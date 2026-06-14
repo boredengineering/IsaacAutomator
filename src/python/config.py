@@ -79,3 +79,18 @@ c["default_isaacsim_git_checkpoint"] = "v6.0.0"
 # --ingress-cidrs
 # empty value will be replaced with the current public IP
 c["default_ingress_cidrs"] = "0.0.0.0/0"
+
+# --demos
+# Out-of-the-box demos to install on the workstation, exposed as double-click
+# desktop shortcuts. Comma-separated list of names from c["demos"], or "no".
+c["default_demos"] = "no"
+
+# Demo registry. Each demo lists the apps it depends on (by the deploy option
+# name); selecting a demo auto-enables those apps if they were left off, using
+# their default git ref. Names here must match the demos role tasks.
+c["demos"] = {
+    "quadruped-locomotion": {
+        "description": "Train an ANYmal-D quadruped to walk using RSL-RL in Isaac Lab.",
+        "requires": ["isaacsim", "isaaclab"],
+    },
+}

@@ -252,6 +252,23 @@ class DeployCommand(click.core.Command):
             ),
         )
 
+        # --demos
+        demo_names = ", ".join(sorted(config["demos"].keys()))
+        help = (
+            'Out-of-the-box demos to install as desktop shortcuts. Valid values: "no", '
+            + f"or a comma-separated list of: {demo_names}. "
+            + "A demo auto-enables the apps it depends on (e.g. Isaac Sim / Isaac Lab)."
+        )
+        self.params.insert(
+            len(self.params),
+            click.core.Option(
+                ("--demos",),
+                help=help,
+                default=config["default_demos"],
+                show_default=True,
+            ),
+        )
+
         # [DEV]
         # private git repo for Isaac Lab
         self.params.insert(

@@ -14,17 +14,13 @@
 # limitations under the License.
 # endregion
 
----
-galaxy_info:
-  role_name: "isaac_workstation"
-  author: NVIDIA Corporation
-  description: Isaac Workstation
-  standalone: false
-dependencies:
-  - { role: system }
-  - { role: nvidia-driver }
-  - { role: remote-desktop }
-  - { role: isaacsim-source }
-  - { role: isaaclab-source }
-  - { role: isaaclab-arena-source }
-  - { role: demos }
+# comma separated list of demos to install, or "no"
+demos: "no"
+
+# where launcher scripts live (desktop shortcuts point here)
+isaaclab_dir: /home/{{ ansible_user }}/IsaacLab
+demos_dir: /home/{{ ansible_user }}/.local/share/isaac-automator-demos
+
+# quadruped-locomotion demo
+quadruped_demo_task: Isaac-Velocity-Flat-Anymal-D-v0
+quadruped_demo_description: Train an ANYmal-D quadruped to walk using RSL-RL in Isaac Lab.

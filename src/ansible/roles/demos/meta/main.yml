@@ -16,15 +16,8 @@
 
 ---
 galaxy_info:
-  role_name: "isaac_workstation"
+  role_name: "demos"
   author: NVIDIA Corporation
-  description: Isaac Workstation
+  description: Out-of-the-box Isaac demos exposed as desktop shortcuts
   standalone: false
-dependencies:
-  - { role: system }
-  - { role: nvidia-driver }
-  - { role: remote-desktop }
-  - { role: isaacsim-source }
-  - { role: isaaclab-source }
-  - { role: isaaclab-arena-source }
-  - { role: demos }
+dependencies: []
