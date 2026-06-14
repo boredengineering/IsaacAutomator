@@ -11,25 +11,25 @@ desktop cloud VM with the Isaac apps installed, plus start/stop/destroy lifecycl
 If you are an AI agent working with this repository, first decide your role:
 
 - **Operating** Isaac Automator - you want to *use* the tool: deploy a workstation, connect to it, run a
-  demo, stop/start it, and tear it down. **Read [`automator.agent.md`](automator.agent.md) and follow the
-  procedures in [`skills/`](skills/).** That is the entry point for operator agents. Start there.
+  demo, stop/start it, and tear it down. **Read [`ai/automator.agent.md`](ai/automator.agent.md) and follow the
+  procedures in [`ai/skills/`](ai/skills/).** That is the entry point for operator agents. Start there.
 - **Developing** Isaac Automator - you want to *change* the tool itself (its Python CLI, Terraform, or
   Ansible). See [`README.md`](README.md) and [`CONTRIBUTING.md`](CONTRIBUTING.md). The operator docs are not
   for editing source.
 
 ## Operator quickstart (the short version)
 
-The full procedures are in `skills/`; this is the orientation.
+The full procedures are in `ai/skills/`; this is the orientation.
 
 1. **Prerequisite:** Docker running, cloud credentials available, then `./build` once.
 2. **Everything runs in a container.** The top-level scripts (`./deploy-aws`, `./start`, `./novnc`, ...) wrap
    commands that run inside the `isaac_automator` Docker image. Run them from the repo root.
 3. **Deploy:** `./deploy-<cloud>` with options; e.g. install Isaac Lab and a demo in one shot. See
-   `skills/deploy-workstation.skill.md`.
+   `ai/skills/deploy-workstation.skill.md`.
 4. **Connect:** `./novnc <name>` (2D desktop), NoMachine (live 3D viewport), or `./ssh <name>` (shell). See
-   `skills/connect-workstation.skill.md`.
+   `ai/skills/connect-workstation.skill.md`.
 5. **Control cost / clean up:** `./stop <name>`, `./start <name>`, and `./destroy <name> --yes`. See
-   `skills/manage-lifecycle.skill.md`.
+   `ai/skills/manage-lifecycle.skill.md`.
 
 ## Rules for agents (read before acting)
 
@@ -46,10 +46,10 @@ The full procedures are in `skills/`; this is the orientation.
 - **Viewport over remote desktop:** noVNC shows the 2D desktop but generally not the live Isaac Sim 3D
   viewport (Omniverse Kit renders via a Vulkan surface VNC does not capture). Use **NoMachine** for live 3D,
   or capture rendered output headlessly with the app's own recorder. Details in
-  `skills/connect-workstation.skill.md` and `skills/troubleshoot.skill.md`.
+  `ai/skills/connect-workstation.skill.md` and `ai/skills/troubleshoot.skill.md`.
 
 ## Map
 
-- [`automator.agent.md`](automator.agent.md) - operator agent entry point (mental model, golden rules, skills index).
-- [`skills/`](skills/) - step-by-step operator procedures (deploy, run-demos, connect, lifecycle, transfer-data, troubleshoot).
+- [`ai/automator.agent.md`](ai/automator.agent.md) - operator agent entry point (mental model, golden rules, skills index).
+- [`ai/skills/`](ai/skills/) - step-by-step operator procedures (deploy, run-demos, connect, lifecycle, transfer-data, troubleshoot).
 - [`README.md`](README.md) - full human documentation for using and understanding the tool.

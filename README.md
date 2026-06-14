@@ -60,7 +60,7 @@ Replace `deploy-aws` with `deploy-gcp`, `deploy-azure`, or `deploy-alicloud` for
 Isaac Automator ships first-class instructions for AI agents that want to operate it.
 
 - **To operate Isaac Automator** (deploy a workstation, connect, run demos, stop/start, destroy), start with
-  [`automator.agent.md`](automator.agent.md) and follow the step-by-step procedures in [`skills/`](skills/).
+  [`ai/automator.agent.md`](ai/automator.agent.md) and follow the step-by-step procedures in [`ai/skills/`](ai/skills/).
 - Agent-aware tools auto-discover [`AGENTS.md`](AGENTS.md) (and [`CLAUDE.md`](CLAUDE.md) for Claude Code),
   which route to that operator guide and summarize the cost/safety and non-interactive rules an agent must
   follow.

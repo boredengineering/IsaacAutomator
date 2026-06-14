@@ -42,8 +42,9 @@ double-click shortcuts on the desktop.
 
 ## Prerequisites
 
-> **Where you run these commands:** from the Isaac Automator repo root - the directory that holds this file
-> along with `./build`, `./deploy-aws`, `./start`, etc. All paths below are relative to that root.
+> **Where you run these commands:** from the Isaac Automator repo root - the parent of this `ai/` directory,
+> which holds `./build`, `./deploy-aws`, `./start`, etc. Shell commands below are run from that root; the
+> `skills/` links in this guide are relative to this `ai/` folder.
 
 1. **Docker** installed and running on the machine you operate from.
 2. **Cloud credentials** for the target cloud (see `skills/deploy-workstation.skill.md` for how each cloud is
