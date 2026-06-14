@@ -1,0 +1,55 @@
+[
+  {
+    "id": "isaac-automator-positive-001",
+    "question": "I need a GPU machine in the cloud running Isaac Sim and Isaac Lab to test a policy. Can you set one up on AWS?",
+    "expected_skill": "isaac-automator",
+    "ground_truth": "The agent loads the isaac-automator skill and deploys an Isaac Workstation with ./deploy-aws, passing all required options non-interactively (deployment name, region, instance type, --ingress-cidrs myip, --isaacsim and --isaaclab refs, --existing replace), notes that it provisions billable infrastructure, and reminds the user to destroy it when done.",
+    "expected_behavior": [
+      "The agent read isaac-automator/SKILL.md before acting",
+      "The agent used ./deploy-aws with all required options passed non-interactively (no interactive prompts)",
+      "The agent warned that the deployment is billable and must be destroyed with ./destroy <name> --yes when finished"
+    ]
+  },
+  {
+    "id": "isaac-automator-positive-002",
+    "question": "I deployed an Isaac workstation. How do I connect so I can actually see the Isaac Sim 3D viewport?",
+    "expected_skill": "isaac-automator",
+    "ground_truth": "The agent loads the isaac-automator skill and explains that the live 3D viewport is best viewed over NoMachine (key-based auth with state/<name>/key.pem, user ubuntu), because noVNC shows the 2D desktop but does not capture Omniverse Kit's Vulkan-rendered viewport. It mentions ./novnc for the desktop and ./ssh for a shell.",
+    "expected_behavior": [
+      "The agent read isaac-automator/SKILL.md before acting",
+      "The agent recommended NoMachine for the live 3D viewport and explained the noVNC/Vulkan limitation",
+      "The agent gave the connection details (public IP, state/<name>/key.pem, user ubuntu)"
+    ]
+  },
+  {
+    "id": "isaac-automator-positive-003",
+    "question": "I'm done with my Isaac workstation for today but want to keep it for tomorrow. How do I stop paying for the GPU?",
+    "expected_skill": "isaac-automator",
+    "ground_truth": "The agent loads the isaac-automator skill and explains ./stop <name> pauses compute billing while keeping the instance and its public IP (resume with ./start <name>), notes that a stopped instance still bills for storage, and that only ./destroy <name> --yes stops all cost.",
+    "expected_behavior": [
+      "The agent read isaac-automator/SKILL.md before acting",
+      "The agent explained ./stop and ./start and that the public IP is preserved",
+      "The agent clarified that stopped instances still incur storage cost and only destroy stops all billing"
+    ]
+  },
+  {
+    "id": "isaac-automator-negative-001",
+    "question": "Install Isaac Lab on my local Ubuntu workstation with an RTX 4090.",
+    "expected_skill": null,
+    "should_trigger": false,
+    "ground_truth": "The agent should not activate the isaac-automator skill; this is a local installation, not a cloud deployment via Isaac Automator.",
+    "expected_behavior": [
+      "The agent did not read or activate isaac-automator/SKILL.md"
+    ]
+  },
+  {
+    "id": "isaac-automator-negative-002",
+    "question": "Fix a bug in the Isaac Automator AWS Terraform module so the security group also allows port 8211.",
+    "expected_skill": null,
+    "should_trigger": false,
+    "ground_truth": "The agent should not activate the isaac-automator skill; this is developing Isaac Automator itself (editing its Terraform), not operating it as a user.",
+    "expected_behavior": [
+      "The agent did not read or activate isaac-automator/SKILL.md"
+    ]
+  }
+]
