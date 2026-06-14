@@ -7,6 +7,7 @@ Isaac Automator allows quick deployment of Isaac Sim, Isaac Lab, and Isaac Lab A
 The result is a fully configured deployed Isaac Workstation — a remote desktop cloud VM that you can use to develop and test robotic applications within minutes and on a budget. Isaac Automator supports a variety of GPU instances and stop/start functionality to save on cloud costs and provides tools to aid your workflow (uploading and downloading data, autorun, deployment management, etc.).
 
 - [TLDR ;)](#tldr-)
+- [Using with AI Agents](#using-with-ai-agents)
 - [Installation](#installation)
   - [Installing Docker](#installing-docker)
   - [Building the Container](#building-the-container)
@@ -53,6 +54,19 @@ The result is a fully configured deployed Isaac Workstation — a remote desktop
 ```
 
 Replace `deploy-aws` with `deploy-gcp`, `deploy-azure`, or `deploy-alicloud` for other clouds. See sections below for details.
+
+## Using with AI Agents
+
+Isaac Automator ships first-class instructions for AI agents that want to operate it.
+
+- **To operate Isaac Automator** (deploy a workstation, connect, run demos, stop/start, destroy), start with
+  [`automator.agent.md`](automator.agent.md) and follow the step-by-step procedures in [`skills/`](skills/).
+- Agent-aware tools auto-discover [`AGENTS.md`](AGENTS.md) (and [`CLAUDE.md`](CLAUDE.md) for Claude Code),
+  which route to that operator guide and summarize the cost/safety and non-interactive rules an agent must
+  follow.
+
+These describe *using* Isaac Automator as an operator. To develop the tool itself, see the sections below and
+[`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## Installation
 
