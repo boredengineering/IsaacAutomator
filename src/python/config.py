@@ -67,14 +67,20 @@ c["alicloud_default_region"] = "us-east-1"
 # --prefix for the created cloud resources
 c["default_prefix"] = "isaacautomator"
 
-# --isaaclab
-c["default_isaaclab_git_checkpoint"] = "release/3.0.0-beta2"
+# --isaacsim / --isaaclab / --isaaclab-arena
+# "latest" -> auto-detect the latest release at deploy time (see git_ref_callback):
+# highest version across the repo's tags + release/* branches, prereleases included
+# (so it tracks e.g. a 3.0.0-beta line, not an older stable), branch wins on a tie.
+# Can be overridden with an explicit git ref or "no" to skip.
+c["default_isaaclab_git_checkpoint"] = "latest"
+c["default_isaaclab_arena_git_checkpoint"] = "latest"
+c["default_isaacsim_git_checkpoint"] = "latest"
 
-# --isaaclab-arena
-c["default_isaaclab_arena_git_checkpoint"] = "release/0.2.1"
-
-# --isaacsim
-c["default_isaacsim_git_checkpoint"] = "v6.0.0"
+# git repos used to validate / auto-detect the --isaacsim/--isaaclab/--isaaclab-arena
+# refs before deploy (mirror of the ansible role defaults; keep both in sync if a repo moves)
+c["isaacsim_git_repo"] = "https://github.com/isaac-sim/IsaacSim.git"
+c["isaaclab_git_repo"] = "https://github.com/isaac-sim/IsaacLab.git"
+c["isaaclab_arena_git_repo"] = "https://github.com/isaac-sim/IsaacLab-Arena.git"
 
 # --ingress-cidrs
 # empty value will be replaced with the current public IP
