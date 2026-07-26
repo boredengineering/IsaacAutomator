@@ -63,3 +63,30 @@ resource "alicloud_security_group_rule" "custom_ssh" {
   port_range        = "${var.ssh_port}/${var.ssh_port}"
   cidr_ip           = "0.0.0.0/0"
 }
+
+# Isaac Sim WebRTC livestream: browser client (8211), signaling (49100) and the
+# media/session ranges, over both TCP and UDP. Needed for the stream to be
+# reachable via the public IP (issue #19). One rule per protocol/range - Alibaba
+# security-group rules take a single protocol and port range each.
+locals {
+  webrtc_rules = {
+    tcp_client   = { proto = "tcp", range = "8211/8211" }
+    tcp_signal   = { proto = "tcp", range = "49100/49100" }
+    tcp_media_a  = { proto = "tcp", range = "47995/48012" }
+    tcp_media_b  = { proto = "tcp", range = "49000/49007" }
+    udp_media_a  = { proto = "udp", range = "47995/48012" }
+    udp_media_b  = { proto = "udp", range = "49000/49007" }
+  }
+}
+
+resource "alicloud_security_group_rule" "webrtc" {
+  for_each          = local.webrtc_rules
+  priority          = 6
+  security_group_id = alicloud_security_group.default.id
+  type              = "ingress"
+  ip_protocol       = each.value.proto
+  nic_type          = "intranet"
+  policy            = "accept"
+  port_range        = each.value.range
+  cidr_ip           = "0.0.0.0/0"
+}
