@@ -77,6 +77,13 @@ class DeployAWSCommand(DeployCommand):
         "g6e.16xlarge",
         "g6e.24xlarge",
         "g6e.48xlarge",
+        # AWS RTX PRO 6000 Blackwell Server Edition - https://aws.amazon.com/ec2/instance-types/g7e/
+        "g7e.2xlarge",
+        "g7e.4xlarge",
+        "g7e.8xlarge",
+        "g7e.12xlarge",
+        "g7e.24xlarge",
+        "g7e.48xlarge",
     ]
 
     @staticmethod

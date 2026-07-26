@@ -53,6 +53,11 @@ class DeployAzureCommand(DeployCommand):
         "Standard_NV36ads_A10_v5",
         "Standard_NV36adms_A10_v5",
         "Standard_NV72ads_A10_v5",
+        # RTX PRO 6000 Blackwell Server Edition (NCv6, for Omniverse/Isaac Sim; check
+        # regional availability) - https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/nc-rtxpro6000-bse-v6-series
+        "Standard_NC24lds_xl_RTXPRO6000BSE_v6",
+        "Standard_NC72lds_xl_RTXPRO6000BSE_v6",
+        "Standard_NC72ds_xl_RTXPRO6000BSE_v6",
     ]
 
     @staticmethod
