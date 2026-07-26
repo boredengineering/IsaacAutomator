@@ -135,6 +135,20 @@
   register: isaacsim_desktop_icon
   when: isaacsim_build_needed
 
+# Pin the active GPU in the launcher. On some cloud GPUs the renderer selects a
+# device that cannot create a Vulkan swapchain, so the Isaac Sim UI never renders
+# over the remote desktop (issue #45). Forcing GPU 0 avoids it and is a no-op on
+# the single-GPU workstations this tool deploys. Idempotent: the anchored regexp
+# stops matching once the flag is appended.
+- name: Pin active GPU in the Isaac Sim desktop launcher (issue #45)
+  replace:
+    path: "/home/{{ ansible_user }}/.local/share/applications/IsaacSim.desktop"
+    regexp: '^(Exec=.*isaac-sim\.sh)$'
+    replace: '\1 --/renderer/activeGpu=0'
+  become_user: "{{ ansible_user }}"
+  when: isaacsim_build_needed and isaacsim_desktop_icon.stat.exists | default(false)
+  ignore_errors: true
+
 # Guarded so a future Isaac Sim change that stops emitting the icon cannot
 # re-break the playbook; the deploy still succeeds, just without the shortcut.
 - name: Copy Isaac Sim desktop icon to Desktop
