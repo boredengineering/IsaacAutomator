@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# region copyright
+# Copyright 2023-2026 NVIDIA Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# endregion
+
+# Quadruped Locomotion RL demo: train an ANYmal-D to walk with RSL-RL in Isaac Lab.
+# Installed by Isaac Automator (demos role). Safe to re-run.
+set -euo pipefail
+
+ISAACLAB_DIR="{{ isaaclab_dir }}"
+TASK="{{ quadruped_demo_task }}"
+
+# Demo defaults keep the viewport light enough to render the robots live.
+# Override via env vars, e.g. HEADLESS=1 NUM_ENVS=4096 MAX_ITERATIONS=1500
+# for a fast, full-scale training run.
+NUM_ENVS="${NUM_ENVS:-64}"
+MAX_ITERATIONS="${MAX_ITERATIONS:-300}"
+HEADLESS="${HEADLESS:-0}"
+
+if [ ! -d "$ISAACLAB_DIR" ]; then
+  echo "Isaac Lab is not installed at $ISAACLAB_DIR. Re-deploy with --isaaclab set." >&2
+  exit 1
+fi
+
+cd "$ISAACLAB_DIR"
+
+ARGS=(-p scripts/reinforcement_learning/rsl_rl/train.py
+  --task "$TASK"
+  --num_envs "$NUM_ENVS"
+  --max_iterations "$MAX_ITERATIONS")
+
+if [ "$HEADLESS" != "0" ]; then
+  ARGS+=(--headless)
+fi
+
+echo "Quadruped Locomotion RL demo"
+echo "Task: $TASK | envs: $NUM_ENVS | iterations: $MAX_ITERATIONS | headless: $HEADLESS"
+echo "Running: ./isaaclab.sh ${ARGS[*]}"
+echo
+
+exec ./isaaclab.sh "${ARGS[@]}"

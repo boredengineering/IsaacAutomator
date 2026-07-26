@@ -119,3 +119,10 @@ WORKDIR /app
 ENTRYPOINT [ "/bin/sh", "-c" ]
 
 ENV VERSION="v4.2.1"
+
+# Keep Terraform's working data (.terraform: provider plugins + modules) OFF the
+# bind-mounted /app. On macOS, Docker Desktop's VirtioFS bind mount cannot reliably
+# execute the downloaded provider binaries (exec format errors) or read freshly
+# written module metadata, which breaks `terraform apply`. A container-local path
+# avoids this and is harmless on Linux (plugins just re-download per container).
+ENV TF_DATA_DIR=/opt/tf-data

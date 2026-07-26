@@ -172,5 +172,58 @@ class Test_InChinaConversion(unittest.TestCase):
         self.assertFalse(deployer.params["in_china"])
 
 
+class Test_ResolveDemos(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def test_no_demos_is_noop(self):
+        deployer = _make_deployer(
+            state_dir=self.tmp, extra={"demos": "no", "isaacsim": "no", "isaaclab": "no"}
+        )
+        self.assertEqual(deployer.params["demos"], "no")
+        # apps left off must stay off
+        self.assertEqual(deployer.params["isaacsim"], "no")
+        self.assertEqual(deployer.params["isaaclab"], "no")
+
+    def test_unknown_demo_exits(self):
+        with self.assertRaises(SystemExit):
+            _make_deployer(state_dir=self.tmp, extra={"demos": "does-not-exist"})
+
+    def test_autoenables_required_apps(self):
+        deployer = _make_deployer(
+            state_dir=self.tmp,
+            extra={
+                "demos": "quadruped-locomotion",
+                "isaacsim": "no",
+                "isaaclab": "no",
+            },
+        )
+        self.assertEqual(
+            deployer.params["isaacsim"], c["default_isaacsim_git_checkpoint"]
+        )
+        self.assertEqual(
+            deployer.params["isaaclab"], c["default_isaaclab_git_checkpoint"]
+        )
+        self.assertEqual(deployer.params["demos"], "quadruped-locomotion")
+
+    def test_keeps_explicit_app_ref(self):
+        deployer = _make_deployer(
+            state_dir=self.tmp,
+            extra={
+                "demos": "quadruped-locomotion",
+                "isaacsim": "v1.2.3",
+                "isaaclab": "no",
+            },
+        )
+        # an explicitly chosen ref is untouched; only the disabled app is enabled
+        self.assertEqual(deployer.params["isaacsim"], "v1.2.3")
+        self.assertEqual(
+            deployer.params["isaaclab"], c["default_isaaclab_git_checkpoint"]
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

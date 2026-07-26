@@ -85,3 +85,26 @@ c["isaaclab_arena_git_repo"] = "https://github.com/isaac-sim/IsaacLab-Arena.git"
 # --ingress-cidrs
 # empty value will be replaced with the current public IP
 c["default_ingress_cidrs"] = "0.0.0.0/0"
+
+# --demos
+# Out-of-the-box demos to install on the workstation, exposed as double-click
+# desktop shortcuts. Comma-separated list of names from c["demos"], or "no".
+c["default_demos"] = "no"
+
+# Demo registry. Each demo lists the apps it depends on (by the deploy option
+# name); selecting a demo auto-enables those apps if they were left off, using
+# their default git ref. Names here must match the demos role tasks.
+c["demos"] = {
+    "quadruped-locomotion": {
+        "description": "Train an ANYmal-D quadruped to walk using RSL-RL in Isaac Lab.",
+        "requires": ["isaacsim", "isaaclab"],
+    },
+    "humanoid-locomotion": {
+        "description": "Train a Unitree G1 humanoid to walk using RSL-RL in Isaac Lab.",
+        "requires": ["isaacsim", "isaaclab"],
+    },
+    "franka-manipulation": {
+        "description": "Train a Franka arm to reach targets using RSL-RL in Isaac Lab.",
+        "requires": ["isaacsim", "isaaclab"],
+    },
+}

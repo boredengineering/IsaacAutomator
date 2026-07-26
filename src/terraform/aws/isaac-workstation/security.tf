@@ -45,6 +45,46 @@ resource "aws_security_group" "sg" {
     cidr_blocks = var.ingress_cidrs
   }
 
+  # Isaac Sim WebRTC livestream (browser client 8211, signaling 49100, media/session
+  # ranges). Without these the stream works on localhost but not via the public IP
+  # (issue #19). Unauthenticated, so scoped to ingress_cidrs like the rest.
+  ingress {
+    from_port   = 8211
+    to_port     = 8211
+    protocol    = "tcp"
+    cidr_blocks = var.ingress_cidrs
+  }
+  ingress {
+    from_port   = 47995
+    to_port     = 48012
+    protocol    = "tcp"
+    cidr_blocks = var.ingress_cidrs
+  }
+  ingress {
+    from_port   = 47995
+    to_port     = 48012
+    protocol    = "udp"
+    cidr_blocks = var.ingress_cidrs
+  }
+  ingress {
+    from_port   = 49000
+    to_port     = 49007
+    protocol    = "tcp"
+    cidr_blocks = var.ingress_cidrs
+  }
+  ingress {
+    from_port   = 49000
+    to_port     = 49007
+    protocol    = "udp"
+    cidr_blocks = var.ingress_cidrs
+  }
+  ingress {
+    from_port   = 49100
+    to_port     = 49100
+    protocol    = "tcp"
+    cidr_blocks = var.ingress_cidrs
+  }
+
   # allow outbound traffic
 
   egress {

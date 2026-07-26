@@ -80,6 +80,28 @@ resource "google_compute_firewall" "novnc" {
   source_ranges = var.ingress_cidrs
 }
 
+# Isaac Sim WebRTC livestream: browser client (8211), signaling (49100) and the
+# media/session port ranges. Without these open the stream works on localhost
+# (inside the desktop) but not via the instance's public IP (see issue #19).
+# Scoped to ingress_cidrs like every other rule - the stream is unauthenticated,
+# so keep it restricted to your client IP(s).
+resource "google_compute_firewall" "webrtc" {
+  name    = "${var.prefix}-fwrules-webrtc"
+  network = google_compute_network.default.self_link
+
+  allow {
+    protocol = "tcp"
+    ports    = ["8211", "47995-48012", "49000-49007", "49100"]
+  }
+
+  allow {
+    protocol = "udp"
+    ports    = ["47995-48012", "49000-49007"]
+  }
+
+  source_ranges = var.ingress_cidrs
+}
+
 # custom ssh port
 resource "google_compute_firewall" "ssh_custom" {
   name    = "${var.prefix}-fwrules-ssh-custom"

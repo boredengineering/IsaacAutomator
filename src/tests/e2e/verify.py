@@ -251,6 +251,36 @@ class Verifier:
             f"requested={requested} HEAD={head[:12]}",
         )
 
+    def check_demos(self) -> CheckResult:
+        requested = (self.input_params.get("demos") or "").strip()
+        if requested.lower() in ("", "no", "none"):
+            return CheckResult("Demos install", SKIP, "deployed with --demos no")
+
+        # Each demo drops an executable launcher in the demos dir plus a
+        # desktop shortcut that points at it.
+        # Per src/ansible/roles/demos/tasks/*.yml.
+        demos = [d.strip() for d in requested.split(",") if d.strip()]
+        demos_dir = f"/home/{self.ssh_user}/.local/share/isaac-automator-demos"
+        desktop_dir = f"/home/{self.ssh_user}/Desktop"
+
+        missing = []
+        for d in demos:
+            launcher = f"{demos_dir}/{d}.sh"
+            cmd = (
+                f"test -x {shlex.quote(launcher)} && "
+                f"grep -rqlF {shlex.quote(launcher)} {shlex.quote(desktop_dir)}"
+            )
+            r = self.run_remote(cmd)
+            if r.returncode != 0:
+                missing.append(d)
+
+        if missing:
+            return CheckResult(
+                "Demos install", FAIL,
+                f"missing launcher and/or desktop shortcut for: {', '.join(missing)}",
+            )
+        return CheckResult("Demos install", PASS, f"installed: {', '.join(demos)}")
+
     def check_services(self) -> CheckResult:
         # Required services (all explicitly started by Ansible roles).
         # x11vnc-ubuntu:   src/ansible/roles/remote-desktop/tasks/vnc.yml:41
@@ -307,6 +337,7 @@ class Verifier:
             self.check_isaacsim,
             self.check_isaaclab,
             self.check_isaaclab_arena,
+            self.check_demos,
         ]
 
     def run_all(self) -> List[CheckResult]:

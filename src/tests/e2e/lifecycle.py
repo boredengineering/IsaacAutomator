@@ -161,6 +161,8 @@ def aws_orphans(deployment_name: str, region: str) -> List[str]:
               help="Isaac Lab ref. Defaults to config.default_isaaclab_git_checkpoint.")
 @click.option("--isaaclab-arena", default="no", show_default=True,
               help="Set to a ref to include Arena. Default skips to save time.")
+@click.option("--demos", default="no", show_default=True,
+              help="Comma-separated demos to install (auto-enables required apps).")
 @click.option("--from-image/--full-deploy", default=True, show_default=True,
               help="--from-image is ~10-15 min, --full-deploy is ~45-60 min.")
 @click.option("--ingress-cidrs", default="myip", show_default=True)
@@ -180,6 +182,7 @@ def main(
     isaacsim: Optional[str],
     isaaclab: Optional[str],
     isaaclab_arena: str,
+    demos: str,
     from_image: bool,
     ingress_cidrs: str,
     ssh_port: int,
@@ -209,6 +212,7 @@ def main(
         "--isaacsim", isaacsim,
         "--isaaclab", isaaclab,
         "--isaaclab-arena", isaaclab_arena,
+        "--demos", demos,
         "--isaaclab-private-git", "",
         "--vnc-password", "e2etestvnc",
         "--system-user-password", "e2etestsys",
