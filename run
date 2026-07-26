@@ -51,19 +51,14 @@ rm -f "${OPEN_URL_FILE}"
 ) &
 WATCHER_PID=$!
 
-if [[ "$OSTYPE" == "darwin"* ]]; then
-  # we're on mac - enable emulation
-  docker run --platform linux/x86_64 -it --rm --network host \
-    -v "${SELF_DIR}":/app \
-    "${ENV_ARGS[@]}" \
-    "$TAG" "${*:-bash}"
-else
-  # we're not on mac
-  docker run -it --rm --network host \
-    -v "${SELF_DIR}":/app \
-    "${ENV_ARGS[@]}" \
-    "$TAG" "${*:-bash}"
-fi
+# run on the host's native architecture. do NOT force linux/x86_64 on macOS: on
+# Apple Silicon that forces QEMU emulation, under which the terraform provider
+# plugins crash. the deploy only orchestrates remote (x86) cloud VMs, so the
+# container's own arch does not matter. force an arch with DOCKER_DEFAULT_PLATFORM.
+docker run -it --rm --network host \
+  -v "${SELF_DIR}":/app \
+  "${ENV_ARGS[@]}" \
+  "$TAG" "${*:-bash}"
 
 # stop the background watcher
 kill "${WATCHER_PID}" 2>/dev/null

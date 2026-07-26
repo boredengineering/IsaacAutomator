@@ -5,11 +5,9 @@ TAG="isaac_automator"
 
 # run build and pasthrough all the args
 
-# check if we're on mac
-if [[ "$OSTYPE" == "darwin"* ]]; then
-  # we're on macOS
-  docker build --platform linux/x86_64 -t "${TAG}" "${SELF_DIR}" "$@"
-else
-  # we're on Linux
-  docker build -t "${TAG}" "${SELF_DIR}" "$@"
-fi
+# build for the host's native architecture. do NOT force linux/x86_64 on macOS:
+# on Apple Silicon that forces slow QEMU emulation, under which the terraform
+# provider plugins crash. the image is arch-aware (terraform/packer/gcloud/azure
+# all have arm64 builds), so a native arm64 image works. to force an arch (e.g. to
+# build an amd64 image for distribution), set DOCKER_DEFAULT_PLATFORM - docker honors it.
+docker build -t "${TAG}" "${SELF_DIR}" "$@"
