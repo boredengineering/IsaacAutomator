@@ -23,3 +23,13 @@
   import_tasks: quadruped-locomotion.yml
   when: "'quadruped-locomotion' in selected_demos"
   tags: __demos_quadruped_locomotion
+
+- name: Install Humanoid Locomotion RL demo
+  import_tasks: humanoid-locomotion.yml
+  when: "'humanoid-locomotion' in selected_demos"
+  tags: __demos_humanoid_locomotion
+
+- name: Install Franka Manipulation RL demo
+  import_tasks: franka-manipulation.yml
+  when: "'franka-manipulation' in selected_demos"
+  tags: __demos_franka_manipulation

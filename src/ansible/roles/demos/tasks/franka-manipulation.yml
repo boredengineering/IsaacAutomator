@@ -1,0 +1,55 @@
+# region copyright
+# Copyright 2023-2026 NVIDIA Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# endregion
+
+- name: Create demos directory
+  file:
+    path: "{{ demos_dir }}"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0755"
+
+- name: Ensure Desktop directory exists
+  file:
+    path: "/home/{{ ansible_user }}/Desktop"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0755"
+
+- name: Install Franka Manipulation launcher script
+  template:
+    src: franka-manipulation.sh.j2
+    dest: "{{ demos_dir }}/franka-manipulation.sh"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0755"
+
+- name: Install Franka Manipulation desktop shortcut
+  template:
+    src: franka-manipulation.desktop.j2
+    dest: "/home/{{ ansible_user }}/Desktop/Franka-Manipulation-RL.desktop"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0755"
+
+# Mark the shortcut trusted so the desktop launches it without a prompt.
+# Needs a session bus, which may be absent at provision time; the shortcut
+# still works after login, so a failure here must not break the deploy.
+- name: Trust the desktop shortcut
+  shell: gio set "/home/{{ ansible_user }}/Desktop/Franka-Manipulation-RL.desktop" metadata::trusted true
+  become_user: "{{ ansible_user }}"
+  ignore_errors: true

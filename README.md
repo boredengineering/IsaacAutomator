@@ -528,6 +528,10 @@ Isaac Automator can install ready-to-run demos on the Isaac Workstation, each ex
 Available demos:
 
 - `quadruped-locomotion` — trains an ANYmal-D quadruped to walk using RSL-RL in Isaac Lab, rendered live in the Isaac Sim viewport. Depends on Isaac Sim and Isaac Lab (auto-enabled).
+- `humanoid-locomotion` — trains a Unitree G1 humanoid to walk using RSL-RL in Isaac Lab. Depends on Isaac Sim and Isaac Lab (auto-enabled).
+- `franka-manipulation` — trains a Franka arm to reach targets using RSL-RL in Isaac Lab. Depends on Isaac Sim and Isaac Lab (auto-enabled).
+
+You can select several at once, e.g. `--demos quadruped-locomotion,humanoid-locomotion,franka-manipulation`.
 
 For example, `--demos quadruped-locomotion` enables Isaac Sim and Isaac Lab automatically (using their default versions) if they were not requested. Launcher scripts are installed to `~/.local/share/isaac-automator-demos/` and can be tuned via environment variables (e.g. `HEADLESS=1`, `NUM_ENVS`, `MAX_ITERATIONS`).
 

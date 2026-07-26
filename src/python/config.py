@@ -99,4 +99,12 @@ c["demos"] = {
         "description": "Train an ANYmal-D quadruped to walk using RSL-RL in Isaac Lab.",
         "requires": ["isaacsim", "isaaclab"],
     },
+    "humanoid-locomotion": {
+        "description": "Train a Unitree G1 humanoid to walk using RSL-RL in Isaac Lab.",
+        "requires": ["isaacsim", "isaaclab"],
+    },
+    "franka-manipulation": {
+        "description": "Train a Franka arm to reach targets using RSL-RL in Isaac Lab.",
+        "requires": ["isaacsim", "isaaclab"],
+    },
 }

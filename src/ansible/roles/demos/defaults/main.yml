@@ -24,3 +24,11 @@ demos_dir: /home/{{ ansible_user }}/.local/share/isaac-automator-demos
 # quadruped-locomotion demo
 quadruped_demo_task: Isaac-Velocity-Flat-Anymal-D-v0
 quadruped_demo_description: Train an ANYmal-D quadruped to walk using RSL-RL in Isaac Lab.
+
+# humanoid-locomotion demo
+humanoid_demo_task: Isaac-Velocity-Flat-G1-v0
+humanoid_demo_description: Train a Unitree G1 humanoid to walk using RSL-RL in Isaac Lab.
+
+# franka-manipulation demo
+franka_demo_task: Isaac-Reach-Franka-v0
+franka_demo_description: Train a Franka arm to reach targets using RSL-RL in Isaac Lab.
