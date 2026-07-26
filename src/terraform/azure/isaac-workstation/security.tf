@@ -50,6 +50,21 @@ resource "azurerm_network_security_group" "sg" {
     source_address_prefix      = "*"
     destination_address_prefix = "*"
   }
+
+  # Isaac Sim WebRTC livestream: browser client (8211), signaling (49100) and the
+  # media/session ranges. Needed for the stream to be reachable via the public IP
+  # (issue #19). protocol "*" covers both the TCP and UDP the stream uses.
+  security_rule {
+    name                       = "WebRTC"
+    priority                   = 107
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "*"
+    source_port_range          = "*"
+    destination_port_ranges    = ["8211", "47995-48012", "49000-49007", "49100"]
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
 }
 
 # security rule for custom ssh port
