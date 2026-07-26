@@ -51,6 +51,9 @@ class Deployer:
             self.params["in_china"]
         ]
 
+        # resolve --demos: validate names and auto-enable required apps
+        self.resolve_demos()
+
         # create state directory if it doesn't exist
         os.makedirs(self.config["state_dir"], exist_ok=True)
 
@@ -70,6 +73,59 @@ class Deployer:
         # print complete command line
         if self.params["debug"]:
             click.echo(colorize_info("* Command:\n" + self.recreate_command_line()))
+
+    def resolve_demos(self):
+        """
+        Normalize the --demos option, validate demo names against the registry,
+        and auto-enable the apps each selected demo depends on.
+
+        A demo that needs an app (e.g. Isaac Sim / Isaac Lab) which the user left
+        off ("no"/empty) flips that app back on using its default git ref, so a
+        demo is deployable with a single flag.
+        """
+
+        if "demos" not in self.params:
+            return
+
+        raw = str(self.params.get("demos") or "no").strip()
+
+        # treat "no"/empty as no demos
+        if raw.lower() in ("", "no", "none"):
+            self.params["demos"] = "no"
+            return
+
+        registry = self.config.get("demos", {})
+        selected = [d.strip() for d in raw.split(",") if d.strip()]
+
+        # validate
+        unknown = [d for d in selected if d not in registry]
+        if unknown:
+            click.echo(
+                colorize_error(
+                    f"* Unknown demo(s): {', '.join(unknown)}. "
+                    + f"Valid demos: {', '.join(sorted(registry.keys())) or '(none)'}."
+                ),
+                err=True,
+            )
+            sys.exit(1)
+
+        # auto-enable required apps
+        for demo in selected:
+            for app in registry[demo].get("requires", []):
+                current = str(self.params.get(app, "no")).strip().lower()
+                if current in ("", "no", "none"):
+                    default_ref = self.config.get(f"default_{app}_git_checkpoint")
+                    if default_ref:
+                        self.params[app] = default_ref
+                        click.echo(
+                            colorize_info(
+                                f'* Demo "{demo}" requires {app}; enabling it'
+                                f" ({default_ref})."
+                            )
+                        )
+
+        # store back the normalized, de-duplicated selection
+        self.params["demos"] = ",".join(dict.fromkeys(selected))
 
     def __del__(self):
         # update meta info

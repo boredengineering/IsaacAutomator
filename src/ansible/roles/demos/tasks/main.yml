@@ -14,17 +14,12 @@
 # limitations under the License.
 # endregion
 
----
-galaxy_info:
-  role_name: "isaac_workstation"
-  author: NVIDIA Corporation
-  description: Isaac Workstation
-  standalone: false
-dependencies:
-  - { role: system }
-  - { role: nvidia-driver }
-  - { role: remote-desktop }
-  - { role: isaacsim-source }
-  - { role: isaaclab-source }
-  - { role: isaaclab-arena-source }
-  - { role: demos }
+# Parse the comma separated --demos list once; "no"/empty means install nothing.
+- name: Build list of selected demos
+  set_fact:
+    selected_demos: "{{ (demos | default('no')).split(',') | map('trim') | reject('in', ['', 'no', 'none']) | list }}"
+
+- name: Install Quadruped Locomotion RL demo
+  import_tasks: quadruped-locomotion.yml
+  when: "'quadruped-locomotion' in selected_demos"
+  tags: __demos_quadruped_locomotion

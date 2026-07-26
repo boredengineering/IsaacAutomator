@@ -30,6 +30,7 @@ The result is a fully configured deployed Isaac Workstation — a remote desktop
     - [Isaac Sim](#isaac-sim)
     - [Isaac Lab](#isaac-lab)
     - [Isaac Lab Arena](#isaac-lab-arena)
+    - [Demos](#demos)
   - [Autorun Script](#autorun-script)
   - [Standard Folders](#standard-folders)
   - [Pausing and Resuming](#pausing-and-resuming)
@@ -267,6 +268,7 @@ Run `./deploy-<cloud> --help` to see the full list of options. Key options inclu
   - `run_ansible` — re-run software configuration (Ansible) only
 - `--instance-type` — Cloud VM instance type (each cloud has its own supported list and default).
 - `--isaacsim` / `--isaaclab` / `--isaaclab-arena` — Git ref for Isaac Sim / Isaac Lab / Isaac Lab Arena version, or `no` to skip installation.
+- `--demos` — Comma-separated list of out-of-the-box demos to install as desktop shortcuts, or `no` (default). A demo automatically enables the apps it depends on (see [Demos](#demos)).
 - `--from-image` — Deploy from a pre-built VM image to speed up provisioning (supported on AWS, Azure, and GCP; see [Speeding Up Deployment with Pre-Built Images](#speeding-up-deployment-with-pre-built-images)).
 - `--in-china` — Use local mirrors for deployments in China. Choices: `auto` (default), `yes`, `no`.
 - `--prefix` — Prefix for created cloud resource names (default: `isaacautomator`).
@@ -518,6 +520,16 @@ To run Isaac Lab CLI, use the following command in the terminal on the deployed 
 To install a specific version, provide a valid Git reference from <https://github.com/isaac-sim/IsaacLab-Arena> as the value of the `--isaaclab-arena` parameter to the deployment command. Use `--isaaclab-arena no` to skip installation.
 
 Isaac Lab Arena is installed to `~/IsaacLab-Arena` on the deployed instance.
+
+#### Demos
+
+Isaac Automator can install ready-to-run demos on the Isaac Workstation, each exposed as a double-click shortcut on the remote desktop. Select them with the `--demos` option (comma-separated, or `no` to install none). A demo automatically enables the apps it depends on, so a single flag is enough to get a working setup.
+
+Available demos:
+
+- `quadruped-locomotion` — trains an ANYmal-D quadruped to walk using RSL-RL in Isaac Lab, rendered live in the Isaac Sim viewport. Depends on Isaac Sim and Isaac Lab (auto-enabled).
+
+For example, `--demos quadruped-locomotion` enables Isaac Sim and Isaac Lab automatically (using their default versions) if they were not requested. Launcher scripts are installed to `~/.local/share/isaac-automator-demos/` and can be tuned via environment variables (e.g. `HEADLESS=1`, `NUM_ENVS`, `MAX_ITERATIONS`).
 
 ### Autorun Script
 
