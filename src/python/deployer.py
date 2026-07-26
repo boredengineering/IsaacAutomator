@@ -31,6 +31,7 @@ from src.python.utils import (
     colorize_result,
     get_my_public_ip,
     read_meta,
+    read_tf_output,
     shell_command,
     subnet_from_ip,
 )
@@ -474,15 +475,13 @@ class Deployer:
         Export SSH key from Terraform state
         """
 
-        debug = self.params["debug"]
         deployment_name = self.params["deployment_name"]
 
-        shell_command(
-            f"terraform output -state={self.config['state_dir']}/{deployment_name}/.tfstate -raw ssh_key"
-            + f" > {self.config['state_dir']}/{deployment_name}/key.pem && "
-            + f"chmod 0600 {self.config['state_dir']}/{deployment_name}/key.pem",
-            verbose=debug,
-        )
+        key = read_tf_output(deployment_name, "ssh_key", verbose=self.params["debug"])
+        key_file = f"{self.config['state_dir']}/{deployment_name}/key.pem"
+        with open(key_file, "w") as f:
+            f.write(key if key.endswith("\n") else key + "\n")
+        os.chmod(key_file, 0o600)
 
     def run_ansible(
         self,
@@ -530,27 +529,16 @@ class Deployer:
         """
 
         if key not in self.tf_outputs:
-            debug = self.params["debug"]
             deployment_name = self.params["deployment_name"]
-
-            r = shell_command(
-                f"terraform output -state='{self.config['state_dir']}/{deployment_name}/.tfstate' -raw '{key}'",
-                capture_output=True,
-                exit_on_error=False,
-                verbose=debug,
-            )
-
-            if r.returncode == 0:
-                self.tf_outputs[key] = r.stdout.decode()
-            else:
-                if self.params["debug"]:
-                    click.echo(
-                        colorize_error(
-                            f"* Warning: Terraform output '{key}' cannot be read."
-                        ),
-                        err=True,
-                    )
-                self.tf_outputs[key] = default
+            value = read_tf_output(deployment_name, key, verbose=self.params["debug"])
+            if value == "" and self.params["debug"]:
+                click.echo(
+                    colorize_error(
+                        f"* Warning: Terraform output '{key}' cannot be read."
+                    ),
+                    err=True,
+                )
+            self.tf_outputs[key] = value if value != "" else default
 
         # update meta file to reflect tf outputs
         self.save_meta()

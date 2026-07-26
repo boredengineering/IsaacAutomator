@@ -111,19 +111,24 @@ def read_meta(deployment_name: str, verbose: bool = False):
 
 def read_tf_output(deployment_name, output, verbose=False):
     """
-    Read terraform output from tfstate file
+    Read a single Terraform output value directly from the deployment's state file.
+
+    Parses the JSON state instead of shelling out to `terraform output`. This is
+    both faster and far more robust: it needs no initialized backend/.terraform and
+    never executes a provider plugin - which matters on macOS, where Docker Desktop's
+    bind mount cannot reliably exec the provider binaries and `terraform output -state=`
+    also conflicts with a configured backend. Returns "" if the value is absent.
     """
 
-    return (
-        shell_command(
-            f"terraform output -state={config['state_dir']}/{deployment_name}/.tfstate -raw {output}",
-            capture_output=True,
-            exit_on_error=False,
-            verbose=verbose,
-        )
-        .stdout.decode()
-        .strip()
-    )
+    tfstate_file = f"{config['state_dir']}/{deployment_name}/.tfstate"
+    try:
+        with open(tfstate_file) as f:
+            state = json.load(f)
+    except (OSError, ValueError):
+        return ""
+
+    value = state.get("outputs", {}).get(output, {}).get("value")
+    return "" if value is None else str(value)
 
 
 def format_instance_role(instance_role):
