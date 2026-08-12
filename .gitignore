@@ -26,3 +26,5 @@ src/ansible/roles/isaac/files/isaaclab.pem
 # Third-party installed skills
 .agents/skills/*
 !.agents/skills/isaac-automator/
+.claude/*
+agent/*
