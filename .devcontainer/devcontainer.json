@@ -1,0 +1,38 @@
+{
+    "name": "AI Playwright Sandbox (Antigravity + Claude + Hermes + HF CLI)",
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "terminal.integrated.defaultProfile.linux": "bash",
+                "r.lsp.enabled": true,
+                "python.defaultInterpreterPath": "/usr/bin/python3"
+            },
+            "extensions": [
+                "anthropic.claude-code",
+                "REditorSupport.r",
+                "ms-python.python",
+                "quarto.quarto",
+                "ms-toolsai.jupyter"
+            ]
+        }
+    },
+    "remoteEnv": {
+        "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}",
+        "OPENAI_API_KEY": "${localEnv:OPENAI_API_KEY}",
+        "GEMINI_API_KEY": "${localEnv:GEMINI_API_KEY}",
+        "HERMES_HOME": "/root/.hermes",
+        "HF_TOKEN": "${localEnv:HF_TOKEN}"
+    },
+    "mounts": [
+        // "source=C:/,target=/c,type=bind,readonly",
+        // "source=E:/,target=/e,type=bind,readonly",
+        // "source=F:/,target=/f,type=bind,readonly",
+        "source=claude-code-config-${devcontainerId},target=/root/.claude,type=volume",
+        "source=hermes-home-${devcontainerId},target=/root/.hermes,type=volume",
+        "source=antigravity-config-${devcontainerId},target=/root/.gemini,type=volume"
+    ],
+    "postCreateCommand": "if [ -f renv.lock ]; then Rscript -e 'renv::restore()'; fi && echo 'Devcontainer setup completed!'"
+}
