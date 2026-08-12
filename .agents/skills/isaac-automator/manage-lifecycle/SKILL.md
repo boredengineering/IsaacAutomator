@@ -1,7 +1,6 @@
 ---
 name: manage-lifecycle
-triggers: ["stop the workstation", "start the rig", "destroy the deployment", "repair isaac", "check deployment status", "how much is it costing"]
-summary: Control a deployment's cost and health - status, stop/start, repair, and destroy.
+description: Control an Isaac Workstation deployment's cost and health - status, stop, start, repair, and destroy.
 ---
 
 # manage-lifecycle <!-- omit in toc -->
@@ -71,5 +70,5 @@ Re-applies configuration without changing your chosen parameters. Use it when a 
 
 Deletes the deployment's cloud resources. This is the only thing that stops storage cost. **Always destroy
 what you created when you are finished.** Afterward, verify nothing tagged with your deployment name remains
-(instances, VPC, static IPs); if `./destroy` failed partway (e.g. a dependency error on the VPC), clean up the
+(instances, VPC, static IPs); if `./destroy` failed partway (e.g. a VPC dependency error), clean up the
 leftover resources by hand and re-run.

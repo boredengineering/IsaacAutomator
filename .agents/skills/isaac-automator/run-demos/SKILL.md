@@ -1,7 +1,6 @@
 ---
 name: run-demos
-triggers: ["run a demo", "list demos", "launch quadruped demo", "show me isaac lab training", "what demos are available"]
-summary: Install and launch the out-of-the-box Isaac demos that ship as desktop shortcuts on the workstation.
+description: Install and launch the out-of-the-box Isaac demos that ship as desktop shortcuts on the workstation.
 ---
 
 # run-demos <!-- omit in toc -->
@@ -30,7 +29,7 @@ To see the current list for a given build, check the `--demos` help on a deploy 
 
 ## 1. Enable a demo at deploy time
 
-Add `--demos <name>[,<name>...]` to the deploy command (see `deploy-workstation.skill.md`). Example:
+Add `--demos <name>[,<name>...]` to the deploy command (see `../deploy-workstation/SKILL.md`). Example:
 
 ```sh
 ./deploy-aws --deployment-name demo-rig-1 --region us-east-1 --instance-type g5.2xlarge \
@@ -61,7 +60,7 @@ The quadruped demo prints live RSL-RL training output (per-iteration reward and 
 
 The 3D viewport renders through Omniverse Kit's Vulkan surface, which **noVNC does not capture** - over noVNC
 you will see the desktop but usually a blank viewport. To watch the live robots, connect with **NoMachine**
-(see `connect-workstation.skill.md`).
+(see `../connect-workstation/SKILL.md`).
 
 To get a rendered file without a display, run the underlying Isaac Lab script with video recording instead of
 relying on a screen capture, e.g. add `--headless --enable_cameras --video --video_length 600` to a

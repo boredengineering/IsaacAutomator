@@ -1,7 +1,6 @@
 ---
 name: troubleshoot
-triggers: ["isaac sim viewport is black", "deploy hangs", "command is stuck", "cannot connect", "driver mismatch", "demo wont show"]
-summary: Diagnose and fix the common Isaac Automator failure modes from the operator side.
+description: Diagnose and fix common Isaac Automator failure modes from the operator side.
 ---
 
 # troubleshoot <!-- omit in toc -->
@@ -20,7 +19,7 @@ summary: Diagnose and fix the common Isaac Automator failure modes from the oper
 Expected, not a bug. Omniverse Kit renders the 3D viewport through a Vulkan surface that the VNC server does
 not capture, so noVNC shows the desktop but an empty viewport. To see rendered output:
 
-- Connect with **NoMachine** (GPU/Vulkan-aware) - see `connect-workstation.skill.md`; or
+- Connect with **NoMachine** (GPU/Vulkan-aware) - see `../connect-workstation/SKILL.md`; or
 - Record the viewport headlessly with the app's own recorder (Isaac Lab `--video --enable_cameras`), then
   download the file.
 

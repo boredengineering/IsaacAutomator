@@ -1,7 +1,6 @@
 ---
 name: deploy-workstation
-triggers: ["deploy isaac", "deploy a workstation", "spin up isaac sim", "create an isaac lab machine", "get me a cloud GPU with isaac"]
-summary: Deploy a new Isaac Workstation (Isaac Sim / Isaac Lab / Arena, optional demos) to a public cloud, non-interactively.
+description: Deploy a new Isaac Workstation (Isaac Sim / Isaac Lab / Arena, optional demos) to a public cloud, non-interactively.
 ---
 
 # deploy-workstation <!-- omit in toc -->
@@ -29,7 +28,7 @@ target, cloud, and that cleanup will happen before you start. A full source depl
 - **What to install:** any of Isaac Sim (`--isaacsim`), Isaac Lab (`--isaaclab`), Isaac Lab Arena
   (`--isaaclab-arena`). Each takes a git ref (e.g. a release tag) or `no` to skip.
 - **Demos** (`--demos`): a comma-separated list, or `no`. A demo auto-enables the apps it needs (see
-  `run-demos.skill.md`). e.g. `--demos quadruped-locomotion` will turn on Isaac Sim + Isaac Lab for you.
+  `../run-demos/SKILL.md`). e.g. `--demos quadruped-locomotion` will turn on Isaac Sim + Isaac Lab for you.
 
 ## 2. Set up credentials
 
@@ -104,9 +103,9 @@ headers, `fatal:` / `Error`, and the final `PLAY RECAP`) rather than waiting bli
 The command prints (and saves to `state/<name>/info.txt`) the public IP and how to connect via SSH, noVNC,
 and NoMachine. Next:
 
-- Connect: `connect-workstation.skill.md`.
-- Run a demo: `run-demos.skill.md`.
-- Control cost / tear down: `manage-lifecycle.skill.md`.
+- Connect: `../connect-workstation/SKILL.md`.
+- Run a demo: `../run-demos/SKILL.md`.
+- Control cost / tear down: `../manage-lifecycle/SKILL.md`.
 
 ## Faster, cheaper deploys (--from-image)
 

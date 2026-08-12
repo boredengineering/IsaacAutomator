@@ -1,7 +1,6 @@
 ---
 name: connect-workstation
-triggers: ["connect to the workstation", "open novnc", "ssh into the rig", "use nomachine", "how do I see the desktop"]
-summary: Connect to a deployed Isaac Workstation via noVNC (browser), NoMachine (3D), or SSH (shell).
+description: Connect to a deployed Isaac Workstation via noVNC (browser desktop), NoMachine (3D viewport), or SSH (shell).
 ---
 
 # connect-workstation <!-- omit in toc -->
@@ -11,7 +10,7 @@ summary: Connect to a deployed Isaac Workstation via noVNC (browser), NoMachine 
 - [NoMachine (live 3D viewport)](#nomachine-live-3d-viewport)
 - [SSH (shell)](#ssh-shell)
 
-You need a deployed, running workstation (see `deploy-workstation.skill.md`; resume a stopped one with
+You need a deployed, running workstation (see `../deploy-workstation/SKILL.md`; resume a stopped one with
 `./start <name>`). All connection info is also saved in `state/<name>/info.txt`.
 
 ## Pick the right method

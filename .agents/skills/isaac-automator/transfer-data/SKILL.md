@@ -1,7 +1,6 @@
 ---
 name: transfer-data
-triggers: ["upload data to the workstation", "download results", "get files off the rig", "set an autorun script", "auto-launch on boot"]
-summary: Move data to/from a workstation and configure what runs automatically on boot.
+description: Move data to/from an Isaac Workstation and configure what runs automatically on boot.
 ---
 
 # transfer-data <!-- omit in toc -->

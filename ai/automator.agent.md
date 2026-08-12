@@ -47,7 +47,7 @@ double-click shortcuts on the desktop.
 > `skills/` links in this guide are relative to this `ai/` folder.
 
 1. **Docker** installed and running on the machine you operate from.
-2. **Cloud credentials** for the target cloud (see `skills/deploy-workstation.skill.md` for how each cloud is
+2. **Cloud credentials** for the target cloud (see `.agents/skills/isaac-automator/deploy-workstation/SKILL.md` for how each cloud is
    authenticated). For AWS the simplest path is `AWS_ACCESS_KEY_ID` + `AWS_SECRET_ACCESS_KEY` in the
    environment, forwarded into the container.
 3. **Build the image once:** `./build` (rebuild only if the tool itself changed).
@@ -94,16 +94,16 @@ above (it is what the skills use).
 
 ## Skills
 
-Open the matching file in `skills/` and follow it. Each is a self-contained operator procedure.
+Open the matching file in `.agents/skills/isaac-automator/` and follow it. Each is a self-contained operator procedure.
 
 | Skill | Use it to |
 |---|---|
-| `skills/deploy-workstation.skill.md` | Deploy a new Isaac Workstation to AWS / GCP / Azure / Alibaba, with the apps (and demos) you want. |
-| `skills/run-demos.skill.md` | List and launch the out-of-the-box demos (e.g. quadruped locomotion RL). |
-| `skills/connect-workstation.skill.md` | Connect via noVNC (browser), NoMachine (best for 3D), or SSH. |
-| `skills/manage-lifecycle.skill.md` | Check status, stop/start to control cost, repair, and destroy. |
-| `skills/transfer-data.skill.md` | Upload inputs, download results, and set an autorun script. |
-| `skills/troubleshoot.skill.md` | Diagnose the common failure modes (blank viewport, driver mismatch, hung prompts, ...). |
+| `.agents/skills/isaac-automator/deploy-workstation/SKILL.md` | Deploy a new Isaac Workstation to AWS / GCP / Azure / Alibaba, with the apps (and demos) you want. |
+| `.agents/skills/isaac-automator/run-demos/SKILL.md` | List and launch the out-of-the-box demos (e.g. quadruped locomotion RL). |
+| `.agents/skills/isaac-automator/connect-workstation/SKILL.md` | Connect via noVNC (browser), NoMachine (best for 3D), or SSH. |
+| `.agents/skills/isaac-automator/manage-lifecycle/SKILL.md` | Check status, stop/start to control cost, repair, and destroy. |
+| `.agents/skills/isaac-automator/transfer-data/SKILL.md` | Upload inputs, download results, and set an autorun script. |
+| `.agents/skills/isaac-automator/troubleshoot/SKILL.md` | Diagnose the common failure modes (blank viewport, driver mismatch, hung prompts, ...). |
 
 ## Connecting: which method shows what
 
