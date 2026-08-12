@@ -48,8 +48,15 @@ The full procedures are in `.agents/skills/isaac-automator/`; this is the orient
   or capture rendered output headlessly with the app's own recorder. Details in
   `.agents/skills/isaac-automator/connect-workstation/SKILL.md` and `.agents/skills/isaac-automator/troubleshoot/SKILL.md`.
 
+## Session Memory Protocol
+
+- **Resuming Work**: When asked about past sessions, check [`.agents/memory/INDEX.md`](.agents/memory/INDEX.md) and load relevant logs from `.agents/memory/sessions/`.
+- **Saving Checkpoints**: Upon completing major milestones, architectural changes, or when requested ("save session", "checkpoint"), follow [`.agents/skills/isaac-automator/session-memory/SKILL.md`](.agents/skills/isaac-automator/session-memory/SKILL.md) to log a 25-character `YYYYMMDD_HHMMSS_<short_uuid>.md` file in `.agents/memory/sessions/` and add an entry to [`.agents/memory/INDEX.md`](.agents/memory/INDEX.md).
+
 ## Map
 
 - [`ai/automator.agent.md`](ai/automator.agent.md) - operator agent entry point (mental model, golden rules, skills index).
 - [`.agents/skills/isaac-automator/`](.agents/skills/isaac-automator/) - step-by-step operator procedures (deploy, run-demos, connect, lifecycle, transfer-data, troubleshoot).
+- [`.agents/memory/INDEX.md`](.agents/memory/INDEX.md) - master index of session memory checkpoints.
 - [`README.md`](README.md) - full human documentation for using and understanding the tool.
+
