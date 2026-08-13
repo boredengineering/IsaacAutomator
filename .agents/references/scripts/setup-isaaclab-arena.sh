@@ -11,7 +11,7 @@ TARGET_HOME="$(getent passwd "$TARGET_USER" | cut -d: -f6)"
 ISAACLAB_DIR="$TARGET_HOME/IsaacLab"
 ARENA_DIR="$TARGET_HOME/IsaacLab-Arena"
 ARENA_GIT_REPO="https://github.com/isaac-sim/IsaacLab-Arena.git"
-ARENA_CHECKPOINT="main"
+ARENA_CHECKPOINT="${1:-release/0.1.1}"
 
 # ---- Root Guard --------------------------------------------------------------
 if [[ "$EUID" -ne 0 ]]; then
