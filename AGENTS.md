@@ -47,6 +47,7 @@ The full procedures are in `.agents/skills/isaac-automator/`; this is the orient
   viewport (Omniverse Kit renders via a Vulkan surface VNC does not capture). Use **NoMachine** for live 3D,
   or capture rendered output headlessly with the app's own recorder. Details in
   `.agents/skills/isaac-automator/connect-workstation/SKILL.md` and `.agents/skills/isaac-automator/troubleshoot/SKILL.md`.
+- **Explicit Push Permission Required:** **NEVER** execute `git push` (or `git push --force`) to remote repositories unless the user explicitly requests a push in their prompt (e.g. "push to github", "git push"). Local edits and local commits (`git commit`) are permitted, but remote pushes must strictly wait for explicit user instruction.
 
 ## Session Memory Protocol
 
