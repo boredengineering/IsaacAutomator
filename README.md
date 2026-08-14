@@ -1,289 +1,214 @@
 ![Isaac Automator](src/banner.png)
 
-# Isaac Automator (v4)
+# Isaac Automator (v4.2)
 
-Isaac Automator allows quick deployment of Isaac Sim, Isaac Lab, and Isaac Lab Arena to public clouds (AWS, GCP, Azure, and Alibaba Cloud are currently supported).
+Isaac Automator deploys **NVIDIA Isaac Sim**, **Isaac Lab**, and **Isaac Lab Arena** to public clouds (AWS, GCP, Azure, and Alibaba Cloud) as ready-to-use GPU **Isaac Workstations** in minutes.
 
-The result is a fully configured deployed Isaac Workstation — a remote desktop cloud VM that you can use to develop and test robotic applications within minutes and on a budget. Isaac Automator supports a variety of GPU instances and stop/start functionality to save on cloud costs and provides tools to aid your workflow (uploading and downloading data, autorun, deployment management, etc.).
+The result is a fully configured remote desktop cloud VM with NVIDIA drivers, Isaac software, GUI streaming (noVNC browser & NoMachine 3D), automated lifecycle management (start/stop/destroy/cycle), and automated state resilience for Spot and Flex-start cost savings.
+
+---
+
+## Table of Contents
 
 - [TLDR ;)](#tldr-)
+- [Development Environments](#development-environments)
+  - [Option A: VS Code DevContainer (Recommended)](#option-a-vs-code-devcontainer-recommended)
+  - [Option B: Local Docker CLI](#option-b-local-docker-cli)
 - [Using with AI Agents](#using-with-ai-agents)
-- [Installation](#installation)
-  - [Installing Docker](#installing-docker)
-  - [Building the Container](#building-the-container)
-    - [Linux/macOS](#linuxmacos)
-    - [Windows](#windows)
-- [Usage](#usage)
-  - [Running Isaac Automator](#running-isaac-automator)
-    - [Linux/macOS](#linuxmacos-1)
-    - [Windows](#windows-1)
-  - [Deploying an Isaac Workstation](#deploying-an-isaac-workstation)
-    - [AWS](#aws)
-    - [GCP](#gcp)
-    - [Azure](#azure)
-    - [Alibaba Cloud](#alibaba-cloud)
-    - [Common Deploy Options](#common-deploy-options)
-    - [Complete Options Reference](#complete-options-reference)
-  - [Credential Management](#credential-management)
-  - [Connecting to Deployed Isaac Workstation](#connecting-to-deployed-isaac-workstation)
-  - [Running Applications](#running-applications)
-    - [Isaac Sim](#isaac-sim)
-    - [Isaac Lab](#isaac-lab)
-    - [Isaac Lab Arena](#isaac-lab-arena)
-    - [Demos](#demos)
-  - [Autorun Script](#autorun-script)
-  - [Standard Folders](#standard-folders)
-  - [Pausing and Resuming](#pausing-and-resuming)
-  - [Uploading Data](#uploading-data)
-  - [Downloading Data](#downloading-data)
-  - [Repairing](#repairing)
-  - [Destroying](#destroying)
+- [Deploying an Isaac Workstation](#deploying-an-isaac-workstation)
+  - [AWS](#aws)
+  - [GCP (Google Cloud Platform)](#gcp-google-cloud-platform)
+  - [Azure](#azure)
+  - [Alibaba Cloud](#alibaba-cloud)
+  - [Common Deploy Options](#common-deploy-options)
+  - [Complete Options Reference](#complete-options-reference)
+- [Spot Preemption Resilience & State Backups (GCP)](#spot-preemption-resilience--state-backups-gcp)
+  - [30-Second Preemption Watchdog](#30-second-preemption-watchdog)
+  - [10-Minute Continuous Backup Timer](#10-minute-continuous-backup-timer)
+  - [Restoring State with `./restore-gcp`](#restoring-state-with-restore-gcp)
+- [Pausing, Resuming & VM Cycling](#pausing-resuming--vm-cycling)
+  - [Stop and Start](#stop-and-start)
+  - [GCP Flex-start 7-Day VM Cycling (`./cycle-vm`)](#gcp-flex-start-7-day-vm-cycling-cycle-vm)
+- [Connecting to Your Workstation](#connecting-to-your-workstation)
+  - [Browser Remote Desktop (noVNC)](#browser-remote-desktop-novnc)
+  - [Live 3D Viewport (NoMachine)](#live-3d-viewport-nomachine)
+  - [SSH Shell](#ssh-shell)
+- [Running Applications & Demos](#running-applications--demos)
+  - [Isaac Sim](#isaac-sim)
+  - [Isaac Lab](#isaac-lab)
+  - [Isaac Lab Arena](#isaac-lab-arena)
+  - [Built-In Robotics Demos](#built-in-robotics-demos)
+- [Autorun Script](#autorun-script)
+- [Data Transfer & Standard Folders](#data-transfer--standard-folders)
+- [Maintenance, Repair & Teardown](#maintenance-repair--teardown)
+  - [Repairing Deployments](#repairing-deployments)
+  - [Tearing Down Deployments](#tearing-down-deployments)
   - [Importing Existing Deployments](#importing-existing-deployments)
-  - [Speeding Up Deployment with Pre-Built Images](#speeding-up-deployment-with-pre-built-images)
+  - [Pre-Built Golden Images](#pre-built-golden-images)
 - [Tips](#tips)
-  - [Persisting Modifications to the deployed Isaac Workstation](#persisting-modifications-to-the-deployed-isaac-workstation)
+
+---
 
 ## TLDR ;)
 
 ```sh
-./build                       # build the Isaac Automator container (one-time)
-./run                         # enter the container
-./deploy-aws                  # deploy an Isaac Workstation (follow the prompts)
-./novnc <deployment-name>     # open the remote desktop in your browser
-./destroy <deployment-name>   # tear down the deployment when done
-./import --cloud aws ...      # import existing cloud resources into state
+# Option 1: Using VS Code DevContainer
+# Simply open the repo in VS Code -> "Reopen in Container" -> Run commands directly:
+./deploy-gcp my-workstation --flex-start --backup-bucket gs://my-isaac-backups/
+./novnc my-workstation        # stream desktop in browser
+./destroy my-workstation --yes # clean up when done
+
+# Option 2: Using Local Docker CLI
+./build                       # build Isaac Automator tool container (one-time)
+./run                         # enter container environment
+./deploy-aws my-workstation   # follow prompts to deploy
+./novnc my-workstation
+./destroy my-workstation --yes
 ```
 
-Replace `deploy-aws` with `deploy-gcp`, `deploy-azure`, or `deploy-alicloud` for other clouds. See sections below for details.
+---
+
+## Development Environments
+
+### Option A: VS Code DevContainer (Recommended)
+
+Isaac Automator provides a fully containerized, zero-setup developer environment using the official OCI DevContainer specification.
+
+1. Install [VS Code](https://code.visualstudio.com/) and the [Dev Containers Extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers).
+2. Open this repository in VS Code and select **"Reopen in Container"** when prompted.
+3. The DevContainer automatically configures:
+   * **Pre-bundled Cloud Tools:** Terraform 1.8, AWS CLI v2, Google Cloud SDK (`gcloud`), Azure CLI, and AliCloud CLI.
+   * **Host Credential Passthrough:** Automatically passes through `~/.aws`, `~/.config/gcloud`, and `~/.azure` from your host system.
+   * **Performance Volume Caching:** `/opt/tf-data` persistent volume cache for smooth Terraform execution without macOS VirtioFS filesystem locks.
+   * **Direct Terminal Execution:** Run all deployment, management, and repair commands directly in the integrated terminal without needing the `./run` wrapper.
+
+### Option B: Local Docker CLI
+
+You can also run Isaac Automator directly via Docker from Linux, macOS, or Windows:
+
+```sh
+# 1. Build the automator container image
+./build
+
+# 2. Launch commands via the ./run wrapper:
+./run ./deploy-gcp
+# Or enter an interactive container shell:
+./run
+```
+
+---
 
 ## Using with AI Agents
 
-Isaac Automator ships first-class instructions for AI agents that want to operate it.
+Isaac Automator provides first-class, non-interactive instructions and native skills for AI agents:
 
-- **To operate Isaac Automator** (deploy a workstation, connect, run demos, stop/start, destroy), start with
-  [`ai/automator.agent.md`](ai/automator.agent.md) and follow the step-by-step procedures in [`ai/skills/`](ai/skills/).
-- Agent-aware tools auto-discover [`AGENTS.md`](AGENTS.md) (and [`CLAUDE.md`](CLAUDE.md) for Claude Code),
-  which route to that operator guide and summarize the cost/safety and non-interactive rules an agent must
-  follow.
+* **Operator Guide:** Agents operating workstations should follow [`ai/automator.agent.md`](ai/automator.agent.md) and [`AGENTS.md`](AGENTS.md).
+* **Native Agent Skills:** Modular, executable procedures located in [`.agents/skills/isaac-automator/`](.agents/skills/isaac-automator/):
+  * `deploy-workstation` — Non-interactive cloud provisioning.
+  * `manage-lifecycle` — Start, stop, cycle, repair, and destroy workflows.
+  * `connect-workstation` — Web desktop, 3D viewport, and SSH tunnels.
+  * `run-demos` — Out-of-the-box Isaac Sim / Lab RL robotics demos.
+  * `transfer-data` — Bi-directional file synchronization and autorun setup.
+  * `troubleshoot` — Common failure diagnostics and auto-repair.
+* **Persistent Session Memory:** Agents track multi-session progress in [`.agents/memory/INDEX.md`](.agents/memory/INDEX.md).
 
-These describe *using* Isaac Automator as an operator. To develop the tool itself, see the sections below and
-[`CONTRIBUTING.md`](CONTRIBUTING.md).
+---
 
-## Installation
+## Deploying an Isaac Workstation
 
-### Installing Docker
-
-Docker should be installed on your system. Visit <https://docs.docker.com/engine/install/> for installation instructions.
-
-### Building the Container
-
-Please enter the following command in the project root directory to build the container:
-
-#### Linux/macOS
-
-```sh
-./build
-```
-
-#### Windows
-
-```sh
-docker build --platform linux/x86_64 -t isaac_automator .
-```
-
-This will build the Isaac Automator container and tag it as `isaac_automator`.
-
-## Usage
-
-### Running Isaac Automator
-
-#### Linux/macOS
-
-On Linux and macOS there are two ways to run Isaac Automator commands:
-
-1. First enter the Isaac Automator container and then run the command inside the container:
-
-```sh
-# enter Isaac Automator container
-./run
-# inside container:
-./somecommand
-```
-
-2. Simply prepend the command with `./run`, like so:
-
-```sh
-./run ./somecommand <parameters>
-```
-
-for example:
-
-```sh
-./run ./deploy-aws
-./run ./destroy my-deployment
-```
-
-#### Windows
-
-On Windows, you can run Isaac Automator commands by entering the container first and then running the command inside the container, like so:
-
-(enter Isaac Automator container)
-
-```sh
-docker run --platform linux/x86_64 -it --rm -v .:/app isaac_automator bash
-```
-
-(run the command inside the container)
-
-```sh
-./somecommand
-```
-
-### Deploying an Isaac Workstation
-
-#### AWS
+### AWS
 
 <details>
-  <a name="#aws-permissions"></a>
-  <summary>Enabling Access Permissions</summary>
+  <summary>Enabling Access Permissions & Credentials</summary>
 
-  You need _AmazonEC2FullAccess_ permissions enabled for your AWS user. You can enable those in the [Identity and Access Management (IAM) section](https://console.aws.amazon.com/iamv2/home#/home) of the AWS console, as follows:
-
-  1. Go to <https://console.aws.amazon.com/iamv2/home#/home>
-  2. Click "Access Management" \> "Users" in the left menu
-  3. Search for your user name
-  4. Under "Permissions" tab click "Add permissions"
-  5. Choose "Attach existing policies directly"
-  6. Search for _AmazonEC2FullAccess_, check the box next to it, click "Next"
-  7. Click "Add permissions"
+  You need *AmazonEC2FullAccess* permissions for your AWS user.
+  On first run, you will be prompted to sign in with AWS IAM Identity Center (`aws configure sso` / `aws sso login`). Credentials are stored in `state/.aws/` and persist across restarts.
 </details>
-
-<details>
-  <a name="#aws-access-creds"></a>
-  <summary>Getting Access Credentials</summary>
-  You will need an _AWS Access Key_ and _AWS Secret Key_ for an existing account. You can obtain those in the [Identity and Access Management (IAM) section](https://console.aws.amazon.com/iamv2/home#/home) of the AWS console.
-</details>
-
-If you have completed the above steps or already have your permissions and credentials set up, run the following command in the project root directory:
 
 ```sh
-# enter Isaac Automator container
-./run
-# inside container:
-./deploy-aws
+./deploy-aws <deployment-name> \
+  --instance-type g6e.2xlarge \
+  --isaacsim latest \
+  --isaaclab latest \
+  --demos quadruped-locomotion
 ```
 
-On the first run (or when credentials expire), you will be prompted to sign in with AWS IAM Identity Center (via `aws configure sso` / `aws sso login`). The credentials are stored in `state/.aws/` and persist across Isaac Automator restarts.
+* Supported instance families: `g4dn.*` (NVIDIA T4), `g5.*` (NVIDIA A10G), `g6.*` (NVIDIA L4), `g6e.*` (NVIDIA L40S).
 
-By default the sign-in uses the AWS SSO **device-code flow** (open a URL and enter a code), which works on headless and remote (SSH) hosts where a local browser is not reachable. If you are on a machine with a local browser and prefer the browser-based flow, set `AWS_SSO_USE_DEVICE_CODE=0` on the host before running `./run`.
-
-Tip: Run `./deploy-aws --help` to see more options.
-
-#### GCP
+### GCP (Google Cloud Platform)
 
 <details>
   <summary>Setting Up GCP Access</summary>
 
-  You will be prompted to log in with your Google account (`gcloud auth login`) during the first deployment. The credentials are stored in `state/.gcp/` and persist across container restarts.
-
-  Make sure you have a GCP project with Compute Engine API enabled and sufficient GPU quota in the target zone.
+  You will be prompted to log in with your Google account (`gcloud auth login`) during the first deployment. Credentials are stored in `state/.gcp/` and persist across container restarts. Ensure the Compute Engine API is enabled in your target project.
 </details>
 
 ```sh
-# enter Isaac Automator container
-./run
-# inside container:
-./deploy-gcp
+./deploy-gcp <deployment-name> \
+  --project my-gcp-project \
+  --zone us-central1-a \
+  --instance-type g2-standard-8 \
+  --isaac-workstation-gpu-count 1 \
+  --flex-start \
+  --backup-bucket gs://my-bucket/backups \
+  --auto-restore
 ```
 
-Tip: Run `./deploy-gcp --help` to see more options.
+* Supported GPUs: NVIDIA L4 (`g2-*`), NVIDIA T4 (`n1-*`), NVIDIA RTX PRO 6000 (`g4-*`).
+* **Flex-start:** Enable Dynamic Workload Scheduling with `--flex-start` for substantial cloud cost savings.
+* **State Backups:** Pass `--backup-bucket <gcs-uri>` to enable automated state persistence and preemption protection.
 
-#### Azure
+### Azure
 
 <details>
   <summary>Setting Up Azure Access</summary>
 
-  You will be prompted to log in with your Azure account (`az login`) during the first deployment. The credentials are stored in `state/.azure/` and persist across container restarts.
-
-  If you have multiple subscriptions, select the desired one before deploying:
-
-  ```sh
-  # inside container:
-  az login
-  az account show --output table       # list subscriptions
-  az account set --subscription "<subscription_name>"
-  ./deploy-azure --no-login
-  ```
+  You will be prompted to log in with your Azure account (`az login`). Credentials persist in `state/.azure/`.
 </details>
 
-If you have a single subscription:
-
 ```sh
-# enter Isaac Automator container
-./run
-# inside container:
-./deploy-azure
+./deploy-azure <deployment-name> \
+  --region westus3 \
+  --instance-type Standard_NV36ads_A10_v5
 ```
 
-Tip: Run `./deploy-azure --help` to see more options.
-
-#### Alibaba Cloud
+### Alibaba Cloud
 
 <details>
-  <a name="#alicloud-access-creds"></a>
   <summary>Getting Access Credentials</summary>
-  You will need an _Access Key_ and _Secret Key_ for an existing Alibaba Cloud account. You can obtain those in the [AccessKey Management](https://usercenter.console.aliyun.com/#/manage/ak) section of the Alibaba Cloud console.
+
+  Provide an Access Key and Secret Key from the Alibaba Cloud console.
 </details>
 
-Once you have prepared the access credentials, run the following command in the project root directory:
-
 ```sh
-# enter Isaac Automator container
-./run
-# inside container:
-./deploy-alicloud
+./deploy-alicloud <deployment-name> \
+  --region us-east-1 \
+  --instance-type ecs.gn7i-c16g1.4xlarge
 ```
 
-Tip: Run `./deploy-alicloud --help` to see more options.
+---
 
-GPU-accelerated instances with NVIDIA A100, A10, and T4 GPUs are supported. You can find the complete list of instance types, availability, and pricing at <https://www.alibabacloud.com/help/en/ecs/user-guide/gpu-accelerated-compute-optimized-and-vgpu-accelerated-instance-families-1>. Please note that vGPU instances are not supported.
+### Common Deploy Options
 
-#### Common Deploy Options
+| Option | Description | Default |
+| :--- | :--- | :--- |
+| `--isaacsim` | Git ref for Isaac Sim, or `latest` / `no` | `latest` |
+| `--isaaclab` | Git ref for Isaac Lab, or `latest` / `no` | `latest` |
+| `--isaaclab-arena` | Git ref for Isaac Lab Arena, or `latest` / `no` | `latest` |
+| `--demos` | Out-of-the-box demo shortcuts (`quadruped-locomotion`, `humanoid-locomotion`, `franka-manipulation`) | `no` |
+| `--flex-start` | *(GCP only)* Deploy using GCP Dynamic Workload Scheduler | `no-flex-start` |
+| `--backup-bucket` | *(GCP only)* GCS bucket URI for automated preemption & 10m backups | `""` |
+| `--auto-restore` | *(GCP only)* Restore workspace automatically from backup bucket on deployment | `no` |
+| `--ingress-cidrs` | Allowed IP CIDR blocks (use `myip` for current IP, or `myip/16`, `myip/24`) | `0.0.0.0/0` |
+| `--existing` | Action if name exists: `ask`, `repair`, `modify`, `replace`, `run_ansible` | `ask` |
+| `--from-image` | Deploy from a pre-built golden VM image to accelerate provisioning | `not-from-image` |
 
-All `deploy-*` commands accept the deployment name as an optional positional argument:
+---
 
-```sh
-./deploy-aws my-deployment
-# equivalent to:
-./deploy-aws --deployment-name my-deployment
-```
-
-Run `./deploy-<cloud> --help` to see the full list of options. Key options include:
-
-- `--existing` — What to do if a deployment with the same name already exists. Choices:
-  - `ask` (default) — prompt interactively
-  - `repair` — fix a broken deployment without changing parameters
-  - `modify` — update parameters and attempt to update existing cloud resources
-  - `replace` — delete old cloud resources first, then redeploy
-  - `run_ansible` — re-run software configuration (Ansible) only
-- `--instance-type` — Cloud VM instance type (each cloud has its own supported list and default).
-- `--isaacsim` / `--isaaclab` / `--isaaclab-arena` — Git ref for Isaac Sim / Isaac Lab / Isaac Lab Arena version, or `no` to skip installation.
-- `--demos` — Comma-separated list of out-of-the-box demos to install as desktop shortcuts, or `no` (default). A demo automatically enables the apps it depends on (see [Demos](#demos)).
-- `--from-image` — Deploy from a pre-built VM image to speed up provisioning (supported on AWS, Azure, and GCP; see [Speeding Up Deployment with Pre-Built Images](#speeding-up-deployment-with-pre-built-images)).
-- `--in-china` — Use local mirrors for deployments in China. Choices: `auto` (default), `yes`, `no`.
-- `--prefix` — Prefix for created cloud resource names (default: `isaacautomator`).
-- `--ingress-cidrs` — CIDR blocks for allowed ingress traffic, comma-separated. Use `myip` for your current public IP, or `myip/16`, `myip/24` for subnets.
-
-GCP additionally supports `--isaac-workstation-gpu-count` (choices: `1`, `2`, `4`, `8`; default: `1`) to control the number of GPUs attached to the instance:
-
-- N1 instances: up to 4x NVIDIA T4
-- G2 instances: up to 8x NVIDIA L4
-- G4 instances: up to 8x NVIDIA RTX PRO 6000
+### Complete Options Reference
 
 <details>
-<summary>deploy-aws options</summary>
-
-#### Complete Options Reference
+<summary><code>deploy-aws</code> options</summary>
 
 ```
 Options:
@@ -302,12 +227,12 @@ Options:
                                 What to do if deployment already exists.
                                 [default: ask]
   --isaacsim TEXT               Git ref at github.com/isaac-sim/IsaacSim, or
-                                "no".  [default: v6.0.0-dev2]
+                                "no".  [default: latest]
   --isaaclab TEXT               Git ref at github.com/isaac-sim/IsaacLab, or
-                                "no".  [default: v3.0.0-beta]
+                                "no".  [default: latest]
   --isaaclab-arena TEXT         Git ref at
                                 github.com/isaac-sim/IsaacLab-Arena, or
-                                "no".  [default: release/0.1.1]
+                                "no".  [default: latest]
   --vnc-password TEXT           Password for VNC access.  [default: <random>]
   --system-user-password TEXT   System user password.  [default: <random>]
   --ssh-port TEXT               SSH port.  [default: 22]
@@ -318,16 +243,12 @@ Options:
   --instance-type TEXT          Instance type (G4dn, G5, G6, G6e supported).
                                 [default: g6e.2xlarge]
   --region TEXT                 AWS Region.  [default: us-east-1]
-
-Note: AWS credentials are managed via `aws configure sso` / `aws sso login` and stored in
-`state/.aws/`. You will be prompted to enter them on first run or when
-they expire.
 ```
 
 </details>
 
 <details>
-<summary>deploy-gcp options</summary>
+<summary><code>deploy-gcp</code> options</summary>
 
 ```
 Options:
@@ -336,9 +257,7 @@ Options:
   --in-china [auto|yes|no]      Is deployment in China? (Local mirrors will be
                                 used.)  [default: auto]
   --deployment-name TEXT        Name of the deployment.  [default: <random>]
-  --zone TEXT                   GCP zone (see cloud.google.com/compute/docs/
-                                gpus/gpu-regions-zones).
-                                [default: us-central1-a]
+  --zone TEXT                   GCP zone.  [default: us-central1-a]
   --project TEXT                GCP Project ID.  [default: from gcloud config]
   --ingress-cidrs TEXT          CIDR blocks for ingress traffic, comma
                                 separated. "myip" for your public IP.
@@ -347,12 +266,12 @@ Options:
                                 What to do if deployment already exists.
                                 [default: ask]
   --isaacsim TEXT               Git ref at github.com/isaac-sim/IsaacSim, or
-                                "no".  [default: v6.0.0-dev2]
+                                "no".  [default: latest]
   --isaaclab TEXT               Git ref at github.com/isaac-sim/IsaacLab, or
-                                "no".  [default: v3.0.0-beta]
+                                "no".  [default: latest]
   --isaaclab-arena TEXT         Git ref at
                                 github.com/isaac-sim/IsaacLab-Arena, or
-                                "no".  [default: release/0.1.1]
+                                "no".  [default: latest]
   --vnc-password TEXT           Password for VNC access.  [default: <random>]
   --system-user-password TEXT   System user password.  [default: <random>]
   --ssh-port TEXT               SSH port.  [default: 22]
@@ -363,413 +282,243 @@ Options:
   --instance-type [g2-standard-4|g2-standard-8|...|n1-standard-4|...|g4-standard-48|...]
                                 Instance type.  [default: g2-standard-8]
   --isaac-workstation-gpu-count [1|2|4|8]
-                                Number of GPUs. N1: NVIDIA T4, G2: NVIDIA L4,
-                                G4: NVIDIA RTX PRO 6000.  [default: 1]
+                                Number of GPUs.  [default: 1]
   --flex-start / --no-flex-start
                                 Deploy using GCP Flex-start (Dynamic Workload
                                 Scheduler) for improved capacity availability.
                                 [default: no-flex-start]
-
+  --backup-bucket TEXT          GCS bucket URI for automated preemption and periodic backups.
+  --auto-restore / --no-auto-restore
+                                Restore workspace from backup bucket on deployment. [default: no]
 ```
 
 </details>
 
+---
 
-<details>
-<summary>deploy-azure options</summary>
+## Spot Preemption Resilience & State Backups (GCP)
 
-```
-Options:
-  --debug / --no-debug          Enable debug output.  [default: no-debug]
-  --prefix TEXT                 Prefix for all cloud resources.  [default: isaacautomator]
-  --from-image / --not-from-image
-                                Deploy from pre-built image, from bare OS
-                                otherwise.  [default: not-from-image]
-  --in-china [auto|yes|no]      Is deployment in China? (Local mirrors will be
-                                used.)  [default: auto]
-  --deployment-name TEXT        Name of the deployment.  [default: <random>]
-  --region TEXT                 Azure region.  [default: westus3]
-  --ingress-cidrs TEXT          CIDR blocks for ingress traffic, comma
-                                separated. "myip" for your public IP.
-                                [default: 0.0.0.0/0]
-  --existing [ask|repair|modify|replace|run_ansible]
-                                What to do if deployment already exists.
-                                [default: ask]
-  --isaacsim TEXT               Git ref at github.com/isaac-sim/IsaacSim, or
-                                "no".  [default: v6.0.0-dev2]
-  --isaaclab TEXT               Git ref at github.com/isaac-sim/IsaacLab, or
-                                "no".  [default: v3.0.0-beta]
-  --isaaclab-arena TEXT         Git ref at
-                                github.com/isaac-sim/IsaacLab-Arena, or
-                                "no".  [default: release/0.1.1]
-  --vnc-password TEXT           Password for VNC access.  [default: <random>]
-  --system-user-password TEXT   System user password.  [default: <random>]
-  --ssh-port TEXT               SSH port.  [default: 22]
-  --ssh-user TEXT               OS username on the deployed instances.
-                                [default: ubuntu]
-  --upload / --no-upload        Upload user data from "uploads/" to cloud
-                                instances.  [default: upload]
-  --instance-type TEXT          VM type (T4 and A10 supported).
-                                [default: Standard_NV36ads_A10_v5]
-  --login / --no-login          Login into Azure before deploying.
-                                [default: login]
-  --resource-group TEXT         Azure resource group (created if empty).
-                                [default: ""]
-```
-
-</details>
-
-<details>
-<summary>deploy-alicloud options</summary>
+When running on GCP Spot or Flex-start instances, Isaac Automator provides an automated state resilience pipeline to prevent data loss.
 
 ```
-Options:
-  --debug / --no-debug          Enable debug output.  [default: no-debug]
-  --prefix TEXT                 Prefix for all cloud resources.  [default: isaacautomator]
-  --in-china [auto|yes|no]      Is deployment in China? (Local mirrors will be
-                                used.)  [default: auto]
-  --deployment-name TEXT        Name of the deployment.  [default: <random>]
-  --ingress-cidrs TEXT          CIDR blocks for ingress traffic, comma
-                                separated. "myip" for your public IP.
-                                [default: 0.0.0.0/0]
-  --existing [ask|repair|modify|replace|run_ansible]
-                                What to do if deployment already exists.
-                                [default: ask]
-  --isaacsim TEXT               Git ref at github.com/isaac-sim/IsaacSim, or
-                                "no".  [default: v6.0.0-dev2]
-  --isaaclab TEXT               Git ref at github.com/isaac-sim/IsaacLab, or
-                                "no".  [default: v3.0.0-beta]
-  --isaaclab-arena TEXT         Git ref at
-                                github.com/isaac-sim/IsaacLab-Arena, or
-                                "no".  [default: release/0.1.1]
-  --vnc-password TEXT           Password for VNC access.  [default: <random>]
-  --system-user-password TEXT   System user password.  [default: <random>]
-  --ssh-port TEXT               SSH port.  [default: 22]
-  --ssh-user TEXT               OS username on the deployed instances.
-                                [default: ubuntu]
-  --upload / --no-upload        Upload user data from "uploads/" to cloud
-                                instances.  [default: upload]
-  --aliyun-access-key TEXT      Alibaba Cloud Access Key.
-                                [default: ALIYUN_ACCESS_KEY env var]
-  --aliyun-secret-key TEXT      Alibaba Cloud Secret Key.
-                                [default: ALIYUN_SECRET_KEY env var]
-  --region TEXT                 Alibaba Cloud Region ID.
-                                [default: us-east-1]
-  --instance-type TEXT          Instance type.
-                                [default: ecs.gn7i-c16g1.4xlarge]
-
-Note: --from-image is not supported on Alibaba Cloud.
+┌────────────────────────────────────────────────────────────────────────────┐
+│ GCP Workstation Instance                                                   │
+│                                                                            │
+│  [10-min Timer] ────> Trigger GCS Sync ─────────────────────┐              │
+│                                                             │              │
+│  [Metadata Watchdog] ──> Preemption Alert! (30s window)     │              │
+│                               │                             │              │
+│                               ├──> Send SIGINT to Isaac     │              │
+│                               │    (Graceful Checkpoint)    ▼              │
+│                               └──> Flush Workspace ───> [ GCS Bucket ]     │
+└────────────────────────────────────────────────────────────────────────────┘
 ```
 
-</details>
+### 30-Second Preemption Watchdog
+The `isaac-preempt-listener.service` daemon continuously polls the GCP instance metadata endpoint:
+1. When Google signals preemption, the listener intercepts the notice with 30 seconds remaining.
+2. It sends `SIGINT` to running Python / Isaac Sim processes so simulation training scripts save final model checkpoints.
+3. It immediately syncs `/home/ubuntu/workspace` and experiment artifacts to your configured GCS bucket via `gcloud storage rsync`.
 
-### Credential Management
+### 10-Minute Continuous Backup Timer
+The `isaac-backup.timer` systemd unit performs periodic background synchronizations every 10 minutes to minimize recovery point objectives (RPO).
 
-Each cloud provider's credentials are stored inside the `state/` directory so they persist across container restarts:
+### Restoring State with `./restore-gcp`
 
-| Cloud         | Storage Location      | How Credentials Are Set                                                          |
-| ------------- | --------------------- | -------------------------------------------------------------------------------- |
-| AWS           | `state/.aws/` or env  | `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` env vars when set on the host; otherwise AWS IAM Identity Center via `aws configure sso` / `aws sso login` |
-| GCP           | `state/.gcp/`         | `gcloud auth login` — prompted during the first deployment                       |
-| Azure         | `state/.azure/`       | `az login` — prompted during the first deployment                                |
-| Alibaba Cloud | Environment variables | `ALIYUN_ACCESS_KEY` and `ALIYUN_SECRET_KEY` — passed from the host via `./run`   |
-
-All commands that interact with cloud resources (`deploy-*`, `start`, `stop`, `destroy`, `repair`) validate credentials before proceeding and prompt you to re-authenticate if they are invalid or expired.
-
-For AWS, if `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` are set on the host before invoking any command, they are forwarded into the container by `./run` and take precedence over the SSO flow. `AWS_SESSION_TOKEN` (for temporary credentials) and `AWS_DEFAULT_REGION` are forwarded too if set. Unset them to fall back to SSO login.
-
-### Connecting to Deployed Isaac Workstation
-
-Deployed Isaac Workstation can be accessed via:
-
-- SSH
-- noVNC (browser-based VNC client)
-- NoMachine (remote desktop client)
-
-Look for the connection instructions at the end of the deployment command output. Additionally, this information is saved in the `state/<deployment-name>/info.txt` file.
-
-You can view available arguments with the `--help` switch for the start scripts. In most cases, you won't need to change the defaults.
-
-Use `./ssh <deployment-name>` to connect to the deployed instance via SSH.
-
-Use `./novnc <deployment-name>` to open the noVNC web client for the deployed instance.
-
-### Running Applications
-
-To use the installed applications, connect to the deployed Isaac Workstation using noVNC or NoMachine. You can find the connection instructions at the end of the deployment command output. Additionally, this information is saved in the `state/<deployment-name>/info.txt` file.
-
-#### Isaac Sim
-
-Isaac Sim is installed from source on the deployed Isaac Workstation. By default, it will automatically start when the instance is deployed. Alternatively, click the "Isaac Sim" icon on the desktop, or run the following command in a terminal on the deployed vm:
+If an instance is preempted or replaced, restore your workspace seamlessly using `./restore-gcp`:
 
 ```sh
-~/IsaacSim/isaac-sim.sh
+# 1. Restore remote workstation workspace directly from the backup bucket
+./restore-gcp <deployment-name>
+
+# 2. Download the backup directly to your local workstation results directory
+./restore-gcp <deployment-name> --to-local ./local-results/
+
+# 3. Restore from a custom specific GCS snapshot URI
+./restore-gcp <deployment-name> --source-bucket gs://my-archive-bucket/checkpoints/
 ```
 
-To install a specific version of Isaac Sim, provide a valid Git reference from <https://github.com/isaac-sim/IsaacSim> as the value of the `--isaacsim` parameter to the deployment command. Use `--isaacsim no` to skip Isaac Sim installation.
+---
 
-#### Isaac Lab
+## Pausing, Resuming & VM Cycling
 
-[Isaac Lab](https://isaac-sim.github.io/IsaacLab/) is installed from source on the Isaac Workstation. To install a specific version of Isaac Lab, provide a valid Git reference from <https://github.com/isaac-sim/IsaacLab> as the value of the `--isaaclab` parameter to the deployment command. Use `--isaaclab no` to skip Isaac Lab installation.
+### Stop and Start
 
-To run Isaac Lab CLI, use the following command in the terminal on the deployed instance:
-
-```sh
-~/IsaacLab/isaaclab.sh [options]
-```
-
-#### Isaac Lab Arena
-
-[Isaac Lab Arena](https://github.com/isaac-sim/IsaacLab-Arena) is an extension to Isaac Lab that provides multi-agent task environments and benchmarks. It is installed from source on the Isaac Workstation by default.
-
-To install a specific version, provide a valid Git reference from <https://github.com/isaac-sim/IsaacLab-Arena> as the value of the `--isaaclab-arena` parameter to the deployment command. Use `--isaaclab-arena no` to skip installation.
-
-Isaac Lab Arena is installed to `~/IsaacLab-Arena` on the deployed instance.
-
-#### Demos
-
-Isaac Automator can install ready-to-run demos on the Isaac Workstation, each exposed as a double-click shortcut on the remote desktop. Select them with the `--demos` option (comma-separated, or `no` to install none). A demo automatically enables the apps it depends on, so a single flag is enough to get a working setup.
-
-Available demos:
-
-- `quadruped-locomotion` — trains an ANYmal-D quadruped to walk using RSL-RL in Isaac Lab, rendered live in the Isaac Sim viewport. Depends on Isaac Sim and Isaac Lab (auto-enabled).
-- `humanoid-locomotion` — trains a Unitree G1 humanoid to walk using RSL-RL in Isaac Lab. Depends on Isaac Sim and Isaac Lab (auto-enabled).
-- `franka-manipulation` — trains a Franka arm to reach targets using RSL-RL in Isaac Lab. Depends on Isaac Sim and Isaac Lab (auto-enabled).
-
-You can select several at once, e.g. `--demos quadruped-locomotion,humanoid-locomotion,franka-manipulation`.
-
-For example, `--demos quadruped-locomotion` enables Isaac Sim and Isaac Lab automatically (using their default versions) if they were not requested. Launcher scripts are installed to `~/.local/share/isaac-automator-demos/` and can be tuned via environment variables (e.g. `HEADLESS=1`, `NUM_ENVS`, `MAX_ITERATIONS`).
-
-### Autorun Script
-
-By default, Isaac Sim will start when the cloud VM is deployed.
-
-If you want to launch a custom application or script on startup, modify the [`uploads/autorun.sh`](uploads/autorun.sh) script (on your local machine). It will either be uploaded to the cloud VM automatically, or you can upload it manually using the `./upload` command.
-
-Every time the cloud VM is deployed or started from a stopped state, the `autorun.sh` script will be executed.
-
-This functionality can be useful for running batch jobs, generating data on startup, or preparing the environment for the user.
-
-### Standard Folders
-
-Two folders are used for exchanging data between your local machine and the deployed instance:
-
-| Local (Isaac Automator) | Remote (Isaac Workstation) | Purpose                                                                                     |
-| ----------------------- | -------------------------- | ------------------------------------------------------------------------------------------- |
-| `uploads/`              | `~/uploads`                | Data you send to the instance. Synced automatically on deploy, or manually with `./upload`. |
-| `results/`              | `~/results`                | Data you pull back from the instance with `./download`.                                     |
-
-### Pausing and Resuming
-
-You can stop and restart instances to save on cloud costs. To do so, run the following commands:
+Cloud instances can be stopped when idle to eliminate GPU compute billing while retaining disk state:
 
 ```sh
-# enter Isaac Automator container
-./run
-# inside container:
+# Stop instance (preserves static IP and storage)
 ./stop <deployment-name>
+
+# Start instance and re-verify drivers/services
 ./start <deployment-name>
-```
 
-By default, `./start` re-runs necessary Ansible steps (such as ECC disabling, etc) after starting the VM. If you're in a rush, use `--quick` to skip that and only run the autorun script:
-
-```sh
+# Fast start (skip Ansible verification, run autorun script only)
 ./start <deployment-name> --quick
 ```
 
-#### GCP Flex-start Cycling (7-Day Limit Reset)
+The public IP address is preserved across stop/start cycles on all supported clouds (AWS uses an Elastic IP, GCP reserves a static external address, and Azure retains the public IP).
 
-GCP Flex-start instances are subject to a 7-day maximum run duration. To prevent abrupt termination, use `./cycle-vm` to monitor uptime and safely cycle the instance:
+### GCP Flex-start 7-Day VM Cycling (`./cycle-vm`)
+
+GCP Flex-start instances have a hard 7-day maximum run duration limit. To prevent hard termination during long training runs, `./cycle-vm` monitors uptime and resets the 7-day window:
 
 ```sh
-# Check uptime without stopping
+# Check current uptime and termination deadline without stopping
 ./cycle-vm <deployment-name> --check-only
 
-# Automatically cycle if uptime is >= 6.5 days (156h)
+# Automatically cycle VM if uptime >= 6.5 days (156 hours)
 ./cycle-vm <deployment-name>
 
-# Force an immediate cycle with quick start
+# Force an immediate stop/start cycle with quick reboot
 ./cycle-vm <deployment-name> --force --quick
 ```
 
-The public IP address is preserved across stop/start cycles on all supported clouds. AWS uses an Elastic IP, GCP reserves a static external address, and Azure VMs retain their public IP while the resource exists.
+---
 
+## Connecting to Your Workstation
 
-### Uploading Data
+### Browser Remote Desktop (noVNC)
 
-You can upload user data from the `uploads/` folder (in the project root) to the deployment by running the following command:
-
-```sh
-# enter Isaac Automator container
-./run
-# inside container:
-./upload <deployment-name>
-```
-
-Data will be uploaded to the `/home/ubuntu/uploads` directory by default (the `ubuntu` part of the path depends on the configured `default_ssh_user`), on all deployed instances. You can change this by passing the `--remote-dir` argument to the command. By default, files deleted locally are also deleted on the remote side during sync; use `--no-delete` to keep remote files that no longer exist locally. Run `./upload --help` to see more options.
-
-### Downloading Data
-
-You can download user data to the `results/` folder (in the project root) from deployed instances by running the following command:
+Connect to the workstation's XFCE desktop directly in any web browser without local client software:
 
 ```sh
-# enter Isaac Automator container
-./run
-# inside container:
-./download <deployment-name>
+./novnc <deployment-name>
 ```
 
-Data will be downloaded from the `/home/ubuntu/results` directory by default (the `ubuntu` part of the path depends on the configured `default_ssh_user`). You can change this by passing the `--remote-dir` argument to the command. By default, local files not present on the remote side are deleted during sync; use `--no-delete` to keep them. Run `./download --help` to see more options.
+### Live 3D Viewport (NoMachine)
 
-### Repairing
+Isaac Sim and Omniverse Kit render via hardware-accelerated Vulkan surfaces. For real-time 3D viewport interaction:
+1. Install [NoMachine client](https://www.nomachine.com/) on your host machine.
+2. Connect to `<instance-ip>:4000` using the username `ubuntu` and the system password displayed during deployment (or stored in `state/<deployment-name>/info.txt`).
 
-If, for some reason, the deployment cloud resources or software configuration become corrupted, you can attempt to repair the deployment by running the following commands:
+### SSH Shell
 
 ```sh
-# run both terraform and ansible
-./repair <deployment-name>
-# just run terraform to try fixing the cloud resources
-./repair <deployment-name> --no-ansible
-# just run ansible to try fixing the software configuration
-./repair <deployment-name> --no-terraform
+./ssh <deployment-name>
 ```
 
-You can also use `./repair` to update the ingress CIDR blocks (firewall rules) on an existing deployment:
+---
+
+## Running Applications & Demos
+
+### Isaac Sim
 
 ```sh
-# restrict access to your current IP
-./repair <deployment-name> --ingress-cidrs myip
-# allow a /16 subnet
-./repair <deployment-name> --ingress-cidrs myip/16
-# specify explicit CIDR blocks
-./repair <deployment-name> --ingress-cidrs "10.0.0.0/8,192.168.1.0/24"
+# Run Isaac Sim with GUI:
+isaac-sim
+
+# Run Isaac Sim headlessly:
+isaac-sim.headless
 ```
 
-### Destroying
-
-To destroy a deployment, run the following command:
+### Isaac Lab
 
 ```sh
-# enter Isaac Automator container
-./run
-# inside container:
-./destroy <deployment-name>
+cd ~/workspace/IsaacLab
+./isaaclab.sh -p source/standalone/tutorials/00_sim/create_empty.py
 ```
 
-_Please note that information about the deployed cloud resources is stored in the `state/` directory. Do not delete this directory._
-
-### Importing Existing Deployments
-
-If you lose the `state/` directory but still have cloud resources running, you can import them back:
+### Isaac Lab Arena
 
 ```sh
-# enter Isaac Automator container
-./run
-# inside container:
-./import --cloud aws --prefix isaacautomator --region us-east-1
+cd ~/workspace/IsaacLab-Arena
+./isaaclab.sh -p source/extensions/omni.isaac.lab_arena/...
 ```
 
-The `./import` command discovers cloud resources by their name prefix, imports them into Terraform state, and reconstructs the deployment metadata. After import, `./stop`, `./start --quick`, and `./destroy` will work.
+### Built-In Robotics Demos
 
-Deployments that already exist locally in `state/` are automatically skipped.
+When selected during deploy (`--demos <name>`), out-of-the-box reinforcement learning demos appear as double-clickable desktop shortcuts:
 
-Key options:
+| Demo Name | Description | Required Apps |
+| :--- | :--- | :--- |
+| `quadruped-locomotion` | Train an ANYmal-D quadruped to walk using RSL-RL in Isaac Lab | Isaac Sim, Isaac Lab |
+| `humanoid-locomotion` | Train a Unitree G1 humanoid to walk using RSL-RL in Isaac Lab | Isaac Sim, Isaac Lab |
+| `franka-manipulation` | Train a Franka arm to reach targets using RSL-RL in Isaac Lab | Isaac Sim, Isaac Lab |
 
-- `--cloud` — Cloud provider: `aws`, `azure`, or `gcp`.
-- `--prefix` — Resource name prefix used during deployment (default: `isaacautomator`).
-- `--region` — Cloud region (or GCP zone) to search in.
-- `--project` — GCP project ID (required for GCP, auto-detected from `gcloud config` if not provided).
-- `--deployment-name` — Import only a specific deployment instead of all discovered ones.
-- `--yes` — Skip confirmation prompts.
+---
 
-**Important:** The original SSH private key (`key.pem`) cannot be recovered from the cloud. After import, replace `state/<deployment-name>/key.pem` with your backed-up copy to restore SSH access.
+## Autorun Script
 
-### Speeding Up Deployment with Pre-Built Images
-
-You can build pre-baked VM images so future deployments skip the lengthy software-install phase. Pass `--from-image` to `./deploy-<cloud>` to use the most recent image. Image builds wrap Packer and handle cloud credential management automatically.
-
-| Command       | Cloud | Image type                           |
-| ------------- | ----- | ------------------------------------ |
-| `./image-aws` | AWS   | AMI in the active region             |
-| `./image-azure` | Azure | Managed image in a resource group  |
-| `./image-gcp` | GCP   | Custom image in the active project   |
-
-All three commands share the same workflow:
-
-```sh
-# enter Isaac Automator container
-./run
-# inside container:
-./image-aws        # or ./image-azure / ./image-gcp
-```
-
-The image name defaults to the current date. The cloud-specific prefix is added automatically. When deploying with `--from-image`, Terraform picks the most recent image matching the prefix.
-
-#### `./image-aws`
-
-Builds an AMI prefixed with `isaacautomator.isaacworkstation.`.
-
-Key options:
-
-- The image name can be passed as a positional argument: `./image-aws my-image-name`
-- `--instance-type` — Instance type for the Packer build (G4dn, G5, G6, G6e supported; default: `g6e.2xlarge`)
-- `--region` — AWS Region, can be entered as `us-east-1` or `US East 1` (default: `us-east-1`)
-- `--existing` — `overwrite` or `fail` if an AMI with the same name already exists (default: `fail`)
-- `--isaacsim` / `--isaaclab` / `--isaaclab-arena` — Git refs to bake into the image
-
-Tip: Run `./image-aws --help` to see all options.
-
-#### `./image-azure`
-
-Builds an Azure managed image prefixed with `isaac_automator.isaacworkstation.`. The image is stored in the resource group given by `--resource-group` (default: `isaac_automator.packer`, created automatically if missing).
-
-Key options:
-
-- The image name can be passed as a positional argument: `./image-azure my-image-name`
-- `--instance-type` — VM size for the Packer build (T4/A10 series, see `./image-azure --help`; default: `Standard_NV36ads_A10_v5`)
-- `--region` — Azure location (default: `westus3`)
-- `--resource-group` — Resource group where the captured image is stored (default: `isaac_automator.packer`)
-- `--existing` — `overwrite` or `fail` if an image with the same name already exists (default: `fail`)
-- `--login` / `--no-login` — Whether to run `az login` first (default: `--login`)
-- `--isaacsim` / `--isaaclab` / `--isaaclab-arena` — Git refs to bake into the image
-
-Tip: Run `./image-azure --help` to see all options.
-
-#### `./image-gcp`
-
-Builds a GCP custom image prefixed with `isaac-automator-isaacworkstation-` (GCP image names are lowercase and use dashes).
-
-Key options:
-
-- The image name can be passed as a positional argument: `./image-gcp my-image-name`
-- `--project` — GCP project ID (defaults to the active `gcloud` project)
-- `--zone` — Zone for the Packer build instance (default: `us-central1-a`)
-- `--instance-type` — Instance type for the Packer build (G2/N1/G4 supported; default: `g2-standard-8`)
-- `--gpu-type` / `--gpu-count` — GPU accelerator to attach during build (defaults: `nvidia-l4`, `1`). Use `nvidia-tesla-t4` with `n1-*`, `nvidia-l4` with `g2-*`, `nvidia-rtx-pro-6000` with `g4-*`.
-- `--existing` — `overwrite` or `fail` if an image with the same name already exists (default: `fail`)
-- `--isaacsim` / `--isaaclab` / `--isaaclab-arena` — Git refs to bake into the image
-
-Tip: Run `./image-gcp --help` to see all options.
-
-## Tips
-
-### Persisting Modifications to the deployed Isaac Workstation
-
-Isaac Workstation local data is persistent and survives `./stop`/`.start` cycles.
-
-For changes that need to be re-applied automatically on every deployment or `./start`, modify the [`uploads/autorun.sh`](uploads/autorun.sh) script. This script runs each time the instance is deployed or started (see [Autorun Script](#autorun-script)).
-
-For example, you can use `autorun.sh` to install additional Python packages, apply patches, or run setup scripts:
+For scripts that need to execute automatically on initial deploy and after every `./start`, edit [`uploads/autorun.sh`](uploads/autorun.sh):
 
 ```sh
 #!/bin/sh
-
-# This script is executed when
-# 1. the VM is first deployed
-# 2. the VM is started after being stopped
-
-SELF_DIR="$(dirname $0)"
-
-# example: install additional packages into the Isaac Lab environment
-pip install torch
+# Executed on initial deploy and after every start
+cd /home/ubuntu/workspace/IsaacLab
+# Example: launch unattended background training job
+python3 train.py &
 ```
+
+---
+
+## Data Transfer & Standard Folders
+
+| Local Folder | Remote Location | Purpose |
+| :--- | :--- | :--- |
+| `uploads/` | `/home/ubuntu/uploads` | Synchronize local datasets, models, or scripts to the cloud VM (`./upload <name>`). |
+| `results/` | `/home/ubuntu/results` | Download training checkpoints, logs, and rendered outputs to local disk (`./download <name>`). |
+| Workspace | `/home/ubuntu/workspace` | Primary development folder backed up automatically on Spot/GCS pipelines. |
+
+```sh
+# Upload local data:
+./upload <deployment-name>
+
+# Download remote results:
+./download <deployment-name>
+```
+
+---
+
+## Maintenance, Repair & Teardown
+
+### Repairing Deployments
+
+If network security groups or software configurations drift, repair them without recreating infrastructure:
+
+```sh
+# Full repair (Terraform infrastructure + Ansible configuration)
+./repair <deployment-name>
+
+# Restrict ingress firewall rules to your current public IP
+./repair <deployment-name> --ingress-cidrs myip
+```
+
+### Tearing Down Deployments
+
+```sh
+# Terminate VM and permanently delete cloud resources
+./destroy <deployment-name> --yes
+```
+
+### Importing Existing Deployments
+
+If you lose the local `state/` directory but still have cloud resources running, import them back:
+
+```sh
+./import --cloud gcp --project my-project --prefix isaacautomator --zone us-central1-a
+```
+
+### Pre-Built Golden Images
+
+To reduce provisioning time from ~15 minutes down to <2 minutes, bake a custom image containing NVIDIA drivers and pre-cached Isaac binaries:
+
+```sh
+./image-gcp --image-name isaac-workstation-base
+./deploy-gcp my-workstation --from-image
+```
+
+---
+
+## Tips
+
+### Persisting Custom Configurations
+To persist customizations (custom conda environments, dependencies, system tweaks) across stop/start cycles:
+1. Store files in `/home/ubuntu/workspace/` (retained across stops and backed up to GCS).
+2. Add automated re-initialization commands to [`uploads/autorun.sh`](uploads/autorun.sh).
+
+---
+
+## License
+
+Copyright 2023-2026 NVIDIA Corporation. Licensed under the Apache License, Version 2.0.
