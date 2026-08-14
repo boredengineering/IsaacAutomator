@@ -1,38 +1,67 @@
 {
-    "name": "AI Playwright Sandbox (Antigravity + Claude + Hermes + HF CLI)",
+    "name": "Isaac Automator DevContainer",
     "build": {
-        "dockerfile": "Dockerfile"
+        "dockerfile": "Dockerfile",
+        "context": ".."
+    },
+    "features": {
+        "ghcr.io/devcontainers/features/terraform:1": {
+            "version": "1.8"
+        },
+        "ghcr.io/devcontainers/features/aws-cli:1": {},
+        "ghcr.io/devcontainers/features/azure-cli:1": {},
+        "ghcr.io/devcontainers/features/node:1": {
+            "version": "lts"
+        },
+        "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
+        "ghcr.io/devcontainers/features/git:1": {},
+        "ghcr.io/devcontainers/features/git-lfs:1": {}
     },
     "customizations": {
         "vscode": {
             "settings": {
                 "terminal.integrated.defaultProfile.linux": "bash",
-                "r.lsp.enabled": true,
-                "python.defaultInterpreterPath": "/usr/bin/python3"
+                "python.defaultInterpreterPath": "/usr/bin/python3",
+                "terraform.languageServer.enable": true
             },
             "extensions": [
-                "anthropic.claude-code",
-                "REditorSupport.r",
                 "ms-python.python",
-                "quarto.quarto",
-                "ms-toolsai.jupyter"
+                "hashicorp.terraform",
+                "redhat.ansible",
+                "ms-azuretools.vscode-docker",
+                "googlecloudtools.cloudcode",
+                "anthropic.claude-code"
             ]
         }
     },
     "remoteEnv": {
-        "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}",
-        "OPENAI_API_KEY": "${localEnv:OPENAI_API_KEY}",
+        "PYTHONPATH": "/app:/app/lib:/app/src:/app/py:/app/python:/app/cli:/app/utils:/app/tests",
+        "ANSIBLE_FORCE_COLOR": "true",
+        "ANSIBLE_CONFIG": "/app/src/ansible/ansible.cfg",
+        "TF_DATA_DIR": "/opt/tf-data",
+        "VERSION": "v4.2.1",
+        "AWS_ACCESS_KEY_ID": "${localEnv:AWS_ACCESS_KEY_ID}",
+        "AWS_SECRET_ACCESS_KEY": "${localEnv:AWS_SECRET_ACCESS_KEY}",
+        "AWS_DEFAULT_REGION": "${localEnv:AWS_DEFAULT_REGION}",
+        "ALIYUN_ACCESS_KEY": "${localEnv:ALIYUN_ACCESS_KEY}",
+        "ALIYUN_SECRET_KEY": "${localEnv:ALIYUN_SECRET_KEY}",
         "GEMINI_API_KEY": "${localEnv:GEMINI_API_KEY}",
-        "HERMES_HOME": "/root/.hermes",
-        "HF_TOKEN": "${localEnv:HF_TOKEN}"
+        "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}",
+        "OPENAI_API_KEY": "${localEnv:OPENAI_API_KEY}"
     },
     "mounts": [
-        // "source=C:/,target=/c,type=bind,readonly",
-        // "source=E:/,target=/e,type=bind,readonly",
-        // "source=F:/,target=/f,type=bind,readonly",
-        "source=claude-code-config-${devcontainerId},target=/root/.claude,type=volume",
-        "source=hermes-home-${devcontainerId},target=/root/.hermes,type=volume",
-        "source=antigravity-config-${devcontainerId},target=/root/.gemini,type=volume"
+        "source=${localEnv:USERPROFILE}/.aws,target=/root/.aws,type=bind,consistency=cached",
+        "source=${localEnv:USERPROFILE}/.config/gcloud,target=/root/.config/gcloud,type=bind,consistency=cached",
+        "source=${localEnv:USERPROFILE}/.azure,target=/root/.azure,type=bind,consistency=cached",
+        "source=isaac-tf-cache-${devcontainerId},target=/opt/tf-data,type=volume",
+        "source=antigravity-config-${devcontainerId},target=/root/.gemini,type=volume",
+        "source=claude-code-config-${devcontainerId},target=/root/.claude,type=volume"
     ],
-    "postCreateCommand": "if [ -f renv.lock ]; then Rscript -e 'renv::restore()'; fi && echo 'Devcontainer setup completed!'"
+    "forwardPorts": [
+        8080,
+        5900,
+        4000,
+        22
+    ],
+    "postCreateCommand": "ansible-galaxy collection install community.docker google.cloud && echo 'Isaac Automator DevContainer ready!'"
 }
