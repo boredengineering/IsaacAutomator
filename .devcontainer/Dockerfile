@@ -2,7 +2,8 @@
 # Isaac Automator - Standardized Cloud-Native DevContainer
 # ==============================================================================
 
-FROM ubuntu:24.04
+# Base image with Playwright dependencies and browsers pre-installed
+FROM mcr.microsoft.com/playwright:v1.58.2-jammy
 
 SHELL ["/bin/bash", "-c"]
 ENV DEBIAN_FRONTEND=noninteractive
@@ -15,11 +16,13 @@ RUN apt-get update && apt-get install -qy --no-install-recommends \
     openssh-client \
     apt-transport-https \
     apt-utils \
+    dirmngr \
     gnupg \
     gnupg2 \
     curl \
     wget \
     git \
+    git-lfs \
     unzip \
     rsync \
     nano \
@@ -27,11 +30,32 @@ RUN apt-get update && apt-get install -qy --no-install-recommends \
     ripgrep \
     dnsutils \
     lsb-release \
+    ffmpeg \
+    libmagick++-dev \
     python3 \
     python3-pip \
     python3-venv \
     python3-dev \
     && rm -rf /var/lib/apt/lists/*
+
+# Add R CRAN repository and install R (r-base and r-base-dev)
+RUN wget -qO- https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc | gpg --dearmor -o /usr/share/keyrings/cran-archive-keyring.gpg \
+    && echo "deb [signed-by=/usr/share/keyrings/cran-archive-keyring.gpg] https://cloud.r-project.org/bin/linux/ubuntu jammy-cran40/" | tee /etc/apt/sources.list.d/cran.list \
+    && apt-get update && apt-get install -y --no-install-recommends \
+    r-base \
+    r-base-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install GitHub CLI repository and gh
+RUN mkdir -p -m 755 /etc/apt/keyrings \
+    && wget -qO- https://cli.github.com/packages/githubcli-archive-keyring.gpg | tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null \
+    && chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+    && apt-get update && apt-get install -y gh \
+    && rm -rf /var/lib/apt/lists/*
+
+# Initialize Git LFS
+RUN git lfs install
 
 # Install Google Cloud CLI
 RUN curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg && \
@@ -55,24 +79,44 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
     ln -sf /root/.local/bin/uv /usr/local/bin/uv && \
     ln -sf /root/.local/bin/uvx /usr/local/bin/uvx
 
+# Install global node packages (Claude Code)
+# Note: npm is available automatically via the playwright base image
+RUN npm install -g @anthropic-ai/claude-code
+
+# Install Antigravity CLI (agy)
+RUN curl -fsSL https://antigravity.google/cli/install.sh | bash && \
+    ln -sf /root/.local/bin/agy /usr/local/bin/agy
+
+# Install Hermes Agent
+RUN curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash -s -- --skip-setup --skip-browser
+
 # Base Python packages for CLI orchestration and development
-RUN pip install --no-cache-dir --break-system-packages \
+RUN pip3 install --no-cache-dir \
     click \
     randomname \
     pwgen \
     debugpy \
     ansible \
-    requests
+    requests \
+    jupyter \
+    ipykernel \
+    usd-core \
+    "huggingface_hub[cli]"
+
+# Install R packages needed for development
+RUN Rscript -e 'install.packages(c("languageserver", "renv"), repos="https://cloud.r-project.org")'
 
 # Create state directory mount points
 RUN mkdir -p /app/state/.aws /app/state/.gcp /app/state/.azure /opt/tf-data
 
-# Persistent bash history & prompt configuration
+# Persistent bash history, prompt configuration, and agent browser paths
 RUN echo 'export HISTFILE=/app/state/.bash_history' >> /root/.bashrc && \
     echo 'export HISTSIZE=10000' >> /root/.bashrc && \
     echo 'export HISTFILESIZE=20000' >> /root/.bashrc && \
     echo 'shopt -s histappend' >> /root/.bashrc && \
     echo 'export PROMPT_COMMAND="history -a; ${PROMPT_COMMAND}"' >> /root/.bashrc && \
-    echo "export PS1='\[\033[01;33m\][Isaac Automator \[\033[00;33m\]\${VERSION:-dev}\[\033[01;33m\]]\[\033[00m\]:\w\$ '" >> /root/.bashrc
+    echo "export PS1='\[\033[01;33m\][Isaac Automator \[\033[00;33m\]\${VERSION:-dev}\[\033[01;33m\]]\[\033[00m\]:\w\$ '" >> /root/.bashrc && \
+    echo "export AGENT_BROWSER_EXECUTABLE_PATH=\$(find /ms-playwright -name chrome -type f | head -n 1)" >> /root/.bashrc && \
+    echo "export AGENT_BROWSER_EXECUTABLE_PATH=\$(find /ms-playwright -name chrome -type f | head -n 1)" >> /etc/bash.bashrc
 
 WORKDIR /app

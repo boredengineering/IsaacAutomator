@@ -1,6 +1,14 @@
 {
-    "version": "1.0",
+    "version": "0.2.0",
     "configurations": [
+        {
+            "name": "Python: Run Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
         {
             "name": "Python: Remote Attach",
             "type": "python",
@@ -16,21 +24,6 @@
                 }
             ],
             "justMyCode": true
-        },
-        {
-            "name": "Docker: Python - General",
-            "type": "docker",
-            "request": "launch",
-            "preLaunchTask": "docker-run: debug",
-            "python": {
-                "pathMappings": [
-                    {
-                        "localRoot": "${workspaceFolder}",
-                        "remoteRoot": "/app"
-                    }
-                ],
-                "projectType": "general"
-            }
         }
     ]
 }
