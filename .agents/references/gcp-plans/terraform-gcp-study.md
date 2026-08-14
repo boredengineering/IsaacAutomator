@@ -1,162 +1,305 @@
-# Terraform & Ansible for GCP: MCP Servers and Agent Skills Evaluation Study
+# GCP Open-Source Automation Stack: Terraform, Ansible & MCP Engineering Specification
 
-A comprehensive architectural exploration, candidate comparison, and decision framework for integrating **Model Context Protocol (MCP) servers** and **Agent Skills** into **Isaac Automator**'s Terraform and Ansible automation pipelines.
+A reference architecture and operational specification for deploying open-source, vendor-agnostic Infrastructure as Code (IaC) and Configuration Management on Google Cloud Platform (GCP) using **Model Context Protocol (MCP)**, **Terraform**, and **Ansible**.
 
 ---
 
-## 1. Executive Summary & Problem Statement
+## 1. Core Architectural Directives
 
-**Isaac Automator** automates the provisioning, lifecycle, and configuration of high-performance GPU workstations across public clouds (GCP, AWS, Azure, Alibaba Cloud) for NVIDIA Omniverse, Isaac Sim, and Isaac Lab.
-
-The automation architecture consists of three interconnected layers:
-1. **Infrastructure Provisioning (Terraform)**: Manages cloud VMs, networking, GPU accelerators, and dynamic scheduling ([`src/terraform/gcp/`](file:///workspaces/IsaacAutomator/src/terraform/gcp/)).
-2. **Software & Driver Configuration (Ansible)**: Installs NVIDIA drivers, X11/Vulkan display environments, remote desktop services (noVNC / NoMachine), and robotics simulation frameworks ([`src/ansible/`](file:///workspaces/IsaacAutomator/src/ansible/)).
-3. **Golden Image Baking (Packer)**: Builds pre-baked images using the same Ansible roles ([`src/packer/gcp/`](file:///workspaces/IsaacAutomator/src/packer/gcp/)).
+To guarantee zero vendor lock-in and reproducible automation, this pipeline exclusively utilizes free, open-source tools and community-supported ecosystems:
 
 ```mermaid
 flowchart TD
-    subgraph AgentIntelligence["1. AI Agent Reasoning & Standards"]
-        SkillTF["Terraform Agent Skill\n• HCL conventions & module layout\n• GCP GPU maintenance rules\n• Non-destructive refactoring"]
-        SkillAnsible["Ansible Agent Skill (ai-forge)\n• Idempotent tasks & handlers\n• Ubuntu 20.04/22.04 parity\n• DKMS & Vulkan display pipelines"]
+    subgraph MCPContext["1. Open-Source MCP Tooling Context"]
+        TF_MCP["Terraform MCP Server\n• hashicorp/google schema\n• Argument validation"]
+        GCP_MCP["GCP MCP (googleapis/gcloud-mcp & enesbol/gcp-mcp)\n• Resource state validation\n• ADC execution"]
+        Ansible_MCP["Ansible MCP Collection\n• ansible.mcp\n• ansible.mcp_builder"]
     end
 
-    subgraph DynamicIntrospection["2. Dynamic Tools & Live Introspection (MCP)"]
-        MCP_TF["HashiCorp Terraform MCP\n• Live Registry provider schemas\n• Argument constraint lookups\n• TFC / HCP workspace status"]
-        MCP_Ansible["Ansible DevTools / SysOperator MCP\n• Module parameter introspection\n• Rendered inventory validation"]
+    subgraph IaCLayer["2. Infrastructure as Code (Terraform)"]
+        GCS["GCS Remote Backend\n• Distributed locking\n• Object versioning"]
+        DynamicCompute["DRY Dynamic Modules\n• google_compute_instance\n• dynamic scheduling / disks\n• IAM & VPC dynamic blocks"]
     end
 
-    subgraph ProjectExecution["3. Isaac Automator Codebase & Execution"]
-        TFCode["Terraform (src/terraform/gcp/)\n• Dynamic scheduling (Flex-Start)\n• google_compute_instance\n• outputs.tf"]
-        AnsibleCode["Ansible (src/ansible/)\n• isaac-workstation.yaml\n• 8 Modular Roles"]
-        CLI["CLI Wrappers / Container\n• ./deploy-gcp\n• ./cycle-vm\n• ./start / ./stop"]
+    subgraph ConfigLayer["3. Configuration Management (Ansible)"]
+        DynInv["google.cloud.gcp_compute\n• Dynamic Inventory Plugin\n• Label & Zone targeting"]
+        Auth["OS Login / Injected SSH Keys\n• Ephemeral credentials"]
+        Playbook["Idempotent Playbooks\n• Roles, handlers, safety checks"]
     end
 
-    AgentIntelligence --> DynamicIntrospection
-    DynamicIntrospection --> ProjectExecution
-    ProjectExecution --> GCP["Google Cloud Platform\n• Compute Engine & L4/T4/A100 GPUs\n• GCS State Storage"]
+    MCPContext --> IaCLayer
+    IaCLayer --> ConfigLayer
+    ConfigLayer --> TargetVMs["GCP Compute Workstations\n• NVIDIA GPUs / L4 / T4 / A100"]
 ```
 
 ---
 
-## 2. Full Candidate Landscape: What is Available?
+## 2. MCP Server Configuration & Ecosystem Setup
 
-### 2.1 Terraform Candidates
+Create or configure `.mcp.json` / agent settings to attach the required open-source MCP servers:
 
-| Solution | Type | Source / Maintainer | Primary Capability | Relevance to Isaac Automator |
-| :--- | :--- | :--- | :--- | :--- |
-| **`hashicorp/terraform-mcp-server`** | MCP Server | Official (HashiCorp) | Real-time schema validation from Terraform Registry (`google`, `aws`, `azurerm`, `alicloud`); HCP Terraform workspace interaction. | **High**: Eliminates trial-and-error syntax errors when writing GCP VM/accelerator blocks. |
-| **`severity1/terraform-cloud-mcp`** | MCP Server | Community (severity1) | Interacts with Terraform Cloud API to manage remote workspaces and run histories. | **Low**: Isaac Automator defaults to local state files (`state/`) or direct GCS backends. |
-| **`omattsson/terragrunt-mcp-server`** | MCP Server | Community (omattsson) | Terragrunt orchestration, dependency DAGs, and DRY configuration management. | **Low**: The project uses pure Terraform modules without Terragrunt. |
-| **`antonbabenko/terraform-skill`** | Agent Skill | Community (Anton Babenko) | Standardized HCL module conventions, testing patterns, and state migration rules. | **High**: Provides solid foundation for module authoring across our 4 supported clouds. |
-| **`hashicorp/agent-skills`** | Agent Skill | Official (HashiCorp) | Provider development, Terraform Stacks, and Sentinel/OPA policy writing. | **Medium**: Useful for advanced policy and packaging. |
-| **In-Repo Custom Skill (`terraform-gcp`)** | Agent Skill | In-House | Custom playbooks for GCP GPU instances, dynamic Flex-Start scheduling, and `./deploy-gcp` CLI flags. | **Critical**: Captures repository-specific operational patterns. |
-
----
-
-### 2.2 Ansible Candidates
-
-| Solution | Type | Source / Maintainer | Primary Capability | Relevance to Isaac Automator |
-| :--- | :--- | :--- | :--- | :--- |
-| **`ansible-community/ai-forge`** | Agent Skill | Official (Ansible Community) | Curated skills (`ansible-role`, `ansible-content-development`, `ansible-collection-standards`) following Red Hat CoP guidelines. | **Critical**: Direct alignment with our 8 roles in [`src/ansible/roles/`](file:///workspaces/IsaacAutomator/src/ansible/roles/). |
-| **Ansible DevTools (ADT) MCP** | MCP Server | Red Hat (VS Code Extension) | Playbook validation, syntax checking, and local execution environment tools. | **Medium-High**: Ideal for local development and validation inside IDEs. |
-| **`ansible/aap-mcp-server`** | MCP Server | Official (Ansible/Red Hat) | Integration with Ansible Automation Platform (AAP) API for enterprise job templates. | **Low**: Overkill for standalone CLI/Docker execution in Isaac Automator. |
-| **`tarnover/mcp-sysoperator`** | MCP Server | Community (tarnover) | Combined execution MCP supporting both Terraform and Ansible runner commands. | **Medium**: Can automate running `ansible-playbook` within an agent conversation. |
-| **`ansible-collections/ansible.mcp`** | Ansible Collection | Ansible Community | Collection allowing Ansible playbooks to call MCP servers during execution. | **Low-Medium**: Novel, but reverses the control flow (playbook calling MCP rather than agent calling Ansible). |
-| **In-Repo Custom Skill (`ansible-workstation`)** | Agent Skill | In-House | NVIDIA driver installation, Vulkan ICD headers, TurboVNC/NoMachine, Omniverse cache directories. | **Critical**: Specialized robotics/graphics simulation provisioning knowledge. |
-
----
-
-## 3. GCP-Specific Deep Dive: Technical Nuances
-
-To make an informed decision on what rules and tools to enforce, we must consider GCP-specific Terraform & Ansible constraints:
-
-### 3.1 Compute Engine & GPU Scheduling Nuances
-1. **Maintenance Policy**:
-   * Any GCP VM with attached GPUs (`guest_accelerator`) **must** set `on_host_maintenance = "TERMINATE"`. Setting `MIGRATE` causes immediate Terraform API errors.
-2. **Flex-Start (Dynamic Workload Scheduler)**:
-   * To prevent GPU allocation rejections in high-demand regions, GCP supports `provisioning_model = "FLEX_START"`.
-   * **Constraint**: Flex-Start instances enforce a 7-day maximum lifespan (`max_run_duration { seconds = 604800 }`) and require `automatic_restart = false`.
-   * **Project Implementation**: Handled conditionally via dynamic blocks in [`src/terraform/gcp/ovkit/main.tf`](file:///workspaces/IsaacAutomator/src/terraform/gcp/ovkit/main.tf) and cycled via `./cycle-vm`.
-3. **Safe In-Place Upgrades**:
-   * Changing instance sizes (e.g. `g2-standard-8` to `g2-standard-16`) must not destroy attached boot disks. Setting `allow_stopping_for_update = true` allows seamless resizing.
-
-### 3.2 Dynamic Ansible Inventory Handoff
-* Terraform produces workstation IPs and connection details in [`outputs.tf`](file:///workspaces/IsaacAutomator/src/terraform/gcp/outputs.tf).
-* The `./deploy-gcp` CLI injects these outputs into [`src/ansible/inventory.template`](file:///workspaces/IsaacAutomator/src/ansible/inventory.template) before running `ansible-playbook`.
-* **Agent Rule**: Any new variable or port exposed in Terraform must have a corresponding entry in `inventory.template` and `isaac-workstation.yaml`.
-
----
-
-## 4. Comprehensive Evaluation Matrix
-
-| Evaluation Criteria | Option A: Native In-Repo Skills Only | Option B: Hybrid (HashiCorp MCP + ai-forge Skills) | Option C: Enterprise Suite (Terraform MCP + AAP MCP + Lola) |
-| :--- | :--- | :--- | :--- |
-| **External Dependencies** | **None** (Markdown files in repo) | **Minimal** (1 lightweight Docker MCP container) | **High** (Multiple daemons, Lola CLI, AAP / AWX API) |
-| **Setup Complexity** | ⭐⭐⭐⭐⭐ (Instant, zero install) | ⭐⭐⭐⭐☆ (Single `docker run` or config snippet) | ⭐⭐☆☆☆ (Complex setup, token management) |
-| **Real-Time Schema Validation** | ⭐⭐☆☆☆ (Relies on model memory) | ⭐⭐⭐⭐⭐ (Live registry lookup for all 4 clouds) | ⭐⭐⭐⭐⭐ (Full API & schema introspection) |
-| **Ansible Role Quality & CoP** | ⭐⭐⭐⭐☆ (In-house guidelines) | ⭐⭐⭐⭐⭐ (Standardized `ai-forge` + in-house rules) | ⭐⭐⭐⭐⭐ (Full AAP validation) |
-| **Security / Credential Exposure** | ⭐⭐⭐⭐⭐ (Zero credentials exposed) | ⭐⭐⭐⭐☆ (Standard env vars passed to Docker) | ⭐⭐⭐☆☆ (Requires API tokens for remote platforms) |
-| **Maintenance Burden** | ⭐⭐⭐⭐⭐ (Maintained with git code) | ⭐⭐⭐⭐☆ (Upstream container updates automatically) | ⭐⭐☆☆☆ (High maintenance) |
-| **Parity with AWS/Azure/AliCloud** | ⭐⭐⭐⭐☆ (Manual synchronization) | ⭐⭐⭐⭐⭐ (MCP resolves all 4 cloud providers) | ⭐⭐⭐⭐☆ |
-
----
-
-## 5. Architectural Options & Decision Paths
-
-### Option 1: Lean & Native (Pure In-Repo Skills)
-* **What it is**: All rules, GCP GPU patterns, Ansible role conventions, and Terraform validation steps are codified directly in `.agents/skills/` within this repository.
-* **Pros**:
-  * Completely self-contained; zero network dependencies or running daemon processes.
-  * 100% reproducible for any agent working in this repo.
-* **Cons**:
-  * Agent relies on training data for obscure Terraform provider arguments or newly released GCP machine types.
-
-### Option 2: Hybrid Best-of-Breed (Recommended)
-* **What it is**:
-  1. Use **`hashicorp/terraform-mcp-server`** (running via Docker) to provide real-time schema and argument lookups for `hashicorp/google`, `hashicorp/aws`, `hashicorp/azurerm`, and `aliyun/alicloud`.
-  2. Adopt **`ansible-community/ai-forge`** role scaffolding standards combined with custom Isaac Automator skills for graphics/robotics pipelines.
-* **Pros**:
-  * Perfect balance: Real-time schema accuracy without heavy infrastructure overhead.
-  * Prevents hallucinated cloud arguments while maintaining strict idempotency across Ansible roles.
-* **Cons**:
-  * Requires Docker to run the MCP server.
-
-### Option 3: Full Enterprise Orchestration
-* **What it is**: Centralized AWX/AAP MCP servers, Terraform Cloud MCP, and Lola package manager.
-* **Pros**:
-  * Enterprise fleet management across distributed teams.
-* **Cons**:
-  * Significant overkill for Isaac Automator's current CLI and single-workstation provisioning architecture.
-
----
-
-## 6. Concrete Recommendations & Next Steps
-
-```mermaid
-graph LR
-    Step1["Step 1: Codify In-Repo Skills\n• .agents/skills/terraform-gcp/\n• .agents/skills/ansible-provisioning/"]
-    Step2["Step 2: Enable HashiCorp MCP\n• Add Docker command to agent config"]
-    Step3["Step 3: Import ai-forge Guidelines\n• Standardize Ansible role structures"]
-    Step4["Step 4: Review & Validate\n• Test against ./deploy-gcp & cycle-vm"]
-
-    Step1 --> Step2 --> Step3 --> Step4
+```json
+{
+  "mcpServers": {
+    "terraform": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "hashicorp/terraform-mcp-server"
+      ]
+    },
+    "gcp-cloud": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@enesbol/gcp-mcp"
+      ],
+      "env": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "${HOME}/.config/gcloud/application_default_credentials.json"
+      }
+    },
+    "gcloud-mcp": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-v", "${HOME}/.config/gcloud:/root/.config/gcloud:ro",
+        "ghcr.io/googleapis/gcloud-mcp:latest"
+      ]
+    }
+  }
+}
 ```
 
-### Proposed Action Plan:
-1. **Decision**: Adopt **Option 2 (Hybrid Best-of-Breed)**.
-2. **Immediate Implementation Steps**:
-   * Scaffold `.agents/skills/terraform-gcp/SKILL.md` with GCP GPU, Flex-Start, and state safety rules.
-   * Scaffold `.agents/skills/ansible-provisioning/SKILL.md` incorporating `ai-forge` CoP standards and NVIDIA/Vulkan requirements.
-   * Add the `hashicorp/terraform-mcp-server` definition to the agent's MCP configuration for instant schema introspection.
+### Ansible MCP Integration: `ansible.mcp` & `ansible.mcp_builder`
+* **`ansible.mcp` Collection**: Used inside playbooks to execute MCP tool calls during task execution without external SaaS platforms.
+* **`ansible.mcp_builder` Collection**: Deploys and packages MCP servers directly inside containerized Ansible Execution Environments (EEs).
+
+```yaml
+# Example task using ansible.mcp collection
+- name: Query GCP resource schema via MCP
+  ansible.mcp.call_tool:
+    server_name: gcp-cloud
+    tool_name: validate_instance_config
+    arguments:
+      project_id: "{{ gcp_project }}"
+      zone: "{{ gcp_zone }}"
+      machine_type: "{{ machine_type }}"
+```
 
 ---
 
-## 7. Associated Repository Files
+## 3. Terraform Provisioning Standards (GCP)
 
-* **GCP Flex-Start Integration Plan**: [`isaac_automator_flex_start_plan.md`](file:///workspaces/IsaacAutomator/.agents/references/gcp-plans/isaac_automator_flex_start_plan.md)
-* **GCP Terraform Root**: [`src/terraform/gcp/main.tf`](file:///workspaces/IsaacAutomator/src/terraform/gcp/main.tf)
-* **GCP Instance Submodule**: [`src/terraform/gcp/ovkit/main.tf`](file:///workspaces/IsaacAutomator/src/terraform/gcp/ovkit/main.tf)
-* **Ansible Master Playbook**: [`src/ansible/isaac-workstation.yaml`](file:///workspaces/IsaacAutomator/src/ansible/isaac-workstation.yaml)
-* **Ansible Inventory Template**: [`src/ansible/inventory.template`](file:///workspaces/IsaacAutomator/src/ansible/inventory.template)
-* **NVIDIA Driver Role**: [`src/ansible/roles/nvidia-driver/`](file:///workspaces/IsaacAutomator/src/ansible/roles/nvidia-driver/)
-* **Remote Desktop Role**: [`src/ansible/roles/remote-desktop/`](file:///workspaces/IsaacAutomator/src/ansible/roles/remote-desktop/)
+### 3.1 Remote State Management (Google Cloud Storage)
+All deployments must use a dedicated GCS backend with versioning enabled to support collaborative, distributed state locking:
+
+```hcl
+terraform {
+  required_version = ">= 1.5.0"
+  backend "gcs" {
+    bucket = "isaac-automator-tfstate-prod"
+    prefix = "terraform/state/gcp-workstations"
+  }
+  required_providers {
+    google = {
+      source  = "hashicorp/google"
+      version = ">= 5.0.0"
+    }
+  }
+}
+```
+
+### 3.2 DRY Module Design with Dynamic Blocks
+Compute instances, scheduling policies (Flex-Start vs. Standard), attached disks, and IAM bindings must be declared using dynamic blocks:
+
+```hcl
+# main.tf - Reusable Compute Instance declaration
+resource "google_compute_instance" "workstation" {
+  name                      = var.instance_name
+  machine_type              = var.machine_type
+  zone                      = var.zone
+  allow_stopping_for_update = true
+
+  # Dynamic Scheduling Block (Supports Standard, Flex-Start, Spot)
+  dynamic "scheduling" {
+    for_each = [var.scheduling_config]
+    content {
+      provisioning_model          = scheduling.value.provisioning_model # STANDARD or FLEX_START
+      instance_termination_action = scheduling.value.termination_action # STOP or DELETE
+      automatic_restart           = scheduling.value.automatic_restart
+      on_host_maintenance         = scheduling.value.gpu_enabled ? "TERMINATE" : "MIGRATE"
+
+      dynamic "max_run_duration" {
+        for_each = scheduling.value.max_run_duration_seconds != null ? [scheduling.value.max_run_duration_seconds] : []
+        content {
+          seconds = max_run_duration.value
+        }
+      }
+    }
+  }
+
+  # Dynamic Guest Accelerator (NVIDIA GPUs)
+  dynamic "guest_accelerator" {
+    for_each = var.gpu_count > 0 ? [1] : []
+    content {
+      type  = var.gpu_type
+      count = var.gpu_count
+    }
+  }
+
+  boot_disk {
+    auto_delete = true
+    initialize_params {
+      image = var.boot_image
+      size  = var.boot_disk_size_gb
+      type  = var.boot_disk_type
+    }
+  }
+
+  # Dynamic Attached Disks
+  dynamic "attached_disk" {
+    for_each = var.extra_disks
+    content {
+      source      = attached_disk.value.disk_id
+      device_name = attached_disk.value.name
+      mode        = lookup(attached_disk.value, "mode", "READ_WRITE")
+    }
+  }
+
+  network_interface {
+    network    = var.network_name
+    subnetwork = var.subnetwork_name
+
+    dynamic "access_config" {
+      for_each = var.enable_public_ip ? [1] : []
+      content {
+        nat_ip = var.static_ip_address
+      }
+    }
+  }
+
+  labels = merge(var.custom_labels, {
+    environment = var.environment
+    role        = "isaac-workstation"
+    managed_by  = "terraform"
+  })
+
+  metadata = {
+    enable-oslogin = var.enable_oslogin ? "TRUE" : "FALSE"
+    ssh-keys       = var.enable_oslogin ? null : "${var.os_username}:${var.ssh_public_key}"
+  }
+}
+```
+
+---
+
+## 4. Ansible Configuration Management Standards
+
+### 4.1 Dynamic Inventory Targeting (`google.cloud.gcp_compute`)
+No static IP addresses. Target workstations dynamically using GCP labels, zones, and status.
+
+Create `inventory/gcp_compute.yaml`:
+```yaml
+plugin: google.cloud.gcp_compute
+projects:
+  - "{{ lookup('env', 'GCP_PROJECT') }}"
+zones:
+  - "us-central1-a"
+  - "us-central1-b"
+  - "europe-west4-a"
+auth_kind: application
+filters:
+  - status = RUNNING
+  - labels.managed_by = terraform
+keyed_groups:
+  - prefix: gcp_role
+    key: labels.role
+  - prefix: gcp_zone
+    key: zone
+hostnames:
+  - name
+compose:
+  ansible_host: networkInterfaces[0].accessConfigs[0].natIP
+```
+
+### 4.2 Secure Access & OS Login
+* Connect via **GCP OS Login** (recommended) or temporary Terraform-injected SSH keys.
+* Configure `ansible.cfg`:
+```ini
+[defaults]
+inventory = ./inventory/gcp_compute.yaml
+host_key_checking = False
+timeout = 30
+interpreter_python = auto_silent
+
+[inventory]
+enable_plugins = google.cloud.gcp_compute, host_list, yaml, ini
+
+[ssh_connection]
+pipelining = True
+ssh_args = -o ControlMaster=auto -o ControlPersist=60s -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+```
+
+### 4.3 Idempotent Playbook Structure
+All tasks must guarantee zero unintended drift and safe re-execution:
+
+```yaml
+---
+# isaac-workstation-gcp.yaml
+- name: Configure GCP GPU Isaac Workstation
+  hosts: gcp_role_isaac_workstation
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Verify NVIDIA GPU presence via PCI bus
+      ansible.builtin.command: lspci -d 10de:
+      register: lspci_nvidia
+      changed_when: false
+      failed_when: false
+
+    - name: Ensure NVIDIA display drivers are installed
+      ansible.builtin.apt:
+        name:
+          - "nvidia-driver-535"
+          - "nvidia-utils-535"
+          - "nvidia-dkms-535"
+        state: present
+        update_cache: true
+      when: lspci_nvidia.rc == 0
+      notify: Restart Display Manager
+
+    - name: Ensure Vulkan development libraries and ICD are present
+      ansible.builtin.apt:
+        name:
+          - "libvulkan1"
+          - "vulkan-tools"
+          - "libvulkan-dev"
+        state: present
+
+  handlers:
+    - name: Restart Display Manager
+      ansible.builtin.systemd:
+        name: lightdm
+        state: restarted
+        enabled: true
+      failed_when: false
+```
+
+---
+
+## 5. Summary of Enforced Directives
+
+| Domain | Standard / Tool | Purpose |
+| :--- | :--- | :--- |
+| **MCP** | `hashicorp/terraform-mcp-server` | Live provider schema lookups for `hashicorp/google`. |
+| **MCP** | `googleapis/gcloud-mcp` & `@enesbol/gcp-mcp` | GCP resource validation & ADC command execution. |
+| **MCP** | `ansible.mcp` & `ansible.mcp_builder` | Execution Environment MCP building and playbook tool calls. |
+| **Terraform** | `backend "gcs"` | Remote, distributed state locking in GCS. |
+| **Terraform** | Dynamic Blocks (`scheduling`, `guest_accelerator`) | DRY, flexible compute definitions across Standard/Flex-Start. |
+| **Ansible** | `google.cloud.gcp_compute` | Dynamic inventory targeting via GCP labels and metadata. |
+| **Ansible** | OS Login / Ephemeral SSH | Secure authentication without static credential exposure. |
