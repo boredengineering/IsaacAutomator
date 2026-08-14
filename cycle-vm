@@ -1,0 +1,218 @@
+#!/usr/bin/env python3
+
+# region copyright
+# Copyright 2023-2026 NVIDIA Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# endregion
+
+"""
+Safely cycles a GCP Flex-start VM if it is approaching its 7-day maximum run duration.
+"""
+
+import os
+import sys
+import time
+
+import click
+
+from src.python.config import c as config
+from src.python.gcp import (
+    gcp_get_instance_last_start,
+    gcp_get_instance_status,
+    gcp_get_instance_uptime_seconds,
+)
+from src.python.utils import (
+    colorize_error,
+    colorize_info,
+    colorize_prompt,
+    colorize_result,
+    deployments,
+    format_cloud_name,
+    format_instance_role,
+    gcp_login,
+    read_meta,
+    read_tf_output,
+    shell_command,
+)
+
+
+@click.command()
+@click.argument(
+    "deployment_name",
+    required=True,
+    type=click.Choice(deployments()),
+)
+@click.option(
+    "--max-age-hours",
+    type=float,
+    default=156.0,  # 6.5 days
+    show_default=True,
+    help="Maximum allowed uptime in hours before triggering a cycle (Flex-start max is 168h / 7d).",
+)
+@click.option(
+    "--settle-delay",
+    type=int,
+    default=15,
+    show_default=True,
+    help="Seconds to wait after stopping the instance before restarting it.",
+)
+@click.option(
+    "--quick/--no-quick",
+    "-q/-Q",
+    default=True,
+    show_default=True,
+    help="Quick start after cycling: skip full Ansible, only run autorun script.",
+)
+@click.option(
+    "--force",
+    "-f",
+    is_flag=True,
+    default=False,
+    help="Force a cycle immediately regardless of current uptime.",
+)
+@click.option(
+    "--check-only",
+    is_flag=True,
+    default=False,
+    help="Check uptime and return status without initiating a stop/start cycle.",
+)
+@click.option(
+    "--debug/--no-debug",
+    default=False,
+    show_default=True,
+    help="Enable debug output.",
+)
+def main(
+    deployment_name: str,
+    max_age_hours: float,
+    settle_delay: int,
+    quick: bool,
+    force: bool,
+    check_only: bool,
+    debug: bool,
+):
+    # Verify cloud provider
+    cloud = read_tf_output(deployment_name, "cloud", verbose=debug)
+    if cloud != "gcp":
+        click.echo(
+            colorize_error(
+                f"* Cycling is designed for GCP Flex-start instances, but deployment '{deployment_name}' is on {format_cloud_name(cloud)}."
+            )
+        )
+        sys.exit(1)
+
+    gcp_login(verbose=debug)
+
+    meta = read_meta(deployment_name, debug)
+    zone = meta.get("params", {}).get("zone") or meta.get("input_params", {}).get("zone")
+    project = meta.get("params", {}).get("project") or meta.get("input_params", {}).get("project")
+
+    vm_id = read_tf_output(deployment_name, "isaac_workstation_vm_id", verbose=debug)
+    instance_name = (
+        vm_id.split("/")[-1]
+        if vm_id
+        else f"{meta.get('params', {}).get('prefix', 'isaac')}-{deployment_name}-isaac-workstation-vm"
+    )
+
+    click.echo(
+        colorize_info(
+            f"* Checking uptime for {instance_name} (Project: {project}, Zone: {zone})..."
+        )
+    )
+
+    status = gcp_get_instance_status(instance_name, zone=zone, project=project, verbose=debug)
+    if not status:
+        click.echo(colorize_error(f"* Error: Could not retrieve status for {instance_name}. Is the VM created?"))
+        sys.exit(1)
+
+    if status != "RUNNING":
+        click.echo(colorize_info(f"* Instance {instance_name} is currently {status} (not RUNNING). No cycle needed."))
+        return
+
+    uptime_seconds = gcp_get_instance_uptime_seconds(
+        instance_name, zone=zone, project=project, verbose=debug
+    )
+
+    if uptime_seconds < 0:
+        click.echo(colorize_error(f"* Error: Could not determine start timestamp for {instance_name}."))
+        sys.exit(1)
+
+    days = uptime_seconds // 86400
+    hours = (uptime_seconds % 86400) // 3600
+    minutes = (uptime_seconds % 3600) // 60
+    max_age_seconds = int(max_age_hours * 3600)
+
+    click.echo(
+        colorize_info(
+            f"* Current uptime: {days}d {hours}h {minutes}m ({uptime_seconds}s). Threshold: {max_age_hours}h ({max_age_seconds}s)."
+        )
+    )
+
+    needs_cycle = force or (uptime_seconds >= max_age_seconds)
+
+    if not needs_cycle:
+        click.echo(
+            colorize_result(
+                f"* Instance is well within the {max_age_hours}h limit. No cycle required."
+            )
+        )
+        return
+
+    if force:
+        click.echo(colorize_info("* Force cycle flag provided."))
+    else:
+        click.echo(
+            colorize_info(
+                f"* Warning: Instance uptime ({uptime_seconds}s) exceeds threshold ({max_age_seconds}s). Initiating cycle to reset Flex-start 7-day timer..."
+            )
+        )
+
+    if check_only:
+        click.echo(colorize_info("* Check-only mode: skipping stop/start execution."))
+        return
+
+    # Execute cycle: stop -> wait -> start
+    click.echo(colorize_info(f"* Stopping {deployment_name}..."))
+    shell_command(
+        f"{config['app_dir']}/stop '{deployment_name}' {'--debug' if debug else ''}",
+        verbose=debug,
+    )
+
+    click.echo(
+        colorize_info(
+            f"* Instance stopped. Waiting {settle_delay}s for cloud state to settle..."
+        )
+    )
+    time.sleep(settle_delay)
+
+    click.echo(colorize_info(f"* Starting {deployment_name}..."))
+    shell_command(
+        f"{config['app_dir']}/start '{deployment_name}' {'--quick' if quick else ''} {'--debug' if debug else ''}",
+        verbose=debug,
+    )
+
+    click.echo(
+        colorize_result(
+            f"* Cycle complete for '{deployment_name}'. Flex-start 7-day maximum runtime limit has been reset."
+        )
+    )
+
+
+if __name__ == "__main__":
+    if os.path.exists("/.dockerenv"):
+        # we're in docker, run command
+        main()
+    else:
+        # we're outside, start docker container first
+        shell_command(f"./run '{' '.join(sys.argv)}'", verbose=True)

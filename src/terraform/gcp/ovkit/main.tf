@@ -24,10 +24,28 @@ resource "google_compute_instance" "default" {
   # allows to change instance type without destriying everything
   allow_stopping_for_update = true
 
-  scheduling {
-    # required when gpus are used
-    on_host_maintenance = "TERMINATE"
+  dynamic "scheduling" {
+    for_each = var.use_flex_start ? [1] : []
+    content {
+      provisioning_model          = "FLEX_START"
+      instance_termination_action = "STOP"
+      automatic_restart           = false
+      on_host_maintenance         = "TERMINATE" # required for GPUs
+
+      max_run_duration {
+        seconds = 604800 # 7 days max allowed duration
+      }
+    }
   }
+
+  dynamic "scheduling" {
+    for_each = var.use_flex_start ? [] : [1]
+    content {
+      provisioning_model  = "STANDARD"
+      on_host_maintenance = "TERMINATE" # required for GPUs
+    }
+  }
+
 
   boot_disk {
     auto_delete = true

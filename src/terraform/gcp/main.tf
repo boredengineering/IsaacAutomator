@@ -44,4 +44,6 @@ module "isaac_workstation" {
   region             = local.region
   from_image         = var.from_image
   image_project      = var.project
+  use_flex_start     = var.use_flex_start
 }
+

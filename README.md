@@ -365,10 +365,15 @@ Options:
   --isaac-workstation-gpu-count [1|2|4|8]
                                 Number of GPUs. N1: NVIDIA T4, G2: NVIDIA L4,
                                 G4: NVIDIA RTX PRO 6000.  [default: 1]
+  --flex-start / --no-flex-start
+                                Deploy using GCP Flex-start (Dynamic Workload
+                                Scheduler) for improved capacity availability.
+                                [default: no-flex-start]
 
 ```
 
 </details>
+
 
 <details>
 <summary>deploy-azure options</summary>
@@ -572,7 +577,23 @@ By default, `./start` re-runs necessary Ansible steps (such as ECC disabling, et
 ./start <deployment-name> --quick
 ```
 
+#### GCP Flex-start Cycling (7-Day Limit Reset)
+
+GCP Flex-start instances are subject to a 7-day maximum run duration. To prevent abrupt termination, use `./cycle-vm` to monitor uptime and safely cycle the instance:
+
+```sh
+# Check uptime without stopping
+./cycle-vm <deployment-name> --check-only
+
+# Automatically cycle if uptime is >= 6.5 days (156h)
+./cycle-vm <deployment-name>
+
+# Force an immediate cycle with quick start
+./cycle-vm <deployment-name> --force --quick
+```
+
 The public IP address is preserved across stop/start cycles on all supported clouds. AWS uses an Elastic IP, GCP reserves a static external address, and Azure VMs retain their public IP while the resource exists.
+
 
 ### Uploading Data
 

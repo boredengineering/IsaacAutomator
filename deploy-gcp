@@ -142,6 +142,19 @@ class DeployGCPCommand(DeployCommand):
             ),
         )
 
+        # --flex-start/--no-flex-start
+
+        self.params.insert(
+            # insert before --ingress-cidrs option
+            self.param_index("ingress_cidrs"),
+            click.core.Option(
+                ("--flex-start/--no-flex-start",),
+                default=False,
+                show_default=True,
+                help="Deploy using GCP Flex-start (Dynamic Workload Scheduler).",
+            ),
+        )
+
 
 class GCPDeployer(Deployer):
     """
@@ -175,8 +188,10 @@ class GCPDeployer(Deployer):
                         "g4": "nvidia-rtx-pro-6000",
                     }[instance_type_prefix],
                     "boot_disk_type": boot_disk_type,
+                    "use_flex_start": self.params.get("flex_start", False),
                 }
             )
+
 
             # login into gcp
             gcp_login(verbose=self.params["debug"])

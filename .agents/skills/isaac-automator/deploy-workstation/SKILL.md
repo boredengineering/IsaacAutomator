@@ -94,9 +94,10 @@ headers, `fatal:` / `Error`, and the final `PLAY RECAP`) rather than waiting bli
 ## 5. Per-cloud specifics
 
 - **AWS** (`./deploy-aws`): `--region`, `--instance-type`. Default instance is an L40S `g6e.2xlarge`.
-- **GCP** (`./deploy-gcp`): adds `--zone`, `--project`, and `--isaac-workstation-gpu-count` (1/2/4/8).
+- **GCP** (`./deploy-gcp`): adds `--zone`, `--project`, `--isaac-workstation-gpu-count` (1/2/4/8), and `--flex-start / --no-flex-start` (GCP Dynamic Workload Scheduler flex-start for higher capacity availability).
 - **Azure** (`./deploy-azure`): adds `--resource-group` and `--login` / `--no-login`.
 - **Alibaba** (`./deploy-alicloud`): `--region` (default `us-east-1`).
+
 
 ## 6. After deploy
 

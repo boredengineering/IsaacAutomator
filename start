@@ -35,6 +35,7 @@ from src.python.aws import (
     aws_start_instance,
 )
 from src.python.azure import azure_login, azure_start_instance
+from src.python.gcp import gcp_get_instance_status, gcp_start_instance
 from src.python.config import c as config
 from src.python.utils import (
     colorize_error,
@@ -43,10 +44,12 @@ from src.python.utils import (
     deployments,
     format_instance_role,
     format_cloud_name,
+    gcp_login,
     read_meta,
     read_tf_output,
     shell_command,
 )
+
 
 
 @click.command()
@@ -97,6 +100,8 @@ def main(
         aws_validate_credentials(deployment_name, region=region, verbose=debug)
     elif "azure" == cloud:
         azure_login(verbose=debug)
+    elif "gcp" == cloud:
+        gcp_login(verbose=debug)
 
     # go through instance roles
 
@@ -142,6 +147,21 @@ def main(
                     break
                 click.echo(colorize_info("."), nl=False)
                 time.sleep(2)
+
+        elif "gcp" == cloud:
+            meta = read_meta(deployment_name, debug)
+            zone = meta.get("params", {}).get("zone") or meta.get("input_params", {}).get("zone")
+            project = meta.get("params", {}).get("project") or meta.get("input_params", {}).get("project")
+            instance_name = vm_id.split("/")[-1] if vm_id else f"{meta.get('params', {}).get('prefix', 'isaac')}-{deployment_name}-isaac-workstation-vm"
+            gcp_start_instance(instance_name, zone=zone, project=project, verbose=debug)
+            # wait for VM to start
+            while True:
+                status = gcp_get_instance_status(instance_name, zone=zone, project=project, verbose=debug)
+                if "RUNNING" == status:
+                    click.echo()
+                    break
+                click.echo(colorize_info("."), nl=False)
+                time.sleep(2)
         else:
             click.echo(
                 colorize_error(
@@ -149,6 +169,7 @@ def main(
                 )
             )
             exit(1)
+
 
         click.echo(
             colorize_result(f"* {format_instance_role(instance_role)} VM started.")

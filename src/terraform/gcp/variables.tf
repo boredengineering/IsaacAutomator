@@ -60,3 +60,10 @@ variable "os_username" {
   type    = string
   default = "ubuntu"
 }
+
+variable "use_flex_start" {
+  description = "Deploy using GCP Flex-start (Dynamic Workload Scheduler) to improve capacity availability"
+  type        = bool
+  default     = false
+}
+

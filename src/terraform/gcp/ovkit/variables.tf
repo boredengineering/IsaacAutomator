@@ -57,3 +57,10 @@ variable "from_image" {
 variable "image_project" {
   type = string
 }
+
+variable "use_flex_start" {
+  description = "Deploy using GCP Flex-start (Dynamic Workload Scheduler)"
+  type        = bool
+  default     = false
+}
+

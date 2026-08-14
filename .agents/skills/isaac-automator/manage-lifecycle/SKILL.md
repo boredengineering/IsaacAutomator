@@ -53,7 +53,23 @@ Stops the instance but keeps it (and its disk + IP). Use whenever you are done f
 Boots the stopped instance again; same IP. After boot the autorun launches the default app on the desktop.
 If a `./start --quick` runs Ansible before sshd is ready you may see `unreachable=1` - just re-run `./start`.
 
+## GCP Flex-start Cycling (7-Day Limit Reset)
+
+GCP Flex-start instances have a maximum runtime of 7 days (168 hours). Use `./cycle-vm` to monitor uptime and safely restart before hitting the cutoff:
+
+```sh
+# Check uptime without stopping
+./cycle-vm <name> --check-only
+
+# Automatically cycle if uptime >= 6.5 days (156h)
+./cycle-vm <name>
+
+# Force an immediate cycle and quick-start
+./cycle-vm <name> --force --quick
+```
+
 ## Repair
+
 
 ```sh
 ./repair <name>

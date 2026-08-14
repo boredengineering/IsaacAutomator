@@ -34,6 +34,7 @@ from src.python.aws import (
     aws_stop_instance,
 )
 from src.python.azure import azure_login, azure_stop_instance
+from src.python.gcp import gcp_get_instance_status, gcp_stop_instance
 from src.python.config import c as config
 from src.python.utils import (
     colorize_error,
@@ -42,6 +43,7 @@ from src.python.utils import (
     deployments,
     format_instance_role,
     format_cloud_name,
+    gcp_login,
     read_meta,
     read_tf_output,
     shell_command,
@@ -73,6 +75,8 @@ def main(
         aws_validate_credentials(deployment_name, region=region, verbose=debug)
     elif "azure" == cloud:
         azure_login(verbose=debug)
+    elif "gcp" == cloud:
+        gcp_login(verbose=debug)
 
     for instance_role in ["isaac_workstation"]:
         vm_id = read_tf_output(deployment_name, f"{instance_role}_vm_id", verbose=debug)
@@ -119,6 +123,21 @@ def main(
                     break
                 click.echo(colorize_info("."), nl=False)
                 time.sleep(2)
+
+        elif "gcp" == cloud:
+            meta = read_meta(deployment_name, debug)
+            zone = meta.get("params", {}).get("zone") or meta.get("input_params", {}).get("zone")
+            project = meta.get("params", {}).get("project") or meta.get("input_params", {}).get("project")
+            instance_name = vm_id.split("/")[-1] if vm_id else f"{meta.get('params', {}).get('prefix', 'isaac')}-{deployment_name}-isaac-workstation-vm"
+            gcp_stop_instance(instance_name, zone=zone, project=project, verbose=debug)
+            # wait for vm to stop
+            while True:
+                status = gcp_get_instance_status(instance_name, zone=zone, project=project, verbose=debug)
+                if status in ("TERMINATED", "STOPPED"):
+                    click.echo()
+                    break
+                click.echo(colorize_info("."), nl=False)
+                time.sleep(2)
         else:
             click.echo(
                 colorize_error(
@@ -126,6 +145,7 @@ def main(
                 )
             )
             exit(1)
+
 
         click.echo(
             colorize_result(
