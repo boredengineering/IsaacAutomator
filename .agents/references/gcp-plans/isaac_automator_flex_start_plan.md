@@ -1,8 +1,12 @@
-# Isaac Automator - Flex-start Integration Plan
+# Isaac Automator - Flex-start Integration & Spot Resilience Plan
+
+A comprehensive architectural plan for deploying and managing GCP Flex-start (Dynamic Workload Scheduler) and Spot GPU instances with automated lifecycle cycling, preemption detection, and off-instance state resilience.
+
+---
 
 ## 1. Terraform Variables Update
 
-Modify `terraform/gcp/variables.tf` to introduce the optional flag.
+Modify `src/terraform/gcp/variables.tf` and `src/terraform/gcp/ovkit/variables.tf` to introduce the optional flag.
 
 ```hcl
 variable "use_flex_start" {
@@ -12,9 +16,11 @@ variable "use_flex_start" {
 }
 ```
 
+---
+
 ## 2. Terraform Main Configuration Update
 
-Modify the `google_compute_instance` resource in `terraform/gcp/main.tf` using dynamic blocks to conditionally apply the Flex-start scheduling configuration. Note the addition of `automatic_restart = false`.
+Modify the `google_compute_instance` resource in `src/terraform/gcp/ovkit/main.tf` using dynamic blocks to conditionally apply the Flex-start scheduling configuration:
 
 ```hcl
   dynamic "scheduling" {
@@ -23,6 +29,7 @@ Modify the `google_compute_instance` resource in `terraform/gcp/main.tf` using d
       provisioning_model          = "FLEX_START"
       instance_termination_action = "STOP"
       automatic_restart           = false
+      on_host_maintenance         = "TERMINATE" # Mandatory for GPUs
 
       max_run_duration {
         seconds = 604800 # 7 days max allowed duration
@@ -33,90 +40,134 @@ Modify the `google_compute_instance` resource in `terraform/gcp/main.tf` using d
   dynamic "scheduling" {
     for_each = var.use_flex_start ? [] : [1]
     content {
-      provisioning_model = "STANDARD"
-      # automatic_restart defaults to true for STANDARD
+      provisioning_model  = "STANDARD"
+      on_host_maintenance = "TERMINATE" # Mandatory for GPUs
     }
   }
 ```
 
+---
+
 ## 3. CLI Wrapper Update
 
-Update the root `./deploy-gcp` bash script to accept the new flag and pass it as a Terraform variable.
+Update `deploy-gcp` to accept the `--flex-start / --no-flex-start` Click flag and inject it into `.tfvars.json`:
 
-```bash
-# Add to the argument parsing while loop
-      --flex-start)
-        USE_FLEX_START=true
-        shift
-        ;;
+```python
+# Add option definition to DeployGCPCommand
+self.params.insert(
+    self.param_index("ingress_cidrs"),
+    click.core.Option(
+        ("--flex-start/--no-flex-start",),
+        default=False,
+        show_default=True,
+        help="Deploy using GCP Flex-start (Dynamic Workload Scheduler).",
+    ),
+)
 
-# ... later in the script, right before terraform apply ...
-
-TF_VARS=""
-if [ "$USE_FLEX_START" = true ]; then
-  TF_VARS="$TF_VARS -var=\"use_flex_start=true\""
-fi
-
-# Apply the infrastructure
-terraform apply $TF_VARS -auto-approve
+# Pass into self.create_tfvars(...)
+"use_flex_start": self.params.get("flex_start", False),
 ```
 
-## 4. Flex-start VM Cycling Script
+---
 
-Create `cycle-vm.sh` in the repository root to automatically manage the 7-day limit. (This includes a python patch to safely parse ISO timestamps containing `Z`, ensuring cross-platform compatibility).
+## 4. Flex-start VM Cycling Utility (`cycle-vm`)
 
-```bash
-#!/bin/bash
-# cycle-vm.sh
-# Safely cycles a GCP Flex-start VM if it is approaching its 7-day maximum run duration.
+The `cycle-vm` tool inspects instance uptime using GCP `lastStartTimestamp` and automatically recycles the instance before reaching the 7-day hard limit:
 
-INSTANCE_NAME="renan-test"
-ZONE="us-central1-b"
-PROJECT="cybernetic-renan"
-MAX_AGE_SECONDS=561600 # 6.5 days in seconds
+```python
+# Uptime evaluation and cycle trigger in cycle-vm
+uptime_seconds = gcp_get_instance_uptime_seconds(instance_name, zone=zone, project=project)
+max_age_seconds = max_age_hours * 3600 # Default 156 hours (6.5 days)
 
-echo "Checking uptime for $INSTANCE_NAME in $ZONE..."
-
-# Fetch the last start timestamp in ISO format
-START_TIME_ISO=$(gcloud compute instances describe $INSTANCE_NAME \
-    --zone=$ZONE \
-    --project=$PROJECT \
-    --format="value(lastStartTimestamp)")
-
-if [ -z "$START_TIME_ISO" ]; then
-    echo "Error: Could not retrieve start time. Is the VM running?"
-    exit 1
-fi
-
-# Convert ISO timestamp to epoch seconds securely on both Mac and Linux
-START_EPOCH=$(python3 -c "import datetime; print(int(datetime.datetime.fromisoformat('$START_TIME_ISO'.replace('Z', '+00:00')).timestamp()))")
-CURRENT_EPOCH=$(date +%s)
-UPTIME_SECONDS=$((CURRENT_EPOCH - START_EPOCH))
-
-echo "Current uptime: $((UPTIME_SECONDS / 86400)) days, $(((UPTIME_SECONDS % 86400) / 3600)) hours."
-
-if [ "$UPTIME_SECONDS" -ge "$MAX_AGE_SECONDS" ]; then
-    echo "Warning: VM uptime has exceeded 6.5 days. Initiating cycle to reset Flex-start timer..."
-    
-    ./stop
-    echo "VM successfully stopped. Waiting 30 seconds for state to settle..."
-    sleep 30
-    
-    ./start
-    echo "VM successfully started. The 7-day limit has been reset."
-else
-    echo "VM is well within the 7-day limit. No action required."
-fi
+if uptime_seconds >= max_age_seconds:
+    click.echo("* VM uptime has exceeded threshold. Initiating cycle...")
+    gcp_stop_instance(instance_name, zone=zone, project=project)
+    time.sleep(settle_delay)
+    gcp_start_instance(instance_name, zone=zone, project=project)
 ```
 
-## 5. Usage Examples
+---
 
-### Deploying with Flex-start Enabled
+## 5. Spot Preemption & State Resilience Strategy
 
-Deploy a new GCP Isaac Workstation utilizing GCP Flex-start (Dynamic Workload Scheduler) to improve GPU availability:
+Because Spot/Preemptible instances can be stopped or deleted when cloud capacity shifts, the architecture must guarantee zero data loss.
 
+### 5.1 Industry Strategy Comparison
+
+| Strategy | Architecture | Pros | Cons / Trade-offs | Recommendation |
+| :--- | :--- | :--- | :--- | :--- |
+| **Periodic GCS Object Sync** | Background timer syncing `/home/ubuntu/results` to Google Cloud Storage (`gs://...`). | • Decoupled from VM & Zone.<br>• Resumable from *any* replacement VM in any region.<br>• Lowest cost storage ($0.020/GB/mo). | Requires background cron/timer. | **Primary State Backbone** (Industry Gold Standard) |
+| **30-Second Preemption Interceptor** | Daemon polling `http://metadata.google.internal/computeMetadata/v1/instance/preempted`. | • Traps preemption signal.<br>• Safely stops Isaac Sim and runs emergency flush. | 30 seconds is brief; cannot transfer massive multi-gigabyte models alone. | **Mandatory Safety Net** (Pairs with periodic sync) |
+| **`instance_termination_action = STOP`** | Configured in Terraform scheduling block. | • Preserves boot disk & static IP upon 7-day timer expiration. | Disk still incurs stopped storage cost; does not protect against zone failures. | **Current Baseline** (Implemented) |
+| **Decoupled Persistent Data Disk** | Secondary `google_compute_disk` mounted to `/data`. | • Fast local block I/O. | **Zonal Lock-in**: Cannot attach a `us-central1-a` disk to a new VM in `us-central1-b`. | Secondary (For massive datasets) |
+| **Scheduled GCP Disk Snapshots** | Automated `google_compute_resource_policy` snapshot schedule. | • Managed by GCP control plane. | Minimum interval is 1 hour; cannot capture live in-memory buffers. | Disaster Recovery only |
+
+---
+
+### 5.2 The 3-Pillar Resilience Architecture
+
+```mermaid
+flowchart TD
+    subgraph Pillar1["Pillar 1: Infrastructure Safety (Terraform)"]
+        Stop["instance_termination_action = STOP\n• Preserves boot disk on 7-day limit\n• allow_stopping_for_update = true"]
+    end
+
+    subgraph Pillar2["Pillar 2: Continuous Sync (Ansible)"]
+        Timer["Systemd Timer (Every 10 mins)\ngcloud storage rsync /results gs://bucket/\n• Offloads simulation results & checkpoints"]
+    end
+
+    subgraph Pillar3["Pillar 3: Preemption Interceptor (Daemon)"]
+        Preempt["Metadata Listener (5s Poll)\nhttp://metadata.google.internal/.../preempted\n• Sends SIGINT to Isaac Sim\n• Flushes last checkpoint & emergency sync"]
+    end
+
+    Pillar1 --> Workstation["GCP Spot / Flex Workstation"]
+    Pillar2 --> Workstation
+    Pillar3 --> Workstation
+    Workstation --> GCS["Google Cloud Storage Bucket (gs://...)"]
+```
+
+---
+
+## 6. Implementation Strategy & Roadmap
+
+### Phase 1: Cloud Storage Backup Role (Ansible)
+* **Goal**: Provide automated continuous backup of checkpoints and outputs.
+* **Implementation**:
+  * Create `src/ansible/roles/isaac-workstation/tasks/gcs-sync.yml`.
+  * Configure systemd timer: `isaac-backup.timer` (executes `gcloud storage rsync /home/ubuntu/results gs://{{ gcs_backup_bucket }}/{{ deployment_name }}/results/` every 10 minutes).
+  * Add automatic pull upon boot if `--restore` flag is enabled.
+
+### Phase 2: Metadata Preemption Interceptor Daemon (Ansible + Python)
+* **Goal**: Handle the 30-second preemption warning gracefully.
+* **Implementation**:
+  * Install `isaac-preempt-listener.service` via Ansible.
+  * Python daemon queries:
+    ```bash
+    curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/preempted
+    ```
+  * When `TRUE` is detected:
+    1. Sends `SIGINT` to Isaac Sim / Python training process to trigger model serialization.
+    2. Runs `gcloud storage rsync /home/ubuntu/results gs://... --delete-unmatched-destination-objects`.
+    3. Logs timestamp and preemption reason.
+
+### Phase 3: Terraform GCS Bucket & IAM Setup (Terraform)
+* **Goal**: Automate bucket provisioning and service account permissions.
+* **Implementation**:
+  * In `src/terraform/gcp/main.tf`, conditionally provision `google_storage_bucket.backup_store` (if `var.enable_gcs_backup` is true).
+  * Assign `roles/storage.objectUser` to the Compute Engine default service account.
+
+### Phase 4: CLI Integration (`./deploy-gcp` & `./restore-gcp`)
+* **Goal**: Expose unified flags to the operator.
+* **Implementation**:
+  * Add `--backup-bucket <bucket_name>` and `--auto-restore` to `./deploy-gcp`.
+  * Create `./restore-gcp <deployment_name>` to synchronize from GCS on demand.
+
+---
+
+## 7. Usage Examples
+
+### Deploy with Flex-start & GCS Backup
 ```bash
-# Non-interactive CLI deployment
 ./deploy-gcp \
   --deployment-name gcp-flex-ws \
   --zone us-central1-a \
@@ -127,39 +178,11 @@ Deploy a new GCP Isaac Workstation utilizing GCP Flex-start (Dynamic Workload Sc
   --existing replace
 ```
 
-### Checking VM Uptime & Flex-start Status
-
-Inspect the running instance to view elapsed uptime, days remaining before the 7-day max duration, and whether cycling is needed:
-
+### Inspect Uptime & Cycle
 ```bash
-# Check uptime without stopping or modifying state
+# Check uptime without stopping
 ./cycle-vm gcp-flex-ws --check-only
-```
 
-### Automated Cycling (Resetting 7-Day Limit)
-
-Run the cycling utility periodically (or via a cron / scheduled job) to automatically stop and restart the instance if uptime exceeds 6.5 days (156 hours):
-
-```bash
-# Cycles only if uptime >= 6.5 days (156h threshold)
+# Automated cycle (if uptime >= 6.5 days)
 ./cycle-vm gcp-flex-ws
-
-# Force an immediate cycle and quick-start
-./cycle-vm gcp-flex-ws --force --quick
-
-# Custom threshold (e.g. 5 days / 120 hours)
-./cycle-vm gcp-flex-ws --max-age-hours 120
 ```
-
-### Standard Pause & Resume
-
-Pause compute billing when idle and resume when needed:
-
-```bash
-# Pause compute billing (preserves disk and static IP)
-./stop gcp-flex-ws
-
-# Resume compute and re-run autorun / apps
-./start gcp-flex-ws --quick
-```
-
