@@ -10,3 +10,4 @@ Catalog of high-level project specifications, architecture documents, and goal d
 | [`docker-images/kasmvnc01.Dockerfile`](./docker-images/kasmvnc01.Dockerfile) | Kasm VNC Ubuntu 22.04 Dockerfile with CUDA 11.8, VirtualGL 3D acceleration & Python 3.10 | Reference Only |
 | [`runpod/runpod-agent-notes.md`](./runpod/runpod-agent-notes.md) | Agent skills guide for RunPod ecosystem, CLI installation, API keys, and skills router | Reference Only |
 | [`runpod/runpod-mcp-notes.md`](./runpod/runpod-mcp-notes.md) | RunPod API & Documentation MCP Server configuration guide for AI coding agents | Reference Only |
+| [`docs/readm_draft.md`](./docs/readm_draft.md) | Modernized README draft covering DevContainer, Spot resilience, GCS backups, and Flex-start cycling | Active Draft |
