@@ -155,6 +155,32 @@ class DeployGCPCommand(DeployCommand):
             ),
         )
 
+        # --backup-bucket
+
+        self.params.insert(
+            # insert after --flex-start option
+            self.param_index("flex_start") + 1,
+            click.core.Option(
+                ("--backup-bucket",),
+                default="",
+                show_default=False,
+                help="GCS bucket name for continuous checkpoints & preemption backups.",
+            ),
+        )
+
+        # --auto-restore/--no-auto-restore
+
+        self.params.insert(
+            # insert after --backup-bucket option
+            self.param_index("backup_bucket") + 1,
+            click.core.Option(
+                ("--auto-restore/--no-auto-restore",),
+                default=False,
+                show_default=True,
+                help="Automatically restore existing results/checkpoints from GCS on startup.",
+            ),
+        )
+
 
 class GCPDeployer(Deployer):
     """

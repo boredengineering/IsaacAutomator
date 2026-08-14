@@ -1,0 +1,11 @@
+[Unit]
+Description=Periodic Isaac Workstation GCS Backup
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User={{ ansible_user }}
+ExecStart=/usr/bin/gcloud storage rsync {{ results_dir }} gs://{{ gcs_backup_bucket }}/{{ deployment_name }}/results/ --recursive
+StandardOutput=journal
+StandardError=journal

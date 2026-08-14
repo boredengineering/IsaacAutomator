@@ -14,16 +14,8 @@
 # limitations under the License.
 # endregion
 
-- name: Wallpaper
-  import_tasks: wallpaper.yml
-  tags: __isaac_wallpaper
+---
 
-- name: Resilience & Preemption Protection
-  import_tasks: resilience.yml
-
-- name: Autorun
-  import_tasks: autorun.yml
-
-- name: Restart NX server
-  meta: noop
-  notify: nx_restart
+- name: Reload Systemd
+  ansible.builtin.systemd:
+    daemon_reload: true

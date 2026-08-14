@@ -1,0 +1,101 @@
+# region copyright
+# Copyright 2023-2026 NVIDIA Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# endregion
+
+---
+
+- name: Ensure results directory exists
+  ansible.builtin.file:
+    path: "{{ results_dir }}"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0755"
+  tags:
+    - on_stop_start
+    - __autorun
+    - skip_in_image
+
+- name: Install GCP Preemption Listener Daemon
+  ansible.builtin.copy:
+    src: preempt-listener.py
+    dest: /usr/local/bin/preempt-listener.py
+    owner: root
+    group: root
+    mode: "0755"
+  when: cloud == "gcp"
+
+- name: Deploy Preemption Listener Service Unit
+  ansible.builtin.template:
+    src: isaac-preempt-listener.service.j2
+    dest: /etc/systemd/system/isaac-preempt-listener.service
+    owner: root
+    group: root
+    mode: "0644"
+  when: cloud == "gcp"
+  notify: Reload Systemd
+
+- name: Enable and Start Preemption Listener
+  ansible.builtin.systemd:
+    name: isaac-preempt-listener.service
+    state: started
+    enabled: true
+    daemon_reload: true
+  when: cloud == "gcp"
+  tags:
+    - skip_in_image
+    - on_stop_start
+
+- name: Deploy GCS Backup Service and Timer
+  when: cloud == "gcp" and gcs_backup_bucket is defined and gcs_backup_bucket | length > 0
+  block:
+    - name: Deploy GCS Backup Service Unit
+      ansible.builtin.template:
+        src: isaac-backup.service.j2
+        dest: /etc/systemd/system/isaac-backup.service
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Reload Systemd
+
+    - name: Deploy GCS Backup Timer Unit
+      ansible.builtin.template:
+        src: isaac-backup.timer.j2
+        dest: /etc/systemd/system/isaac-backup.timer
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Reload Systemd
+
+    - name: Enable and Start GCS Backup Timer
+      ansible.builtin.systemd:
+        name: isaac-backup.timer
+        state: started
+        enabled: true
+        daemon_reload: true
+      tags:
+        - skip_in_image
+        - on_stop_start
+
+    - name: Auto-Restore from GCS on First Boot
+      ansible.builtin.command: >
+        gcloud storage rsync gs://{{ gcs_backup_bucket }}/{{ deployment_name }}/results/ {{ results_dir }} --recursive
+      become_user: "{{ ansible_user }}"
+      register: restore_result
+      changed_when: restore_result.rc == 0
+      failed_when: false
+      when: gcs_auto_restore | default(false) | bool
+      tags:
+        - skip_in_image

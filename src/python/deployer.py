@@ -406,6 +406,10 @@ class Deployer:
         # add config
         ansible_vars["config"] = self.config
 
+        # default resilience parameters
+        ansible_vars.setdefault("gcs_backup_bucket", self.params.get("backup_bucket", "") or "")
+        ansible_vars.setdefault("gcs_auto_restore", self.params.get("auto_restore", False))
+
         # get missing values from terraform
         for k in [
             "isaac_workstation_ip",

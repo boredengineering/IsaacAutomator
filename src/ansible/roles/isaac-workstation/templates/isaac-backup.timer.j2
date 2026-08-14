@@ -1,0 +1,11 @@
+[Unit]
+Description=Timer for Periodic Isaac Workstation GCS Backup
+After=network-online.target
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec={{ gcs_backup_interval_minutes }}min
+Unit=isaac-backup.service
+
+[Install]
+WantedBy=timers.target

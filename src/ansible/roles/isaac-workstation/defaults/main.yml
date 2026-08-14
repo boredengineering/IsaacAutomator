@@ -19,3 +19,11 @@ deployment_name:
 uploads_dir: /home/{{ ansible_user }}/uploads
 
 launch_scripts_dir: /home/{{ ansible_user }}
+
+results_dir: /home/{{ ansible_user }}/results
+
+gcs_backup_bucket: ""
+
+gcs_backup_interval_minutes: 10
+
+gcs_auto_restore: false

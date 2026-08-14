@@ -1,0 +1,118 @@
+#!/usr/bin/env python3
+
+# region copyright
+# Copyright 2023-2026 NVIDIA Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# endregion
+
+"""
+Restores simulation results and checkpoints from GCS backup bucket.
+"""
+
+import os
+import sys
+import click
+
+from src.python.config import c as config
+from src.python.utils import (
+    colorize_error,
+    colorize_info,
+    colorize_result,
+    deployments,
+    format_cloud_name,
+    gcp_login,
+    read_meta,
+    read_tf_output,
+    shell_command,
+)
+
+
+@click.command()
+@click.argument(
+    "deployment_name",
+    required=True,
+    type=click.Choice(deployments()),
+)
+@click.option(
+    "--bucket",
+    default="",
+    help="Override GCS backup bucket name (defaults to deployment metadata).",
+)
+@click.option(
+    "--target",
+    type=click.Choice(["remote", "local"]),
+    default="remote",
+    show_default=True,
+    help="Restore target: 'remote' (onto running workstation) or 'local' (to operator results folder).",
+)
+@click.option(
+    "--debug/--no-debug",
+    default=False,
+    show_default=True,
+    help="Enable debug output.",
+)
+def main(deployment_name: str, bucket: str, target: str, debug: bool):
+    meta = read_meta(deployment_name, debug)
+    cloud = read_tf_output(deployment_name, "cloud", verbose=debug)
+
+    if cloud != "gcp":
+        click.echo(
+            colorize_error(
+                f"* GCS restoration is for GCP deployments, but '{deployment_name}' is on {format_cloud_name(cloud)}."
+            )
+        )
+        sys.exit(1)
+
+    gcs_bucket = bucket or meta.get("params", {}).get("backup_bucket") or meta.get("input_params", {}).get("backup_bucket")
+    if not gcs_bucket:
+        click.echo(
+            colorize_error(
+                f"* Error: No backup bucket specified. Pass --bucket <bucket_name> or deploy with --backup-bucket."
+            )
+        )
+        sys.exit(1)
+
+    gcs_source = f"gs://{gcs_bucket.rstrip('/')}/{deployment_name}/results/"
+    click.echo(colorize_info(f"* Sourcing backup from: {gcs_source}"))
+
+    gcp_login(verbose=debug)
+
+    if target == "local":
+        local_dest = f"{config['app_dir']}/results/{deployment_name}/"
+        os.makedirs(local_dest, exist_ok=True)
+        click.echo(colorize_info(f"* Syncing from GCS to local directory: {local_dest}..."))
+        cmd = f"gcloud storage rsync {gcs_source} {local_dest} --recursive"
+        shell_command(cmd, verbose=True, exit_on_error=True)
+        click.echo(colorize_result(f"* Local restore complete: {local_dest}"))
+    else:
+        ip = read_tf_output(deployment_name, "isaac_workstation_ip", verbose=debug)
+        ssh_key = f"{config['state_dir']}/{deployment_name}/key.pem"
+        ssh_user = config["default_ssh_user"]
+
+        if not ip or ip == "NA":
+            click.echo(colorize_error(f"* Error: Workstation IP not available for '{deployment_name}'. Is it running?"))
+            sys.exit(1)
+
+        click.echo(colorize_info(f"* Syncing from GCS onto remote workstation ({ip})..."))
+        remote_cmd = f"gcloud storage rsync {gcs_source} /home/{ssh_user}/results/ --recursive"
+        ssh_cmd = f"ssh -i {ssh_key} -o StrictHostKeyChecking=no {ssh_user}@{ip} '{remote_cmd}'"
+        shell_command(ssh_cmd, verbose=True, exit_on_error=True)
+        click.echo(colorize_result(f"* Remote workstation restore complete."))
+
+
+if __name__ == "__main__":
+    if os.path.exists("/.dockerenv"):
+        main()
+    else:
+        shell_command(f"./run '{' '.join(sys.argv)}'", verbose=True)
