@@ -14,18 +14,23 @@
 # limitations under the License.
 # endregion
 
+import os
 from typing import Any
 
 c: dict[str, Any] = {}
 
 # paths
-c["app_dir"] = "/app"
-c["state_dir"] = "/app/state"
-c["results_dir"] = "/app/results"
-c["uploads_dir"] = "/app/uploads"
-c["tests_dir"] = "/app/src/tests"
-c["ansible_dir"] = "/app/src/ansible"
-c["terraform_dir"] = "/app/src/terraform"
+_repo_root = os.environ.get(
+    "APP_DIR",
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")),
+)
+c["app_dir"] = _repo_root
+c["state_dir"] = f"{_repo_root}/state"
+c["results_dir"] = f"{_repo_root}/results"
+c["uploads_dir"] = f"{_repo_root}/uploads"
+c["tests_dir"] = f"{_repo_root}/src/tests"
+c["ansible_dir"] = f"{_repo_root}/src/ansible"
+c["terraform_dir"] = f"{_repo_root}/src/terraform"
 
 # app image name
 c["app_image_name"] = "isaac_automator"
