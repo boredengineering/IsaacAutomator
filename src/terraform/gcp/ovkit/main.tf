@@ -24,6 +24,10 @@ resource "google_compute_instance" "default" {
   # allows to change instance type without destriying everything
   allow_stopping_for_update = true
 
+  timeouts {
+    create = "60m"
+  }
+
   dynamic "scheduling" {
     for_each = var.use_flex_start ? [1] : []
     content {
