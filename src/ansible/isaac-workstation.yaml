@@ -29,6 +29,7 @@
 
 - name: Deploy Isaac Workstation
   hosts: isaac_workstation
+  become: true
   gather_facts: true
   vars:
       in_china: False

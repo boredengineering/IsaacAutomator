@@ -5,6 +5,7 @@ cloud="{cloud}"
 in_china={in_china}
 ssh_port={ssh_port}
 ansible_user="{config[default_ssh_user]}"
+ansible_become=true
 vnc_password="{vnc_password}"
 deployment_name="{deployment_name}"
 isaaclab_git_checkpoint="{isaaclab}"

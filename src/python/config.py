@@ -32,6 +32,9 @@ c["tests_dir"] = f"{_repo_root}/src/tests"
 c["ansible_dir"] = f"{_repo_root}/src/ansible"
 c["terraform_dir"] = f"{_repo_root}/src/terraform"
 
+# ensure Ansible picks up the repository ansible.cfg
+os.environ["ANSIBLE_CONFIG"] = f"{_repo_root}/src/ansible/ansible.cfg"
+
 # app image name
 c["app_image_name"] = "isaac_automator"
 
