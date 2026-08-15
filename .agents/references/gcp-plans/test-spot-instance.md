@@ -20,7 +20,7 @@ This reference document records the full parameters, cloud infrastructure, and o
 | **VPC & Firewall** | `isaacautomator-test03-isaac-workstation-network` | Ports 22 (SSH), 5900 (VNC), 4000 (NoMachine), 8211/47995-49100 (WebRTC) |
 | **Base OS** | Ubuntu 22.04 LTS (`jammy`) | `ubuntu-2204-jammy-v20251023` |
 | **User Account** | `ubuntu` | Key-based authentication via `state/test03/key.pem` |
-| **Current Live Status** | **`RUNNING`** | Provisioned via DWS in `us-central1-b`; SSH verified; GPU detected (`05:00.0 NVIDIA Device 2bb5`) |
+| **Current Live Status** | **`RUNNING & FULLY CONFIGURED`** | All 137 Ansible tasks completed (`failed=0`). NVIDIA 595.84 / CUDA 13.2 / RTX PRO 6000 (98GB VRAM) verified. Isaac Sim, Isaac Lab, noVNC desktop, and preempt-listener watchdog active. |
 
 ---
 
