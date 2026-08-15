@@ -107,7 +107,61 @@ All local state artifacts are preserved in [`state/test03/`](file:///workspaces/
 
 ---
 
-## 5. Operations & Runbook
+---
+
+## 5. Provisioning Lifecycle & Dynamic Workload Scheduler (DWS) Mechanics
+
+### Why the VM Enters `PROVISIONING`
+* When deploying with `FLEX_START`, GCP does not fail immediately if GPU hardware is temporarily occupied. Instead, the **Dynamic Workload Scheduler (DWS)** places the VM in an allocation queue in `us-central1-b`.
+* The VM remains in `PROVISIONING` while Google locates a physical hypervisor host with matching capacity (48 vCPUs, 192 GB RAM, 1x NVIDIA RTX PRO 6000 GPU, Hyperdisk Balanced storage).
+* **Billing Note:** You are **not billed** for GPU compute while the instance is queued in `PROVISIONING`.
+* **Queue Duration:** Normal queueing takes **10 to 30 minutes**; during peak datacenter demand, it can remain queued for **1 to 2+ hours** until capacity frees up.
+
+### Terraform Timeout Extension
+Because Terraform's default creation timeout is 20 minutes, `src/terraform/gcp/ovkit/main.tf` was updated with:
+```hcl
+timeouts {
+  create = "60m"
+}
+```
+This gives GCP DWS up to 60 minutes to complete hardware allocation before Terraform reports a timeout.
+
+---
+
+## 6. How Ansible Installs the Software Stack
+
+### Why Ansible Waits for `RUNNING`
+Ansible operates agentlessly over SSH (`136.65.140.205:22`) using the generated private key [`state/test03/key.pem`](../state/test03/key.pem). While the VM is in `PROVISIONING`, the OS kernel and SSH daemon have not booted yet.
+
+### Staged Artifacts Ready in `state/test03/`
+All prerequisites for Ansible are pre-generated and stored in `state/test03/`:
+1. **[`.inventory`](../state/test03/.inventory)**: Maps the target host `136.65.140.205`, user `ubuntu`, and key path.
+2. **[`key.pem`](../state/test03/key.pem)**: RSA 4096 private key (chmod `0600`).
+3. **[`meta.json`](../state/test03/meta.json)**: Records all software version tags (Isaac Sim `latest`, Isaac Lab `latest`, etc.).
+4. **[`.tfstate`](../state/test03/.tfstate)**: Complete record of all 12 cloud resources.
+
+### Triggering the Installation
+The moment GCP transitions the VM to `RUNNING`, run:
+
+```bash
+./deploy-gcp test03 --existing run_ansible
+```
+
+*(Alternatively: `./repair test03 --no-terraform`)*
+
+### Ansible Execution Sequence
+When triggered, Ansible performs the complete workstation setup automatically:
+1. **SSH Handshake & Cloud-Init:** Polls port 22 until the SSH daemon is ready and cloud-init finishes base package updates.
+2. **NVIDIA Driver Stack:** Automatically detects the NVIDIA RTX PRO 6000 GPU and installs NVIDIA Driver 580 Server + CUDA runtime.
+3. **Desktop & GUI Streaming:** Installs XFCE desktop environment, VirtualGL hardware acceleration, noVNC browser server, and NoMachine streaming server.
+4. **Isaac Robotics Suite:** Clones and configures Isaac Sim, Isaac Lab, and Isaac Lab Arena into `/home/ubuntu/workspace/`.
+5. **Spot Preemption & Backup Resilience:**
+   - Deploys `preempt-listener.py` and starts `isaac-preempt-listener.service` (30s preemption watchdog).
+   - Deploys and enables `isaac-backup.timer` (10-minute continuous background GCS backup).
+
+---
+
+## 7. Operations & Runbook
 
 ### Checking Live GCP Status
 ```bash
@@ -154,3 +208,4 @@ Once the VM is in `RUNNING` status:
 # Tear down and destroy all cloud resources when finished:
 ./destroy test03 --yes
 ```
+
