@@ -5,7 +5,7 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/python3 /usr/local/bin/preempt-listener.py --results-dir {{ results_dir }} --gcs-bucket {{ gcs_backup_bucket }} --deployment-name {{ deployment_name }} --poll-interval 5
+ExecStart=/usr/bin/python3 /usr/local/bin/preempt-listener.py --results-dir {{ results_dir }}{% if gcs_backup_bucket is defined and gcs_backup_bucket | length > 0 %} --gcs-bucket {{ gcs_backup_bucket }}{% endif %} --deployment-name {{ deployment_name }} --poll-interval 5
 Restart=always
 RestartSec=5
 User=root
