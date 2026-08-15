@@ -24,7 +24,18 @@ This reference document records the full parameters, cloud infrastructure, and o
 
 ---
 
-## 2. Command Executed
+## 2. Credentials & Access Passwords
+
+| Access Method | Username | Password / Key | Direct Connection URL / Command |
+| :--- | :--- | :--- | :--- |
+| **noVNC (Web Desktop)** | N/A | `iVkyHnIAMu` | `http://136.65.140.205:8080/vnc.html?password=iVkyHnIAMu&autoconnect=true` |
+| **SSH Shell** | `ubuntu` | `state/test03/key.pem` | `ssh -i state/test03/key.pem ubuntu@136.65.140.205` or `./ssh test03` |
+| **System User / Sudo** | `ubuntu` | `aMyxt19ytG` | Sudo elevation password on the cloud VM |
+| **NoMachine (3D Viewport)** | `ubuntu` | `state/test03/key.pem` (or `aMyxt19ytG`) | Host `136.65.140.205`, Port `4000` |
+
+---
+
+## 3. Command Executed
 
 The deployment was launched non-interactively with the following parameters:
 
@@ -48,7 +59,7 @@ The deployment was launched non-interactively with the following parameters:
 
 ---
 
-## 3. Scheduling & Architecture Details
+## 4. Scheduling & Architecture Details
 
 ### Flex-start Dynamic Workload Scheduling
 The instance was provisioned with GCP Dynamic Workload Scheduler (Flex-start) in Terraform (`src/terraform/gcp/ovkit/main.tf`):
@@ -84,7 +95,7 @@ service_account {
 
 ---
 
-## 4. State Files & Local Artifacts
+## 5. State Files & Local Artifacts
 
 All local state artifacts are preserved in [`state/test03/`](file:///workspaces/IsaacAutomator/state/test03/):
 
@@ -108,9 +119,7 @@ All local state artifacts are preserved in [`state/test03/`](file:///workspaces/
 
 ---
 
----
-
-## 5. Provisioning Lifecycle & Dynamic Workload Scheduler (DWS) Mechanics
+## 6. Provisioning Lifecycle & Dynamic Workload Scheduler (DWS) Mechanics
 
 ### Why the VM Enters `PROVISIONING`
 * When deploying with `FLEX_START`, GCP does not fail immediately if GPU hardware is temporarily occupied. Instead, the **Dynamic Workload Scheduler (DWS)** places the VM in an allocation queue in `us-central1-b`.
@@ -129,7 +138,7 @@ This gives GCP DWS up to 60 minutes to complete hardware allocation before Terra
 
 ---
 
-## 6. How Ansible Installs the Software Stack
+## 7. How Ansible Installs the Software Stack
 
 ### Why Ansible Waits for `RUNNING`
 Ansible operates agentlessly over SSH (`136.65.140.205:22`) using the generated private key [`state/test03/key.pem`](../state/test03/key.pem). While the VM is in `PROVISIONING`, the OS kernel and SSH daemon have not booted yet.
@@ -162,7 +171,7 @@ When triggered, Ansible performs the complete workstation setup automatically:
 
 ---
 
-## 7. Operations & Runbook
+## 8. Operations & Runbook
 
 ### Checking Live GCP Status
 ```bash
