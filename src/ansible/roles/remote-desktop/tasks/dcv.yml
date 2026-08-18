@@ -1,0 +1,81 @@
+# region copyright
+# Copyright 2023-2026 NVIDIA Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# endregion
+---
+# Install and configure NICE DCV server for hardware-accelerated GPU desktop streaming
+
+- name: Add NICE DCV GPG key
+  apt_key:
+    url: "https://d1c2596061whyc.cloudfront.net/NICE-GPG-KEY"
+    state: present
+
+- name: Add NICE DCV repository
+  apt_repository:
+    repo: "deb https://d1c2596061whyc.cloudfront.net/{{ ansible_distribution_release }} {{ ansible_distribution_release }} main"
+    state: present
+    filename: nice-dcv
+
+- name: Install NICE DCV server packages
+  apt:
+    name:
+      - nice-dcv-server
+      - nice-xdcv
+    state: present
+    update_cache: yes
+
+- name: Enable DCV GPU acceleration (dcv-gl)
+  command: dcvgladmin enable
+  register: dcvgl_result
+  changed_when: "'already enabled' not in dcvgl_result.stdout"
+  failed_when: false
+
+- name: Configure NICE DCV (/etc/dcv/dcv.conf)
+  template:
+    src: dcv.conf.j2
+    dest: /etc/dcv/dcv.conf
+    mode: "0644"
+    owner: root
+    group: root
+
+- name: Ensure dcvserver service is enabled and started
+  systemd:
+    name: dcvserver
+    enabled: yes
+    state: restarted
+
+- name: Add automatic DCV session creation service
+  copy:
+    dest: /etc/systemd/system/dcv-session.service
+    mode: "0644"
+    content: |
+      [Unit]
+      Description=NICE DCV Automatic Console Session
+      After=dcvserver.service
+      Requires=dcvserver.service
+
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/bin/dcv create-session --owner {{ ansible_user }} --user {{ ansible_user }} console-session
+      RemainAfterExit=yes
+
+      [Install]
+      WantedBy=multi-user.target
+
+- name: Enable and start DCV session service
+  systemd:
+    name: dcv-session
+    daemon_reload: yes
+    enabled: yes
+    state: restarted

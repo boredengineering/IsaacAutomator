@@ -4,7 +4,7 @@
 
 Isaac Automator deploys **NVIDIA Isaac Sim**, **Isaac Lab**, and **Isaac Lab Arena** to public clouds (AWS, GCP, Azure, and Alibaba Cloud) as ready-to-use GPU **Isaac Workstations** in minutes.
 
-The result is a fully configured remote desktop cloud VM with NVIDIA drivers, Isaac software, GUI streaming (noVNC browser & NoMachine 3D), automated lifecycle management (start/stop/destroy/cycle), and automated state resilience for Spot and Flex-start cost savings.
+The result is a fully configured remote desktop cloud VM with NVIDIA drivers, Isaac software, high-performance GUI and 3D streaming (noVNC, KasmVNC, NoMachine, NICE DCV, xrdp, Sunshine+Moonlight, Parsec), automated lifecycle management (start/stop/destroy/cycle), and automated state resilience for Spot and Flex-start cost savings.
 
 ---
 
@@ -21,6 +21,17 @@ The result is a fully configured remote desktop cloud VM with NVIDIA drivers, Is
   - [Azure](#azure)
   - [Alibaba Cloud](#alibaba-cloud)
   - [Common Deploy Options](#common-deploy-options)
+- [Remote Desktop & Interactive 3D Streaming](#remote-desktop--interactive-3d-streaming)
+  - [Supported Providers](#supported-providers)
+  - [1. noVNC (Standard HTML5 Web Desktop)](#1-novnc-standard-html5-web-desktop)
+  - [2. KasmVNC (WebRTC Browser Desktop with Native Clipboard)](#2-kasmvnc-webrtc-browser-desktop-with-native-clipboard)
+  - [3. NoMachine (Hardware-Accelerated 3D Viewport)](#3-nomachine-hardware-accelerated-3d-viewport)
+  - [4. NICE DCV (Enterprise GPU Streaming)](#4-nice-dcv-enterprise-gpu-streaming)
+  - [5. xrdp (Native Windows / Mac Remote Desktop)](#5-xrdp-native-windows--mac-remote-desktop)
+  - [6. Sunshine + Moonlight (Ultra-Low Latency 60/120 FPS Streaming)](#6-sunshine--moonlight-ultra-low-latency-60120-fps-streaming)
+  - [7. Parsec (Interactive Streaming Daemon)](#7-parsec-interactive-streaming-daemon)
+  - [8. SSH Shell](#8-ssh-shell)
+- [Reusing Existing Machines & In-Place Updates](#reusing-existing-machines--in-place-updates)
 - [Spot Preemption Resilience & State Backups (GCP)](#spot-preemption-resilience--state-backups-gcp)
   - [30-Second Preemption Watchdog](#30-second-preemption-watchdog)
   - [10-Minute Continuous Backup Timer](#10-minute-continuous-backup-timer)
@@ -28,16 +39,12 @@ The result is a fully configured remote desktop cloud VM with NVIDIA drivers, Is
 - [Pausing, Resuming & VM Cycling](#pausing-resuming--vm-cycling)
   - [Stop and Start](#stop-and-start)
   - [GCP Flex-start 7-Day VM Cycling (`./cycle-vm`)](#gcp-flex-start-7-day-vm-cycling-cycle-vm)
-- [Connecting to Your Workstation](#connecting-to-your-workstation)
-  - [Browser Remote Desktop (noVNC)](#browser-remote-desktop-novnc)
-  - [Live 3D Viewport (NoMachine)](#live-3d-viewport-nomachine)
-  - [SSH Shell](#ssh-shell)
 - [Data Transfer & Standard Folders](#data-transfer--standard-folders)
 - [Maintenance, Repair & Teardown](#maintenance-repair--teardown)
   - [Repairing Deployments](#repairing-deployments)
   - [Tearing Down Deployments](#tearing-down-deployments)
   - [Pre-Built Golden Images](#pre-built-golden-images)
-- [Complete CLI Options Reference](#complete-cli-options-reference)
+- [License](#license)
 
 ---
 
@@ -47,13 +54,13 @@ The result is a fully configured remote desktop cloud VM with NVIDIA drivers, Is
 # Option 1: Using VS Code DevContainer
 # Simply open the repo in VS Code -> "Reopen in Container" -> Run commands directly:
 ./deploy-gcp my-workstation --flex-start --backup-bucket gs://my-isaac-backups/
-./novnc my-workstation        # stream desktop in browser
+./novnc my-workstation         # stream desktop in browser
 ./destroy my-workstation --yes # clean up when done
 
 # Option 2: Using Local Docker CLI
-./build                       # build Isaac Automator tool container (one-time)
-./run                         # enter container environment
-./deploy-aws my-workstation   # follow prompts to deploy
+./build                        # build Isaac Automator tool container (one-time)
+./run                          # enter container environment
+./deploy-aws my-workstation    # follow prompts to deploy
 ./novnc my-workstation
 ./destroy my-workstation --yes
 ```
@@ -115,6 +122,7 @@ Isaac Automator provides first-class, non-interactive instructions and native sk
   --instance-type g6e.2xlarge \
   --isaacsim latest \
   --isaaclab latest \
+  --remote-desktop standard,dcv \
   --demos quadruped-locomotion
 ```
 
@@ -131,6 +139,7 @@ Isaac Automator provides first-class, non-interactive instructions and native sk
   --isaac-workstation-gpu-count 1 \
   --flex-start \
   --backup-bucket gs://my-bucket/backups \
+  --remote-desktop standard,kasmvnc \
   --auto-restore
 ```
 
@@ -143,7 +152,8 @@ Isaac Automator provides first-class, non-interactive instructions and native sk
 ```sh
 ./deploy-azure <deployment-name> \
   --region westus3 \
-  --instance-type Standard_NV36ads_A10_v5
+  --instance-type Standard_NV36ads_A10_v5 \
+  --remote-desktop standard,xrdp
 ```
 
 ### Alibaba Cloud
@@ -158,6 +168,7 @@ Isaac Automator provides first-class, non-interactive instructions and native sk
 
 | Option | Description | Default |
 | :--- | :--- | :--- |
+| `--remote-desktop` | Remote desktop & streaming providers (`standard`, `kasmvnc`, `dcv`, `xrdp`, `sunshine`, `parsec`, `all`, `no`) | `standard` |
 | `--isaacsim` | Git ref for Isaac Sim, or `latest` / `no` | `latest` |
 | `--isaaclab` | Git ref for Isaac Lab, or `latest` / `no` | `latest` |
 | `--isaaclab-arena` | Git ref for Isaac Lab Arena, or `latest` / `no` | `latest` |
@@ -167,6 +178,119 @@ Isaac Automator provides first-class, non-interactive instructions and native sk
 | `--auto-restore` | *(GCP only)* Restore workspace automatically from backup bucket on deployment | `no` |
 | `--ingress-cidrs` | Allowed IP CIDR blocks (use `myip` for current IP) | `0.0.0.0/0` |
 | `--existing` | Action if name exists: `ask`, `repair`, `modify`, `replace`, `run_ansible` | `ask` |
+
+---
+
+## Remote Desktop & Interactive 3D Streaming
+
+Isaac Automator provides multi-provider remote desktop support. All options attach directly to the primary hardware-accelerated NVIDIA GPU display buffer (`DISPLAY=:0`), ensuring full compatibility with Omniverse Kit and Vulkan hardware rendering.
+
+### Supported Providers
+
+| Provider | Access Mode | Port(s) | Primary Use Case |
+| :--- | :--- | :--- | :--- |
+| **noVNC** | Browser (HTML5) | `6080` (TCP) | Default lightweight web desktop. |
+| **KasmVNC** | Browser (WebRTC HTTPS) | `8444` (TCP) | Modern browser streaming with **native copy-paste (`Ctrl+V`)**. |
+| **NoMachine** | Native Client | `4000` (TCP/UDP) | Default high-performance 3D viewport rendering over NX protocol. |
+| **NICE DCV** | Browser & Client | `8443` (TCP/UDP) | Enterprise GPU streaming (100% free on AWS EC2 instances). |
+| **xrdp** | Native Windows/Mac RDP | `3389` (TCP) | Zero-client-install Microsoft Remote Desktop console mirror. |
+| **Sunshine** | Moonlight Client | `47984-48010`, `47990` | Sub-10ms, 60/120 FPS NVENC streaming for robotics teleoperation. |
+| **Parsec** | Native Client | `8000-8040` (UDP) | Low-latency interactive cloud streaming daemon. |
+
+---
+
+### 1. noVNC (Standard HTML5 Web Desktop)
+
+Launch a standard browser session:
+```sh
+./novnc <deployment-name>
+```
+* **URL:** `http://<ip>:6080/vnc.html?host=<ip>&port=6080&password=<pw>&resize=scale`
+* Runs out-of-the-box with zero client software installation required.
+
+---
+
+### 2. KasmVNC (WebRTC Browser Desktop with Native Clipboard)
+
+Deploy or enable with `--remote-desktop standard,kasmvnc` (or `kasmvnc`):
+* **URL:** `https://<ip>:8444`
+* **Authentication:** Username `ubuntu`, VNC password from `state/<name>/meta.json`.
+* **Clipboard:** Full bidirectional clipboard synchronization natively via the browser's Async Clipboard API (`Ctrl+C` and `Ctrl+V` work directly without clipboard sidebars).
+
+---
+
+### 3. NoMachine (Hardware-Accelerated 3D Viewport)
+
+* **Client:** Download from [NoMachine](https://downloads.nomachine.com/).
+* **Host:** `<instance-ip>:4000`
+* **Authentication:** Select *"Use key-based authentication with a key you provide"* $\to$ point to `state/<deployment-name>/key.pem`, and enter username `ubuntu`.
+* **3D Acceleration:** Directly captures the NVIDIA Vulkan viewport for real-time robot visualization.
+
+---
+
+### 4. NICE DCV (Enterprise GPU Streaming)
+
+Deploy or enable with `--remote-desktop standard,dcv` (or `dcv`):
+* **Web Browser:** `https://<ip>:8443`
+* **Native Client:** Connect to `<ip>:8443` using the NICE DCV client.
+* **Authentication:** Username `ubuntu`, system password from `state/<name>/meta.json`.
+* **Licensing:** Free on AWS EC2 instances via instance metadata verification.
+
+---
+
+### 5. xrdp (Native Windows / Mac Remote Desktop)
+
+Deploy or enable with `--remote-desktop standard,xrdp` (or `xrdp`):
+* **Client:** Open built-in **Remote Desktop Connection** (`mstsc.exe` on Windows) or **Microsoft Remote Desktop** (macOS).
+* **Host:** `<ip>:3389`
+* **Session:** Mirrors the active GPU console session (`DISPLAY=:0`), ensuring Vulkan apps run with hardware acceleration.
+
+---
+
+### 6. Sunshine + Moonlight (Ultra-Low Latency 60/120 FPS Streaming)
+
+Deploy or enable with `--remote-desktop standard,sunshine` (or `sunshine`):
+1. Install and open the [Moonlight client](https://moonlight-stream.org/) on your PC.
+2. Add host `<ip>`.
+3. Open `https://<ip>:47990` in your web browser and enter the 4-digit pairing PIN displayed by Moonlight.
+4. Enjoy sub-10ms ultra-low latency streaming powered by NVIDIA NVENC hardware encoding.
+
+---
+
+### 7. Parsec (Interactive Streaming Daemon)
+
+Deploy or enable with `--remote-desktop standard,parsec`:
+* Open the Parsec app on your local machine and connect to host `<deployment-name>`.
+
+---
+
+### 8. SSH Shell
+
+```sh
+./ssh <deployment-name>
+```
+Or directly with the saved key:
+```sh
+ssh -i state/<deployment-name>/key.pem -o StrictHostKeyChecking=no ubuntu@<ip>
+```
+
+---
+
+## Reusing Existing Machines & In-Place Updates
+
+You do **not** need to destroy or recreate your cloud workstations to enable new remote desktop options. Use `--existing modify`:
+
+```sh
+# Add KasmVNC to an existing GCP deployment
+./deploy-gcp <deployment-name> --existing modify --remote-desktop standard,kasmvnc
+
+# Add xrdp and Sunshine to an existing AWS deployment
+./deploy-aws <deployment-name> --existing modify --remote-desktop standard,xrdp,sunshine
+```
+
+* **Terraform** updates cloud firewall rules in-place (~5 seconds, zero VM restart).
+* **Ansible** detects that Isaac Sim, Isaac Lab, and NVIDIA drivers are already installed, skipping them completely and provisioning only the new remote desktop packages (~1 minute).
+* All datasets, files in `~/workspace`, and training checkpoints are completely preserved.
 
 ---
 
@@ -244,30 +368,6 @@ GCP Flex-start instances have a hard 7-day maximum run duration limit. To preven
 
 # Force an immediate stop/start cycle with quick reboot
 ./cycle-vm <deployment-name> --force --quick
-```
-
----
-
-## Connecting to Your Workstation
-
-### Browser Remote Desktop (noVNC)
-
-Connect to the workstation's XFCE desktop directly in any web browser without local client software:
-
-```sh
-./novnc <deployment-name>
-```
-
-### Live 3D Viewport (NoMachine)
-
-Isaac Sim and Omniverse Kit render via hardware-accelerated Vulkan surfaces. For real-time 3D viewport interaction:
-1. Install [NoMachine client](https://www.nomachine.com/) on your host machine.
-2. Connect to `<instance-ip>:4000` using the username `ubuntu` and the system password displayed during deployment (or stored in `state/<deployment-name>/info.txt`).
-
-### SSH Shell
-
-```sh
-./ssh <deployment-name>
 ```
 
 ---

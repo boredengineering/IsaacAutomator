@@ -110,6 +110,59 @@ class DeployCommand(click.core.Command):
         "isaaclab_arena": "Isaac Lab Arena",
     }
 
+    @staticmethod
+    def remote_desktop_callback(ctx, param, value):
+        """
+        Validate and normalize the --remote-desktop option.
+        Accepts a comma-separated list of providers, or special keywords:
+        - "standard": expands to default standard providers (nomachine,novnc)
+        - "all": all registered providers
+        - "no" / "none": disables remote desktop installation
+        """
+        if value is None or str(value).strip() == "":
+            return config.get("default_remote_desktop", "standard")
+
+        val_str = str(value).strip().lower()
+        if val_str in ("no", "none"):
+            return "no"
+
+        registry = config.get("remote_desktop_providers", {})
+        valid_keys = set(registry.keys())
+        aliases = {
+            "rdp": "xrdp",
+            "nice-dcv": "dcv",
+            "nicedcv": "dcv",
+            "moonlight": "sunshine",
+        }
+
+        parts = [p.strip() for p in val_str.split(",") if p.strip()]
+        resolved = []
+        for p in parts:
+            if p == "standard":
+                resolved.extend([k for k, v in registry.items() if v.get("standard")])
+            elif p == "all":
+                resolved.extend(list(registry.keys()))
+            else:
+                norm = aliases.get(p, p)
+                if norm not in valid_keys:
+                    valid_list = ", ".join(sorted(valid_keys)) + ", standard, all, no"
+                    raise click.BadParameter(
+                        colorize_error(
+                            f"Unknown remote desktop provider '{p}'. Valid values: {valid_list}"
+                        ),
+                        ctx=ctx,
+                        param=param,
+                    )
+                resolved.append(norm)
+
+        # Deduplicate while preserving order
+        deduped = []
+        for r in resolved:
+            if r not in deduped:
+                deduped.append(r)
+
+        return ",".join(deduped) if deduped else config.get("default_remote_desktop", "standard")
+
     # release-version comparison ranks: a stable release outranks any of its
     # prereleases; among prereleases dev < alpha < beta < rc.
     _PRE_RANK = {"dev": 0, "alpha": 1, "a": 1, "beta": 2, "b": 2, "rc": 3, "c": 3}
@@ -441,6 +494,23 @@ class DeployCommand(click.core.Command):
                 help=help,
                 default=config["default_demos"],
                 show_default=True,
+            ),
+        )
+
+        # --remote-desktop
+        provider_names = ", ".join(sorted(config.get("remote_desktop_providers", {}).keys()))
+        help = (
+            'Remote desktop and streaming providers to install. Valid values: "standard" '
+            + f'(NoMachine + noVNC), "all", "no", or a comma-separated list of: {provider_names}.'
+        )
+        self.params.insert(
+            len(self.params),
+            click.core.Option(
+                ("--remote-desktop",),
+                help=help,
+                default=config.get("default_remote_desktop", "standard"),
+                show_default=True,
+                callback=DeployCommand.remote_desktop_callback,
             ),
         )
 

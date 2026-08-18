@@ -1,0 +1,66 @@
+# region copyright
+# Copyright 2023-2026 NVIDIA Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# endregion
+---
+# Install and configure xrdp (Microsoft Remote Desktop) with console mirroring on DISPLAY=:0
+
+- name: Install xrdp packages
+  apt:
+    name:
+      - xrdp
+      - xorgxrdp
+      - ssl-cert
+    state: present
+    update_cache: yes
+
+- name: Add xrdp user to ssl-cert group
+  user:
+    name: xrdp
+    groups: ssl-cert
+    append: yes
+
+- name: Suppress Polkit colord prompts over RDP
+  copy:
+    dest: /etc/polkit-1/localauthority/50-local.d/45-allow-colord.pkla
+    mode: "0644"
+    content: |
+      [Allow Colord all Users]
+      Identity=unix-user:*
+      Action=org.freedesktop.color-manager.create-device;org.freedesktop.color-manager.create-profile;org.freedesktop.color-manager.delete-device;org.freedesktop.color-manager.delete-profile;org.freedesktop.color-manager.modify-device;org.freedesktop.color-manager.modify-profile
+      ResultAny=no
+      ResultInactive=no
+      ResultActive=yes
+
+- name: Configure xrdp console mirror session (/etc/xrdp/xrdp.ini)
+  blockinfile:
+    path: /etc/xrdp/xrdp.ini
+    insertbefore: "^\\[Xorg\\]"
+    block: |
+      [console-0]
+      name=Console-Mirror
+      lib=libvnc.so
+      ip=127.0.0.1
+      port=5900
+      username=na
+      password=ask
+
+- name: Start and enable xrdp services
+  systemd:
+    name: "{{ item }}"
+    enabled: yes
+    state: restarted
+  with_items:
+    - xrdp
+    - xrdp-sesman

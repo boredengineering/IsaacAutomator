@@ -116,3 +116,40 @@ c["demos"] = {
         "requires": ["isaacsim", "isaaclab"],
     },
 }
+
+# --remote-desktop
+# Comma-separated list of remote desktop providers to install on the workstation,
+# or "standard" (installs nomachine + novnc).
+c["default_remote_desktop"] = "standard"
+
+# Remote desktop provider registry.
+c["remote_desktop_providers"] = {
+    "nomachine": {
+        "description": "NoMachine NX server for hardware-accelerated 3D viewport (Port 4000).",
+        "standard": True,
+    },
+    "novnc": {
+        "description": "HTML5 browser desktop via websockify + x11vnc (Port 6080).",
+        "standard": True,
+    },
+    "kasmvnc": {
+        "description": "WebRTC browser desktop with native clipboard support over HTTPS (Port 8444).",
+        "standard": False,
+    },
+    "dcv": {
+        "description": "NICE DCV enterprise GPU streaming server (Port 8443).",
+        "standard": False,
+    },
+    "xrdp": {
+        "description": "Microsoft Remote Desktop (RDP) console mirror server (Port 3389).",
+        "standard": False,
+    },
+    "sunshine": {
+        "description": "Sunshine NVENC game/3D streaming server for Moonlight clients (Port 47984-48010, 47990).",
+        "standard": False,
+    },
+    "parsec": {
+        "description": "Parsec ultra-low latency interactive streaming daemon (Port 8000-8040).",
+        "standard": False,
+    },
+}

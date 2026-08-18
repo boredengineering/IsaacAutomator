@@ -85,6 +85,70 @@ resource "aws_security_group" "sg" {
     cidr_blocks = var.ingress_cidrs
   }
 
+  # KasmVNC (HTTPS WebRTC)
+  ingress {
+    from_port   = 8444
+    to_port     = 8444
+    protocol    = "tcp"
+    cidr_blocks = var.ingress_cidrs
+  }
+
+  # NICE DCV
+  ingress {
+    from_port   = 8443
+    to_port     = 8443
+    protocol    = "tcp"
+    cidr_blocks = var.ingress_cidrs
+  }
+  ingress {
+    from_port   = 8443
+    to_port     = 8443
+    protocol    = "udp"
+    cidr_blocks = var.ingress_cidrs
+  }
+
+  # xrdp (Microsoft Remote Desktop)
+  ingress {
+    from_port   = 3389
+    to_port     = 3389
+    protocol    = "tcp"
+    cidr_blocks = var.ingress_cidrs
+  }
+
+  # Sunshine / Moonlight
+  ingress {
+    from_port   = 47984
+    to_port     = 47984
+    protocol    = "tcp"
+    cidr_blocks = var.ingress_cidrs
+  }
+  ingress {
+    from_port   = 47989
+    to_port     = 47990
+    protocol    = "tcp"
+    cidr_blocks = var.ingress_cidrs
+  }
+  ingress {
+    from_port   = 47990
+    to_port     = 47990
+    protocol    = "udp"
+    cidr_blocks = var.ingress_cidrs
+  }
+  ingress {
+    from_port   = 47998
+    to_port     = 48000
+    protocol    = "udp"
+    cidr_blocks = var.ingress_cidrs
+  }
+
+  # Parsec (UDP peer-to-peer range)
+  ingress {
+    from_port   = 8000
+    to_port     = 8040
+    protocol    = "udp"
+    cidr_blocks = var.ingress_cidrs
+  }
+
   # allow outbound traffic
 
   egress {

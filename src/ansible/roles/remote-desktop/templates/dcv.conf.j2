@@ -1,0 +1,22 @@
+[license]
+# On AWS EC2, NICE DCV license is automatically validated against the instance metadata service
+
+[session-management]
+create-session = true
+
+[session-management/automatic-console-session]
+owner = "{{ ansible_user }}"
+max-concurrent-clients = 4
+
+[display]
+# Bind directly to the hardware X11 display
+target-fps = 60
+
+[connectivity]
+web-port = {{ dcv_port }}
+web-url-path = "/"
+enable-quic-frontend = true
+
+[security]
+auth-token-verifier = ""
+authentication = "system"

@@ -1,0 +1,17 @@
+[Unit]
+Description=KasmVNC WebRTC Remote Desktop Service
+After=network.target graphical.target
+Wants=graphical.target
+
+[Service]
+Type=simple
+User={{ ansible_user }}
+Group={{ ansible_user }}
+Environment=DISPLAY=:0
+Environment=HOME=/home/{{ ansible_user }}
+ExecStart=/usr/bin/vncserver :0 -config /home/{{ ansible_user }}/.vnc/kasmvnc.yaml -websocketPort {{ kasmvnc_port }}
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

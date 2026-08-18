@@ -55,6 +55,9 @@ class Deployer:
         # resolve --demos: validate names and auto-enable required apps
         self.resolve_demos()
 
+        # resolve --remote-desktop: validate providers
+        self.resolve_remote_desktop()
+
         # create state directory if it doesn't exist
         os.makedirs(self.config["state_dir"], exist_ok=True)
 
@@ -127,6 +130,53 @@ class Deployer:
 
         # store back the normalized, de-duplicated selection
         self.params["demos"] = ",".join(dict.fromkeys(selected))
+
+    def resolve_remote_desktop(self):
+        """
+        Normalize the --remote-desktop option and validate providers against the registry.
+        """
+        if "remote_desktop" not in self.params:
+            self.params["remote_desktop"] = self.config.get(
+                "default_remote_desktop", "standard"
+            )
+
+        raw = str(self.params.get("remote_desktop") or "standard").strip()
+        if raw.lower() in ("", "no", "none"):
+            self.params["remote_desktop"] = "no"
+            return
+
+        registry = self.config.get("remote_desktop_providers", {})
+        aliases = {
+            "rdp": "xrdp",
+            "nice-dcv": "dcv",
+            "nicedcv": "dcv",
+            "moonlight": "sunshine",
+        }
+
+        selected = []
+        for item in [x.strip().lower() for x in raw.split(",") if x.strip()]:
+            if item == "standard":
+                selected.extend(
+                    [k for k, v in registry.items() if v.get("standard")]
+                )
+            elif item == "all":
+                selected.extend(list(registry.keys()))
+            else:
+                norm = aliases.get(item, item)
+                if norm not in registry:
+                    click.echo(
+                        colorize_error(
+                            f"* Unknown remote desktop provider: {item}. "
+                            f"Valid providers: {', '.join(sorted(registry.keys()))}, standard, all, no."
+                        ),
+                        err=True,
+                    )
+                    sys.exit(1)
+                selected.append(norm)
+
+        self.params["remote_desktop"] = (
+            ",".join(dict.fromkeys(selected)) if selected else "standard"
+        )
 
     def __del__(self):
         # update meta info
@@ -577,29 +627,85 @@ class Deployer:
         ip = self.tf_output("isaac_workstation_ip")
         user = self.config["default_ssh_user"]
         banner = f"* Isaac Workstation is deployed at {ip} *"
+        vnc_pw = self.params.get("vnc_password", "")
+        sys_pw = self.params.get("system_user_password", "")
 
-        instructions = f"""{'*' * len(banner)}
-{banner}
-{'*' * len(banner)}
+        rd_raw = str(self.params.get("remote_desktop", "standard")).lower()
+        if rd_raw == "standard":
+            rd_providers = ["nomachine", "novnc"]
+        else:
+            rd_providers = [p.strip() for p in rd_raw.split(",") if p.strip()]
 
-* To connect via SSH:
+        sections = [
+            f"{'*' * len(banner)}",
+            banner,
+            f"{'*' * len(banner)}",
+            "",
+            "* To connect via SSH:",
+            "",
+            f"./ssh {dn}",
+        ]
 
-./ssh {dn}
+        if "novnc" in rd_providers:
+            sections.extend([
+                "",
+                "* To connect via noVNC (opens in browser):",
+                "",
+                f"./novnc {dn}",
+            ])
 
-* To connect via noVNC (opens in browser):
+        if "nomachine" in rd_providers:
+            sections.extend([
+                "",
+                "* To connect via NoMachine:",
+                "",
+                "0. Download NoMachine client at https://downloads.nomachine.com/, install and launch it.",
+                '1. Click "Add" button.',
+                f'2. Enter Host: "{ip}".',
+                '3. In "Configuration" > "Use key-based authentication with a key you provide",',
+                f'   select file "state/{dn}/key.pem".',
+                '4. Click "Connect" button.',
+                f'5. Enter "{user}" as a username when prompted.',
+            ])
 
-./novnc {dn}
+        if "kasmvnc" in rd_providers:
+            sections.extend([
+                "",
+                "* To connect via KasmVNC (WebRTC browser access with native clipboard):",
+                f"https://{ip}:8444 (VNC Password: {vnc_pw})",
+            ])
 
-* To connect via NoMachine:
+        if "dcv" in rd_providers:
+            sections.extend([
+                "",
+                "* To connect via NICE DCV:",
+                f'https://{ip}:8443 (Username: "{user}", Password: "{sys_pw}")',
+                f'Or connect via native NICE DCV client to "{ip}:8443".',
+            ])
 
-0. Download NoMachine client at https://downloads.nomachine.com/, install and launch it.
-1. Click "Add" button.
-2. Enter Host: "{ip}".
-3. In "Configuration" > "Use key-based authentication with a key you provide",
-   select file "state/{dn}/key.pem".
-4. Click "Connect" button.
-5. Enter "{user}" as a username when prompted.
-"""
+        if "xrdp" in rd_providers:
+            sections.extend([
+                "",
+                "* To connect via Microsoft Remote Desktop (RDP):",
+                f'Connect to "{ip}:3389" (Username: "{user}", Password: "{sys_pw}").',
+            ])
+
+        if "sunshine" in rd_providers:
+            sections.extend([
+                "",
+                "* To connect via Moonlight (Ultra-low latency streaming):",
+                f'1. Add host "{ip}" in Moonlight client.',
+                f"2. Open https://{ip}:47990 in browser and enter the 4-digit pairing PIN.",
+            ])
+
+        if "parsec" in rd_providers:
+            sections.extend([
+                "",
+                "* To connect via Parsec:",
+                f'Open Parsec client and connect to host "{dn}".',
+            ])
+
+        instructions = "\n".join(sections) + "\n"
 
         if extra_text:
             instructions += extra_text + "\n"

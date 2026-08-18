@@ -114,3 +114,78 @@ resource "google_compute_firewall" "ssh_custom" {
 
   source_ranges = var.ingress_cidrs
 }
+
+# KasmVNC (HTTPS WebRTC)
+resource "google_compute_firewall" "kasmvnc" {
+  name    = "${var.prefix}-fwrules-kasmvnc"
+  network = google_compute_network.default.self_link
+
+  allow {
+    protocol = "tcp"
+    ports    = ["8444"]
+  }
+
+  source_ranges = var.ingress_cidrs
+}
+
+# NICE DCV (TCP & UDP)
+resource "google_compute_firewall" "dcv" {
+  name    = "${var.prefix}-fwrules-dcv"
+  network = google_compute_network.default.self_link
+
+  allow {
+    protocol = "tcp"
+    ports    = ["8443"]
+  }
+
+  allow {
+    protocol = "udp"
+    ports    = ["8443"]
+  }
+
+  source_ranges = var.ingress_cidrs
+}
+
+# xrdp (Microsoft Remote Desktop)
+resource "google_compute_firewall" "xrdp" {
+  name    = "${var.prefix}-fwrules-xrdp"
+  network = google_compute_network.default.self_link
+
+  allow {
+    protocol = "tcp"
+    ports    = ["3389"]
+  }
+
+  source_ranges = var.ingress_cidrs
+}
+
+# Sunshine / Moonlight streaming
+resource "google_compute_firewall" "sunshine" {
+  name    = "${var.prefix}-fwrules-sunshine"
+  network = google_compute_network.default.self_link
+
+  allow {
+    protocol = "tcp"
+    ports    = ["47984", "47989", "47990", "48010"]
+  }
+
+  allow {
+    protocol = "udp"
+    ports    = ["47990", "47998-48000"]
+  }
+
+  source_ranges = var.ingress_cidrs
+}
+
+# Parsec (UDP peer-to-peer range)
+resource "google_compute_firewall" "parsec" {
+  name    = "${var.prefix}-fwrules-parsec"
+  network = google_compute_network.default.self_link
+
+  allow {
+    protocol = "udp"
+    ports    = ["8000-8040"]
+  }
+
+  source_ranges = var.ingress_cidrs
+}

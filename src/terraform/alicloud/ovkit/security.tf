@@ -76,6 +76,16 @@ locals {
     tcp_media_b  = { proto = "tcp", range = "49000/49007" }
     udp_media_a  = { proto = "udp", range = "47995/48012" }
     udp_media_b  = { proto = "udp", range = "49000/49007" }
+    kasmvnc      = { proto = "tcp", range = "8444/8444" }
+    dcv_tcp      = { proto = "tcp", range = "8443/8443" }
+    dcv_udp      = { proto = "udp", range = "8443/8443" }
+    xrdp         = { proto = "tcp", range = "3389/3389" }
+    sunshine_web = { proto = "tcp", range = "47990/47990" }
+    sunshine_a   = { proto = "tcp", range = "47984/47984" }
+    sunshine_b   = { proto = "tcp", range = "47989/47989" }
+    sunshine_c   = { proto = "tcp", range = "48010/48010" }
+    sunshine_u   = { proto = "udp", range = "47990/47990" }
+    parsec       = { proto = "udp", range = "8000/8040" }
   }
 }
 

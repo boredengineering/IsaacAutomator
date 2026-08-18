@@ -242,5 +242,52 @@ class Test_VersionKeyAndResolve(unittest.TestCase):
         self.assertIsNone(self._resolve(["refs/heads/main", "refs/heads/develop"]))
 
 
+class Test_RemoteDesktopCallback(unittest.TestCase):
+    def test_standard_default(self):
+        self.assertEqual(
+            DeployCommand.remote_desktop_callback(None, None, "standard"),
+            "nomachine,novnc",
+        )
+        self.assertEqual(
+            DeployCommand.remote_desktop_callback(None, None, None),
+            "standard",
+        )
+
+    def test_individual_providers(self):
+        self.assertEqual(
+            DeployCommand.remote_desktop_callback(None, None, "kasmvnc"),
+            "kasmvnc",
+        )
+        self.assertEqual(
+            DeployCommand.remote_desktop_callback(None, None, "kasmvnc,xrdp"),
+            "kasmvnc,xrdp",
+        )
+
+    def test_aliases_mapping(self):
+        self.assertEqual(
+            DeployCommand.remote_desktop_callback(None, None, "rdp,nice-dcv,moonlight"),
+            "xrdp,dcv,sunshine",
+        )
+
+    def test_no_and_none(self):
+        self.assertEqual(
+            DeployCommand.remote_desktop_callback(None, None, "no"),
+            "no",
+        )
+        self.assertEqual(
+            DeployCommand.remote_desktop_callback(None, None, "none"),
+            "no",
+        )
+
+    def test_all_keyword(self):
+        res = DeployCommand.remote_desktop_callback(None, None, "all")
+        for p in ["nomachine", "novnc", "kasmvnc", "dcv", "xrdp", "sunshine", "parsec"]:
+            self.assertIn(p, res)
+
+    def test_invalid_provider_raises(self):
+        with self.assertRaises(click.BadParameter):
+            DeployCommand.remote_desktop_callback(None, None, "invalid-provider")
+
+
 if __name__ == "__main__":
     unittest.main()

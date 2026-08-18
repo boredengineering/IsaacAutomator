@@ -65,6 +65,66 @@ resource "azurerm_network_security_group" "sg" {
     source_address_prefix      = "*"
     destination_address_prefix = "*"
   }
+
+  security_rule {
+    name                       = "KasmVNC"
+    priority                   = 108
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "TCP"
+    source_port_range          = "*"
+    destination_port_ranges    = ["8444"]
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+
+  security_rule {
+    name                       = "NICEDCV"
+    priority                   = 109
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "*"
+    source_port_range          = "*"
+    destination_port_ranges    = ["8443"]
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+
+  security_rule {
+    name                       = "xrdp"
+    priority                   = 110
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "TCP"
+    source_port_range          = "*"
+    destination_port_ranges    = ["3389"]
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+
+  security_rule {
+    name                       = "Sunshine"
+    priority                   = 111
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "*"
+    source_port_range          = "*"
+    destination_port_ranges    = ["47984", "47989", "47990", "48010"]
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+
+  security_rule {
+    name                       = "Parsec"
+    priority                   = 112
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Udp"
+    source_port_range          = "*"
+    destination_port_ranges    = ["8000-8040"]
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
 }
 
 # security rule for custom ssh port

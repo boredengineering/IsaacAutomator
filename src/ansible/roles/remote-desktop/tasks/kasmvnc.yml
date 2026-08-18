@@ -1,0 +1,115 @@
+# region copyright
+# Copyright 2023-2026 NVIDIA Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# endregion
+---
+# Install and configure KasmVNC server for WebRTC browser streaming with native clipboard
+
+- name: Install KasmVNC prerequisites
+  apt:
+    name:
+      - libjpeg-turbo8
+      - libxcomposite1
+      - libxinerama1
+      - libxrandr2
+      - libxtst6
+      - libgbm1
+      - libdrm2
+      - ssl-cert
+    state: present
+    update_cache: yes
+
+- name: Determine KasmVNC package URL
+  set_fact:
+    kasmvnc_deb_url: >-
+      https://github.com/kasmtech/KasmVNC/releases/download/v{{ kasmvnc_version }}/kasmvncserver_{{ ansible_distribution_release }}_{{ kasmvnc_version }}_amd64.deb
+
+- name: Download KasmVNC package
+  get_url:
+    url: "{{ kasmvnc_deb_url }}"
+    dest: "{{ kasmvnc_deb_path }}"
+    mode: "0644"
+    timeout: 300
+    force: false
+
+- name: Install KasmVNC server package
+  apt:
+    deb: "{{ kasmvnc_deb_path }}"
+    state: present
+
+- name: Ensure /etc/kasmvnc directory exists
+  file:
+    path: /etc/kasmvnc
+    state: directory
+    mode: "0755"
+    owner: root
+    group: root
+
+- name: Ensure user .vnc directory exists
+  file:
+    path: "/home/{{ ansible_user }}/.vnc"
+    state: directory
+    mode: "0755"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+
+- name: Generate self-signed TLS certificate for KasmVNC
+  command: >
+    openssl req -x509 -nodes -days 365 -newkey rsa:2048
+    -keyout /etc/kasmvnc/kasmvnc.key
+    -out /etc/kasmvnc/kasmvnc.crt
+    -subj "/CN=IsaacAutomator-KasmVNC"
+  args:
+    creates: /etc/kasmvnc/kasmvnc.crt
+
+- name: Combine cert and key for KasmVNC PEM
+  shell: cat /etc/kasmvnc/kasmvnc.crt /etc/kasmvnc/kasmvnc.key > /etc/kasmvnc/self.pem
+  args:
+    creates: /etc/kasmvnc/self.pem
+
+- name: Set permissions on KasmVNC certificates
+  file:
+    path: /etc/kasmvnc/self.pem
+    mode: "0644"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+
+- name: Configure KasmVNC YAML
+  template:
+    src: kasmvnc.yaml.j2
+    dest: "/home/{{ ansible_user }}/.vnc/kasmvnc.yaml"
+    mode: "0644"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+
+- name: Set KasmVNC password
+  shell: >
+    echo "{{ vnc_password }}" | kasmvncpasswd -u "{{ ansible_user }}" -o -w /home/{{ ansible_user }}/.vnc/kasmvnc.yaml
+  become_user: "{{ ansible_user }}"
+  ignore_errors: true
+
+- name: Install KasmVNC systemd service
+  template:
+    src: kasmvnc.service.j2
+    dest: /etc/systemd/system/kasmvnc.service
+    mode: "0644"
+    owner: root
+    group: root
+
+- name: Start and enable KasmVNC service
+  systemd:
+    name: kasmvnc
+    daemon_reload: yes
+    enabled: yes
+    state: restarted

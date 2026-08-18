@@ -55,19 +55,54 @@
   tags:
     - __vscode
 
+# Parse selected remote desktop providers
+- name: Build list of selected remote desktop providers
+  set_fact:
+    selected_remote_desktop: >-
+      {{
+        (['nomachine', 'novnc'] if (remote_desktop | default('standard') == 'standard')
+         else (remote_desktop | default('standard')).split(',') | map('trim') | reject('in', ['', 'no', 'none']) | list)
+      }}
+
 # VNC
 - name: VNC server
   import_tasks: vnc.yml
+  when: "'novnc' in selected_remote_desktop or 'xrdp' in selected_remote_desktop or 'vnc' in selected_remote_desktop or 'standard' in selected_remote_desktop"
 
 # NoMachine
-
 - name: NoMachine server
   import_tasks: nomachine.yml
-  when: "'nxserver.service' not in ansible_facts.services"
+  when: "'nomachine' in selected_remote_desktop and 'nxserver.service' not in ansible_facts.services"
 
 # NoVNC
 - name: NoVNC server
   import_tasks: novnc.yml
+  when: "'novnc' in selected_remote_desktop"
+
+# KasmVNC
+- name: KasmVNC server
+  import_tasks: kasmvnc.yml
+  when: "'kasmvnc' in selected_remote_desktop"
+
+# NICE DCV
+- name: NICE DCV server
+  import_tasks: dcv.yml
+  when: "'dcv' in selected_remote_desktop or 'nice-dcv' in selected_remote_desktop"
+
+# xrdp (RDP)
+- name: xrdp server
+  import_tasks: xrdp.yml
+  when: "'xrdp' in selected_remote_desktop or 'rdp' in selected_remote_desktop"
+
+# Sunshine (Moonlight)
+- name: Sunshine server
+  import_tasks: sunshine.yml
+  when: "'sunshine' in selected_remote_desktop or 'moonlight' in selected_remote_desktop"
+
+# Parsec
+- name: Parsec daemon
+  import_tasks: parsec.yml
+  when: "'parsec' in selected_remote_desktop"
 
 # do reboots if needed
 - name: Reboot if needed

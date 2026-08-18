@@ -1,0 +1,92 @@
+# region copyright
+# Copyright 2023-2026 NVIDIA Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# endregion
+---
+# Install and configure Sunshine server for ultra-low latency Moonlight game/3D streaming
+
+- name: Install Sunshine prerequisites
+  apt:
+    name:
+      - libayatana-appindicator3-1
+      - libcap2-bin
+      - libcurl4
+      - avahi-daemon
+      - udev
+    state: present
+    update_cache: yes
+
+- name: Set Sunshine download URL
+  set_fact:
+    sunshine_deb_url: >-
+      https://github.com/LizardByte/Sunshine/releases/download/v{{ sunshine_version }}/sunshine-ubuntu-22.04-amd64.deb
+
+- name: Download Sunshine package
+  get_url:
+    url: "{{ sunshine_deb_url }}"
+    dest: "{{ sunshine_deb_path }}"
+    mode: "0644"
+    timeout: 300
+    force: false
+
+- name: Install Sunshine package
+  apt:
+    deb: "{{ sunshine_deb_path }}"
+    state: present
+
+- name: Grant frame grab capabilities to Sunshine binary
+  capabilities:
+    path: /usr/bin/sunshine
+    capability: cap_sys_admin+ep
+    state: present
+  failed_when: false
+
+- name: Add user to input and video groups
+  user:
+    name: "{{ ansible_user }}"
+    groups:
+      - input
+      - video
+    append: yes
+
+- name: Ensure Sunshine configuration directory exists
+  file:
+    path: "/home/{{ ansible_user }}/.config/sunshine"
+    state: directory
+    mode: "0755"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+
+- name: Configure Sunshine settings
+  template:
+    src: sunshine.conf.j2
+    dest: "/home/{{ ansible_user }}/.config/sunshine/sunshine.conf"
+    mode: "0644"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+
+- name: Install Sunshine systemd service
+  template:
+    src: sunshine.service.j2
+    dest: /etc/systemd/system/sunshine.service
+    mode: "0644"
+    owner: root
+    group: root
+
+- name: Start and enable Sunshine service
+  systemd:
+    name: sunshine
+    daemon_reload: yes
+    enabled: yes
+    state: restarted

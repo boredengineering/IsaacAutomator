@@ -1,0 +1,22 @@
+network:
+  protocol: http
+  interface: 0.0.0.0
+  websocket_port: {{ kasmvnc_port }}
+  ssl:
+    require_ssl: true
+    pem_certificate: /etc/kasmvnc/self.pem
+    pem_key: /etc/kasmvnc/self.pem
+
+logging:
+  log_directory: /home/{{ ansible_user }}/.vnc
+
+runtime_configuration:
+  allow_override_from_client: true
+  clipboard:
+    enabled: true
+    allow_client_to_server: true
+    allow_server_to_client: true
+  video:
+    hw3d: true
+    prefer_av1: false
+    prefer_h264: true
