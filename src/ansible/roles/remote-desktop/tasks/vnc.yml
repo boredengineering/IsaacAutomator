@@ -37,32 +37,35 @@
     owner=root
     group=root
 
-- name: Start x11vnc
-  systemd: name=x11vnc-ubuntu
-    daemon_reload=yes
-    enabled=yes
-    state=restarted
-
-- name: Clear VNC password
+- name: Ensure /etc/x11vnc directory exists
   file:
-    path: /home/{{ ansible_user }}/.vnc/passwd
-    state: absent
+    path: /etc/x11vnc
+    state: directory
+    mode: "0755"
+    owner: root
+    group: root
 
 - name: Set VNC password
-  expect:
-    command: /usr/bin/x11vnc -storepasswd
-    responses:
-      (?i).*password:.*: "{{ vnc_password }}\r"
-      (?i)write.*: "y\r"
-    creates: /home/{{ ansible_user }}/.vnc/passwd
-  become_user: "{{ ansible_user }}"
+  shell: >
+    x11vnc -storepasswd "{{ vnc_password }}" /etc/x11vnc/x11vnc.pass
+  args:
+    creates: /etc/x11vnc/x11vnc.pass
   tags:
     - skip_in_image
 
-- name: Cleanup VNC password
+- name: Ensure permissions on VNC password file
   file:
-    path: /home/{{ ansible_user }}/.vnc/passwd
-    state: absent
+    path: /etc/x11vnc/x11vnc.pass
+    mode: "0644"
+    owner: root
+    group: root
+
+- name: Start x11vnc
+  systemd:
+    name: x11vnc-ubuntu
+    daemon_reload: yes
+    enabled: yes
+    state: restarted
   tags:
     - never
     - cleanup

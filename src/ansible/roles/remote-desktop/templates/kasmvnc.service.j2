@@ -4,13 +4,13 @@ After=network.target graphical.target
 Wants=graphical.target
 
 [Service]
-Type=simple
+Type=forking
 User={{ ansible_user }}
 Group={{ ansible_user }}
-Environment=DISPLAY=:0
 Environment=HOME=/home/{{ ansible_user }}
-ExecStart=/usr/bin/vncserver :0 -config /home/{{ ansible_user }}/.vnc/kasmvnc.yaml -websocketPort {{ kasmvnc_port }}
-Restart=always
+ExecStart=/usr/bin/vncserver :1 -httpd /usr/share/kasmvnc/www -config /home/{{ ansible_user }}/.vnc/kasmvnc.yaml -websocketPort {{ kasmvnc_port }}
+ExecStop=/usr/bin/vncserver -kill :1
+Restart=on-failure
 RestartSec=3
 
 [Install]

@@ -1,3 +1,10 @@
+desktop:
+  resolution:
+    width: 1920
+    height: 1080
+  allow_resize: true
+  pixel_depth: 24
+
 network:
   protocol: http
   interface: 0.0.0.0
@@ -7,16 +14,23 @@ network:
     pem_certificate: /etc/kasmvnc/self.pem
     pem_key: /etc/kasmvnc/self.pem
 
-logging:
-  log_directory: /home/{{ ansible_user }}/.vnc
+server:
+  http:
+    httpd_directory: /usr/share/kasmvnc/www
 
-runtime_configuration:
-  allow_override_from_client: true
+security:
+  brute_force_protection:
+    blacklist_threshold: 100
+    blacklist_timeout: 1
+
+data_loss_prevention:
   clipboard:
-    enabled: true
-    allow_client_to_server: true
-    allow_server_to_client: true
-  video:
-    hw3d: true
-    prefer_av1: false
-    prefer_h264: true
+    server_to_client:
+      enabled: true
+      size: unlimited
+    client_to_server:
+      enabled: true
+      size: unlimited
+
+command_line:
+  prompt: false

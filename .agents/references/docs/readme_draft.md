@@ -199,79 +199,119 @@ Isaac Automator provides multi-provider remote desktop support. All options atta
 
 ---
 
+### Credentials & Password Management
+
+Isaac Automator configures two levels of access credentials:
+
+* **VNC / WebRTC Password (`--vnc-password`)**: Used for **noVNC** (port 6080) and **KasmVNC** (port 8444).
+* **System User Password (`--system-user-password`)**: Used for the `ubuntu` Linux account, **Microsoft Remote Desktop (xrdp)** (port 3389), and SSH sudo operations.
+
+```sh
+# Deploy with custom passwords
+./deploy-gcp my-workstation \
+  --vnc-password "MySecretVNC123" \
+  --system-user-password "MySecretSys456" \
+  --remote-desktop standard,kasmvnc,xrdp
+```
+
+> [!TIP]
+> If you omit these flags, secure random 10-character passwords are automatically generated. You can view the active passwords for any deployment at any time in `state/<deployment-name>/info.txt` or `state/<deployment-name>/meta.json`.
+
+---
+
 ### 1. noVNC (Standard HTML5 Web Desktop)
 
-Launch a standard browser session:
-```sh
-./novnc <deployment-name>
-```
-* **URL:** `http://<ip>:6080/vnc.html?host=<ip>&port=6080&password=<pw>&resize=scale`
-* Runs out-of-the-box with zero client software installation required.
+Zero client installation required. Opens directly in your browser:
+
+* **One-Click Command:**
+  ```sh
+  ./novnc <deployment-name>
+  ```
+* **Direct URL:**
+  ```text
+  http://<instance-ip>:6080/vnc.html?host=<instance-ip>&port=6080&password=<vnc-password>&autoconnect=true&resize=scale
+  ```
+* **Best For:** Quick checks, starting scripts, or running when no client software can be installed.
 
 ---
 
 ### 2. KasmVNC (WebRTC Browser Desktop with Native Clipboard)
 
-Deploy or enable with `--remote-desktop standard,kasmvnc` (or `kasmvnc`):
-* **URL:** `https://<ip>:8444`
-* **Authentication:** Username `ubuntu`, VNC password from `state/<name>/meta.json`.
-* **Clipboard:** Full bidirectional clipboard synchronization natively via the browser's Async Clipboard API (`Ctrl+C` and `Ctrl+V` work directly without clipboard sidebars).
+Modern WebRTC streaming in the browser with **full native clipboard support** (`Ctrl+C` and `Ctrl+V` work directly between host and cloud VM without sidebars):
+
+* **Direct URL:**
+  ```text
+  https://<instance-ip>:8444/
+  ```
+* **Authentication:**
+  * **Username:** `ubuntu`
+  * **Password:** `<vnc-password>` (from `state/<deployment-name>/meta.json`)
+* **Browser Certificate Notice:** Because KasmVNC uses TLS to enable the browser's `navigator.clipboard` API, modern browsers will display a standard self-signed certificate warning on first access. Click **Advanced $\to$ Proceed to `<instance-ip>` (unsafe)** to continue to the login prompt.
 
 ---
 
-### 3. NoMachine (Hardware-Accelerated 3D Viewport)
+### 3. Microsoft Remote Desktop (xrdp)
 
-* **Client:** Download from [NoMachine](https://downloads.nomachine.com/).
-* **Host:** `<instance-ip>:4000`
-* **Authentication:** Select *"Use key-based authentication with a key you provide"* $\to$ point to `state/<deployment-name>/key.pem`, and enter username `ubuntu`.
-* **3D Acceleration:** Directly captures the NVIDIA Vulkan viewport for real-time robot visualization.
+Native OS remote desktop client integration on Windows, macOS, and Linux:
 
----
-
-### 4. NICE DCV (Enterprise GPU Streaming)
-
-Deploy or enable with `--remote-desktop standard,dcv` (or `dcv`):
-* **Web Browser:** `https://<ip>:8443`
-* **Native Client:** Connect to `<ip>:8443` using the NICE DCV client.
-* **Authentication:** Username `ubuntu`, system password from `state/<name>/meta.json`.
-* **Licensing:** Free on AWS EC2 instances via instance metadata verification.
+* **Client Software:**
+  * **Windows:** Built-in **Remote Desktop Connection** (`mstsc.exe`).
+  * **macOS / iOS:** [Microsoft Remote Desktop](https://apps.apple.com/us/app/microsoft-remote-desktop/id1295203466) (App Store).
+  * **Linux:** `xfreerdp` or `Remmina`.
+* **Host Address:** `<instance-ip>:3389`
+* **Authentication:**
+  * **Username:** `ubuntu`
+  * **Password:** `<system-user-password>` (from `state/<deployment-name>/meta.json`)
+* **Console Mirroring:** Automatically mirrors the primary GPU hardware console session (`DISPLAY=:0`), ensuring full NVIDIA Vulkan acceleration.
 
 ---
 
-### 5. xrdp (Native Windows / Mac Remote Desktop)
+### 4. Sunshine + Moonlight (Ultra-Low Latency 60/120 FPS Streaming)
 
-Deploy or enable with `--remote-desktop standard,xrdp` (or `xrdp`):
-* **Client:** Open built-in **Remote Desktop Connection** (`mstsc.exe` on Windows) or **Microsoft Remote Desktop** (macOS).
-* **Host:** `<ip>:3389`
-* **Session:** Mirrors the active GPU console session (`DISPLAY=:0`), ensuring Vulkan apps run with hardware acceleration.
+High-performance gaming-grade streaming powered by NVIDIA NVENC hardware video encoding. Ideal for live robotics teleoperation and interactive 3D camera navigation:
+
+1. **Install Client:** Download and launch [Moonlight](https://moonlight-stream.org/) on your computer.
+2. **Add Workstation Host:** Click **Add Host** in Moonlight and enter `<instance-ip>`. Moonlight will display a 4-digit pairing PIN on your screen.
+3. **Pair Host:** Open `https://<instance-ip>:47990` in your web browser, click the **PIN** tab, and enter the 4-digit PIN.
+4. **Launch Stream:** Moonlight will immediately show the Isaac Workstation desktop ready to launch at 60 or 120 FPS with sub-10ms latency.
 
 ---
 
-### 6. Sunshine + Moonlight (Ultra-Low Latency 60/120 FPS Streaming)
+### 5. NoMachine (Hardware-Accelerated 3D Viewport)
 
-Deploy or enable with `--remote-desktop standard,sunshine` (or `sunshine`):
-1. Install and open the [Moonlight client](https://moonlight-stream.org/) on your PC.
-2. Add host `<ip>`.
-3. Open `https://<ip>:47990` in your web browser and enter the 4-digit pairing PIN displayed by Moonlight.
-4. Enjoy sub-10ms ultra-low latency streaming powered by NVIDIA NVENC hardware encoding.
+* **Client Software:** Download and install from [NoMachine](https://downloads.nomachine.com/).
+* **Host Address:** `<instance-ip>:4000` (Protocol: `NX`)
+* **Authentication:** In Connection Settings $\to$ Configuration $\to$ select *"Use key-based authentication with a key you provide"*, point to file `state/<deployment-name>/key.pem`, and enter username `ubuntu`.
+* **Best For:** Direct Vulkan frame-buffer capture over high-latency WAN links.
+
+---
+
+### 6. NICE DCV (Enterprise GPU Streaming)
+
+* **Browser Access:** `https://<instance-ip>:8443`
+* **Native Client:** Connect to `<instance-ip>:8443` using the NICE DCV client.
+* **Authentication:** Username `ubuntu`, password `<system-user-password>`.
+* **Licensing:** 100% free when running on AWS EC2 instances.
 
 ---
 
 ### 7. Parsec (Interactive Streaming Daemon)
 
-Deploy or enable with `--remote-desktop standard,parsec`:
-* Open the Parsec app on your local machine and connect to host `<deployment-name>`.
+* Deploy with `--remote-desktop standard,parsec`.
+* Open the Parsec app on your local machine and select your deployed cloud workstation from the list.
 
 ---
 
 ### 8. SSH Shell
 
+Open an interactive shell into your workstation:
+
 ```sh
+# Convenience wrapper
 ./ssh <deployment-name>
-```
-Or directly with the saved key:
-```sh
-ssh -i state/<deployment-name>/key.pem -o StrictHostKeyChecking=no ubuntu@<ip>
+
+# Or direct standard OpenSSH command
+ssh -i state/<deployment-name>/key.pem -o StrictHostKeyChecking=no ubuntu@<instance-ip>
 ```
 
 ---

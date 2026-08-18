@@ -27,6 +27,9 @@
       - libgbm1
       - libdrm2
       - ssl-cert
+      - dbus-x11
+      - xfce4
+      - xfce4-goodies
     state: present
     update_cache: yes
 
@@ -93,9 +96,21 @@
     owner: "{{ ansible_user }}"
     group: "{{ ansible_user }}"
 
+- name: Ensure xstartup script exists
+  copy:
+    dest: "/home/{{ ansible_user }}/.vnc/xstartup"
+    mode: "0755"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    content: |
+      #!/bin/sh
+      unset SESSION_MANAGER
+      unset DBUS_SESSION_BUS_ADDRESS
+      exec dbus-launch --exit-with-session startxfce4
+
 - name: Set KasmVNC password
   shell: >
-    echo "{{ vnc_password }}" | kasmvncpasswd -u "{{ ansible_user }}" -o -w /home/{{ ansible_user }}/.vnc/kasmvnc.yaml
+    printf "%s\n%s\n" "{{ vnc_password }}" "{{ vnc_password }}" | kasmvncpasswd -u "{{ ansible_user }}" -w -o
   become_user: "{{ ansible_user }}"
   ignore_errors: true
 
