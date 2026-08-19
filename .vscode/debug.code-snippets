@@ -11,6 +11,7 @@
     "prefix": "debug_start",
     "body": [
       "from src.python.debug import debug_start; debug_start()  # fmt: skip\n"
-    ],
+    ]
   }
 }
+

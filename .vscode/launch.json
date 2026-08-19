@@ -7,14 +7,17 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "justMyCode": true
+            "justMyCode": true,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}:${workspaceFolder}/src"
+            }
         },
         {
-            "name": "Python: Remote Attach",
+            "name": "Python: Remote Attach (Debugpy)",
             "type": "python",
             "request": "attach",
             "connect": {
-                "host": "0.0.0.0",
+                "host": "127.0.0.1",
                 "port": 5678
             },
             "pathMappings": [

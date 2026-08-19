@@ -1,38 +1,32 @@
 {
-    // See https://go.microsoft.com/fwlink/?LinkId=733558
-    // for the documentation about the tasks.json format
     "version": "2.0.0",
     "tasks": [
         {
-            "type": "docker-build",
-            "label": "docker-build",
-            "platform": "python",
-            "dockerBuild": {
-                "dockerfile": "${workspaceFolder}/Dockerfile",
-                "context": "${workspaceFolder}",
-                "pull": true,
-                "buildArgs": {
-                    "WITH_PACKER": "true",
-                    "WITH_GIT": "true"
-                }
-            }
+            "label": "Build Isaac Automator Container",
+            "type": "shell",
+            "command": "./build",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": []
         },
         {
-            "type": "docker-run",
-            "label": "docker-run: debug",
-            "dependsOn": [],
-            "python": {
-                "file": "${relativeFile}"
+            "label": "Run All Tests",
+            "type": "shell",
+            "command": "bash src/tests/run_all.sh",
+            "group": {
+                "kind": "test",
+                "isDefault": true
             },
-            "dockerRun": {
-                "volumes": [
-                    {
-                        "localPath": "${workspaceFolder}",
-                        "containerPath": "/app"
-                    }
-                ],
-                "remove": true
-            }
+            "problemMatcher": []
+        },
+        {
+            "label": "Terraform: Format All",
+            "type": "shell",
+            "command": "terraform fmt -recursive src/terraform",
+            "problemMatcher": []
         }
-    ],
+    ]
 }
+

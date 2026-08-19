@@ -1,15 +1,18 @@
 {
     "recommendations": [
         "hashicorp.terraform",
-        "4ops.terraform",
-        "editorconfig.editorconfig",
+        "redhat.ansible",
         "redhat.vscode-yaml",
-        "4ops.packer",
-        "yzhang.markdown-all-in-one",
+        "ms-python.python",
+        "ms-python.vscode-pylance",
         "ms-python.black-formatter",
-        "maptz.regionfolder",
         "ms-python.flake8",
         "ms-python.mypy-type-checker",
-        "ms-python.isort"
+        "ms-python.isort",
+        "ms-azuretools.vscode-docker",
+        "tamasfe.even-better-toml",
+        "yzhang.markdown-all-in-one",
+        "editorconfig.editorconfig"
     ]
 }
+
