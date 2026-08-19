@@ -2,6 +2,9 @@
   "entries": [
     {
       "path": ".agents/skills/isaac-automator"
+    },
+    {
+      "path": ".agents/skills"
     }
   ]
 }

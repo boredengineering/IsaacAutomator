@@ -50,12 +50,12 @@
         "OPENAI_API_KEY": "${localEnv:OPENAI_API_KEY}"
     },
     "mounts": [
-        "source=${localEnv:USERPROFILE}/.aws,target=/root/.aws,type=bind,consistency=cached",
-        "source=${localEnv:USERPROFILE}/.config/gcloud,target=/root/.config/gcloud,type=bind,consistency=cached",
-        "source=${localEnv:USERPROFILE}/.azure,target=/root/.azure,type=bind,consistency=cached",
-        "source=isaac-tf-cache-${devcontainerId},target=/opt/tf-data,type=volume",
-        "source=antigravity-config-${devcontainerId},target=/root/.gemini,type=volume",
-        "source=claude-code-config-${devcontainerId},target=/root/.claude,type=volume"
+        "source=${localEnv:HOME}${localEnv:USERPROFILE}/.aws,target=/root/.aws,type=bind,consistency=cached",
+        "source=${localEnv:HOME}${localEnv:USERPROFILE}/.config/gcloud,target=/root/.config/gcloud,type=bind,consistency=cached",
+        "source=${localEnv:HOME}${localEnv:USERPROFILE}/.azure,target=/root/.azure,type=bind,consistency=cached",
+        "source=${localEnv:HOME}${localEnv:USERPROFILE}/.gemini,target=/root/.gemini,type=bind,consistency=cached",
+        "source=${localEnv:HOME}${localEnv:USERPROFILE}/.claude,target=/root/.claude,type=bind,consistency=cached",
+        "source=isaac-tf-cache-${devcontainerId},target=/opt/tf-data,type=volume"
     ],
     "forwardPorts": [
         8080,
@@ -63,5 +63,5 @@
         4000,
         22
     ],
-    "postCreateCommand": "ansible-galaxy collection install community.docker google.cloud && echo 'Isaac Automator DevContainer ready!'"
+    "postCreateCommand": "bash .devcontainer/setup.sh"
 }

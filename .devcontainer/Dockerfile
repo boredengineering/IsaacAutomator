@@ -117,6 +117,25 @@ RUN echo 'export HISTFILE=/app/state/.bash_history' >> /root/.bashrc && \
     echo 'export PROMPT_COMMAND="history -a; ${PROMPT_COMMAND}"' >> /root/.bashrc && \
     echo "export PS1='\[\033[01;33m\][Isaac Automator \[\033[00;33m\]\${VERSION:-dev}\[\033[01;33m\]]\[\033[00m\]:\w\$ '" >> /root/.bashrc && \
     echo "export AGENT_BROWSER_EXECUTABLE_PATH=\$(find /ms-playwright -name chrome -type f | head -n 1)" >> /root/.bashrc && \
-    echo "export AGENT_BROWSER_EXECUTABLE_PATH=\$(find /ms-playwright -name chrome -type f | head -n 1)" >> /etc/bash.bashrc
+    echo "export AGENT_BROWSER_EXECUTABLE_PATH=\$(find /ms-playwright -name chrome -type f | head -n 1)" >> /etc/bash.bashrc && \
+    echo '# Auto-load host-persisted keys (~/.gemini/.env or ~/.claude/.env)' >> /root/.bashrc && \
+    echo '[ -f /root/.gemini/.env ] && set -a && . /root/.gemini/.env && set +a' >> /root/.bashrc && \
+    echo '[ -f /root/.claude/.env ] && set -a && . /root/.claude/.env && set +a' >> /root/.bashrc && \
+    echo '[ -f /root/.gemini/.env ] && set -a && . /root/.gemini/.env && set +a' >> /etc/bash.bashrc && \
+    echo '[ -f /root/.claude/.env ] && set -a && . /root/.claude/.env && set +a' >> /etc/bash.bashrc
+
+# Helper script for setting keys into host-persisted storage
+RUN echo '#!/bin/bash' > /usr/local/bin/set-key && \
+    echo 'if [ -z "$1" ] || [ -z "$2" ]; then' >> /usr/local/bin/set-key && \
+    echo '    echo "Usage: set-key <KEY_NAME> <VALUE>"' >> /usr/local/bin/set-key && \
+    echo '    echo "Example: set-key ANTHROPIC_API_KEY sk-ant-..."' >> /usr/local/bin/set-key && \
+    echo '    exit 1' >> /usr/local/bin/set-key && \
+    echo 'fi' >> /usr/local/bin/set-key && \
+    echo 'mkdir -p /root/.gemini' >> /usr/local/bin/set-key && \
+    echo '[ -f /root/.gemini/.env ] && sed -i "/^$1=/d" /root/.gemini/.env' >> /usr/local/bin/set-key && \
+    echo 'echo "$1=\"$2\"" >> /root/.gemini/.env' >> /usr/local/bin/set-key && \
+    echo 'chmod 600 /root/.gemini/.env' >> /usr/local/bin/set-key && \
+    echo 'echo "Saved $1 to host storage (~/.gemini/.env). Run source ~/.bashrc or open a new terminal to use it."' >> /usr/local/bin/set-key && \
+    chmod +x /usr/local/bin/set-key
 
 WORKDIR /app
