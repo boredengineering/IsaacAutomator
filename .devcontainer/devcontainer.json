@@ -55,7 +55,8 @@
         "source=${localEnv:HOME}${localEnv:USERPROFILE}/.azure,target=/root/.azure,type=bind,consistency=cached",
         "source=${localEnv:HOME}${localEnv:USERPROFILE}/.gemini,target=/root/.gemini,type=bind,consistency=cached",
         "source=${localEnv:HOME}${localEnv:USERPROFILE}/.claude,target=/root/.claude,type=bind,consistency=cached",
-        "source=isaac-tf-cache-${devcontainerId},target=/opt/tf-data,type=volume"
+        "source=isaac-tf-cache-${devcontainerId},target=/opt/tf-data,type=volume",
+        "source=isaac-gh-config,target=/root/.config/gh,type=volume"
     ],
     "forwardPorts": [
         8080,
@@ -63,5 +64,7 @@
         4000,
         22
     ],
-    "postCreateCommand": "bash .devcontainer/setup.sh"
+    "postCreateCommand": "bash .devcontainer/setup.sh",
+    "postStartCommand": "gh auth setup-git 2>/dev/null || true",
+    "postAttachCommand": "gh auth setup-git 2>/dev/null || true"
 }

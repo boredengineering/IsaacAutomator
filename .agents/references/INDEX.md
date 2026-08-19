@@ -16,3 +16,6 @@ Catalog of high-level project specifications, architecture documents, and goal d
 | [`docs/readme_draft.md`](./docs/readme_draft.md) | Modernized README draft covering DevContainer, Spot resilience, GCS backups, and Flex-start cycling | Active Draft |
 | [`gcp-plans/test-spot-instance.md`](./gcp-plans/test-spot-instance.md) | Deployment run record for test03 (g4-standard-48 Flex-start GPU instance) | Active Reference |
 | [`gcp-plans/debugging-instance.md`](./gcp-plans/debugging-instance.md) | Incident report & root cause analysis for Isaac Sim full.kit segfault & base.kit resolution on test03 | Active Reference |
+| [`devcontainer/isaacautomator-devcontainer-plan.md`](./devcontainer/isaacautomator-devcontainer-plan.md) | Architectural evaluation & parity validation for unified DevContainer with OCI features | Active Reference |
+| [`devcontainer/auth-strategy.md`](./devcontainer/auth-strategy.md) | DevContainer Git & GitHub authentication strategy (Pattern B: persistent named volume + setup hook) | Active Reference |
+

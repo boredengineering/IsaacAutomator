@@ -65,9 +65,24 @@ fi
 # ----------------------------------------------------------------------
 # 4. Ansible Galaxy Collections
 # ----------------------------------------------------------------------
-echo "⚙️  [4/4] Installing Ansible Galaxy Collections..."
+echo "⚙️  [4/5] Installing Ansible Galaxy Collections..."
 ansible-galaxy collection install community.docker google.cloud --force-with-deps 2>/dev/null || true
 echo "   ✔ Installed community.docker and google.cloud collections"
+
+# ----------------------------------------------------------------------
+# 5. GitHub CLI & Git Credential Setup (Defense-in-Depth)
+# ----------------------------------------------------------------------
+echo "⚙️  [5/5] Configuring Git Credential Helper for GitHub CLI..."
+if command -v gh &>/dev/null; then
+    # System-level default
+    git config --system "credential.https://github.com.helper" "" 2>/dev/null || true
+    git config --system --add "credential.https://github.com.helper" "!/usr/bin/gh auth git-credential" 2>/dev/null || true
+    git config --system "credential.https://gist.github.com.helper" "" 2>/dev/null || true
+    git config --system --add "credential.https://gist.github.com.helper" "!/usr/bin/gh auth git-credential" 2>/dev/null || true
+    # User-level override
+    gh auth setup-git 2>/dev/null || true
+    echo "   ✔ Configured system & global gh auth git-credential helpers"
+fi
 
 echo "================================================================"
 echo "✅ All agent environments (Antigravity & Claude Code) ready!"

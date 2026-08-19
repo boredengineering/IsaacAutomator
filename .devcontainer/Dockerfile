@@ -54,8 +54,12 @@ RUN mkdir -p -m 755 /etc/apt/keyrings \
     && apt-get update && apt-get install -y gh \
     && rm -rf /var/lib/apt/lists/*
 
-# Initialize Git LFS
-RUN git lfs install
+# Initialize Git LFS and configure Git to use GitHub CLI credential helper
+RUN git lfs install && \
+    git config --system "credential.https://github.com.helper" "" && \
+    git config --system --add "credential.https://github.com.helper" "!/usr/bin/gh auth git-credential" && \
+    git config --system "credential.https://gist.github.com.helper" "" && \
+    git config --system --add "credential.https://gist.github.com.helper" "!/usr/bin/gh auth git-credential"
 
 # Install Google Cloud CLI
 RUN curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg && \
@@ -122,7 +126,9 @@ RUN echo 'export HISTFILE=/app/state/.bash_history' >> /root/.bashrc && \
     echo '[ -f /root/.gemini/.env ] && set -a && . /root/.gemini/.env && set +a' >> /root/.bashrc && \
     echo '[ -f /root/.claude/.env ] && set -a && . /root/.claude/.env && set +a' >> /root/.bashrc && \
     echo '[ -f /root/.gemini/.env ] && set -a && . /root/.gemini/.env && set +a' >> /etc/bash.bashrc && \
-    echo '[ -f /root/.claude/.env ] && set -a && . /root/.claude/.env && set +a' >> /etc/bash.bashrc
+    echo '[ -f /root/.claude/.env ] && set -a && . /root/.claude/.env && set +a' >> /etc/bash.bashrc && \
+    echo 'command -v gh &>/dev/null && ! git config --global --get credential.https://github.com.helper &>/dev/null && gh auth setup-git 2>/dev/null || true' >> /root/.bashrc && \
+    echo 'command -v gh &>/dev/null && ! git config --global --get credential.https://github.com.helper &>/dev/null && gh auth setup-git 2>/dev/null || true' >> /etc/bash.bashrc
 
 # Helper script for setting keys into host-persisted storage
 RUN echo '#!/bin/bash' > /usr/local/bin/set-key && \
