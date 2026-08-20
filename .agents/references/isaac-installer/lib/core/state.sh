@@ -138,20 +138,35 @@ audit_workspace_drift() {
         local desired_ref="${ISAACLAB_TAG:-${ISAACLAB_BRANCH:-main}}"
         
         # Check remotes & ref drift
+        local desired_origin_norm
+        desired_origin_norm="$(normalize_git_url "${ISAACLAB_REPO:-https://github.com/isaac-sim/IsaacLab.git}")"
+        local desired_upstream_norm
+        desired_upstream_norm="$(normalize_git_url "${ISAACLAB_UPSTREAM:-https://github.com/isaac-sim/IsaacLab.git}")"
+
         local drift_check
         drift_check=$(python3 -c "
 import json
 info = json.loads('''${lab_info}''')
-desired_origin = '${ISAACLAB_REPO:-https://github.com/isaac-sim/IsaacLab.git}'
-desired_upstream = '${ISAACLAB_UPSTREAM:-https://github.com/isaac-sim/IsaacLab.git}'
+desired_origin = '${desired_origin_norm}'
+desired_upstream = '${desired_upstream_norm}'
 desired_ref = '${desired_ref}'
 
-drifts = []
-if desired_origin and info.get('origin') and info.get('origin') != desired_origin and desired_origin not in info.get('origin'):
-    drifts.append(f'ORIGIN_MISMATCH|{info.get(\"origin\")}|{desired_origin}|Origin remote points to unexpected URL')
+def clean_url(u):
+    if not u: return ''
+    return u.rstrip('/').removesuffix('.git').lower()
 
-if not info.get('upstream') and desired_origin != desired_upstream:
-    drifts.append(f'UPSTREAM_MISSING|None|{desired_upstream}|Upstream canonical remote not wired')
+cur_origin = info.get('origin', '')
+cur_upstream = info.get('upstream', '')
+
+drifts = []
+if desired_origin and cur_origin and clean_url(cur_origin) != clean_url(desired_origin):
+    drifts.append(f'ORIGIN_MISMATCH|{cur_origin}|{desired_origin}|Origin remote points to unexpected URL')
+
+if clean_url(desired_origin) != clean_url(desired_upstream):
+    if not cur_upstream:
+        drifts.append(f'UPSTREAM_MISSING|None|{desired_upstream}|Upstream canonical remote not wired')
+    elif clean_url(cur_upstream) != clean_url(desired_upstream):
+        drifts.append(f'UPSTREAM_MISMATCH|{cur_upstream}|{desired_upstream}|Upstream remote points to unexpected URL')
 
 active_ref = info.get('tag') if info.get('tag') else info.get('branch')
 if desired_ref and active_ref and active_ref != desired_ref:

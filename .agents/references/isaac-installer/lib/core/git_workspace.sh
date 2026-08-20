@@ -178,30 +178,33 @@ get_repo_info() {
         return 1
     fi
 
-    sudo -H -u "${TARGET_USER}" bash -c "
-        cd '${repo_path}'
-        branch=\$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo 'HEAD')
-        tag=\$(git describe --tags --exact-match 2>/dev/null || echo '')
-        commit=\$(git rev-parse HEAD 2>/dev/null || echo '')
-        origin=\$(git remote get-url origin 2>/dev/null || git config --get remote.origin.url 2>/dev/null || echo '')
-        upstream=\$(git remote get-url upstream 2>/dev/null || git config --get remote.upstream.url 2>/dev/null || echo '')
-        dirty=false
-        if [[ -n \$(git status --porcelain 2>/dev/null) ]]; then dirty=true; fi
+    git config --global --add safe.directory "${repo_path}" 2>/dev/null || true
+    sudo -H -u "${TARGET_USER}" git config --global --add safe.directory "${repo_path}" 2>/dev/null || true
 
-        python3 -c \"
+    local branch tag commit origin upstream dirty
+    branch="$(sudo -H -u "${TARGET_USER}" git -C "${repo_path}" rev-parse --abbrev-ref HEAD 2>/dev/null || echo 'HEAD')"
+    tag="$(sudo -H -u "${TARGET_USER}" git -C "${repo_path}" describe --tags --exact-match 2>/dev/null || echo '')"
+    commit="$(sudo -H -u "${TARGET_USER}" git -C "${repo_path}" rev-parse HEAD 2>/dev/null || echo '')"
+    origin="$(sudo -H -u "${TARGET_USER}" git -C "${repo_path}" config --get remote.origin.url 2>/dev/null || echo '')"
+    upstream="$(sudo -H -u "${TARGET_USER}" git -C "${repo_path}" config --get remote.upstream.url 2>/dev/null || echo '')"
+    dirty=false
+    if [[ -n "$(sudo -H -u "${TARGET_USER}" git -C "${repo_path}" status --porcelain 2>/dev/null)" ]]; then
+        dirty=true
+    fi
+
+    python3 -c "
 import json
 print(json.dumps({
     'exists': True,
-    'path': '${repo_path}',
-    'branch': '\${branch}',
-    'tag': '\${tag}',
-    'commit': '\${commit}',
-    'origin': '\${origin}',
-    'upstream': '\${upstream}',
-    'dirty': \${dirty}
+    'path': '''${repo_path}''',
+    'branch': '''${branch}''',
+    'tag': '''${tag}''',
+    'commit': '''${commit}''',
+    'origin': '''${origin}''',
+    'upstream': '''${upstream}''',
+    'dirty': ${dirty}
 }))
-\"
-    " 2>/dev/null || echo "{\"exists\": false}"
+" 2>/dev/null || echo "{\"exists\": false}"
 }
 
 # Safely switches or checks out a desired git ref (tag, branch, commit)
