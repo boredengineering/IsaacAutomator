@@ -263,3 +263,51 @@ Runs an end-to-end verification covering:
 - [x] **Isaac Lab & IsaacLab-Arena Multi-Agent Linking** (`lib/modules/isaaclab.sh`, `lib/modules/isaaclab_arena.sh`)
 - [x] **13-Subsystem End-to-End Verification Suite** (`cmd_test`)
 - [ ] **Multi-Agent Skills Registration** (`.agents/skills/isaac-baremetal-installer/SKILL.md`)
+
+---
+
+## 10. Backburner Features (Low Priority / Future Iterations)
+
+The following architectural concepts represent high-value long-term force multipliers, but are **strictly low priority / backburner** and will not block initial production release.
+
+```mermaid
+flowchart LR
+    subgraph BACKBURNER ["Backburner Features (Low Priority)"]
+        B1["1. USD Asset Pre-Cacher\n(Offline simulation without AWS CDN lag)"]
+        B2["2. ROS 2 & CycloneDDS Tuning\n(Zero-copy IPC & network buffer tuning)"]
+        B3["3. Low-Latency Kernel Tuning\n(CPU governor & GPU persistence mode)"]
+        B4["4. Task / Robot Scaffolder CLI\n(Boilerplate generator for Isaac Lab gym tasks)"]
+        B5["5. Diagnostic Support Bundle\n(1-click encrypted debug tarball for AI/remote teams)"]
+        B6["6. CLI Self-Update Engine\n(Seamless upstream updates & profile migration)"]
+    end
+```
+
+### 1. Local Omniverse USD Asset Pre-Cacher (`cache preload`)
+- **Concept**: Pre-download and cache essential USD robot models (Unitree G1, Go2, H1, Franka Panda, UR10) and environments (warehouse, tabletop) directly to local NVMe storage (`~/.local/share/ov/data/Isaac/5.1/`).
+- **Goal**: Enable 100% offline, zero-internet robotics simulation bootable in under 2 seconds without streaming assets on-the-fly from NVIDIA Omniverse AWS servers.
+- **Priority**: Low / Backburner.
+
+### 2. ROS 2 Humble / Jazzy & CycloneDDS High-Throughput Network Tuning (`ros2`)
+- **Concept**: Install native ROS 2 Humble / Jazzy, configure Isaac ROS bridges (`ros2_bridge`), and apply `sysctl` Linux UDP network buffer tuning (`net.core.rmem_max=2147483647`) to prevent dropped frames when publishing 4x 1080p camera feeds from Isaac Sim to ROS 2 nodes.
+- **Goal**: Seamless hardware-in-the-loop bridge for physical robot deployment.
+- **Priority**: Low / Backburner.
+
+### 3. Low-Latency Linux Kernel & GPU Performance Tuning (`tune`)
+- **Concept**: Set CPU frequency governor to `performance` across all cores (`cpupower frequency-set -g performance`), enable NVIDIA GPU persistence mode (`nvidia-smi -pm 1`), and configure Linux Transparent HugePages (`transparent_hugepage=madvise`) for PyTorch memory allocators.
+- **Goal**: Eliminate micro-stutters during compute-intensive RL physics steps.
+- **Priority**: Low / Backburner.
+
+### 4. Custom Task & Robot Scaffolder CLI (`new`)
+- **Concept**: Interactive CLI generator (`./bin/isaac-installer new task ReachTarget --robot g1`) that scaffolds clean, standardized Isaac Lab gym task folders (`task_cfg.py`, `env_cfg.py`, `mdp/rewards.py`, `mdp/observations.py`, `rsl_rl_cfg.py`) and launch scripts.
+- **Goal**: Speed up new environment development from days to seconds.
+- **Priority**: Low / Backburner.
+
+### 5. Automated Diagnostic Support Bundle (`doctor --bundle`)
+- **Concept**: Bundle sanitized `nvidia-smi`, `dmesg`, `vulkaninfo`, `lsblk`, NVMe SMART health, and Omniverse crash logs into a single compressed `isaac-diagnostics.tar.gz` archive.
+- **Goal**: Allow remote lab teams and AI coding agents to diagnose crashes in seconds.
+- **Priority**: Low / Backburner.
+
+### 6. Seamless Self-Update & Profile Migrator (`update`)
+- **Concept**: CLI command (`./bin/isaac-installer update`) that pulls latest installer updates from GitHub, resolves merge conflicts with local YAML profiles, and runs schema migration checks.
+- **Goal**: Keep bare-metal workstations up-to-date across Isaac Sim releases without losing custom fork configurations.
+- **Priority**: Low / Backburner.

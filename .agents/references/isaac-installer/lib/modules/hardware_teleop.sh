@@ -3,24 +3,50 @@
 # hardware_teleop.sh - Declarative Teleoperation, XR & Peripheral Controller
 # ==============================================================================
 
+get_teleop_description() {
+    local parts=()
+    [[ "${CFG_TELEOPERATION_FTDI_1MS_LATENCY_RULE:-true}" == "true" ]] && parts+=("1ms FTDI low-latency serial rule for robotic arms")
+    [[ "${CFG_TELEOPERATION_SPACEMOUSE_DAEMON:-false}" == "true" ]] && parts+=("SpaceMouse daemon (spacenavd)")
+    [[ "${CFG_TELEOPERATION_MANUS_VR_GLOVES:-false}" == "true" ]] && parts+=("Manus VR haptic gloves")
+    [[ "${CFG_TELEOPERATION_REALSENSE_CAMERAS:-false}" == "true" ]] && parts+=("Intel RealSense depth cameras")
+    [[ "${CFG_TELEOPERATION_XR_CLOUDXR:-false}" == "true" ]] && parts+=("XR CloudXR retargeters")
+
+    if [[ ${#parts[@]} -gt 0 ]]; then
+        local IFS=", "
+        echo "${parts[*]}"
+    else
+        echo "Hardware teleoperation (Disabled in profile)"
+    fi
+}
+
 check_hardware_teleop() {
     local missing=()
     local udev_dir="/etc/udev/rules.d"
+    local total_enabled=0
 
     if [[ "${CFG_TELEOPERATION_FTDI_1MS_LATENCY_RULE:-true}" == "true" ]]; then
+        total_enabled=$((total_enabled + 1))
         [[ -f "${udev_dir}/99-ftdi-latency.rules" ]] || missing+=("1ms FTDI rule")
     fi
 
     if [[ "${CFG_TELEOPERATION_SPACEMOUSE_DAEMON:-false}" == "true" ]]; then
+        total_enabled=$((total_enabled + 1))
         command -v spacenavd &>/dev/null || missing+=("spacenavd")
     fi
 
     if [[ "${CFG_TELEOPERATION_MANUS_VR_GLOVES:-false}" == "true" ]]; then
+        total_enabled=$((total_enabled + 1))
         [[ -f "${udev_dir}/99-manus-gloves.rules" ]] || missing+=("Manus gloves rule")
     fi
 
     if [[ "${CFG_TELEOPERATION_REALSENSE_CAMERAS:-false}" == "true" ]]; then
+        total_enabled=$((total_enabled + 1))
         [[ -f "${udev_dir}/99-realsense.rules" ]] || missing+=("RealSense rule")
+    fi
+
+    if [[ "$total_enabled" -eq 0 ]]; then
+        STAGE_CHECK_MSG="Hardware teleoperation is disabled in active profile"
+        return 0
     fi
 
     if [[ ${#missing[@]} -eq 0 ]]; then

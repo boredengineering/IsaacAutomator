@@ -1,7 +1,16 @@
-#!/usr/bin/env bash
-# ==============================================================================
-# dev_tools.sh - Declarative Development Workstation Stack & Cloud CLIs
-# ==============================================================================
+get_devtools_description() {
+    local parts=("Docker CE" "nvidia-ctk")
+    [[ "${CFG_HARDWARE_ENABLE_NVME_STORAGE_TOOLS:-true}" == "true" ]] && parts+=("NVMe/LVM tools")
+    [[ "${CFG_DEVTOOLS_GITHUB_DESKTOP:-true}" == "true" ]] && parts+=("GitHub Desktop")
+    [[ "${CFG_DEVTOOLS_VSCODE:-true}" == "true" ]] && parts+=("VS Code")
+    [[ "${CFG_DEVTOOLS_CHROMIUM:-true}" == "true" ]] && parts+=("Chromium")
+    [[ "${CFG_DEVTOOLS_CLOUD_CLIS_AWS:-false}" == "true" ]] && parts+=("AWS CLI")
+    [[ "${CFG_DEVTOOLS_CLOUD_CLIS_GCLOUD:-false}" == "true" ]] && parts+=("GCP CLI")
+    [[ "${CFG_DEVTOOLS_DISCORD:-false}" == "true" ]] && parts+=("Discord")
+
+    local IFS=", "
+    echo "${parts[*]}"
+}
 
 check_dev_tools() {
     local missing=()

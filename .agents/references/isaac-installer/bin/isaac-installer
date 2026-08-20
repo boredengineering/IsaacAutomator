@@ -67,13 +67,33 @@ is_stage_selected() {
     # Check YAML Profile rules
     case "$stage_name" in
         arena)
-            if [[ "${CFG_REPOSITORIES_ARENA_ENABLED:-${CFG_ISAACLAB_ARENA_ENABLED:-false}}" != "true" ]]; then
+            local arena_active=false
+            [[ "${CFG_REPOSITORIES_ARENA_ENABLED:-false}" == "true" ]] && arena_active=true
+            [[ "${CFG_REPOSITORIES_ARENA:-false}" == "true" ]] && arena_active=true
+            [[ "${CFG_REPOSITORIES_ISAACLAB_ARENA_ENABLED:-false}" == "true" ]] && arena_active=true
+            [[ "${CFG_REPOSITORIES_ISAACLAB_ARENA:-false}" == "true" ]] && arena_active=true
+            [[ "${CFG_ISAACLAB_ARENA_ENABLED:-false}" == "true" ]] && arena_active=true
+            [[ "${CFG_ISAACLAB_ARENA:-false}" == "true" ]] && arena_active=true
+            [[ "${CFG_ARENA_ENABLED:-false}" == "true" ]] && arena_active=true
+            [[ "${CFG_ARENA:-false}" == "true" ]] && arena_active=true
+            [[ "${CFG_ECOSYSTEM_ARENA:-false}" == "true" ]] && arena_active=true
+
+            if [[ "$arena_active" != true ]]; then
                 STAGE_CHECK_MSG="Disabled in profile (${CONFIG_FILE})"
                 return 1
             fi
             ;;
         physical_ai)
-            if [[ "${CFG_REPOSITORIES_LEROBOT_ENABLED:-${CFG_ECOSYSTEM_LEROBOT:-false}}" != "true" ]]; then
+            local lerobot_active=false
+            [[ "${CFG_REPOSITORIES_LEROBOT_ENABLED:-false}" == "true" ]] && lerobot_active=true
+            [[ "${CFG_REPOSITORIES_LEROBOT:-false}" == "true" ]] && lerobot_active=true
+            [[ "${CFG_REPOSITORIES_PHYSICAL_AI_ENABLED:-false}" == "true" ]] && lerobot_active=true
+            [[ "${CFG_LEROBOT_ENABLED:-false}" == "true" ]] && lerobot_active=true
+            [[ "${CFG_LEROBOT:-false}" == "true" ]] && lerobot_active=true
+            [[ "${CFG_ECOSYSTEM_LEROBOT:-false}" == "true" ]] && lerobot_active=true
+            [[ "${CFG_PHYSICAL_AI_ENABLED:-false}" == "true" ]] && lerobot_active=true
+
+            if [[ "$lerobot_active" != true ]]; then
                 STAGE_CHECK_MSG="Disabled in profile (${CONFIG_FILE})"
                 return 1
             fi
@@ -359,11 +379,11 @@ cmd_install() {
 
     # Stage 3: Python Runtime & Dev Tools
     evaluate_and_run_stage "python" "Miniforge & uv package manager" check_python_env install_python_env
-    evaluate_and_run_stage "devtools" "Docker CE, nvidia-ctk, VS Code, Chrome & Discord" check_dev_tools install_dev_tools
+    evaluate_and_run_stage "devtools" "$(get_devtools_description)" check_dev_tools install_dev_tools
 
     # Stage 4: Physical AI & Hardware Teleop
     evaluate_and_run_stage "physical_ai" "Hugging Face CLI, LeRobot, lerobot-dataset-viz & video codecs" check_physical_ai install_physical_ai_stack
-    evaluate_and_run_stage "hardware_teleop" "XR Headsets, Manus gloves, SpaceMouse & 1ms FTDI udev rules" check_hardware_teleop install_hardware_teleop
+    evaluate_and_run_stage "hardware_teleop" "$(get_teleop_description)" check_hardware_teleop install_hardware_teleop
 
     # Stage 5: Isaac Sim Engine
     evaluate_and_run_stage "isaacsim" "NVIDIA Isaac Sim standalone extraction & EULA" check_isaac_sim install_isaac_sim
@@ -406,7 +426,8 @@ cmd_resume() {
 }
 
 cmd_test() {
-    log_header "Running Complete Workstation & Physical AI Verification Suite"
+    log_header "Running Profile-Aware Workstation Verification Suite"
+    log_info "Active Profile: ${PROFILE_NAME} (${CONFIG_FILE})"
     probe_system
 
     local tests_passed=0
@@ -470,96 +491,106 @@ cmd_test() {
         log_warn "Docker CE is not installed."
     fi
 
-    # 6. Developer Applications
-    tests_total=$((tests_total + 1))
-    log_step "6. Testing Developer Applications (VS Code, Chrome, Discord)..."
-    local dev_apps=()
-    command -v code &>/dev/null && dev_apps+=("VS Code")
-    (command -v google-chrome &>/dev/null || command -v chromium-browser &>/dev/null || command -v chromium &>/dev/null) && dev_apps+=("Chrome/Chromium")
-    command -v discord &>/dev/null && dev_apps+=("Discord")
-    command -v github-desktop &>/dev/null && dev_apps+=("GitHub Desktop")
+    # 6. Developer Applications (VS Code, Chrome, GitHub Desktop)
+    if [[ "${CFG_DEVTOOLS_VSCODE:-true}" == "true" || "${CFG_DEVTOOLS_CHROMIUM:-true}" == "true" || "${CFG_DEVTOOLS_GITHUB_DESKTOP:-true}" == "true" ]]; then
+        tests_total=$((tests_total + 1))
+        log_step "6. Testing Configured Developer Applications..."
+        local dev_apps=()
+        command -v code &>/dev/null && dev_apps+=("VS Code")
+        (command -v google-chrome &>/dev/null || command -v chromium-browser &>/dev/null || command -v chromium &>/dev/null) && dev_apps+=("Chrome/Chromium")
+        command -v github-desktop &>/dev/null && dev_apps+=("GitHub Desktop")
 
-    if [[ ${#dev_apps[@]} -ge 2 ]]; then
-        log_success "Developer Apps active: ${dev_apps[*]}"
-        tests_passed=$((tests_passed + 1))
-    else
-        log_info "Developer Apps found: ${dev_apps[*]:-None}"
+        if [[ ${#dev_apps[@]} -ge 1 ]]; then
+            log_success "Developer Apps active: ${dev_apps[*]}"
+            tests_passed=$((tests_passed + 1))
+        else
+            log_warn "Configured developer apps not yet installed."
+        fi
     fi
 
     # 7. Cloud & Hub CLIs
-    tests_total=$((tests_total + 1))
-    log_step "7. Testing Cloud & Ecosystem CLIs (gh, aws, gcloud, hf)..."
-    local clis=()
-    command -v gh &>/dev/null && clis+=("gh")
-    command -v aws &>/dev/null && clis+=("aws")
-    command -v gcloud &>/dev/null && clis+=("gcloud")
-    (command -v huggingface-cli &>/dev/null || command -v hf &>/dev/null) && clis+=("hf")
+    if [[ "${CFG_DEVTOOLS_CLOUD_CLIS_AWS:-false}" == "true" || "${CFG_DEVTOOLS_CLOUD_CLIS_GCLOUD:-false}" == "true" ]]; then
+        tests_total=$((tests_total + 1))
+        log_step "7. Testing Cloud CLIs (AWS, GCP)..."
+        local clis=()
+        command -v aws &>/dev/null && clis+=("aws")
+        command -v gcloud &>/dev/null && clis+=("gcloud")
 
-    if [[ ${#clis[@]} -gt 0 ]]; then
-        log_success "CLIs present: ${clis[*]}"
-        tests_passed=$((tests_passed + 1))
-    else
-        log_info "Cloud CLIs are optional and not currently installed."
+        if [[ ${#clis[@]} -gt 0 ]]; then
+            log_success "Cloud CLIs present: ${clis[*]}"
+            tests_passed=$((tests_passed + 1))
+        else
+            log_warn "Configured Cloud CLIs are missing."
+        fi
     fi
 
     # 8. High-Speed NVMe & LVM Storage Subsystem
-    tests_total=$((tests_total + 1))
-    log_step "8. Testing NVMe Management & LVM Storage Stack..."
-    local storage_ok=true
-    if command -v nvme &>/dev/null; then
-        log_success "nvme-cli is installed ($(nvme version 2>/dev/null | head -n 1 || echo "active"))."
-    else
-        log_warn "nvme-cli is missing."
-        storage_ok=false
-    fi
-    if command -v lvm &>/dev/null; then
-        log_success "LVM2 logical volume manager is active."
-    else
-        log_warn "lvm2 is missing."
-        storage_ok=false
-    fi
-    if [[ "$storage_ok" == true ]]; then
-        tests_passed=$((tests_passed + 1))
-    fi
-
-    # 9. Hugging Face CLI & LeRobot Visualizer
-    tests_total=$((tests_total + 1))
-    log_step "9. Testing Physical AI (Hugging Face CLI & LeRobot Dataset Visualizer)..."
-    if (command -v huggingface-cli &>/dev/null || command -v hf &>/dev/null) && command -v lerobot-dataset-viz &>/dev/null; then
-        log_success "huggingface-cli and lerobot-dataset-viz are verified in PATH."
-        tests_passed=$((tests_passed + 1))
-    else
-        log_warn "LeRobot dataset visualizer or Hugging Face CLI not found in /usr/local/bin."
+    if [[ "${CFG_HARDWARE_ENABLE_NVME_STORAGE_TOOLS:-true}" == "true" ]]; then
+        tests_total=$((tests_total + 1))
+        log_step "8. Testing NVMe Management & LVM Storage Stack..."
+        local storage_ok=true
+        if command -v nvme &>/dev/null; then
+            log_success "nvme-cli is installed ($(nvme version 2>/dev/null | head -n 1 || echo "active"))."
+        else
+            log_warn "nvme-cli is missing."
+            storage_ok=false
+        fi
+        if command -v lvm &>/dev/null; then
+            log_success "LVM2 logical volume manager is active."
+        else
+            log_warn "lvm2 is missing."
+            storage_ok=false
+        fi
+        if [[ "$storage_ok" == true ]]; then
+            tests_passed=$((tests_passed + 1))
+        fi
     fi
 
-    # 10. Hardware Peripherals & 1ms Latency Udev Rules
-    tests_total=$((tests_total + 1))
-    log_step "10. Testing Hardware Teleop (1ms FTDI latency, SpaceMouse, Manus rules)..."
-    local teleop_ready=true
-    if [[ -f /etc/udev/rules.d/99-ftdi-latency.rules ]]; then
-        log_success "1ms FTDI low-latency serial udev rule is active."
-    else
-        log_warn "99-ftdi-latency.rules missing (default 16ms serial lag active)."
-        teleop_ready=false
+    # 9. Physical AI / LeRobot (Only if enabled in YAML profile)
+    if [[ "${CFG_REPOSITORIES_LEROBOT_ENABLED:-${CFG_ECOSYSTEM_LEROBOT:-false}}" == "true" ]]; then
+        tests_total=$((tests_total + 1))
+        log_step "9. Testing Physical AI (Hugging Face CLI & LeRobot Dataset Visualizer)..."
+        if (command -v huggingface-cli &>/dev/null || command -v hf &>/dev/null) && command -v lerobot-dataset-viz &>/dev/null; then
+            log_success "huggingface-cli and lerobot-dataset-viz are verified in PATH."
+            tests_passed=$((tests_passed + 1))
+        else
+            log_warn "LeRobot dataset visualizer or Hugging Face CLI not found in /usr/local/bin."
+        fi
     fi
-    if systemctl is-active --quiet spacenavd 2>/dev/null; then
-        log_success "SpaceMouse daemon (spacenavd) is active."
-    else
-        log_info "SpaceMouse daemon (spacenavd) is idle or not running."
+
+    # 10. Hardware Teleoperation Rules (Only if enabled in YAML profile)
+    if [[ "${CFG_TELEOPERATION_FTDI_1MS_LATENCY_RULE:-true}" == "true" ]]; then
+        tests_total=$((tests_total + 1))
+        log_step "10. Testing Hardware Teleop Serial Latency (1ms FTDI rule)..."
+        if [[ -f /etc/udev/rules.d/99-ftdi-latency.rules ]]; then
+            log_success "1ms FTDI low-latency serial udev rule is active."
+            tests_passed=$((tests_passed + 1))
+        else
+            log_warn "99-ftdi-latency.rules missing (default 16ms serial lag active)."
+        fi
     fi
-    if [[ "$teleop_ready" == true ]]; then
-        tests_passed=$((tests_passed + 1))
+
+    if [[ "${CFG_TELEOPERATION_SPACEMOUSE_DAEMON:-false}" == "true" ]]; then
+        tests_total=$((tests_total + 1))
+        log_step "Testing SpaceMouse Daemon (spacenavd)..."
+        if systemctl is-active --quiet spacenavd 2>/dev/null; then
+            log_success "SpaceMouse daemon (spacenavd) is active."
+            tests_passed=$((tests_passed + 1))
+        else
+            log_warn "SpaceMouse daemon (spacenavd) is not running."
+        fi
     fi
 
     # 11. Isaac Sim Standalone Engine
     tests_total=$((tests_total + 1))
-    log_step "11. Testing NVIDIA Isaac Sim Standalone Engine..."
-    local sim_dir="${ISAACSIM_DIR:-${TARGET_HOME}/IsaacSim}"
+    log_step "11. Testing NVIDIA Isaac Sim Engine..."
+    local sim_dir
+    sim_dir="$(resolve_isaacsim_dir)"
     if [[ -x "${sim_dir}/isaac-sim.sh" && -f "${sim_dir}/.eula_accepted" ]]; then
-        log_success "Isaac Sim v5.1.0 engine ready at ${sim_dir}"
+        log_success "Isaac Sim engine ready at ${sim_dir}"
         tests_passed=$((tests_passed + 1))
     else
-        log_warn "Isaac Sim standalone engine not found at ${sim_dir}."
+        log_warn "Isaac Sim engine not found or EULA not accepted at ${sim_dir}."
     fi
 
     # 12. Isaac Lab PyTorch CUDA Linkage
@@ -575,21 +606,23 @@ cmd_test() {
             log_warn "Isaac Lab PyTorch CUDA check encountered an issue."
         fi
     else
-        log_info "Isaac Lab framework is not yet installed."
+        log_info "Isaac Lab framework is not yet installed at ${lab_dir}."
     fi
 
-    # 13. Desktop Shortcuts & Demos
-    tests_total=$((tests_total + 1))
-    log_step "13. Testing Desktop Shortcuts & RL Demo Launchers..."
-    if [[ -f "${TARGET_HOME}/Desktop/Humanoid-Locomotion-G1.desktop" ]]; then
-        log_success "Desktop launchers for Unitree G1, Go2, and Franka are ready."
-        tests_passed=$((tests_passed + 1))
-    else
-        log_info "Desktop shortcuts not yet deployed."
+    # 13. Desktop Shortcuts & Demos (Only if enabled in YAML)
+    if [[ "${CFG_DEMOS_DESKTOP_SHORTCUTS:-${CFG_ECOSYSTEM_DEMOS:-true}}" == "true" ]]; then
+        tests_total=$((tests_total + 1))
+        log_step "13. Testing Desktop Shortcuts & RL Demo Launchers..."
+        if [[ -f "${TARGET_HOME}/Desktop/Humanoid-Locomotion-G1.desktop" ]]; then
+            log_success "Desktop launchers for Unitree G1, Go2, and Franka are ready."
+            tests_passed=$((tests_passed + 1))
+        else
+            log_info "Desktop shortcuts not yet deployed."
+        fi
     fi
 
     echo ""
-    log_card_start "Verification Summary"
+    log_card_start "Verification Summary (${PROFILE_NAME})"
     log_card_item "Tests Passed" "${tests_passed} / ${tests_total}"
     local score_pct
     score_pct=$(awk "BEGIN {printf \"%.0f\", (${tests_passed}/${tests_total}) * 100}")
@@ -616,7 +649,7 @@ Commands:
   config                                       Display active YAML configuration profile
   install                                      Run bare-metal installation according to YAML profile
   resume                                       Resume installation from last recorded checkpoint
-  test                                         Run end-to-end 13-subsystem verification suite
+  test                                         Run profile-aware verification suite
   stream <provider>                            Setup 3D streaming (nomachine | sunshine)
   backups                                      List configuration safety snapshots
   help                                         Show this message
