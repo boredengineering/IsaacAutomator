@@ -239,6 +239,106 @@ fetch_and_checkout_ref() {
     "
 }
 
+# Check if a remote fork repository exists on GitHub
+check_remote_fork_exists() {
+    local repo_url="$1"
+    detect_target_user
+
+    # 1. Try with git ls-remote first
+    if sudo -H -u "${TARGET_USER}" git ls-remote --heads "$repo_url" &>/dev/null; then
+        return 0
+    fi
+
+    # 2. Try with gh CLI if authenticated
+    local slug
+    slug="$(extract_repo_owner "$repo_url")/$(basename "$repo_url" .git)"
+    if sudo -H -u "${TARGET_USER}" gh api "repos/${slug}" &>/dev/null; then
+        return 0
+    fi
+
+    return 1
+}
+
+# Ensures a user fork exists on GitHub, automatically creating it via gh if missing
+ensure_github_fork() {
+    local requested_fork_url="$1"
+    local official_upstream_url="$2"
+
+    requested_fork_url="$(normalize_git_url "$requested_fork_url")"
+    official_upstream_url="$(normalize_git_url "$official_upstream_url")"
+
+    if [[ "$requested_fork_url" == "$official_upstream_url" ]]; then
+        echo "$requested_fork_url"
+        return 0
+    fi
+
+    detect_target_user
+
+    # Check if the fork already exists on GitHub
+    if check_remote_fork_exists "$requested_fork_url"; then
+        echo "$requested_fork_url"
+        return 0
+    fi
+
+    # Fork does not exist; check if auto_create_fork is enabled and gh is authenticated
+    local auto_create="${WORKSPACE_AUTO_CREATE_FORK:-${CFG_WORKSPACE_AUTO_CREATE_FORK:-true}}"
+    if [[ "$auto_create" == "true" ]] && command -v gh &>/dev/null && sudo -H -u "${TARGET_USER}" gh auth status &>/dev/null; then
+        log_info "GitHub fork ${requested_fork_url} not found. Automatically creating fork of ${official_upstream_url} via GitHub CLI..."
+        if sudo -H -u "${TARGET_USER}" gh repo fork "${official_upstream_url}" --clone=false --default-branch-only 2>/dev/null; then
+            log_success "Fork successfully created on GitHub under your account."
+            echo "$requested_fork_url"
+            return 0
+        fi
+    fi
+
+    log_warn "Fork ${requested_fork_url} does not exist on GitHub and auto-fork was unavailable."
+    log_info "Falling back to cloning official upstream repository directly: ${official_upstream_url}"
+    echo "$official_upstream_url"
+}
+
+# Checks if local repository fork is behind or ahead of official upstream
+check_fork_sync_status() {
+    local repo_path="$1"
+    detect_target_user
+
+    if [[ ! -d "${repo_path}/.git" ]]; then
+        echo "{\"sync\": \"unknown\"}"
+        return 1
+    fi
+
+    sudo -H -u "${TARGET_USER}" bash -c "
+        cd '${repo_path}'
+        if ! git remote | grep -q '^upstream$'; then
+            echo '{\"has_upstream\": false}'
+            exit 0
+        fi
+
+        git fetch upstream --quiet 2>/dev/null || true
+        curr_branch=\$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo 'main')
+        
+        # Check against matching upstream branch or upstream/main
+        upstream_ref='upstream/main'
+        if git rev-parse --verify \"upstream/\${curr_branch}\" &>/dev/null; then
+            upstream_ref=\"upstream/\${curr_branch}\"
+        fi
+
+        behind=\$(git rev-list --count HEAD..\${upstream_ref} 2>/dev/null || echo 0)
+        ahead=\$(git rev-list --count \${upstream_ref}..HEAD 2>/dev/null || echo 0)
+
+        python3 -c \"
+import json
+print(json.dumps({
+    'has_upstream': True,
+    'branch': '\${curr_branch}',
+    'upstream_ref': '\${upstream_ref}',
+    'behind': int('\${behind}'),
+    'ahead': int('\${ahead}'),
+    'in_sync': int('\${behind}') == 0 and int('\${ahead}') == 0
+}))
+\"
+    " 2>/dev/null || echo "{\"sync\": \"unknown\"}"
+}
+
 # Clones or updates a repository with dual-remote (origin = fork, upstream = official) and ref resolution
 setup_git_repo_with_fork() {
     local dest_dir="$1"
@@ -252,7 +352,7 @@ setup_git_repo_with_fork() {
     mkdir -p "$(dirname "$dest_dir")"
     chown "${TARGET_USER}:${TARGET_USER}" "$(dirname "$dest_dir")"
 
-    fork_or_main_url="$(normalize_git_url "$fork_or_main_url")"
+    fork_or_main_url="$(ensure_github_fork "$fork_or_main_url" "$official_upstream_url")"
     official_upstream_url="$(normalize_git_url "$official_upstream_url")"
 
     local target_ref="${tag:-$branch}"

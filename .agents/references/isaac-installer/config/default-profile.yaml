@@ -20,32 +20,39 @@ workspace:
   layout: "auto"                     # "auto" | "org" | "flat"
   default_owner: "BoredEngineer"      # Default GitHub owner namespace
   auto_register_github_desktop: true
+  auto_create_fork: true             # Automatically create GitHub fork if missing via gh CLI
 
 repositories:
   isaaclab:
     enabled: true
-    repo: "https://github.com/isaac-sim/IsaacLab.git"
+    repo: "BoredEngineer/IsaacLab"
     upstream: "https://github.com/isaac-sim/IsaacLab.git"
     branch: "main"
-    tag: ""                          # e.g. "v2.3.0" (empty = use branch)
+    tag: ""                          # e.g. "v3.0.0-beta2" (empty = use branch)
   arena:
-    enabled: true                   # Enabled in profile
-    repo: "https://github.com/isaac-sim/IsaacLab-Arena.git"
+    enabled: true
+    repo: "BoredEngineer/IsaacLab-Arena"
     upstream: "https://github.com/isaac-sim/IsaacLab-Arena.git"
-    branch: "release/0.1.1"
+    branch: "release/0.3.0-prerelease"
     tag: ""
   lerobot:
-    enabled: false                   # Disabled by default in standard profile
-    repo: "https://github.com/huggingface/lerobot.git"
+    enabled: false                   # Disabled by default; enable in full-ecosystem
+    repo: "BoredEngineer/lerobot"
     upstream: "https://github.com/huggingface/lerobot.git"
     branch: "main"
-    tag: ""
+    tag: "v0.4.3"                    # Pinned stable release
+    isolated_env: true               # Run in dedicated 'lerobot' conda env to prevent GR00T/numpy conflicts
 
 simulation:
   isaacsim:
     enabled: true
-    version: "6.0.1"
-    install_dir: "~/IsaacSim"
+    version: "6.0.1"                 # "6.0.1" | "5.1.0" | "custom"
+    install_dir: "~/IsaacSim"        # Standard standalone directory or custom build
+    source_type: "standalone"        # "standalone" | "custom_build" | "omniverse_launcher"
+    custom_build:
+      enabled: false
+      source_path: "~/IsaacSim-Source"
+      build_command: "./build.sh -r"
     accept_eula: true
 
 devtools:

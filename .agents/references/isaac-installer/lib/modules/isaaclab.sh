@@ -124,10 +124,13 @@ cmd_lab() {
 
             local info
             info="$(get_repo_info "${lab_dir}")"
+            local sync_info
+            sync_info="$(check_fork_sync_status "${lab_dir}")"
             
             python3 -c "
 import json
 data = json.loads('''${info}''')
+sync = json.loads('''${sync_info}''')
 print('  Directory:        ', data.get('path'))
 print('  Active Branch:    ', data.get('branch'))
 print('  Active Tag:       ', data.get('tag') or '(none / on branch)')
@@ -135,6 +138,17 @@ print('  Current Commit:   ', data.get('commit')[:10] if data.get('commit') else
 print('  Origin Remote:    ', data.get('origin'))
 print('  Upstream Remote:  ', data.get('upstream') or '(none)')
 print('  Working Tree:     ', 'DIRTY (uncommitted edits)' if data.get('dirty') else 'CLEAN')
+
+if sync.get('has_upstream'):
+    behind = sync.get('behind', 0)
+    ahead = sync.get('ahead', 0)
+    if behind == 0 and ahead == 0:
+        print('  Upstream Sync:     IN SYNC with ' + sync.get('upstream_ref', 'upstream/main'))
+    else:
+        status_parts = []
+        if behind > 0: status_parts.append(f'{behind} commits behind')
+        if ahead > 0: status_parts.append(f'{ahead} commits ahead')
+        print(f'  Upstream Sync:     OUT OF SYNC ({', '.join(status_parts)}) -> Run ./bin/isaac-installer lab sync')
 "
             local sim_link=""
             if [[ -L "${lab_dir}/_isaac_sim" ]]; then

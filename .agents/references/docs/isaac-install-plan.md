@@ -239,6 +239,7 @@ workspace:
   layout: "auto"
   default_owner: "BoredEngineer"      # Fallback if unauthenticated
   auto_register_github_desktop: true
+  auto_create_fork: true             # Automatically checks/creates fork via gh CLI
 
 repositories:
   isaaclab:
@@ -246,30 +247,49 @@ repositories:
     repo: "BoredEngineer/IsaacLab"    # Personal fork (origin)
     upstream: "https://github.com/isaac-sim/IsaacLab.git" # Canonical (upstream)
     branch: "main"
-    tag: "v2.3.0"
-    # Optional path override:
-    # path: "~/Documents/GitHub/BoredEngineer/IsaacLab"
+    tag: ""                          # e.g. "v3.0.0-beta2" (empty = use branch)
 
   arena:
     enabled: true
     repo: "BoredEngineer/IsaacLab-Arena"
     upstream: "https://github.com/isaac-sim/IsaacLab-Arena.git"
-    branch: "release/0.1.1"
+    branch: "release/0.3.0-prerelease" # Arena 0.3.0 Pre-release (Newton physics & OpenPI)
+    tag: ""
 
   lerobot:
-    enabled: false
+    enabled: true
     repo: "BoredEngineer/lerobot"
     upstream: "https://github.com/huggingface/lerobot.git"
     branch: "main"
+    tag: "v0.4.3"                    # Pinned stable release
+    isolated_env: true               # Dedicated 'lerobot' conda env to prevent GR00T/numpy conflicts
+
+simulation:
+  isaacsim:
+    enabled: true
+    version: "6.0.1"                 # "6.0.1" | "5.1.0" | "custom"
+    install_dir: "~/IsaacSim"        # Standard standalone directory or custom build root
+    source_type: "standalone"        # "standalone" | "custom_build" | "omniverse_launcher"
+    custom_build:
+      enabled: false
+      source_path: "~/IsaacSim-Source"
+      build_command: "./build.sh -r"
+    accept_eula: true
 ```
 
 ---
 
-## 5. Dual-Remote Fork Topology & Tag/Branch Management
+## 5. Dual-Remote Fork Topology & GitHub Remote Checking
 
 ```mermaid
 flowchart TD
     DEV["Robotics Engineer"]
+
+    subgraph PROBE ["0. Remote Fork Validation & Auto-Creation"]
+        CHECK["Check if fork exists on GitHub\n(gh api repos/<owner>/<repo>)"]
+        CREATE["If missing: Auto-create fork\n(gh repo fork <upstream> --clone=false)"]
+        FALLBACK["If unauthenticated: Fallback to upstream clone"]
+    end
 
     subgraph REMOTES ["Dual-Remote Git Configuration (.git/config)"]
         ORIGIN["origin (Push / Personal Fork)\ngit@github.com:BoredEngineer/IsaacLab.git"]
@@ -277,24 +297,63 @@ flowchart TD
     end
 
     subgraph WORKFLOW ["Day-to-Day Development Loop"]
+        SYNC_CHECK["Check Sync Delta\n(ahead / behind commits)"]
+        SYNC["Sync / Rebase\ngit fetch upstream\ngit rebase upstream/main"]
         BRANCH["New Feature Branch\n(e.g., feature/g1-locomotion)"]
-        SYNC["Sync / Rebase\ngit fetch upstream\ngit rebase upstream/tags/v2.3.0"]
         PUSH["Push to Personal Fork\ngit push -u origin feature/g1-locomotion"]
         PR["Open Upstream PR\nvia GitHub Desktop / gh pr create"]
     end
 
-    UPSTREAM -- "git fetch --tags upstream" --> SYNC
+    DEV --> CHECK --> CREATE --> ORIGIN
+    CHECK --> FALLBACK --> ORIGIN
+    UPSTREAM -- "git fetch --tags upstream" --> SYNC_CHECK --> SYNC
     SYNC --> BRANCH
     BRANCH -- "git push" --> ORIGIN
     ORIGIN --> PR
-    DEV --> WORKFLOW
 ```
 
 ### Core Capabilities:
-1. **Protocol Auto-Detection**: Uses SSH (`git@github.com:...`) if SSH keys are configured; otherwise uses HTTPS with `gh auth setup-git` credential helper.
+1. **Automated Remote Fork Discovery & Creation**:
+   - `isaac-installer` checks if the fork exists on GitHub using `gh api repos/<owner>/<repo>` or `git ls-remote`.
+   - If missing and `gh` is authenticated, it calls `gh repo fork <upstream> --clone=false --default-branch-only` to instantiate the fork under your account instantly.
+   - If unauthenticated, it clones upstream directly with a clear warning so development is never blocked.
 2. **Upstream Push Guard**: `git config remote.upstream.pushurl "PUSH_DISABLED_CANONICAL_UPSTREAM"` to eliminate accidental pushes to official repositories.
-3. **Targeted Ref & Tag Fetching**: Automatically fetches upstream tags (`git fetch --tags upstream`) and handles on-demand un-shallowing so developers can switch between release tags (`v2.2.0`, `v2.3.0`) without git errors.
+3. **Fork Sync Delta Telemetry (`lab status` & `lab sync`)**:
+   - Compares local branches against upstream (`upstream/main`), reporting exact `ahead`/`behind` commit deltas.
+   - One-click `isaac-installer lab sync [--rebase]` to keep personal forks aligned with upstream release tags.
 4. **GitHub Desktop UI Integration**: Executing `github-desktop --add <path>` enables native "Fetch upstream", "Sync with upstream", and visual PR creation.
+
+---
+
+## 5.1 Custom Source-Built Isaac Sim & Multi-Version Coexistence (6.0.1 & 5.1.0)
+
+For advanced physical AI teams compiling Isaac Sim from source (or maintaining custom USD/PhysX builds), or teams needing both 6.0.1 and 5.1.0 on the same machine:
+
+```mermaid
+flowchart TD
+    subgraph ENGINES ["Sim Engines on Host Disk"]
+        SIM6["Isaac Sim 6.0.1 (~/IsaacSim-6.0.1)\n• Python 3.12\n• Isaac Lab 3.0 / Arena 0.3.0"]
+        SIM5["Isaac Sim 5.1.0 (~/IsaacSim-5.1.0)\n• Python 3.10\n• Isaac Lab 2.3.2 / Arena 0.1.1"]
+        CUSTOM["Custom Source Build (~/IsaacSim-Custom)\n• Custom Kit SDK / USD"]
+    end
+
+    subgraph SWITCHER ["Atomic Symlink Switcher (isaac-installer sim switch)"]
+        LINK["_isaac_sim symlink\n(POSIX atomic staging via tmp.$$ rename)"]
+    end
+
+    subgraph ENVS ["Matched Python Conda Environments"]
+        ENV6["conda activate isaaclab (Python 3.12)"]
+        ENV5["conda activate isaaclab-5.1 (Python 3.10)"]
+    end
+
+    SIM6 --> LINK
+    SIM5 --> LINK
+    CUSTOM --> LINK
+    LINK --> ENVS
+```
+
+* **Custom Build Compilation**: If `source_type: "custom_build"`, the installer validates `kit/kit` or `isaac-sim.sh` binaries, and optionally runs `custom_build.build_command` under unprivileged user permissions.
+* **Instant Switching**: Run `./bin/isaac-installer sim switch 6.0.1` or `./bin/isaac-installer sim switch 5.1.0` to switch the active engine in < 100ms without re-installing or corrupting packages.
 
 ---
 

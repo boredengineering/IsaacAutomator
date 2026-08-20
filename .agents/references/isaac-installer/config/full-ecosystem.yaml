@@ -19,32 +19,39 @@ workspace:
   layout: "auto"                     # "auto" | "org" | "flat"
   default_owner: "BoredEngineer"
   auto_register_github_desktop: true
+  auto_create_fork: true
 
 repositories:
   isaaclab:
     enabled: true
-    repo: "https://github.com/isaac-sim/IsaacLab.git"
+    repo: "BoredEngineer/IsaacLab"
     upstream: "https://github.com/isaac-sim/IsaacLab.git"
     branch: "main"
     tag: ""
   arena:
     enabled: true
-    repo: "https://github.com/isaac-sim/IsaacLab-Arena.git"
+    repo: "BoredEngineer/IsaacLab-Arena"
     upstream: "https://github.com/isaac-sim/IsaacLab-Arena.git"
-    branch: "release/0.1.1"
+    branch: "release/0.3.0-prerelease"
     tag: ""
   lerobot:
     enabled: true
-    repo: "https://github.com/huggingface/lerobot.git"
+    repo: "BoredEngineer/lerobot"
     upstream: "https://github.com/huggingface/lerobot.git"
     branch: "main"
-    tag: ""
+    tag: "v0.4.3"
+    isolated_env: true               # Dedicated 'lerobot' conda env to prevent GR00T/numpy conflicts
 
 simulation:
   isaacsim:
     enabled: true
-    version: "5.1.0"
+    version: "6.0.1"
     install_dir: "~/IsaacSim"
+    source_type: "standalone"
+    custom_build:
+      enabled: false
+      source_path: "~/IsaacSim-Source"
+      build_command: "./build.sh -r"
     accept_eula: true
 
 devtools:

@@ -6,41 +6,60 @@
 resolve_isaacsim_dir() {
     detect_target_user
 
-    # 1. Explicit override
+    # 1. Explicit override or custom build path
+    if [[ "${ISAACSIM_SOURCE_TYPE:-standalone}" == "custom_build" && -n "${ISAACSIM_CUSTOM_BUILD_SOURCE_PATH:-}" ]]; then
+        if [[ -d "${ISAACSIM_CUSTOM_BUILD_SOURCE_PATH}" ]]; then
+            echo "${ISAACSIM_CUSTOM_BUILD_SOURCE_PATH}"
+            return 0
+        fi
+    fi
+
     if [[ -n "${ISAACSIM_DIR:-}" && -d "${ISAACSIM_DIR}" ]]; then
         echo "${ISAACSIM_DIR}"
         return 0
     fi
 
-    # 2. Standard ~/IsaacSim location
+    local req_ver="${ISAACSIM_VERSION:-${CFG_SIMULATION_ISAACSIM_VERSION:-6.0.1}}"
+
+    # 2. Version-specific path (e.g. ~/IsaacSim-6.0.1 or ~/IsaacSim-5.1.0)
+    if [[ -x "${TARGET_HOME}/IsaacSim-${req_ver}/isaac-sim.sh" ]]; then
+        echo "${TARGET_HOME}/IsaacSim-${req_ver}"
+        return 0
+    fi
+
+    # 3. Standard ~/IsaacSim location
     if [[ -x "${TARGET_HOME}/IsaacSim/isaac-sim.sh" ]]; then
         echo "${TARGET_HOME}/IsaacSim"
         return 0
     fi
 
-    # 3. Omniverse Launcher standard path (~/.local/share/ov/pkg/isaac_sim-*)
+    # 4. Omniverse Launcher standard path (~/.local/share/ov/pkg/isaac*sim*)
     local ov_pkg
-    ov_pkg=$(find "${TARGET_HOME}/.local/share/ov/pkg" -maxdepth 1 -type d -name "isaac*sim*" 2>/dev/null | sort -V | tail -n 1 || true)
+    ov_pkg=$(find "${TARGET_HOME}/.local/share/ov/pkg" -maxdepth 1 -type d -name "isaac*sim*${req_ver}*" 2>/dev/null | sort -V | tail -n 1 || true)
     if [[ -n "$ov_pkg" && -x "${ov_pkg}/isaac-sim.sh" ]]; then
         echo "$ov_pkg"
         return 0
     fi
 
-    # 4. System-wide /opt/nvidia/isaac-sim
+    # 5. System-wide /opt/nvidia/isaac-sim
     if [[ -x "/opt/nvidia/isaac-sim/isaac-sim.sh" ]]; then
         echo "/opt/nvidia/isaac-sim"
         return 0
     fi
 
     # Default fallback
-    echo "${TARGET_HOME}/IsaacSim"
+    if [[ "$req_ver" == "5.1.0" ]]; then
+        echo "${TARGET_HOME}/IsaacSim-5.1.0"
+    else
+        echo "${TARGET_HOME}/IsaacSim"
+    fi
 }
 
 check_isaac_sim() {
     local install_dir
     install_dir="$(resolve_isaacsim_dir)"
 
-    if [[ -x "${install_dir}/isaac-sim.sh" ]]; then
+    if [[ -x "${install_dir}/isaac-sim.sh" || -x "${install_dir}/kit/kit" ]]; then
         # Ensure EULA is accepted
         if [[ ! -f "${install_dir}/.eula_accepted" ]]; then
             sudo -H -u "${TARGET_USER}" touch "${install_dir}/.eula_accepted" 2>/dev/null || true
@@ -58,8 +77,31 @@ install_isaac_sim() {
 
     local install_dir
     install_dir="$(resolve_isaacsim_dir)"
+    local source_type="${ISAACSIM_SOURCE_TYPE:-standalone}"
+
+    # Handle Custom Source Build
+    if [[ "$source_type" == "custom_build" ]]; then
+        log_header "Configuring Custom Source Built Isaac Sim"
+        local custom_path="${ISAACSIM_CUSTOM_BUILD_SOURCE_PATH:-$install_dir}"
+        local build_cmd="${ISAACSIM_CUSTOM_BUILD_COMMAND:-}"
+
+        if [[ -n "$build_cmd" && -d "$custom_path" ]]; then
+            log_info "Executing custom build command: ${build_cmd} in ${custom_path}..."
+            sudo -H -u "${TARGET_USER}" bash -c "cd '${custom_path}' && ${build_cmd}"
+        fi
+
+        if [[ -x "${custom_path}/isaac-sim.sh" || -x "${custom_path}/kit/kit" ]]; then
+            sudo -H -u "${TARGET_USER}" touch "${custom_path}/.eula_accepted" 2>/dev/null || true
+            log_success "Custom Isaac Sim build verified at ${custom_path}."
+            return 0
+        else
+            log_error "Custom build at ${custom_path} is missing isaac-sim.sh or kit/kit binary."
+            return 1
+        fi
+    fi
+
     local source_dir="${TARGET_HOME}/isaacsim-pkg"
-    local zip_version="${ISAACSIM_VERSION:-5.1.0}"
+    local zip_version="${ISAACSIM_VERSION:-6.0.1}"
     local zip_name="isaac-sim-standalone-${zip_version}-linux-x86_64.zip"
     local download_url="https://download.isaacsim.omniverse.nvidia.com/${zip_name}"
 
@@ -125,11 +167,13 @@ cmd_sim() {
             log_header "Discovered Isaac Sim Engine Installations"
             local found=0
 
-            # 1. Standard ~/IsaacSim
-            if [[ -x "${TARGET_HOME}/IsaacSim/isaac-sim.sh" ]]; then
-                echo -e "  ● ${CLR_BOLD}${TARGET_HOME}/IsaacSim${CLR_RESET} (Standard Standalone)"
-                found=$((found + 1))
-            fi
+            # 1. Standard ~/IsaacSim versions
+            for dir in "${TARGET_HOME}"/IsaacSim* "${TARGET_HOME}"/isaacsim*; do
+                if [[ -x "${dir}/isaac-sim.sh" || -x "${dir}/kit/kit" ]]; then
+                    echo -e "  ● ${CLR_BOLD}${dir}${CLR_RESET} (Standalone / Custom)"
+                    found=$((found + 1))
+                fi
+            done
 
             # 2. Omniverse packages
             if [[ -d "${TARGET_HOME}/.local/share/ov/pkg" ]]; then
@@ -158,7 +202,7 @@ cmd_sim() {
                 if [[ -L "${lab_dir}/_isaac_sim" ]]; then
                     echo -e "  ↳ ${CLR_GREEN}$(readlink -f "${lab_dir}/_isaac_sim")${CLR_RESET}"
                 else
-                    echo -e "  ↳ ${CLR_YELLOW}None (Run ./bin/isaac-installer sim switch <path>)${CLR_RESET}"
+                    echo -e "  ↳ ${CLR_YELLOW}None (Run ./bin/isaac-installer sim switch <path|version>)${CLR_RESET}"
                 fi
             fi
             ;;
@@ -166,13 +210,29 @@ cmd_sim() {
         switch)
             local target_sim="${1:-}"
             if [[ -z "$target_sim" ]]; then
-                log_error "Usage: ./bin/isaac-installer sim switch <path-to-isaac-sim>"
+                log_error "Usage: ./bin/isaac-installer sim switch <version|path-to-isaac-sim>"
                 return 1
             fi
 
-            target_sim="$(expand_tilde_path "$target_sim")"
-            if [[ ! -x "${target_sim}/isaac-sim.sh" ]]; then
-                log_error "Path ${target_sim} is not a valid Isaac Sim installation (missing isaac-sim.sh)."
+            # Check if version alias passed (e.g. 6.0.1 or 5.1.0)
+            if [[ "$target_sim" == "6.0.1" || "$target_sim" == "6.0" ]]; then
+                if [[ -d "${TARGET_HOME}/IsaacSim-6.0.1" ]]; then
+                    target_sim="${TARGET_HOME}/IsaacSim-6.0.1"
+                else
+                    target_sim="${TARGET_HOME}/IsaacSim"
+                fi
+            elif [[ "$target_sim" == "5.1.0" || "$target_sim" == "5.1" ]]; then
+                if [[ -d "${TARGET_HOME}/IsaacSim-5.1.0" ]]; then
+                    target_sim="${TARGET_HOME}/IsaacSim-5.1.0"
+                else
+                    target_sim="${TARGET_HOME}/IsaacSim"
+                fi
+            else
+                target_sim="$(expand_tilde_path "$target_sim")"
+            fi
+
+            if [[ ! -x "${target_sim}/isaac-sim.sh" && ! -x "${target_sim}/kit/kit" ]]; then
+                log_error "Path ${target_sim} is not a valid Isaac Sim installation (missing isaac-sim.sh or kit/kit)."
                 return 1
             fi
 
@@ -192,7 +252,7 @@ cmd_sim() {
             ;;
 
         *)
-            echo "Usage: ./bin/isaac-installer sim [list|switch <path>]"
+            echo "Usage: ./bin/isaac-installer sim [list|switch <version|path>]"
             ;;
     esac
 }
