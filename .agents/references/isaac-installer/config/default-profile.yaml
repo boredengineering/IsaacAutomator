@@ -18,26 +18,26 @@ hardware:
 workspace:
   root: "~/Documents/GitHub"
   layout: "auto"                     # "auto" | "org" | "flat"
-  default_owner: "BoredEngineer"      # Default GitHub owner namespace
+  default_owner: "boredengineering"  # GitHub user / org namespace
   auto_register_github_desktop: true
   auto_create_fork: true             # Automatically create GitHub fork if missing via gh CLI
 
 repositories:
   isaaclab:
     enabled: true
-    repo: "BoredEngineer/IsaacLab"
+    repo: "boredengineering/IsaacLab"
     upstream: "https://github.com/isaac-sim/IsaacLab.git"
     branch: ""
     tag: "v3.0.0-beta2"                  # Exact pinned tag for Arena 0.3.0 & Isaac Sim 6.0.1
   arena:
     enabled: true
-    repo: "BoredEngineer/IsaacLab-Arena"
+    repo: "boredengineering/IsaacLab-Arena"
     upstream: "https://github.com/isaac-sim/IsaacLab-Arena.git"
     branch: "release/0.3.0-prerelease"
     tag: ""
   lerobot:
     enabled: false                   # Disabled by default; enable in full-ecosystem
-    repo: "BoredEngineer/lerobot"
+    repo: "boredengineering/lerobot"
     upstream: "https://github.com/huggingface/lerobot.git"
     branch: "main"
     tag: "v0.4.3"                    # Pinned stable release

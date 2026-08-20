@@ -164,7 +164,13 @@ register_github_desktop_repo() {
 
     if command -v github-desktop &>/dev/null && [[ -d "${repo_path}/.git" ]]; then
         log_info "Registering ${repo_path} with GitHub Desktop..."
-        sudo -H -u "${TARGET_USER}" github-desktop --add "${repo_path}" 2>/dev/null || true
+        local user_uid
+        user_uid="$(id -u "${TARGET_USER}" 2>/dev/null || echo "1000")"
+        sudo -H -u "${TARGET_USER}" \
+            DISPLAY="${DISPLAY:-:0}" \
+            XAUTHORITY="${XAUTHORITY:-${TARGET_HOME}/.Xauthority}" \
+            DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/${user_uid}/bus}" \
+            github-desktop --add "${repo_path}" 2>/dev/null || true
     fi
 }
 
