@@ -35,6 +35,10 @@ source "${LIB_MODULES}/streaming.sh"
 source "${LIB_MODULES}/demos.sh"
 source "${LIB_MODULES}/ecosystem.sh"
 
+# Register Error & Interrupt Traps
+trap 'on_error_trap $? $LINENO "$BASH_COMMAND"' ERR
+trap 'on_error_trap 130 $LINENO "SIGINT"' INT
+
 # Global State & Filter Lists
 STAGE_CHECK_MSG=""
 ONLY_STAGES=""
@@ -115,7 +119,9 @@ evaluate_and_run_stage() {
     local check_func="$3"
     local install_func="$4"
 
+    CURRENT_STAGE_RUNNING="$stage_name"
     STAGE_CHECK_MSG=""
+
     if ! is_stage_selected "$stage_name"; then
         if [[ "$DRY_RUN" == true ]]; then
             local reason="${STAGE_CHECK_MSG:-Filtered out by options}"
@@ -359,6 +365,7 @@ cmd_auth() {
 }
 
 cmd_install() {
+    init_logging "$@"
     log_header "Starting Isaac Workstation Installation Assessment"
     probe_system
 
@@ -416,10 +423,12 @@ cmd_install() {
         clear_resume_hook
         log_header "Installation Complete! (${total_sec}s)"
         log_success "Profile [${PROFILE_NAME}] successfully provisioned."
+        log_info "Full session log saved to: ${CURRENT_LOG_FILE}"
     fi
 }
 
 cmd_resume() {
+    init_logging "$@"
     log_header "Resuming Isaac Workstation Installation..."
     probe_system
     cmd_install
@@ -650,6 +659,7 @@ Commands:
   install                                      Run bare-metal installation according to YAML profile
   resume                                       Resume installation from last recorded checkpoint
   test                                         Run profile-aware verification suite
+  logs [latest|--tail|-t|--list|-l|--follow|-f] Inspect persistent session and error logs
   stream <provider>                            Setup 3D streaming (nomachine | sunshine)
   backups                                      List configuration safety snapshots
   help                                         Show this message
@@ -727,8 +737,20 @@ case "${COMMAND}" in
     bench)            cmd_bench ;;
     config)           print_active_config ;;
     install)          cmd_install ;;
-    resume)           cmd_resume ;;
-    test)             cmd_test ;;
+    test)             
+        if [[ "${PASSTHROUGH_ARGS[0]:-}" == "--arena" || "${PASSTHROUGH_ARGS[0]:-}" == "arena" ]]; then
+            test_isaaclab_arena
+        else
+            cmd_test
+        fi
+        ;;
+    validate)
+        case "${PASSTHROUGH_ARGS[0]:-arena}" in
+            arena) test_isaaclab_arena ;;
+            *) test_isaaclab_arena ;;
+        esac
+        ;;
+    logs)             cmd_logs "${PASSTHROUGH_ARGS[@]:-latest}" ;;
     stream)           install_streaming_provider "${PASSTHROUGH_ARGS[0]:-nomachine}" ;;
     backups)          list_backups ;;
     help|--help|-h)   usage ;;

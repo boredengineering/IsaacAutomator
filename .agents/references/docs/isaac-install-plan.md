@@ -220,7 +220,72 @@ $$\text{IsaacSim (Engine)} \xleftarrow{\text{Atomic Symlink}} \text{IsaacLab (Co
 
 ---
 
-## 8. Pre-Flight Validation, Conflict Detection & Idempotency
+
+---
+
+## 8. Python Environment Architecture: Conda, UV & Dual-Hybrid Isolation
+
+To eliminate reliance on Isaac Sim's monolithic embedded Python (`IsaacSim/kit/python/bin/python3`) and ensure standard `conda activate isaaclab` or `source .venv/bin/activate` workflows:
+
+```mermaid
+flowchart TD
+    subgraph A1 ["Approach 1: Conda Environment"]
+        C1["Miniforge / Conda: conda create -n isaaclab python=3.10"]
+        C2["Install PyTorch CUDA via Conda/Pip"]
+        C3["Source Isaac Sim Environment & pip install -e IsaacLab"]
+    end
+
+    subgraph A2 ["Approach 2: Pure UV Virtualenv"]
+        U1["UV: uv venv ~/.venvs/isaaclab --python 3.10"]
+        U2["uv pip install torch torchvision --index-url cu124"]
+        U3["uv pip install -e IsaacLab & IsaacLab-Arena"]
+    end
+
+    subgraph A3 ["Approach 3: Dual Hybrid (Recommended)"]
+        H1["Conda Environment (isaaclab) for System & CUDA Isolation"]
+        H2["UV (uv pip) inside Conda for 10x-faster Rust package resolution"]
+        H3["Zero-downtime editable linkage to /home/tarfy/IsaacSim"]
+    end
+```
+
+### Comparative Analysis:
+
+| Criteria | Approach 1: Dedicated Conda | Approach 2: Pure UV Virtualenv | Approach 3: Dual Hybrid (Recommended) |
+| :--- | :--- | :--- | :--- |
+| **Environment Management** | `conda activate isaaclab` | `source ~/.venvs/isaaclab/bin/activate` or `uv run` | `conda activate isaaclab` |
+| **Package Install Speed** | Moderate (Standard Pip/Conda) | **Blazing Fast** (<15s with Rust cache) | **Blazing Fast** (`uv pip` inside Conda) |
+| **Python Version** | Pinned **Python 3.10.15** | Pinned **Python 3.10.15** | Pinned **Python 3.10.15** |
+| **PyTorch CUDA Link** | `torch==2.5.1+cu124` | `torch==2.5.1+cu124` | `torch==2.5.1+cu124` (Blackwell optimized) |
+| **Isaac Sim Linkage** | Sourced via `${ISAACSIM_DIR}/setup_conda_env.sh` | Sourced via `.env` / wrapper | Sourced via `${ISAACSIM_DIR}/setup_conda_env.sh` |
+| **IsaacLab-Arena** | `pip install -e` in conda | `uv pip install -e` in venv | `uv pip install -e` in conda |
+| **VS Code Auto-Detect** | Instant (`~/.conda/envs/isaaclab/bin/python`) | Instant (`~/.venvs/isaaclab/bin/python`) | Instant (`~/.conda/envs/isaaclab/bin/python`) |
+
+### Dual-Hybrid Implementation Workflow:
+```bash
+# 1. Create Isolated Python 3.10 Environment with Miniforge
+conda create -n isaaclab python=3.10 -y
+
+# 2. Use UV inside the Conda environment for ultra-fast dependency resolution:
+conda activate isaaclab
+uv pip install torch==2.5.1 torchvision --index-url https://download.pytorch.org/whl/cu124
+
+# 3. Link your standalone Isaac Sim engine (/home/tarfy/IsaacSim)
+source /home/tarfy/IsaacSim/setup_conda_env.sh
+
+# 4. Install Isaac Lab & IsaacLab-Arena in editable mode
+cd ~/Documents/GitHub/IsaacLab
+uv pip install -e source/extensions/omni.isaac.lab
+uv pip install -e source/extensions/omni.isaac.lab_tasks
+uv pip install -e source/extensions/omni.isaac.lab_assets
+uv pip install -e source/extensions/omni.isaac.lab_rl
+
+cd ~/Documents/GitHub/IsaacLab-Arena
+uv pip install -e .
+```
+
+---
+
+## 9. Pre-Flight Validation, Conflict Detection & Idempotency
 
 ### Pre-Flight Audit (`plan`)
 Runs a non-destructive 20-component diff comparison comparing host states vs target states:
@@ -247,7 +312,7 @@ Runs an end-to-end verification covering:
 
 ---
 
-## 9. Implementation Roadmap & Status
+## 10. Implementation Roadmap & Status
 
 - [x] **Core CLI & Unicode UI Engine** (`bin/isaac-installer`, `lib/core/logging.sh`)
 - [x] **Deep Hardware, NVMe & Multi-GPU Discovery** (`lib/core/detect.sh`)
@@ -266,7 +331,7 @@ Runs an end-to-end verification covering:
 
 ---
 
-## 10. Backburner Features (Low Priority / Future Iterations)
+## 11. Backburner Features (Low Priority / Future Iterations)
 
 The following architectural concepts represent high-value long-term force multipliers, but are **strictly low priority / backburner** and will not block initial production release.
 
