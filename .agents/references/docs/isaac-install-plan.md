@@ -12,11 +12,11 @@ The **Universal Isaac Installer (`isaac-installer`)** is the zero-infrastructure
 
 ### The Real-World Developer Reality:
 In production robotics and Physical AI research, developers do **not** work in a static, monolithic sandbox. They:
-1. Maintain active Git forks of core frameworks (`IsaacLab`, `IsaacLab-Arena`, `lerobot`) and switch branches rapidly.
-2. Develop custom robot extensions, gym environments, and PhysX plugins across multiple distinct projects.
+1. Maintain active Git forks of core frameworks (`IsaacLab`, `IsaacLab-Arena`, `lerobot`) and switch branches/tags rapidly.
+2. Structure repositories cleanly under user/organization hierarchies (`~/Documents/GitHub/<Owner>/<Repo>`) matching their GitHub Desktop accounts.
 3. Manage different Python dependencies across tasks without corrupting Isaac Sim's underlying runtime.
-4. Integrate real-time teleoperation hardware (ALOHA leader-follower arms, SpaceMouse, VR headsets, cameras) with sub-millisecond serial latency.
-5. Ingest and train on 100s of gigabytes of camera and policy trajectories without thermal or storage I/O bottlenecks.
+4. Require automated state tracking and self-healing: if repos are misplaced, remotes misconfigured, or symlinks broken, the installer automatically detects the drift, reconciles the state, and heals the workspace based on declarative YAML profiles.
+5. Integrate real-time teleoperation hardware (ALOHA leader-follower arms, SpaceMouse, VR headsets, cameras) with sub-millisecond serial latency.
 
 ---
 
@@ -39,11 +39,12 @@ flowchart TD
 
     subgraph PHASE2 ["Phase 2: Developer Workspace (Unprivileged - Target User)"]
         U1["Toolchain Provisioning (UV, Miniforge/Micromamba, GitHub CLI)"]
-        U2["Smart Git Workspace (~/Documents/GitHub/<Org>/<Repo>) & Fork Remotes"]
-        U3["Dynamic Python Isolation & Environment Shims (isaaclab-env)"]
-        U4["Topological Extension Installation (omni.isaac.lab -> tasks -> rl)"]
-        U5["Downstream Package Linkage (IsaacLab-Arena, LeRobot, Rerun)"]
-        U6["IDE & Desktop Integration (VS Code Discovery, GitHub Desktop UI)"]
+        U2["Workspace Hierarchy Engine (~/Documents/GitHub/<Owner>/<Repo>)"]
+        U3["Dual-Remote Fork Topology (origin = user fork, upstream = canonical)"]
+        U4["Dynamic Python Isolation & Environment Shims (isaaclab-env)"]
+        U5["Topological Extension Installation (omni.isaac.lab -> tasks -> rl)"]
+        U6["State Tracking, Drift Reconciliation & Self-Healing Engine"]
+        U7["IDE & Desktop Integration (VS Code Discovery, GitHub Desktop UI)"]
     end
 
     PHASE1 -- "System Ready (No Root Required Afterwards)" --> PHASE2
@@ -99,32 +100,184 @@ flowchart TD
 
 ---
 
-## 4. Open-Ended Developer Fork & Multi-Repo Workflows
+## 4. Workspace Organization & GitHub Desktop Hierarchy
 
-In active robotics development, researchers frequently work across custom branches and organizational forks.
+In professional robotics setups, developers maintain repositories under user or organization folders matching their GitHub account (e.g. `~/Documents/GitHub/BoredEngineer/IsaacAutomator`). Naive flat cloning (`~/Documents/GitHub/IsaacLab`) creates folder fragmentation and breaks GitHub Desktop repository tracking.
 
-### Dual-Remote Git Topology
-For every cloned repository (`IsaacLab`, `IsaacLab-Arena`, `lerobot`, `rsl_rl`):
-- `origin`: Developer's personal or lab fork (Read/Write for branches, commits, PRs).
-- `upstream`: Official NVIDIA or Hugging Face repository (Read-only for tracking and syncing).
+```mermaid
+flowchart TD
+    subgraph LAYOUT ["Clean Organization Hierarchy (~/Documents/GitHub/<Owner>/<Repo>)"]
+        ROOT["~/Documents/GitHub/"]
+        OWNER["BoredEngineer/ (User / Org Namespace)"]
+        R1["IsaacAutomator/"]
+        R2["IsaacLab/"]
+        R3["IsaacLab-Arena/"]
+        R4["lerobot/"]
+    end
 
-```text
-~/Documents/GitHub/
-├── BoredEngineer/
-│   ├── IsaacLab/               [origin: BoredEngineer/IsaacLab | upstream: isaac-sim/IsaacLab]
-│   ├── IsaacLab-Arena/         [origin: BoredEngineer/IsaacLab-Arena | upstream: isaac-sim/IsaacLab-Arena]
-│   └── lerobot/                [origin: BoredEngineer/lerobot | upstream: huggingface/lerobot]
-└── custom_extensions/
-    └── omni.isaac.custom_task/ [User's proprietary robot manipulation tasks]
+    ROOT --> OWNER
+    OWNER --> R1
+    OWNER --> R2
+    OWNER --> R3
+    OWNER --> R4
 ```
 
-### Submodule Optimization:
-- Large upstream submodules (`rsl_rl`, `Arena-Assets`) are initialized with `--depth 1 --recurse-submodules --shallow-submodules` to avoid pulling gigabytes of unused commit history while preserving branch switching capabilities.
-- Automated URL rewrites ensure SSH authentication gracefully falls back to HTTPS for automated/CI runs.
+### Declarative YAML Configuration (`config/*.yaml`):
+```yaml
+workspace:
+  root: "~/Documents/GitHub"
+  # Layout Strategy:
+  #   - "auto": Auto-detects if owner directory exists (e.g. ~/Documents/GitHub/BoredEngineer)
+  #   - "org":  Always nest under owner folder (~/Documents/GitHub/<Owner>/<Repo>)
+  #   - "flat": Always place directly under root (~/Documents/GitHub/<Repo>)
+  layout: "auto"
+  default_owner: "BoredEngineer"      # Fallback if unauthenticated
+  auto_register_github_desktop: true
+
+repositories:
+  isaaclab:
+    enabled: true
+    repo: "BoredEngineer/IsaacLab"    # Personal fork (origin)
+    upstream: "https://github.com/isaac-sim/IsaacLab.git" # Canonical (upstream)
+    branch: "main"
+    tag: "v2.3.0"
+    # Optional path override:
+    # path: "~/Documents/GitHub/BoredEngineer/IsaacLab"
+
+  arena:
+    enabled: true
+    repo: "BoredEngineer/IsaacLab-Arena"
+    upstream: "https://github.com/isaac-sim/IsaacLab-Arena.git"
+    branch: "release/0.1.1"
+
+  lerobot:
+    enabled: false
+    repo: "BoredEngineer/lerobot"
+    upstream: "https://github.com/huggingface/lerobot.git"
+    branch: "main"
+```
 
 ---
 
-## 5. Teleoperation, Real-Time Serial & Peripherals Subsystem
+## 5. Dual-Remote Fork Topology & Tag/Branch Management
+
+```mermaid
+flowchart TD
+    DEV["Robotics Engineer"]
+
+    subgraph REMOTES ["Dual-Remote Git Configuration (.git/config)"]
+        ORIGIN["origin (Push / Personal Fork)\ngit@github.com:BoredEngineer/IsaacLab.git"]
+        UPSTREAM["upstream (Pull / Sync / Official Releases)\nhttps://github.com/isaac-sim/IsaacLab.git"]
+    end
+
+    subgraph WORKFLOW ["Day-to-Day Development Loop"]
+        BRANCH["New Feature Branch\n(e.g., feature/g1-locomotion)"]
+        SYNC["Sync / Rebase\ngit fetch upstream\ngit rebase upstream/tags/v2.3.0"]
+        PUSH["Push to Personal Fork\ngit push -u origin feature/g1-locomotion"]
+        PR["Open Upstream PR\nvia GitHub Desktop / gh pr create"]
+    end
+
+    UPSTREAM -- "git fetch --tags upstream" --> SYNC
+    SYNC --> BRANCH
+    BRANCH -- "git push" --> ORIGIN
+    ORIGIN --> PR
+    DEV --> WORKFLOW
+```
+
+### Core Capabilities:
+1. **Protocol Auto-Detection**: Uses SSH (`git@github.com:...`) if SSH keys are configured; otherwise uses HTTPS with `gh auth setup-git` credential helper.
+2. **Upstream Push Guard**: `git config remote.upstream.pushurl "PUSH_DISABLED_CANONICAL_UPSTREAM"` to eliminate accidental pushes to official repositories.
+3. **Targeted Ref & Tag Fetching**: Automatically fetches upstream tags (`git fetch --tags upstream`) and handles on-demand un-shallowing so developers can switch between release tags (`v2.2.0`, `v2.3.0`) without git errors.
+4. **GitHub Desktop UI Integration**: Executing `github-desktop --add <path>` enables native "Fetch upstream", "Sync with upstream", and visual PR creation.
+
+---
+
+## 6. State Tracking, Drift Detection & Self-Healing Engine
+
+When workstations evolve over time, repositories get misplaced (e.g. flat `GitHub/IsaacLab` vs `GitHub/BoredEngineer/IsaacLab`), remotes point to wrong URLs, branches drift, or symlinks break.
+
+`isaac-installer` introduces an **Automated Drift Detection & Self-Healing Engine**:
+
+```mermaid
+flowchart TD
+    subgraph DESIRED ["1. Desired State (Declarative YAML)"]
+        Y1["Profile: layout='org', default_owner='BoredEngineer'"]
+        Y2["IsaacLab: tag='v2.3.0', origin='BoredEngineer/IsaacLab'"]
+    end
+
+    subgraph PROBER ["2. Host State Prober & Drift Auditor"]
+        P1["Discovers all repos across ~/Documents/GitHub/**, ~/workspace/**"]
+        P2["Inspects origin/upstream URLs, active ref/tag, dirty state"]
+        P3["Validates symlinks (_isaac_sim) and pip -e packages"]
+        P4["Computes Drift Delta Matrix (Plan / Doctor)"]
+    end
+
+    subgraph HEALER ["3. Self-Healing & Reconciliation Engine (repair / fix)"]
+        H1["Safe Re-Homing: Move GitHub/IsaacLab -> GitHub/BoredEngineer/IsaacLab"]
+        H2["Remote Wiring: Set origin=fork, upstream=canonical"]
+        H3["Ref Alignment: Fetch & checkout target tag/branch"]
+        H4["Symlink Healing: Atomically re-link _isaac_sim -> active Isaac Sim"]
+        H5["Python Re-Index: Update uv pip -e editable package pointers"]
+        H6["GHD Sync: Re-register resolved paths in GitHub Desktop"]
+    end
+
+    DESIRED --> PROBER --> HEALER
+```
+
+### Drift Classification Matrix:
+
+| Drift Category | Detected Scenario | Automated Self-Healing Action |
+| :--- | :--- | :--- |
+| **Mislocated Directory** | `IsaacLab` is in flat `GitHub/` or `~/workspace/`, but YAML specifies `org` layout. | Safely moves directory to `~/Documents/GitHub/BoredEngineer/IsaacLab`, checks dirty state, and updates all symlinks. |
+| **Origin Remote Mismatch** | `origin` is set to `isaac-sim/IsaacLab` instead of `BoredEngineer/IsaacLab`. | Updates `origin` to personal fork and configures `upstream` to canonical NVIDIA repo. |
+| **Branch / Tag Drift** | Local repo is on `main`, but YAML requests `tag: v2.3.0`. | Fetches upstream tags, stashes any uncommitted work, and checks out `release/v2.3.0`. |
+| **Broken Engine Symlink** | `_isaac_sim` symlink is broken or points to a non-existent Isaac Sim path. | Atomically recreates `_isaac_sim` pointing to active `${ISAACSIM_DIR}`. |
+| **Stale Python Editable Link** | Pip editable metadata points to old directory path before re-homing. | Re-runs `uv pip install -e <new_path>` inside the conda/venv environment. |
+| **Dirty Work Protection** | Local repo contains uncommitted edits or untracked research files. | Never deletes or overwrites; creates safety git branch/stash backup before migration. |
+
+### Persistent State Ledger (`~/.isaac-installer/state.json`):
+```json
+{
+  "version": "1.0",
+  "last_reconciled": "2026-08-20T21:30:00Z",
+  "workspace_layout": "org",
+  "default_owner": "BoredEngineer",
+  "repositories": {
+    "isaaclab": {
+      "path": "/home/tarfy/Documents/GitHub/BoredEngineer/IsaacLab",
+      "repo_slug": "BoredEngineer/IsaacLab",
+      "upstream_slug": "isaac-sim/IsaacLab",
+      "active_ref": "v2.3.0",
+      "ref_type": "tag",
+      "linked_sim": "/home/tarfy/IsaacSim",
+      "git_status": "clean"
+    },
+    "arena": {
+      "path": "/home/tarfy/Documents/GitHub/BoredEngineer/IsaacLab-Arena",
+      "repo_slug": "BoredEngineer/IsaacLab-Arena",
+      "upstream_slug": "isaac-sim/IsaacLab-Arena",
+      "active_ref": "release/0.1.1",
+      "ref_type": "branch",
+      "linked_sim": "/home/tarfy/IsaacSim",
+      "git_status": "clean"
+    }
+  },
+  "simulation": {
+    "active_version": "5.1.0",
+    "path": "/home/tarfy/IsaacSim"
+  },
+  "python_env": {
+    "type": "conda",
+    "name": "isaaclab",
+    "path": "/opt/conda/envs/isaaclab",
+    "torch_cuda": "2.5.1+cu124"
+  }
+}
+```
+
+---
+
+## 7. Teleoperation, Real-Time Serial & Peripherals Subsystem
 
 Robotics teleoperation requires deterministic, low-latency communication with physical actuators, microcontrollers, and sensory devices.
 
@@ -159,7 +312,7 @@ ACTION=="add", SUBSYSTEM=="usb-serial", DRIVER=="ftdi_sio", ATTR{latency_timer}=
 
 ---
 
-## 6. High-Throughput NVMe Storage, Datasets & USD Asset Cache
+## 8. High-Throughput NVMe Storage, Datasets & USD Asset Cache
 
 Physical AI training and multi-camera simulation create massive I/O traffic.
 
@@ -177,12 +330,12 @@ Physical AI training and multi-camera simulation create massive I/O traffic.
 
 ---
 
-## 7. Concrete Project Structure
+## 9. Concrete Project Structure
 
 ```text
 isaac-installer/
 ├── bin/
-│   ├── isaac-installer            # CLI dispatcher (doctor, plan, install, sim, auth, test)
+│   ├── isaac-installer            # CLI dispatcher (doctor, plan, install, sim, lab, auth, test, repair)
 │   └── isaaclab-env               # Dynamic runtime environment shim
 ├── config/
 │   ├── default-profile.yaml       # Standard interactive robotics workstation preset
@@ -192,11 +345,12 @@ isaac-installer/
 │   ├── core/
 │   │   ├── logging.sh             # Unicode UI cards, color palette, failure log tailing
 │   │   ├── detect.sh              # Blackwell/Ada GPU, NVMe SSDs, LVM, Wayland/X11
+│   │   ├── config.sh              # Declarative YAML profile parser & layout mapper
 │   │   ├── audit.sh               # 20-component pre-flight audit diff matrix
-│   │   ├── state.sh               # JSON state machine & reboot resumption
+│   │   ├── state.sh               # JSON state machine, ledger & drift tracker
 │   │   ├── network.sh             # CDN latency pre-flight benchmark
 │   │   ├── backup.sh              # Safety configuration snapshots & rollback
-│   │   ├── git_workspace.sh       # Dual-remote fork topology & GitHub Desktop integration
+│   │   ├── git_workspace.sh       # Hierarchy resolver, dual-remote fork engine, GHD registration
 │   │   └── package_manager.sh     # Abstract package manager wrapper
 │   ├── modules/
 │   │   ├── driver.sh              # NVIDIA drivers (570+ / 535+), DKMS, nouveau blacklist
@@ -207,7 +361,7 @@ isaac-installer/
 │   │   ├── physical_ai.sh         # Hugging Face CLI, LeRobot, Rerun.io dataset viz
 │   │   ├── hardware_teleop.sh     # 1ms FTDI rules, SpaceMouse, RealSense, Manus VR
 │   │   ├── isaacsim.sh            # Standalone ZIP engine extraction, multi-version registry
-│   │   ├── isaaclab.sh            # Topological extension installer & PyTorch verification
+│   │   ├── isaaclab.sh            # Topological extension installer, tag/branch switcher, PyTorch check
 │   │   ├── isaaclab_arena.sh      # Arena multi-agent benchmark suite with depth-1 submodules
 │   │   ├── auth.sh                # Unified OAuth, Cloud Hubs (GH, HF, NGC, WandB)
 │   │   ├── streaming.sh           # Hardware streaming (NoMachine, Sunshine NVENC)
@@ -223,7 +377,7 @@ isaac-installer/
 
 ---
 
-## 8. Authentication & Permissions Matrix
+## 10. Authentication & Permissions Matrix
 
 | Category | Component / Service | Required Credentials | Interactive Flow | Automated / Headless Flow |
 | :--- | :--- | :--- | :--- | :--- |
@@ -238,7 +392,7 @@ isaac-installer/
 
 ---
 
-## 9. 13-Subsystem End-to-End Verification Suite (`test`)
+## 11. 13-Subsystem End-to-End Verification Suite (`test`)
 
 The verification suite runs granular, non-destructive health checks across 13 core subsystems:
 
@@ -258,7 +412,7 @@ The verification suite runs granular, non-destructive health checks across 13 co
 
 ---
 
-## 10. Critical Architectural Review & Open Questions
+## 12. Critical Architectural Review & Open Questions
 
 The following architectural points require specific team and stakeholder review during the next development iterations:
 
@@ -288,7 +442,7 @@ The following architectural points require specific team and stakeholder review 
 
 ---
 
-## 11. Implementation Roadmap
+## 13. Implementation Roadmap
 
 - [x] **Core CLI & Unicode UI Engine** (`bin/isaac-installer`, `lib/core/logging.sh`)
 - [x] **Deep Hardware, NVMe & Multi-GPU Discovery** (`lib/core/detect.sh`)
@@ -297,12 +451,13 @@ The following architectural points require specific team and stakeholder review 
 - [x] **Configuration Safety Snapshots & Rollback** (`lib/core/backup.sh`)
 - [x] **Unified Authentication & Cloud Hub Manager** (`lib/modules/auth.sh`)
 - [x] **High-Speed Storage Stack (`nvme-cli`, `lvm2`, `fio`)** (`lib/modules/dev_tools.sh`)
-- [x] **Smart Repo Discovery, Fork Wiring & GitHub Desktop** (`lib/core/git_workspace.sh`)
 - [x] **Hugging Face LeRobot & `lerobot-dataset-viz`** (`lib/modules/physical_ai.sh`)
 - [x] **Hardware Teleop Peripherals & 1ms Low-Latency Serial** (`lib/modules/hardware_teleop.sh`)
 - [x] **Multi-Version Isaac Sim Detection & Atomic Symlink Switcher** (`lib/modules/isaacsim.sh`)
-- [x] **Topological Isaac Lab & Arena Linking** (`lib/modules/isaaclab.sh`, `lib/modules/isaaclab_arena.sh`)
 - [x] **13-Subsystem End-to-End Verification Suite** (`cmd_test`)
+- [ ] **Workspace Hierarchy Engine (`~/Documents/GitHub/<Owner>/<Repo>`)** (`lib/core/git_workspace.sh`)
+- [ ] **Dual-Remote Fork & Tag/Branch Management (`lab switch`, `lab sync`)** (`lib/modules/isaaclab.sh`)
+- [ ] **State Tracking, Drift Reconciliation & Self-Healing Engine (`repair` / `fix`)** (`lib/core/state.sh`)
 - [ ] **Two-Phase Privilege Boundary Refactor (`sys-provision` vs `dev-setup`)**
 - [ ] **Dynamic Environment Shim Implementation (`isaaclab-env` & activation hooks)**
 - [ ] **Multi-Agent Skills Registration** (`.agents/skills/isaac-baremetal-installer/SKILL.md`)
