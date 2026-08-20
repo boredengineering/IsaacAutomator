@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Franka Cube Lift RL
+Comment=Train Franka robotic arm in object lifting with RSL-RL
+Exec=gnome-terminal -- /bin/bash -c "DISPLAY=:0 __DEMOS_DIR__/franka-manipulation.sh; exec bash"
+Icon=utilities-terminal
+Terminal=false
+Categories=Development;Science;Robotics;

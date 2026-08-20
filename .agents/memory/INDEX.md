@@ -13,6 +13,7 @@ Master index of session memory checkpoints for Isaac Automator.
 | 2026-08-19 21:23 | `a1d8f3c4` | Multi-Agent MCP & Skills Automation for Antigravity and Claude Code | Automated DevContainer bootstrap lifecycle via setup.sh, consolidated 336 skills, fixed MCP synchronization and pre-approvals across Antigravity and Claude Code | [`20260819_212300_a1d8f3c4.md`](./sessions/20260819_212300_a1d8f3c4.md) |
 | 2026-08-19 22:01 | `d4a8e2f1` | DevContainer Git & GitHub Authentication Strategy (Pattern B) | Implemented persistent Docker named volume for gh credentials, automated gh auth setup-git in setup.sh, and documented authentication architecture | [`20260819_220130_d4a8e2f1.md`](./sessions/20260819_220130_d4a8e2f1.md) |
 | 2026-08-19 22:08 | `e8f291a4` | DevContainer Git Auth Resolution & 4-Layer Defense-in-Depth | Fixed terminal prompt disabled error on git push with system gitconfig, attach hooks, shell guards, and named volume persistence | [`20260819_220815_e8f291a4.md`](./sessions/20260819_220815_e8f291a4.md) |
+| 2026-08-20 06:00 | `f2c3d4e5` | Universal Bare-Metal Isaac Installer & Blackwell Workstation Probe | Implemented modular bare-metal installer, Blackwell architecture detection, multi-GPU topology handling, dev tools stack, and verified live host probe | [`20260820_060000_f2c3d4e5.md`](./sessions/20260820_060000_f2c3d4e5.md) |
 
 
 

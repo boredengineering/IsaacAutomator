@@ -1,0 +1,3 @@
+# 3Dconnexion SpaceMouse Devices
+KERNEL=="hidraw*", ATTRS{idVendor}=="046d|256f", MODE="0666", GROUP="plugdev"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="046d|256f", MODE="0666", GROUP="plugdev"

@@ -1,0 +1,339 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# isaac-installer - Universal Bare-Metal Physical AI & Robotics Provisioner
+# ==============================================================================
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+LIB_CORE="${SCRIPT_DIR}/lib/core"
+LIB_MODULES="${SCRIPT_DIR}/lib/modules"
+
+# Source Core Libraries
+source "${LIB_CORE}/logging.sh"
+source "${LIB_CORE}/detect.sh"
+source "${LIB_CORE}/state.sh"
+source "${LIB_CORE}/package_manager.sh"
+source "${LIB_CORE}/audit.sh"
+
+# Source Modules
+source "${LIB_MODULES}/driver.sh"
+source "${LIB_MODULES}/display.sh"
+source "${LIB_MODULES}/system_prereqs.sh"
+source "${LIB_MODULES}/conda.sh"
+source "${LIB_MODULES}/dev_tools.sh"
+source "${LIB_MODULES}/physical_ai.sh"
+source "${LIB_MODULES}/hardware_teleop.sh"
+source "${LIB_MODULES}/isaacsim.sh"
+source "${LIB_MODULES}/isaaclab.sh"
+source "${LIB_MODULES}/isaaclab_arena.sh"
+source "${LIB_MODULES}/streaming.sh"
+source "${LIB_MODULES}/demos.sh"
+source "${LIB_MODULES}/ecosystem.sh"
+
+# Global Check State
+STAGE_CHECK_MSG=""
+
+# Flags & Options
+SKIP_DRIVER=false
+SKIP_DISPLAY=false
+INSTALL_DEV_TOOLS=true
+INSTALL_PHYSICAL_AI=true
+INSTALL_HARDWARE_TELEOP=true
+INSTALL_STREAMING=false
+STREAMING_PROVIDER="none"
+AUTO_REBOOT=false
+DRY_RUN=false
+INTERACTIVE_STEP=false
+
+# Intelligent gate that evaluates live ground-truth check
+evaluate_and_run_stage() {
+    local stage_name="$1"
+    local stage_desc="$2"
+    local check_func="$3"
+    local install_func="$4"
+
+    STAGE_CHECK_MSG=""
+    local check_passed=false
+    
+    set +e
+    "$check_func"
+    local check_status=$?
+    set -e
+
+    if [[ "$check_status" -eq 0 ]]; then
+        check_passed=true
+    fi
+
+    if [[ "$check_passed" == true ]]; then
+        if [[ "$DRY_RUN" == true ]]; then
+            echo -e "  ${CLR_GREEN}✔ [DRY-RUN] Skip [${stage_name}]:${CLR_RESET} ${STAGE_CHECK_MSG}"
+        else
+            log_success "Stage [${stage_name}] already satisfied: ${STAGE_CHECK_MSG}"
+            set_stage "${stage_name}"
+        fi
+        return 0
+    fi
+
+    # Action is required
+    if [[ "$DRY_RUN" == true ]]; then
+        echo -e "  ${CLR_YELLOW}▶ [DRY-RUN] Would execute [${stage_name}]:${CLR_RESET} ${stage_desc} (${STAGE_CHECK_MSG})"
+        return 0
+    fi
+
+    if [[ "$INTERACTIVE_STEP" == true ]]; then
+        echo -e "\n${CLR_BOLD}${CLR_CYAN}▶ Proposed Stage: [${stage_name}] - ${stage_desc}${CLR_RESET}"
+        echo -e "  ${CLR_GRAY}Reason: ${STAGE_CHECK_MSG}${CLR_RESET}"
+        read -r -p "  Proceed with this stage? [Y/n/s(kip)]: " choice
+        case "$choice" in
+            [nN]*) log_warn "Execution cancelled by operator."; exit 0 ;;
+            [sS]*) log_info "Skipping stage ${stage_name}."; return 0 ;;
+            *)     ;;
+        esac
+    fi
+
+    # Execute installation
+    "$install_func"
+    set_stage "${stage_name}"
+}
+
+cmd_doctor() {
+    log_header "Isaac Installer System Doctor & Hardware Probe"
+    probe_system
+
+    echo -e "${CLR_BOLD}Target Environment:${CLR_RESET}"
+    log_info "Target User:      ${TARGET_USER} (${TARGET_HOME})"
+    log_info "Operating System: ${OS_NAME} ${OS_VERSION} (${OS_ID})"
+    log_info "Free Disk Space:  ${FREE_DISK_GB} GB"
+
+    echo -e "\n${CLR_BOLD}NVIDIA GPU Topology & Architecture:${CLR_RESET}"
+    if [[ "$GPU_FOUND" == true ]]; then
+        log_success "Total NVIDIA GPUs Detected: ${GPU_COUNT}"
+        for gpu in "${GPUS[@]}"; do
+            log_info "${gpu}"
+        done
+
+        if [[ "$HAS_BLACKWELL" == true ]]; then
+            log_warn "Blackwell Architecture GPU detected! Requires driver >= 570."
+        fi
+
+        if [[ "$IS_HETEROGENEOUS" == true ]]; then
+            log_warn "Heterogeneous GPUs detected (Mixed architectures). GPU 0 will be pinned for rendering."
+        fi
+
+        if [[ "$HAS_INTEGRATED_GPU" == true ]]; then
+            log_warn "Integrated CPU Graphics (Intel/AMD) detected alongside NVIDIA dGPU."
+            log_info "Ensure physical display cable is connected directly to the NVIDIA GPU port."
+        fi
+
+        if [[ "$DRIVER_INSTALLED" == true ]]; then
+            log_success "Active Driver: Version ${DRIVER_VERSION} (Recommended: >= ${RECOMMENDED_DRIVER})"
+        else
+            log_warn "NVIDIA Driver is NOT currently active."
+        fi
+    else
+        log_error "No NVIDIA GPU detected on PCIe bus."
+    fi
+
+    echo -e "\n${CLR_BOLD}Display Server & Session:${CLR_RESET}"
+    if [[ "$HAS_PHYSICAL_MONITOR" == true ]]; then
+        log_success "Display Server: ${DISPLAY_MODE} (Physical monitor detected)"
+    else
+        log_info "Display Server: Headless (Virtual EDID recommended)"
+    fi
+
+    if [[ "$IS_WAYLAND" == true ]]; then
+        log_warn "Active session is Wayland. X11 enforcement required for Omniverse Vulkan."
+    else
+        log_success "Session Server: X11 compliant."
+    fi
+
+    echo ""
+}
+
+cmd_plan() {
+    probe_system
+    print_audit_report
+}
+
+cmd_install() {
+    log_header "Starting Isaac Workstation Installation Assessment"
+    probe_system
+
+    if [[ "$DRY_RUN" != true && "$EUID" -ne 0 ]]; then
+        log_fatal "Installation requires root privileges. Please run with: sudo ./bin/isaac-installer install"
+    fi
+
+    init_state
+
+    # Stage 1: Driver & Display
+    if [[ "$SKIP_DRIVER" != true ]]; then
+        evaluate_and_run_stage "driver" "NVIDIA GPU driver & kernel modules" check_driver install_nvidia_driver
+    fi
+
+    if [[ "$SKIP_DISPLAY" != true ]]; then
+        evaluate_and_run_stage "display" "X11 enforcement & GDM Wayland toggle" check_display_server configure_display_server
+    fi
+
+    # Stage 2: System Prereqs & Compilers
+    evaluate_and_run_stage "prereqs" "Vulkan runtime, dev headers, GCC 11 & Git LFS" check_system_prereqs install_system_prereqs
+
+    # Stage 3: Python Runtime & Dev Tools
+    evaluate_and_run_stage "python" "Miniforge & uv package manager" check_python_env install_python_env
+
+    if [[ "$INSTALL_DEV_TOOLS" == true ]]; then
+        evaluate_and_run_stage "devtools" "Docker CE, nvidia-ctk, VS Code, Chrome & Discord" check_dev_tools install_dev_tools
+    fi
+
+    # Stage 4: Physical AI & Hardware Teleop
+    if [[ "$INSTALL_PHYSICAL_AI" == true ]]; then
+        evaluate_and_run_stage "physical_ai" "Hugging Face LeRobot, lerobot-dataset-viz & video codecs" check_physical_ai install_physical_ai_stack
+    fi
+
+    if [[ "$INSTALL_HARDWARE_TELEOP" == true ]]; then
+        evaluate_and_run_stage "hardware_teleop" "XR Headsets, Manus gloves, SpaceMouse & 1ms FTDI udev rules" check_hardware_teleop install_hardware_teleop
+    fi
+
+    # Stage 5: Isaac Sim Engine
+    evaluate_and_run_stage "isaacsim" "NVIDIA Isaac Sim standalone extraction & EULA" check_isaac_sim install_isaac_sim
+
+    # Stage 6: Isaac Lab
+    evaluate_and_run_stage "isaaclab" "Isaac Lab clone, _isaac_sim link & PyTorch verification" check_isaac_lab install_isaac_lab
+
+    # Stage 7: IsaacLab-Arena
+    evaluate_and_run_stage "arena" "IsaacLab-Arena benchmark suite" check_isaaclab_arena install_isaaclab_arena
+
+    # Stage 8: Demos & Desktop Shortcuts
+    evaluate_and_run_stage "demos" "Desktop .desktop launchers for Unitree G1, Go2 & Franka" check_demos install_demos_and_shortcuts
+
+    # Stage 9: Optional Streaming (Strictly opt-in)
+    if [[ "$INSTALL_STREAMING" == true && "$STREAMING_PROVIDER" != "none" ]]; then
+        install_streaming_provider "$STREAMING_PROVIDER"
+    fi
+
+    if [[ "$DRY_RUN" == true ]]; then
+        log_header "Dry-Run Simulation Complete!"
+        log_info "No system modifications were made."
+    else
+        set_stage "completed"
+        clear_resume_hook
+        log_header "Installation Complete!"
+        log_success "Physical AI Stack, LeRobot, Isaac Sim, Isaac Lab, Docker, and Dev Tools are ready."
+    fi
+}
+
+cmd_resume() {
+    log_header "Resuming Isaac Workstation Installation..."
+    probe_system
+    cmd_install
+}
+
+cmd_test() {
+    log_header "Running Isaac Workstation Verification Suite"
+    probe_system
+
+    log_step "1. Testing NVIDIA Driver..."
+    if nvidia-smi &>/dev/null; then
+        log_success "NVIDIA Driver OK: $(nvidia-smi --query-gpu=name,driver_version --format=csv,noheader)"
+    else
+        log_error "NVIDIA Driver test failed."
+    fi
+
+    log_step "2. Testing Docker & NVIDIA Container Toolkit..."
+    if command -v docker &>/dev/null; then
+        if sudo docker info &>/dev/null; then
+            log_success "Docker Engine is active."
+            if sudo docker run --rm --gpus all nvidia/cuda:12.2.0-base-ubuntu22.04 nvidia-smi &>/dev/null; then
+                log_success "NVIDIA Docker GPU Passthrough verified."
+            else
+                log_warn "Docker GPU passthrough check failed. Verify nvidia-container-toolkit."
+            fi
+        fi
+    fi
+
+    log_step "3. Testing LeRobot Dataset Visualizer..."
+    if command -v lerobot-dataset-viz &>/dev/null; then
+        log_success "lerobot-dataset-viz command is available in PATH."
+    else
+        log_warn "lerobot-dataset-viz not found in /usr/local/bin."
+    fi
+
+    log_step "4. Testing SpaceMouse & Hardware Daemons..."
+    if systemctl is-active --quiet spacenavd 2>/dev/null; then
+        log_success "SpaceMouse daemon (spacenavd) is active."
+    else
+        log_info "SpaceMouse daemon is idle or not running."
+    fi
+
+    log_step "5. Testing Isaac Lab PyTorch CUDA..."
+    local lab_dir="${TARGET_HOME}/IsaacLab"
+    if [[ -d "${lab_dir}" ]]; then
+        sudo -H -u "${TARGET_USER}" bash -c "
+            cd '${lab_dir}'
+            ./isaaclab.sh -p -c 'import torch; assert torch.cuda.is_available(); print(\"  ✔ PyTorch CUDA Ready:\", torch.cuda.get_device_name(0))'
+        "
+    fi
+}
+
+usage() {
+    cat << HELP
+Isaac Installer - Universal Bare-Metal Physical AI & Robotics Provisioner
+
+Usage:
+  isaac-installer <command> [options]
+
+Commands:
+  plan | check        Perform deep pre-flight audit & conflict diff matrix
+  doctor              Probe hardware, Blackwell GPUs, PCIe, display, and OS
+  install             Run full bare-metal installation of Physical AI stack
+  resume              Resume installation from last recorded checkpoint
+  test                Run end-to-end driver, Docker, LeRobot, and PyTorch verification
+  stream <provider>   Setup 3D streaming (nomachine | sunshine)
+  help                Show this message
+
+Options:
+  --dry-run              Simulate installation without making any system changes
+  --step | -i            Interactive step-by-step mode (prompts before each stage)
+  --skip-driver          Skip driver installation (preserves existing NVIDIA driver)
+  --skip-display         Skip display server / GDM configuration
+  --no-dev-tools         Skip Docker, GitHub Desktop, and VS Code setup
+  --no-physical-ai       Skip Hugging Face LeRobot & dataset visualizer
+  --no-hardware-teleop   Skip XR/Vision Pro, Manus glove, and SpaceMouse udev setup
+  --stream <provider>    Enable streaming provider (nomachine | sunshine) [Default: disabled]
+  --auto-reboot          Automatically reboot if driver installation requires it
+
+HELP
+}
+
+# --- CLI Argument Parsing ---
+COMMAND="${1:-help}"
+shift || true
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --dry-run)             DRY_RUN=true; shift ;;
+        --step|-i)             INTERACTIVE_STEP=true; shift ;;
+        --skip-driver)         SKIP_DRIVER=true; shift ;;
+        --skip-display)        SKIP_DISPLAY=true; shift ;;
+        --no-dev-tools)        INSTALL_DEV_TOOLS=false; shift ;;
+        --no-physical-ai)      INSTALL_PHYSICAL_AI=false; shift ;;
+        --no-hardware-teleop)  INSTALL_HARDWARE_TELEOP=false; shift ;;
+        --stream)              INSTALL_STREAMING=true; STREAMING_PROVIDER="$2"; shift 2 ;;
+        --auto-reboot)         AUTO_REBOOT=true; shift ;;
+        *)                     shift ;;
+    esac
+done
+
+case "${COMMAND}" in
+    plan|check|audit) cmd_plan ;;
+    doctor)           cmd_doctor ;;
+    install)          cmd_install ;;
+    resume)           cmd_resume ;;
+    test)             cmd_test ;;
+    stream)           install_streaming_provider "${1:-nomachine}" ;;
+    help|--help|-h)   usage ;;
+    *)
+        log_error "Unknown command: ${COMMAND}"
+        usage
+        exit 1
+        ;;
+esac

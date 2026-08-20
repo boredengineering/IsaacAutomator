@@ -1,0 +1,35 @@
+version: "1.0"
+profile_name: "workstation-standard"
+
+hardware:
+  force_gpu_index: 0
+  enforce_x11: true
+  auto_blacklist_nouveau: true
+
+isaac_sim:
+  method: "standalone" # standalone | pip | source | docker
+  version: "5.1.0"
+  install_path: "~/IsaacSim"
+  accept_eula: true
+
+isaac_lab:
+  enabled: true
+  repo: "https://github.com/isaac-sim/IsaacLab.git"
+  branch: "main"
+  install_path: "~/IsaacLab"
+
+isaaclab_arena:
+  enabled: true
+  repo: "https://github.com/isaac-sim/IsaacLab-Arena.git"
+  branch: "release/0.1.1"
+  install_path: "~/IsaacLab-Arena"
+
+ecosystem:
+  demos: true
+  gr00t: false
+  lerobot: false
+  ros2_bridge: false
+
+streaming:
+  enable_nomachine: false
+  enable_sunshine: false

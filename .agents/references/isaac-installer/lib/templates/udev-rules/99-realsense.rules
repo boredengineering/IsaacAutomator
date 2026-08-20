@@ -1,0 +1,2 @@
+# Intel RealSense Depth Cameras (D405, D435, D455)
+SUBSYSTEM=="usb", ATTRS{idVendor}=="8086", ATTRS{idProduct}=="0b07|0b3a|0b5c|0b64|0b68", MODE="0666", GROUP="plugdev"

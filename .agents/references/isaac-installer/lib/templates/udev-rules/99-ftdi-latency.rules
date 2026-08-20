@@ -1,0 +1,4 @@
+# FTDI / USB-Serial Low-Latency 1ms Timer (Crucial for 1000Hz ALOHA, SO-100 & Dynamixel Servos)
+ACTION=="add", SUBSYSTEM=="usb-serial", DRIVER=="ftdi_sio", ATTR{latency_timer}="1"
+ACTION=="add", SUBSYSTEM=="tty", KERNEL=="ttyUSB*", ATTR{device/latency_timer}="1"
+ACTION=="add", SUBSYSTEM=="tty", KERNEL=="ttyACM*", ATTR{device/latency_timer}="1"

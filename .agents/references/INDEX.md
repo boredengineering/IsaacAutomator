@@ -20,5 +20,6 @@ Catalog of high-level project specifications, architecture documents, and goal d
 | [`gcp-plans/debugging-instance.md`](./gcp-plans/debugging-instance.md) | Incident report & root cause analysis for Isaac Sim full.kit segfault & base.kit resolution on test03 | Active Reference |
 | [`devcontainer/isaacautomator-devcontainer-plan.md`](./devcontainer/isaacautomator-devcontainer-plan.md) | Architectural evaluation & parity validation for unified DevContainer with OCI features | Active Reference |
 | [`devcontainer/devcontainer-mcp-skills-plan.md`](./devcontainer/devcontainer-mcp-skills-plan.md) | Step-by-step integration plan for robotics MCP servers (docker, hw-probe) and skills | Active Plan |
+| [`isaac-installer/README.md`](./isaac-installer/README.md) | Universal bare-metal Ubuntu 22.04 installer CLI & modular library | Active Tool |
 | [`devcontainer/auth-strategy.md`](./devcontainer/auth-strategy.md) | DevContainer Git & GitHub authentication strategy (Pattern B: persistent named volume + setup hook) | Active Reference |
 

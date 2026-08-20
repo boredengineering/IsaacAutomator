@@ -1,0 +1,32 @@
+version: "1.0"
+profile_name: "minimal-headless"
+
+hardware:
+  force_gpu_index: 0
+  enforce_x11: true
+  auto_blacklist_nouveau: true
+
+isaac_sim:
+  method: "standalone"
+  version: "5.1.0"
+  install_path: "~/IsaacSim"
+  accept_eula: true
+
+isaac_lab:
+  enabled: true
+  repo: "https://github.com/isaac-sim/IsaacLab.git"
+  branch: "main"
+  install_path: "~/IsaacLab"
+
+isaaclab_arena:
+  enabled: false
+
+ecosystem:
+  demos: false
+  gr00t: false
+  lerobot: false
+  ros2_bridge: false
+
+streaming:
+  enable_nomachine: false
+  enable_sunshine: false

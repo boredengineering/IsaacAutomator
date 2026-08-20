@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Humanoid Locomotion RL (G1)
+Comment=Train Unitree G1 humanoid with RSL-RL in Isaac Lab
+Exec=gnome-terminal -- /bin/bash -c "DISPLAY=:0 __DEMOS_DIR__/humanoid-locomotion.sh; exec bash"
+Icon=utilities-terminal
+Terminal=false
+Categories=Development;Science;Robotics;

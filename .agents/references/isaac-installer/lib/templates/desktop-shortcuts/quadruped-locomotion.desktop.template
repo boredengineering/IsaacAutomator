@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Quadruped Locomotion RL (Go2)
+Comment=Train Unitree Go2 quadruped with RSL-RL in Isaac Lab
+Exec=gnome-terminal -- /bin/bash -c "DISPLAY=:0 __DEMOS_DIR__/quadruped-locomotion.sh; exec bash"
+Icon=utilities-terminal
+Terminal=false
+Categories=Development;Science;Robotics;

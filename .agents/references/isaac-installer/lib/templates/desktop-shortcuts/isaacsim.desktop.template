@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Isaac Sim (Vulkan GPU 0)
+Comment=NVIDIA Isaac Sim Robotics Simulation Platform
+Exec=__ISAACSIM_DIR__/isaac-sim.sh --/renderer/activeGpu=0
+Icon=__ISAACSIM_DIR__/extscache/omni.isaac.app.setup/data/isaac_sim.png
+Terminal=false
+Categories=Development;Science;Robotics;
