@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# isaaclab-env - Scoped Runner for Headless Scripts, CI/CD, and Terminal Executions
+# ==============================================================================
+set -e
+
+SIM_PATH="${ISAACSIM_DIR:-$HOME/IsaacSim}"
+export EXP_PATH="${SIM_PATH}/apps"
+export ISAAC_PATH="${SIM_PATH}"
+export CARB_APP_PATH="${SIM_PATH}/kit"
+export VK_ICD_FILENAMES="/etc/vulkan/icd.d/nvidia_icd.json"
+
+CONDA_PY="/opt/conda/envs/isaaclab/bin/python"
+
+if [[ $# -eq 0 ]]; then
+    echo "Usage: isaaclab-env <command> [args...]"
+    echo "Example: isaaclab-env python scripts/reinforcement_learning/rsl_rl/train.py --task Isaac-Ant-v0"
+    exit 1
+fi
+
+if [[ "$1" == "python" || "$1" == "python3" ]]; then
+    shift
+    if [[ -x "${CONDA_PY}" ]]; then
+        export PATH="/opt/conda/envs/isaaclab/bin:$PATH"
+        exec "${CONDA_PY}" "$@"
+    else
+        exec python3 "$@"
+    fi
+else
+    if [[ -x "${CONDA_PY}" ]]; then
+        export PATH="/opt/conda/envs/isaaclab/bin:$PATH"
+    fi
+    exec "$@"
+fi

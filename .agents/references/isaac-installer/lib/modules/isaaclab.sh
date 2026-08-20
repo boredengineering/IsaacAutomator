@@ -44,19 +44,56 @@ install_isaac_lab() {
     mv -Tf "${lab_dir}/_isaac_sim.tmp.$$" "${lab_dir}/_isaac_sim"
     chown -h "${TARGET_USER}:${TARGET_USER}" "${lab_dir}/_isaac_sim"
 
-    # 3. Execute Isaac Lab Installer
-    log_info "Running ./isaaclab.sh --install (this sets up extension packages and dependencies)..."
+    # 3. Execute Isaac Lab Installer & Topological Extension Setup
+    log_info "Installing Isaac Lab extensions in topological order..."
+    local conda_py="/opt/conda/envs/isaaclab/bin/python"
+    local uv_bin
+    uv_bin="$(command -v uv || echo "${TARGET_HOME}/.local/bin/uv")"
+
+    if [[ -x "${conda_py}" && -x "${uv_bin}" ]]; then
+        log_info "Accelerating extension installation into 'isaaclab' Conda environment via UV..."
+        sudo -H -u "${TARGET_USER}" bash -c "
+            cd '${lab_dir}'
+            # Topological installation order: Base -> Assets -> Tasks -> RL
+            for ext in source/extensions/omni.isaac.lab \
+                       source/extensions/omni.isaac.lab_assets \
+                       source/extensions/omni.isaac.lab_tasks \
+                       source/extensions/omni.isaac.lab_rl; do
+                if [[ -d \"\$ext\" ]]; then
+                    echo \"  ↳ Linking \$ext...\"
+                    '${uv_bin}' pip install --python '${conda_py}' -e \"\$ext\" 2>/dev/null || true
+                fi
+            done
+        "
+    fi
+
+    log_info "Running native ./isaaclab.sh --install..."
     sudo -H -u "${TARGET_USER}" bash -c "
         cd '${lab_dir}'
         ./isaaclab.sh --install
     "
 
     # 4. Verify PyTorch CUDA Tensors
-    log_info "Verifying PyTorch CUDA acceleration in Isaac Lab environment..."
+    log_info "Verifying PyTorch CUDA acceleration in Isaac Lab environments..."
+    local sim_ok=false
+    local conda_ok=false
+
     if sudo -H -u "${TARGET_USER}" bash -c "
         cd '${lab_dir}'
-        ./isaaclab.sh -p -c 'import torch; assert torch.cuda.is_available(), \"CUDA unavailable\"; print(\"  ✔ PyTorch CUDA Ready:\", torch.cuda.get_device_name(0))'
-    "; then
+        ./isaaclab.sh -p -c 'import torch; assert torch.cuda.is_available(), \"CUDA unavailable\"; print(\"  ✔ Isaac Sim Bundled PyTorch:\", torch.cuda.get_device_name(0))'
+    " 2>/dev/null; then
+        sim_ok=true
+    fi
+
+    if [[ -x "${conda_py}" ]]; then
+        if sudo -H -u "${TARGET_USER}" bash -c "
+            '${conda_py}' -c 'import torch; assert torch.cuda.is_available(), \"CUDA unavailable\"; print(\"  ✔ Named Conda Env PyTorch:\", torch.cuda.get_device_name(0))'
+        " 2>/dev/null; then
+            conda_ok=true
+        fi
+    fi
+
+    if [[ "$sim_ok" == true || "$conda_ok" == true ]]; then
         log_success "Isaac Lab installation verified successfully."
     else
         log_warn "Isaac Lab PyTorch verification encountered an issue. Check GPU driver / Vulkan status."

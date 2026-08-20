@@ -20,6 +20,8 @@ Master index of session memory checkpoints for Isaac Automator.
 | 2026-08-20 21:30 | `e7f8a9b0` | Workspace Hierarchy, Dual-Remote Forks, and State Drift Self-Healing Engine | Added workspace organization layout, dual-remote fork topology, tag management, and automated state drift reconciliation & self-healing repair to plan | [`20260820_213015_e7f8a9b0.md`](./sessions/20260820_213015_e7f8a9b0.md) |
 | 2026-08-20 21:54 | `f1a2b3c4` | Implementation of Workspace Hierarchy, Dual-Remote Forks, and Self-Healing Engine | Implemented resolve_repo_dest_path, dual-remote fork topology with push guards, lab version switching, state ledger, and automated drift repair in isaac-installer | [`20260820_215440_f1a2b3c4.md`](./sessions/20260820_215440_f1a2b3c4.md) |
 | 2026-08-20 22:14 | `a1b2c3d4` | Hybrid Conda + UV Architecture Plan & Rationale | Documented hybrid named Conda environment + UV pip acceleration model, Standalone vs Pip rationale, and clean shell activation hooks in isaac-install-plan.md | [`20260820_221410_a1b2c3d4.md`](./sessions/20260820_221410_a1b2c3d4.md) |
+| 2026-08-20 22:20 | `b3c4d5e6` | Implementation of Hybrid Conda + UV Model, Scoped Activation Hooks, and isaaclab-env Shim | Implemented central named Conda environment (isaaclab), scoped activation/deactivation hooks, isaaclab-env CLI runner, and topological UV extension linking | [`20260820_222023_b3c4d5e6.md`](./sessions/20260820_222023_b3c4d5e6.md) |
+
 
 
 

@@ -121,6 +121,32 @@ audit_all_components() {
     fi
     AUDIT_RESULTS+=("Git Large File Storage|${lfs_cur}|Installed|${lfs_status}|${lfs_risk}")
 
+    # 8. Hybrid Conda & UV Toolchain
+    local py_cur="Missing"
+    local py_status="MISSING"
+    local py_risk="None"
+    local py_target="Miniforge + UV"
+    if [[ -x /opt/conda/bin/conda && -d /opt/conda/envs/isaaclab ]]; then
+        if command -v uv &>/dev/null; then
+            py_cur="Conda ('isaaclab') + UV"
+            py_status="UP_TO_DATE"
+            SATISFIED_COUNT=$((SATISFIED_COUNT + 1))
+        else
+            py_cur="Conda ('isaaclab') (UV missing)"
+            py_status="UPGRADES_NEEDED"
+            py_risk="UV missing; package installation will be slow"
+            UPGRADES_FOUND=$((UPGRADES_FOUND + 1))
+        fi
+    elif command -v uv &>/dev/null; then
+        py_cur="UV only (Conda missing)"
+        py_status="UPGRADES_NEEDED"
+        py_risk="Named 'isaaclab' Conda environment not yet created"
+        UPGRADES_FOUND=$((UPGRADES_FOUND + 1))
+    else
+        INSTALLS_FOUND=$((INSTALLS_FOUND + 1))
+    fi
+    AUDIT_RESULTS+=("Hybrid Python Environment|${py_cur}|${py_target}|${py_status}|${py_risk}")
+
     # 8. Docker Engine & NVIDIA Container Toolkit
     local docker_cur="Missing"
     local docker_status="MISSING"
