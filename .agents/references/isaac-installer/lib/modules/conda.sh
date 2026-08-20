@@ -69,11 +69,16 @@ CONDA_PROF
         sudo chmod 644 /etc/profile.d/conda.sh
     fi
 
-    # Initialize conda for user non-invasively
+    # Initialize conda for user and register /opt/conda/envs in search paths
     sudo -H -u "${TARGET_USER}" bash -c "
         if ! grep -q 'conda initialize' ~/.bashrc 2>/dev/null; then
             ${CONDA_ROOT}/bin/conda init bash 2>/dev/null || true
         fi
+        # Register /opt/conda/envs in conda envs_dirs so 'conda activate isaaclab' works from user's miniconda/base
+        if command -v conda &>/dev/null; then
+            conda config --append envs_dirs '${CONDA_ROOT}/envs' 2>/dev/null || true
+        fi
+        ${CONDA_ROOT}/bin/conda config --append envs_dirs '${CONDA_ROOT}/envs' 2>/dev/null || true
     "
 
     # 3. Create or Verify Named Conda Environment ('isaaclab')
