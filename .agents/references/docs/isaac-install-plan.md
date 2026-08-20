@@ -137,7 +137,7 @@ A major trap in manual Isaac Lab setups is sourcing `setup_conda_env.sh` inside 
 `isaac-installer` guarantees **Zero Shell Contamination** using scoped Conda activation hooks:
 
 ```text
-/opt/conda/envs/isaaclab/etc/conda/
+<User_Conda_Root>/envs/isaaclab/etc/conda/   (e.g. ~/miniconda3/envs/isaaclab/etc/conda/)
 ├── activate.d/
 │   └── 00_isaaclab_env.sh      <-- Scopes Omniverse paths ONLY upon 'conda activate isaaclab'
 └── deactivate.d/
@@ -160,6 +160,31 @@ A major trap in manual Isaac Lab setups is sourcing `setup_conda_env.sh` inside 
 
 ---
 
+### 3.4.1 Official NVIDIA Docs Note on Conda vs. Bundled Python & `./isaaclab.sh -p`
+
+> **NVIDIA Official Documentation Guidance**:
+> *"Combining an Isaac Sim binary installation with an unmanaged conda, uv, or venv virtual environment is not supported. Use Isaac Sim's bundled Python via `./isaaclab.sh -p` instead."*
+
+#### Why NVIDIA States This & Why Our Architecture Solves It:
+1. **The Core Hazard (ABI Mismatch & Library Paths)**:
+   In raw/unmanaged virtual environments, developers frequently install mismatched PyTorch C++ binaries or execute scripts without setting `CARB_APP_PATH`, `EXP_PATH`, or `VK_ICD_FILENAMES`. When Python tries to load Isaac Sim's Carbonite bindings (`libcarb.so`, `libomni.ext.so`), it crashes with `SIGSEGV` or `undefined symbol: PyExc_...`.
+2. **How `./isaaclab.sh` Operates Internally**:
+   When inspected directly from Isaac Lab 3.0 source (`isaaclab.sh` lines 23–31):
+   ```bash
+   if [ -n "$CONDA_PREFIX" ]; then
+       python_exe="$CONDA_PREFIX/bin/python"
+   elif [ -f "$ISAACLAB_PATH/_isaac_sim/python.sh" ]; then
+       python_exe="$ISAACLAB_PATH/_isaac_sim/python.sh"
+   ```
+   If a Conda environment is active (`$CONDA_PREFIX`), `isaaclab.sh` explicitly routes execution to the active Conda environment!
+3. **The `isaac-installer` Harmony**:
+   * We ensure the Conda environment matches the exact ABI (Python 3.12 for Sim 6.0; Python 3.10 for Sim 5.1).
+   * We deploy scoped `activate.d` hooks so `conda activate isaaclab` injects the exact same Omniverse library paths as `_isaac_sim/python.sh`.
+   * We execute the official `./isaaclab.sh --install` inside the healed Conda environment to link all editable extensions properly.
+   * Both `python <script>` (under activated conda), `isaaclab-env python <script>`, and `./isaaclab.sh -p <script>` work 100% reliably in full harmony.
+
+---
+
 ### 3.5 Developer Interaction Modes
 
 The hybrid model supports all four primary robotics development workflows:
@@ -167,9 +192,9 @@ The hybrid model supports all four primary robotics development workflows:
 | Workflow Mode | Command / Invocation | Use Case |
 | :--- | :--- | :--- |
 | **1. Global Interactive Terminal** | `conda activate isaaclab`<br>`python scripts/reinforcement_learning/rsl_rl/train.py --task Isaac-Ant-v0` | Day-to-day interactive RL training and development from any directory. |
-| **2. Zero-Activation CLI Shim** | `isaaclab-env python train.py --task Isaac-Cartpole-v0` | Headless execution, bash scripts, tmux workers, or CI/CD pipelines without manual activation. |
-| **3. Bundled Sim Runner** | `./isaaclab.sh -p scripts/tutorials/00_sim/create_empty.py` | Official standalone Isaac Lab bundled scripts. |
-| **4. IDE / Debugger** | Select `/opt/conda/envs/isaaclab/bin/python` in IDE | Visual Studio Code, Cursor, PyCharm interactive breakpoints and linting. |
+| **2. Native Isaac Lab Launcher** | `./isaaclab.sh -p scripts/tutorials/00_sim/create_empty.py` | Official standalone Isaac Lab launcher (auto-detects active `$CONDA_PREFIX`). |
+| **3. Zero-Activation CLI Shim** | `isaaclab-env python train.py --task Isaac-Cartpole-v0` | Headless execution, bash scripts, tmux workers, or CI/CD pipelines without manual activation. |
+| **4. IDE / Debugger** | Select `~/miniconda3/envs/isaaclab/bin/python` in IDE | Visual Studio Code, Cursor, PyCharm interactive breakpoints and linting. |
 
 ---
 

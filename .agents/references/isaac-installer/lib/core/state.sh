@@ -193,6 +193,20 @@ for d in drifts:
     if [[ -n "$lerobot_existing" && "$lerobot_existing" != "$lerobot_target_path" ]]; then
         DRIFT_ITEMS+=("LeRobot|PATH_MISLOCATED|${lerobot_existing}|${lerobot_target_path}|LeRobot located at flat or legacy path instead of desired hierarchy")
     fi
+
+    # 4. Audit Conda Environment Drift
+    local conda_bin
+    conda_bin="$(resolve_conda_bin 2>/dev/null || echo "")"
+    local user_env_path
+    user_env_path="$(resolve_conda_env_path "isaaclab" 2>/dev/null || echo "")"
+
+    if [[ -d "/opt/conda/envs/isaaclab" && "$user_env_path" != "/opt/conda/envs/isaaclab" ]]; then
+        DRIFT_ITEMS+=("CondaEnv|CONDA_ENV_MISLOCATED|/opt/conda/envs/isaaclab|${user_env_path}|Orphaned /opt/conda/envs/isaaclab found outside user's active Conda")
+    fi
+
+    if [[ -n "$user_env_path" && (! -d "$user_env_path" || ! -x "$user_env_path/bin/python") ]]; then
+        DRIFT_ITEMS+=("CondaEnv|CONDA_ENV_MISSING|None|${user_env_path}|Named 'isaaclab' Conda environment missing in user's Conda runtime")
+    fi
 }
 
 print_drift_report() {
@@ -288,15 +302,43 @@ repair_workspace_drift() {
                 chown -h "${TARGET_USER}:${TARGET_USER}" "${repo_dir}/_isaac_sim"
                 log_success "_isaac_sim symlink healed."
                 ;;
+
+            CONDA_ENV_MISLOCATED)
+                log_info "Cleaning up orphaned system Conda environment ${cur}..."
+                rm -rf "$cur" 2>/dev/null || true
+                if [[ -d "/opt/conda" && -z "$(ls -A /opt/conda/envs 2>/dev/null)" ]]; then
+                    rm -rf "/opt/conda" 2>/dev/null || true
+                fi
+                log_info "Provisioning native named Conda environment in user's Conda (${target})..."
+                install_python_env
+                log_success "Conda environment mislocation healed."
+                ;;
+
+            CONDA_ENV_MISSING)
+                log_info "Provisioning named Conda environment in user's Conda (${target})..."
+                install_python_env
+                log_success "Named 'isaaclab' Conda environment created."
+                ;;
         esac
     done
 
-    # Re-index Python runtime after healing
+    # Re-index Python runtime after healing using official ./isaaclab.sh --install in healed Conda env
     local lab_dir
     lab_dir="$(resolve_isaaclab_dir)"
     if [[ -d "${lab_dir}" && -x "${lab_dir}/isaaclab.sh" ]]; then
-        log_step "Re-indexing Isaac Lab editable extensions..."
-        sudo -H -u "${TARGET_USER}" bash -c "cd '${lab_dir}' && ./isaaclab.sh --install" 2>/dev/null || true
+        log_step "Running official ./isaaclab.sh --install in healed Conda environment..."
+        local env_path
+        env_path="$(resolve_conda_env_path "isaaclab" 2>/dev/null || echo "")"
+        if [[ -x "${env_path}/bin/python" ]]; then
+            sudo -H -u "${TARGET_USER}" bash -c "
+                export CONDA_PREFIX='${env_path}'
+                export PATH='${env_path}/bin:\$PATH'
+                cd '${lab_dir}'
+                ./isaaclab.sh --install
+            " 2>/dev/null || true
+        else
+            sudo -H -u "${TARGET_USER}" bash -c "cd '${lab_dir}' && ./isaaclab.sh --install" 2>/dev/null || true
+        fi
     fi
 
     log_success "Workspace reconciliation complete. All drift resolved."
