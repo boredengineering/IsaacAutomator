@@ -1,12 +1,51 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# isaacsim.sh - NVIDIA Isaac Sim Standalone Engine Installation
+# isaacsim.sh - NVIDIA Isaac Sim Engine Detection & Standalone Management
 # ==============================================================================
 
+resolve_isaacsim_dir() {
+    detect_target_user
+
+    # 1. Explicit override
+    if [[ -n "${ISAACSIM_DIR:-}" && -d "${ISAACSIM_DIR}" ]]; then
+        echo "${ISAACSIM_DIR}"
+        return 0
+    fi
+
+    # 2. Standard ~/IsaacSim location
+    if [[ -x "${TARGET_HOME}/IsaacSim/isaac-sim.sh" ]]; then
+        echo "${TARGET_HOME}/IsaacSim"
+        return 0
+    fi
+
+    # 3. Omniverse Launcher standard path (~/.local/share/ov/pkg/isaac_sim-*)
+    local ov_pkg
+    ov_pkg=$(find "${TARGET_HOME}/.local/share/ov/pkg" -maxdepth 1 -type d -name "isaac*sim*" 2>/dev/null | sort -V | tail -n 1 || true)
+    if [[ -n "$ov_pkg" && -x "${ov_pkg}/isaac-sim.sh" ]]; then
+        echo "$ov_pkg"
+        return 0
+    fi
+
+    # 4. System-wide /opt/nvidia/isaac-sim
+    if [[ -x "/opt/nvidia/isaac-sim/isaac-sim.sh" ]]; then
+        echo "/opt/nvidia/isaac-sim"
+        return 0
+    fi
+
+    # Default fallback
+    echo "${TARGET_HOME}/IsaacSim"
+}
+
 check_isaac_sim() {
-    local install_dir="${ISAACSIM_DIR:-${TARGET_HOME}/IsaacSim}"
-    if [[ -x "${install_dir}/isaac-sim.sh" && -f "${install_dir}/.eula_accepted" ]]; then
-        STAGE_CHECK_MSG="Isaac Sim v5.1.0 engine already installed at ${install_dir}"
+    local install_dir
+    install_dir="$(resolve_isaacsim_dir)"
+
+    if [[ -x "${install_dir}/isaac-sim.sh" ]]; then
+        # Ensure EULA is accepted
+        if [[ ! -f "${install_dir}/.eula_accepted" ]]; then
+            sudo -H -u "${TARGET_USER}" touch "${install_dir}/.eula_accepted" 2>/dev/null || true
+        fi
+        STAGE_CHECK_MSG="Isaac Sim engine already installed and verified at ${install_dir}"
         return 0
     else
         STAGE_CHECK_MSG="Isaac Sim engine not installed at ${install_dir}"
@@ -15,16 +54,17 @@ check_isaac_sim() {
 }
 
 install_isaac_sim() {
-    log_step "Installing NVIDIA Isaac Sim Engine..."
+    log_step "Checking NVIDIA Isaac Sim Engine..."
 
-    local install_dir="${ISAACSIM_DIR:-${TARGET_HOME}/IsaacSim}"
+    local install_dir
+    install_dir="$(resolve_isaacsim_dir)"
     local source_dir="${TARGET_HOME}/isaacsim-pkg"
     local zip_version="${ISAACSIM_VERSION:-5.1.0}"
     local zip_name="isaac-sim-standalone-${zip_version}-linux-x86_64.zip"
     local download_url="https://download.isaacsim.omniverse.nvidia.com/${zip_name}"
 
     if check_isaac_sim; then
-        log_success "${STAGE_CHECK_MSG}."
+        log_success "${STAGE_CHECK_MSG} (Skipping 15 GB download)."
         return 0
     fi
 

@@ -1,65 +1,93 @@
 # Isaac Installer (`isaac-installer`)
 
-A modular, zero-infrastructure, bare-metal robotics workstation provisioner for **Ubuntu 22.04 LTS**.
+A modular, zero-infrastructure, bare-metal robotics and Physical AI workstation provisioner for **Ubuntu 22.04 LTS**.
 
-`isaac-installer` transforms a freshly booted or pre-existing physical desktop or server into a complete robotics development, teleoperation, and simulation workstation.
+`isaac-installer` transforms a freshly booted or pre-existing physical desktop or server into a complete robotics development, teleoperation, and simulation workstation using **declarative YAML profiles**.
 
 ---
 
 ## Key Features
 
-- **Deep Pre-Flight Audit (`plan` / `check`)**: Generates a comprehensive diff matrix comparing host versions vs target versions, highlighting missing packages, upgrade requirements, and potential conflict risks (e.g. Wayland active, low disk space, apt locks).
-- **Dry-Run Simulation (`--dry-run`)**: Simulates the exact actions the installer would execute without modifying any system files or running package installations.
-- **Interactive Step-by-Step Gate (`--step` / `-i`)**: Pauses before every major stage, displaying the proposed action and asking for operator confirmation (`[Y/n/s(kip)]`).
-- **Hardware & Architecture Aware**: Auto-detects **Blackwell (RTX 50xx / GBxxx)**, **Ada Lovelace (RTX 40xx)**, and **Ampere (RTX 30xx)** GPUs, automatically selecting the correct driver branch (e.g. `>= 570` for Blackwell).
-- **Physical AI & Imitation Learning**:
-  - Installs **Hugging Face LeRobot** (`lerobot[all,dataset_viz]`) with native FFmpeg hardware acceleration.
-  - Deploys **`lerobot-dataset-viz`** into PATH with **Rerun.io** and **Foxglove Studio** visualization backends.
-- **Teleoperation & Robotics Peripherals**:
-  - **XR Headsets (Apple Vision Pro, Meta Quest 3, Pico 4)**: Deploys `isaacteleop[cloudxr,retargeters]` into Isaac Lab with OpenXR dev headers.
-  - **Manus VR Gloves**: Deploys `99-manus-gloves.rules` and grants `uinput`/`plugdev` group access.
-  - **3D SpaceMouse**: Installs and starts `spacenavd` daemon with `99-spacenav.rules`.
-  - **ALOHA & SO-100 Arms (Dynamixel / Feetech)**: Injects **1ms FTDI low-latency timer udev rule** (`99-ftdi-latency.rules`) for 1000Hz feedback without 16ms Linux serial lag.
-  - **Depth Cameras (Intel RealSense)**: Injects `99-realsense.rules`.
-- **Complete Developer Application Suite**:
-  - **Visual Studio Code** (Pre-installed with ROS, Python, C++, USD, Jupyter, GitLens, and Foxglove extensions).
-  - **Docker CE Engine & CLI** + **NVIDIA Container Toolkit** (`nvidia-ctk`) + non-root user permissions.
-  - **GitHub Desktop** for Linux.
-  - **Google Chrome / Native Chromium** (with hardware-accelerated WebGPU/WebXR/WebRTC for Foxglove and CloudXR).
-  - **Discord** for robotics community channels.
+- **Declarative YAML Configuration Profiles (`config/*.yaml`)**:
+  - `default-profile.yaml`: Clean, standard interactive robotics workstation (Sim + Lab + VS Code + GitHub Desktop + Chromium + NVMe tools + 1ms FTDI serial rule). Bloat-free: VR gloves, SpaceMouse daemons, LeRobot, and Discord are disabled by default.
+  - `minimal-headless.yaml`: Headless RL training or CI/CD server (Driver + Docker + Vulkan + Isaac Sim + Isaac Lab only).
+  - `full-ecosystem.yaml`: Full Physical AI ecosystem (+ LeRobot, Arena, SpaceMouse, Manus VR, RealSense, Cloud CLIs).
+- **Smart Repository Discovery & Fork Workflows**:
+  - Automatically searches for existing project clones in `~/Documents/GitHub/`, `~/workspace/`, `~`.
+  - Supports personal fork repositories (`--isaaclab-repo <slug>`, `--arena-repo <slug>`, `--lerobot-repo <slug>`).
+  - Automatically wires **Dual-Remote Git Topology** (`origin` = your fork for pushing, `upstream` = official NVIDIA/HF for syncing).
+  - **GitHub Desktop Integration**: Automatically registers all cloned repositories directly into GitHub Desktop's UI sidebar (`github-desktop --add`).
+- **High-Speed Multi-NVMe Storage & LVM2 Subsystem**:
+  - Probes all PCIe Gen4/Gen5 NVMe SSDs (Model, Capacity, SMART health, S.M.A.R.T. thermal logs) and LVM volume groups across `doctor`, `plan`, and `test`.
+- **POSIX Atomic Multi-Version & Custom Source Engine Switcher (`sim`)**:
+  - Seamlessly switch between Isaac Sim versions (4.2.0, 4.5.0, 5.1.0) and custom source builds with 0.1s atomic symlink swapping and automated rollback.
+- **Unified OAuth & Cloud Hub Manager (`auth`)**:
+  - Single pane of glass to audit, login, and configure GitHub, Hugging Face Hub, NVIDIA NGC (`nvcr.io`), Weights & Biases, GCP ADC, AWS, and local hardware groups (`docker`, `dialout`, `plugdev`, `input`, `video`).
+  - Git Author Identity (`user.name` / `user.email`) & SSH public key generator (`auth gen-ssh`).
+- **Deep Pre-Flight Audit (`plan` / `check`)**:
+  - 20-component diff matrix comparing host versions vs target versions with APT lock holder detection and conflict warnings.
+- **13-Subsystem Verification Suite (`test`)**:
+  - Tests Driver, Display, Vulkan, Git LFS, Docker GPU passthrough, VS Code/Apps, Cloud CLIs, NVMe/LVM, Hugging Face CLI, LeRobot Viz, 1ms FTDI rule, Isaac Sim, and Isaac Lab with overall Health Scorecard.
 
 ---
 
-## Usage Guide
+## Usage & Profiles
 
-### 1. Pre-Flight Audit & Conflict Matrix (`plan`)
-Run `plan` to see the full state comparison before touching anything:
+### 1. Inspect Active YAML Configuration
 ```bash
+./bin/isaac-installer config
+```
+
+### 2. Run with a Preset YAML Profile
+```bash
+# Standard clean workstation (default):
+sudo ./bin/isaac-installer install
+
+# Minimal headless server (no GUI apps, no teleop daemons):
+sudo ./bin/isaac-installer install --profile minimal
+
+# Full ecosystem (LeRobot, Arena benchmarks, all hardware teleop):
+sudo ./bin/isaac-installer install --profile full
+
+# Custom YAML configuration file:
+sudo ./bin/isaac-installer install --config my-custom-config.yaml
+```
+
+### 3. Dynamic CLI Overrides on Top of Profiles
+```bash
+# Standard workstation + selectively enable LeRobot:
+sudo ./bin/isaac-installer install --with-lerobot
+
+# Minimal headless server + selectively enable IsaacLab-Arena:
+sudo ./bin/isaac-installer install --profile minimal --with-arena
+
+# Clone personal fork with custom workspace directory:
+sudo ./bin/isaac-installer install \
+  --workspace-dir ~/Documents/GitHub/BoredEngineer \
+  --isaaclab-repo BoredEngineer/IsaacLab \
+  --arena-repo BoredEngineer/IsaacLab-Arena
+```
+
+### 4. Non-Destructive Pre-Flight Simulations
+```bash
+# Simulate default profile:
+./bin/isaac-installer install --dry-run
+
+# Simulate minimal profile:
+./bin/isaac-installer install --dry-run --profile minimal
+
+# 20-component audit diff report:
 ./bin/isaac-installer plan
 ```
 
-### 2. Dry-Run Simulation (`--dry-run`)
-Simulate execution non-destructively:
+### 5. Diagnostics & Health Verification
 ```bash
-./bin/isaac-installer install --dry-run
-```
+# Probe CPU, RAM, NVMe SSDs, LVM, GPU PCIe link, and Display:
+./bin/isaac-installer doctor
 
-### 3. Step-by-Step Interactive Installation (`--step`)
-Prompt for confirmation before every stage:
-```bash
-sudo ./bin/isaac-installer install --step
-```
-
-### 4. Full Bare-Metal Installation
-```bash
-# Standard automated setup
-sudo ./bin/isaac-installer install
-
-# Skip driver if you wish to preserve your existing NVIDIA driver:
-sudo ./bin/isaac-installer install --skip-driver
-```
-
-### 5. Verification Suite
-```bash
+# Run end-to-end 13-subsystem test suite:
 ./bin/isaac-installer test
+
+# Check Cloud Hubs, OAuth & user permissions:
+./bin/isaac-installer auth status
 ```

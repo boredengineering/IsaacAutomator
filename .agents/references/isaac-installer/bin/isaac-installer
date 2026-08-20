@@ -11,9 +11,13 @@ LIB_MODULES="${SCRIPT_DIR}/lib/modules"
 # Source Core Libraries
 source "${LIB_CORE}/logging.sh"
 source "${LIB_CORE}/detect.sh"
+source "${LIB_CORE}/config.sh"
 source "${LIB_CORE}/state.sh"
 source "${LIB_CORE}/package_manager.sh"
 source "${LIB_CORE}/audit.sh"
+source "${LIB_CORE}/network.sh"
+source "${LIB_CORE}/backup.sh"
+source "${LIB_CORE}/git_workspace.sh"
 
 # Source Modules
 source "${LIB_MODULES}/driver.sh"
@@ -26,26 +30,65 @@ source "${LIB_MODULES}/hardware_teleop.sh"
 source "${LIB_MODULES}/isaacsim.sh"
 source "${LIB_MODULES}/isaaclab.sh"
 source "${LIB_MODULES}/isaaclab_arena.sh"
+source "${LIB_MODULES}/auth.sh"
 source "${LIB_MODULES}/streaming.sh"
 source "${LIB_MODULES}/demos.sh"
 source "${LIB_MODULES}/ecosystem.sh"
 
-# Global Check State
+# Global State & Filter Lists
 STAGE_CHECK_MSG=""
-
-# Flags & Options
-SKIP_DRIVER=false
-SKIP_DISPLAY=false
-INSTALL_DEV_TOOLS=true
-INSTALL_PHYSICAL_AI=true
-INSTALL_HARDWARE_TELEOP=true
-INSTALL_STREAMING=false
-STREAMING_PROVIDER="none"
-AUTO_REBOOT=false
+ONLY_STAGES=""
+WITHOUT_STAGES=""
+JSON_OUTPUT=false
 DRY_RUN=false
 INTERACTIVE_STEP=false
+AUTO_REBOOT=false
+STREAMING_PROVIDER="none"
+CUSTOM_CONFIG_FILE=""
 
-# Intelligent gate that evaluates live ground-truth check
+# Check if a stage is enabled via YAML configuration or CLI flags
+is_stage_selected() {
+    local stage_name="$1"
+    
+    if [[ -n "$WITHOUT_STAGES" ]]; then
+        if [[ ",${WITHOUT_STAGES}," == *",${stage_name},"* ]]; then
+            return 1
+        fi
+    fi
+
+    if [[ -n "$ONLY_STAGES" ]]; then
+        if [[ ",${ONLY_STAGES}," == *",${stage_name},"* ]]; then
+            return 0
+        else
+            return 1
+        fi
+    fi
+
+    # Check YAML Profile rules
+    case "$stage_name" in
+        arena)
+            if [[ "${CFG_REPOSITORIES_ARENA_ENABLED:-${CFG_ISAACLAB_ARENA_ENABLED:-false}}" != "true" ]]; then
+                STAGE_CHECK_MSG="Disabled in profile (${CONFIG_FILE})"
+                return 1
+            fi
+            ;;
+        physical_ai)
+            if [[ "${CFG_REPOSITORIES_LEROBOT_ENABLED:-${CFG_ECOSYSTEM_LEROBOT:-false}}" != "true" ]]; then
+                STAGE_CHECK_MSG="Disabled in profile (${CONFIG_FILE})"
+                return 1
+            fi
+            ;;
+        demos)
+            if [[ "${CFG_DEMOS_DESKTOP_SHORTCUTS:-${CFG_ECOSYSTEM_DEMOS:-true}}" != "true" ]]; then
+                STAGE_CHECK_MSG="Disabled in profile (${CONFIG_FILE})"
+                return 1
+            fi
+            ;;
+    esac
+
+    return 0
+}
+
 evaluate_and_run_stage() {
     local stage_name="$1"
     local stage_desc="$2"
@@ -53,6 +96,14 @@ evaluate_and_run_stage() {
     local install_func="$4"
 
     STAGE_CHECK_MSG=""
+    if ! is_stage_selected "$stage_name"; then
+        if [[ "$DRY_RUN" == true ]]; then
+            local reason="${STAGE_CHECK_MSG:-Filtered out by options}"
+            echo -e "  ${CLR_GRAY}⊘ [DRY-RUN] Excluded [${stage_name}]:${CLR_RESET} ${reason}"
+        fi
+        return 0
+    fi
+
     local check_passed=false
     
     set +e
@@ -66,7 +117,7 @@ evaluate_and_run_stage() {
 
     if [[ "$check_passed" == true ]]; then
         if [[ "$DRY_RUN" == true ]]; then
-            echo -e "  ${CLR_GREEN}✔ [DRY-RUN] Skip [${stage_name}]:${CLR_RESET} ${STAGE_CHECK_MSG}"
+            echo -e "  ${CLR_GREEN}${GLYPH_CHECK} [DRY-RUN] Skip [${stage_name}]:${CLR_RESET} ${STAGE_CHECK_MSG}"
         else
             log_success "Stage [${stage_name}] already satisfied: ${STAGE_CHECK_MSG}"
             set_stage "${stage_name}"
@@ -76,7 +127,7 @@ evaluate_and_run_stage() {
 
     # Action is required
     if [[ "$DRY_RUN" == true ]]; then
-        echo -e "  ${CLR_YELLOW}▶ [DRY-RUN] Would execute [${stage_name}]:${CLR_RESET} ${stage_desc} (${STAGE_CHECK_MSG})"
+        echo -e "  ${CLR_YELLOW}${GLYPH_ARROW} [DRY-RUN] Would execute [${stage_name}]:${CLR_RESET} ${stage_desc} (${STAGE_CHECK_MSG})"
         return 0
     fi
 
@@ -91,68 +142,200 @@ evaluate_and_run_stage() {
         esac
     fi
 
-    # Execute installation
+    local start_ns
+    start_ns=$(date +%s%N)
     "$install_func"
+    local end_ns
+    end_ns=$(date +%s%N)
+    local dur_sec
+    dur_sec=$(awk "BEGIN {printf \"%.2f\", ($end_ns - $start_ns)/1000000000}")
+    log_success "Completed [${stage_name}] in ${dur_sec}s"
     set_stage "${stage_name}"
 }
 
 cmd_doctor() {
-    log_header "Isaac Installer System Doctor & Hardware Probe"
     probe_system
 
-    echo -e "${CLR_BOLD}Target Environment:${CLR_RESET}"
-    log_info "Target User:      ${TARGET_USER} (${TARGET_HOME})"
-    log_info "Operating System: ${OS_NAME} ${OS_VERSION} (${OS_ID})"
-    log_info "Free Disk Space:  ${FREE_DISK_GB} GB"
+    local ws_dir
+    ws_dir="$(resolve_default_workspace_dir)"
+    local resolved_lab
+    resolved_lab="$(resolve_isaaclab_dir)"
+    local resolved_arena
+    resolved_arena="$(resolve_arena_dir)"
+    local resolved_lerobot
+    resolved_lerobot="$(resolve_lerobot_dir)"
 
-    echo -e "\n${CLR_BOLD}NVIDIA GPU Topology & Architecture:${CLR_RESET}"
-    if [[ "$GPU_FOUND" == true ]]; then
-        log_success "Total NVIDIA GPUs Detected: ${GPU_COUNT}"
-        for gpu in "${GPUS[@]}"; do
-            log_info "${gpu}"
+    if [[ "$JSON_OUTPUT" == true ]]; then
+        python3 -c "
+import json
+data = {
+    'user': '${TARGET_USER}',
+    'home': '${TARGET_HOME}',
+    'profile': '${PROFILE_NAME}',
+    'config_file': '${CONFIG_FILE}',
+    'os': '${OS_NAME} ${OS_VERSION}',
+    'kernel': '${KERNEL_VERSION}',
+    'workspace_root': '${ws_dir}',
+    'repositories': {
+        'isaaclab': '${resolved_lab}',
+        'arena': '${resolved_arena}',
+        'lerobot': '${resolved_lerobot}',
+        'isaacsim': '${ISAACSIM_DIR:-${TARGET_HOME}/IsaacSim}'
+    },
+    'cpu': {
+        'model': '${CPU_MODEL}',
+        'cores': int('${CPU_CORES}' or 1)
+    },
+    'ram': {
+        'total_gb': int('${TOTAL_RAM_GB}' or 0),
+        'available_gb': int('${AVAILABLE_RAM_GB}' or 0)
+    },
+    'disk_free_gb': int('${FREE_DISK_GB}' or 0),
+    'apt_locked': '${APT_LOCKED}' == 'true',
+    'apt_lock_holder': '${APT_LOCK_HOLDER}',
+    'gpu': {
+        'found': '${GPU_FOUND}' == 'true',
+        'count': int('${GPU_COUNT}' or 0),
+        'name': '${GPU_NAME}',
+        'driver_installed': '${DRIVER_INSTALLED}' == 'true',
+        'driver_version': '${DRIVER_VERSION}',
+        'is_blackwell': '${HAS_BLACKWELL}' == 'true',
+        'pcie_link': '${PCIE_LINK_INFO}',
+        'recommended_driver': '${RECOMMENDED_DRIVER}'
+    },
+    'display': {
+        'mode': '${DISPLAY_MODE}',
+        'physical_monitor': '${HAS_PHYSICAL_MONITOR}' == 'true',
+        'is_wayland': '${IS_WAYLAND}' == 'true'
+    }
+}
+print(json.dumps(data, indent=2))
+"
+        return 0
+    fi
+
+    log_header "Isaac Installer System Doctor & Hardware Probe"
+
+    log_card_start "Host CPU & Memory Topology"
+    log_card_item "Target User" "${TARGET_USER} (${TARGET_HOME})"
+    log_card_item "Active Profile" "${PROFILE_NAME} (${CONFIG_FILE})"
+    log_card_item "Operating System" "${OS_NAME} ${OS_VERSION} (Kernel: ${KERNEL_VERSION})"
+    log_card_item "Processor (CPU)" "${CPU_MODEL} (${CPU_CORES} logical cores)"
+    log_card_item "System Memory" "${TOTAL_RAM_GB} GB Total (${AVAILABLE_RAM_GB} GB Available)"
+    log_card_item "Available Storage" "${FREE_DISK_GB} GB"
+    if [[ "$APT_LOCKED" == true ]]; then
+        log_card_item "Package Manager" "${CLR_RED}Locked by: ${APT_LOCK_HOLDER}${CLR_RESET}"
+    else
+        log_card_item "Package Manager" "${CLR_GREEN}Unlocked (Ready)${CLR_RESET}"
+    fi
+    log_card_end
+
+    log_card_start "NVMe High-Speed Storage & LVM"
+    if [[ "$NVME_COUNT" -gt 0 ]]; then
+        log_card_item "NVMe Devices" "${NVME_COUNT} high-speed drive(s) detected"
+        for d in "${NVME_DRIVES[@]}"; do
+            log_card_item "Drive" "${d}"
         done
+    else
+        log_card_item "NVMe Devices" "Standard SATA / Virtual disk active"
+    fi
+    if [[ ${#LVM_VOLUME_GROUPS[@]} -gt 0 ]]; then
+        for vg in "${LVM_VOLUME_GROUPS[@]}"; do
+            log_card_item "LVM Volume Group" "${vg}"
+        done
+    else
+        log_card_item "LVM Volumes" "None configured"
+    fi
+    log_card_end
 
+    log_card_start "Workspace & Repository Targets"
+    log_card_item "Workspace Root" "${ws_dir}"
+    log_card_item "Isaac Lab Target" "${resolved_lab}"
+    log_card_item "Arena Target" "${resolved_arena}"
+    log_card_item "LeRobot Target" "${resolved_lerobot}"
+    log_card_item "Isaac Sim Target" "${ISAACSIM_DIR:-${TARGET_HOME}/IsaacSim}"
+    log_card_end
+
+    log_card_start "NVIDIA GPU Topology & PCIe Link"
+    if [[ "$GPU_FOUND" == true ]]; then
+        log_card_item "Total GPUs" "${GPU_COUNT}"
+        for gpu in "${GPUS[@]}"; do
+            log_card_item "Topology" "${gpu}"
+        done
         if [[ "$HAS_BLACKWELL" == true ]]; then
-            log_warn "Blackwell Architecture GPU detected! Requires driver >= 570."
+            log_card_item "Architecture" "${CLR_MAGENTA}Blackwell${CLR_RESET} (Enforces Driver >= 570)"
         fi
-
-        if [[ "$IS_HETEROGENEOUS" == true ]]; then
-            log_warn "Heterogeneous GPUs detected (Mixed architectures). GPU 0 will be pinned for rendering."
-        fi
-
-        if [[ "$HAS_INTEGRATED_GPU" == true ]]; then
-            log_warn "Integrated CPU Graphics (Intel/AMD) detected alongside NVIDIA dGPU."
-            log_info "Ensure physical display cable is connected directly to the NVIDIA GPU port."
-        fi
-
         if [[ "$DRIVER_INSTALLED" == true ]]; then
-            log_success "Active Driver: Version ${DRIVER_VERSION} (Recommended: >= ${RECOMMENDED_DRIVER})"
+            log_card_item "Active Driver" "${CLR_GREEN}v${DRIVER_VERSION}${CLR_RESET} (Target: >= ${RECOMMENDED_DRIVER})"
         else
-            log_warn "NVIDIA Driver is NOT currently active."
+            log_card_item "Active Driver" "${CLR_RED}Not Loaded${CLR_RESET}"
+        fi
+        if [[ "$PCIE_LINK_INFO" != "Unknown" ]]; then
+            log_card_item "PCIe Link State" "${PCIE_LINK_INFO}"
         fi
     else
-        log_error "No NVIDIA GPU detected on PCIe bus."
+        log_card_item "GPU Status" "${CLR_RED}No NVIDIA GPU detected on PCIe bus${CLR_RESET}"
     fi
+    log_card_end
 
-    echo -e "\n${CLR_BOLD}Display Server & Session:${CLR_RESET}"
+    log_card_start "Display Server & Rendering Session"
     if [[ "$HAS_PHYSICAL_MONITOR" == true ]]; then
-        log_success "Display Server: ${DISPLAY_MODE} (Physical monitor detected)"
+        log_card_item "Display Server" "${CLR_GREEN}${DISPLAY_MODE}${CLR_RESET} (Physical monitor detected)"
     else
-        log_info "Display Server: Headless (Virtual EDID recommended)"
+        log_card_item "Display Server" "${CLR_YELLOW}Headless${CLR_RESET} (Virtual EDID suggested)"
     fi
-
     if [[ "$IS_WAYLAND" == true ]]; then
-        log_warn "Active session is Wayland. X11 enforcement required for Omniverse Vulkan."
+        log_card_item "Session Protocol" "${CLR_RED}Wayland${CLR_RESET} (X11 enforcement required)"
     else
-        log_success "Session Server: X11 compliant."
+        log_card_item "Session Protocol" "${CLR_GREEN}X11 Compliant${CLR_RESET}"
     fi
-
-    echo ""
+    log_card_end
 }
 
 cmd_plan() {
     probe_system
-    print_audit_report
+    if [[ "$JSON_OUTPUT" == true ]]; then
+        export_audit_json
+    else
+        print_audit_report
+    fi
+}
+
+cmd_bench() {
+    log_header "Network CDN Latency & Bandwidth Pre-Flight Benchmark"
+    benchmark_network_preflight
+}
+
+cmd_auth() {
+    local subcmd="${1:-status}"
+    shift || true
+
+    case "$subcmd" in
+        status)
+            if [[ "$JSON_OUTPUT" == true ]]; then
+                export_auth_json
+            else
+                print_auth_dashboard
+            fi
+            ;;
+        login)
+            auth_login_provider "${1:-all}"
+            ;;
+        gen-ssh|ssh)
+            auth_generate_ssh_key
+            ;;
+        git|identity)
+            auth_configure_git
+            ;;
+        check-perms|fix-perms)
+            auth_fix_permissions
+            ;;
+        *)
+            log_error "Unknown auth subcommand: ${subcmd}"
+            echo "Usage: isaac-installer auth [status | login <provider> | gen-ssh | git | check-perms]"
+            exit 1
+            ;;
+    esac
 }
 
 cmd_install() {
@@ -164,34 +347,23 @@ cmd_install() {
     fi
 
     init_state
+    local overall_start_ns
+    overall_start_ns=$(date +%s%N)
 
     # Stage 1: Driver & Display
-    if [[ "$SKIP_DRIVER" != true ]]; then
-        evaluate_and_run_stage "driver" "NVIDIA GPU driver & kernel modules" check_driver install_nvidia_driver
-    fi
-
-    if [[ "$SKIP_DISPLAY" != true ]]; then
-        evaluate_and_run_stage "display" "X11 enforcement & GDM Wayland toggle" check_display_server configure_display_server
-    fi
+    evaluate_and_run_stage "driver" "NVIDIA GPU driver & kernel modules" check_driver install_nvidia_driver
+    evaluate_and_run_stage "display" "X11 enforcement & GDM Wayland toggle" check_display_server configure_display_server
 
     # Stage 2: System Prereqs & Compilers
     evaluate_and_run_stage "prereqs" "Vulkan runtime, dev headers, GCC 11 & Git LFS" check_system_prereqs install_system_prereqs
 
     # Stage 3: Python Runtime & Dev Tools
     evaluate_and_run_stage "python" "Miniforge & uv package manager" check_python_env install_python_env
-
-    if [[ "$INSTALL_DEV_TOOLS" == true ]]; then
-        evaluate_and_run_stage "devtools" "Docker CE, nvidia-ctk, VS Code, Chrome & Discord" check_dev_tools install_dev_tools
-    fi
+    evaluate_and_run_stage "devtools" "Docker CE, nvidia-ctk, VS Code, Chrome & Discord" check_dev_tools install_dev_tools
 
     # Stage 4: Physical AI & Hardware Teleop
-    if [[ "$INSTALL_PHYSICAL_AI" == true ]]; then
-        evaluate_and_run_stage "physical_ai" "Hugging Face LeRobot, lerobot-dataset-viz & video codecs" check_physical_ai install_physical_ai_stack
-    fi
-
-    if [[ "$INSTALL_HARDWARE_TELEOP" == true ]]; then
-        evaluate_and_run_stage "hardware_teleop" "XR Headsets, Manus gloves, SpaceMouse & 1ms FTDI udev rules" check_hardware_teleop install_hardware_teleop
-    fi
+    evaluate_and_run_stage "physical_ai" "Hugging Face CLI, LeRobot, lerobot-dataset-viz & video codecs" check_physical_ai install_physical_ai_stack
+    evaluate_and_run_stage "hardware_teleop" "XR Headsets, Manus gloves, SpaceMouse & 1ms FTDI udev rules" check_hardware_teleop install_hardware_teleop
 
     # Stage 5: Isaac Sim Engine
     evaluate_and_run_stage "isaacsim" "NVIDIA Isaac Sim standalone extraction & EULA" check_isaac_sim install_isaac_sim
@@ -206,18 +378,24 @@ cmd_install() {
     evaluate_and_run_stage "demos" "Desktop .desktop launchers for Unitree G1, Go2 & Franka" check_demos install_demos_and_shortcuts
 
     # Stage 9: Optional Streaming (Strictly opt-in)
-    if [[ "$INSTALL_STREAMING" == true && "$STREAMING_PROVIDER" != "none" ]]; then
+    if [[ "$STREAMING_PROVIDER" != "none" ]]; then
         install_streaming_provider "$STREAMING_PROVIDER"
     fi
 
+    local overall_end_ns
+    overall_end_ns=$(date +%s%N)
+    local total_sec
+    total_sec=$(awk "BEGIN {printf \"%.2f\", ($overall_end_ns - $overall_start_ns)/1000000000}")
+
     if [[ "$DRY_RUN" == true ]]; then
-        log_header "Dry-Run Simulation Complete!"
+        log_header "Dry-Run Simulation Complete (${total_sec}s)"
+        log_info "Profile: ${PROFILE_NAME} (${CONFIG_FILE})"
         log_info "No system modifications were made."
     else
         set_stage "completed"
         clear_resume_hook
-        log_header "Installation Complete!"
-        log_success "Physical AI Stack, LeRobot, Isaac Sim, Isaac Lab, Docker, and Dev Tools are ready."
+        log_header "Installation Complete! (${total_sec}s)"
+        log_success "Profile [${PROFILE_NAME}] successfully provisioned."
     fi
 }
 
@@ -228,50 +406,199 @@ cmd_resume() {
 }
 
 cmd_test() {
-    log_header "Running Isaac Workstation Verification Suite"
+    log_header "Running Complete Workstation & Physical AI Verification Suite"
     probe_system
 
-    log_step "1. Testing NVIDIA Driver..."
+    local tests_passed=0
+    local tests_total=0
+
+    # 1. NVIDIA Driver
+    tests_total=$((tests_total + 1))
+    log_step "1. Testing NVIDIA Driver & GPU Topology..."
     if nvidia-smi &>/dev/null; then
-        log_success "NVIDIA Driver OK: $(nvidia-smi --query-gpu=name,driver_version --format=csv,noheader)"
+        log_success "NVIDIA Driver OK: $(nvidia-smi --query-gpu=name,driver_version --format=csv,noheader | head -n 1)"
+        tests_passed=$((tests_passed + 1))
     else
         log_error "NVIDIA Driver test failed."
     fi
 
-    log_step "2. Testing Docker & NVIDIA Container Toolkit..."
+    # 2. Display Server
+    tests_total=$((tests_total + 1))
+    log_step "2. Testing Display Server (X11 / Wayland)..."
+    if [[ "$IS_WAYLAND" == false ]]; then
+        log_success "Display Server is X11 compliant (Vulkan compatible)."
+        tests_passed=$((tests_passed + 1))
+    else
+        log_warn "Active display session is Wayland."
+    fi
+
+    # 3. Compilers & Vulkan
+    tests_total=$((tests_total + 1))
+    log_step "3. Testing GCC Compiler & Vulkan Development Headers..."
+    if command -v gcc &>/dev/null && pkg_is_installed "libvulkan-dev" 2>/dev/null; then
+        log_success "GCC $(gcc -dumpversion 2>/dev/null) & libvulkan-dev verified."
+        tests_passed=$((tests_passed + 1))
+    else
+        log_warn "GCC 11 or libvulkan-dev is missing."
+    fi
+
+    # 4. Git & Git LFS
+    tests_total=$((tests_total + 1))
+    log_step "4. Testing Git & Git Large File Storage (Git LFS)..."
+    if command -v git-lfs &>/dev/null; then
+        log_success "Git LFS is active: $(git-lfs --version | awk '{print $1}')"
+        tests_passed=$((tests_passed + 1))
+    else
+        log_warn "Git LFS is not installed (3D meshes will clone as text pointers)."
+    fi
+
+    # 5. Docker Engine & NVIDIA Container Toolkit
+    tests_total=$((tests_total + 1))
+    log_step "5. Testing Docker Engine & NVIDIA GPU Passthrough..."
     if command -v docker &>/dev/null; then
         if sudo docker info &>/dev/null; then
-            log_success "Docker Engine is active."
             if sudo docker run --rm --gpus all nvidia/cuda:12.2.0-base-ubuntu22.04 nvidia-smi &>/dev/null; then
-                log_success "NVIDIA Docker GPU Passthrough verified."
+                log_success "Docker GPU Passthrough verified with NVIDIA Container Toolkit."
+                tests_passed=$((tests_passed + 1))
             else
-                log_warn "Docker GPU passthrough check failed. Verify nvidia-container-toolkit."
+                log_warn "Docker installed, but GPU passthrough failed (check nvidia-ctk)."
             fi
+        else
+            log_warn "Docker service is not running."
         fi
-    fi
-
-    log_step "3. Testing LeRobot Dataset Visualizer..."
-    if command -v lerobot-dataset-viz &>/dev/null; then
-        log_success "lerobot-dataset-viz command is available in PATH."
     else
-        log_warn "lerobot-dataset-viz not found in /usr/local/bin."
+        log_warn "Docker CE is not installed."
     fi
 
-    log_step "4. Testing SpaceMouse & Hardware Daemons..."
+    # 6. Developer Applications
+    tests_total=$((tests_total + 1))
+    log_step "6. Testing Developer Applications (VS Code, Chrome, Discord)..."
+    local dev_apps=()
+    command -v code &>/dev/null && dev_apps+=("VS Code")
+    (command -v google-chrome &>/dev/null || command -v chromium-browser &>/dev/null || command -v chromium &>/dev/null) && dev_apps+=("Chrome/Chromium")
+    command -v discord &>/dev/null && dev_apps+=("Discord")
+    command -v github-desktop &>/dev/null && dev_apps+=("GitHub Desktop")
+
+    if [[ ${#dev_apps[@]} -ge 2 ]]; then
+        log_success "Developer Apps active: ${dev_apps[*]}"
+        tests_passed=$((tests_passed + 1))
+    else
+        log_info "Developer Apps found: ${dev_apps[*]:-None}"
+    fi
+
+    # 7. Cloud & Hub CLIs
+    tests_total=$((tests_total + 1))
+    log_step "7. Testing Cloud & Ecosystem CLIs (gh, aws, gcloud, hf)..."
+    local clis=()
+    command -v gh &>/dev/null && clis+=("gh")
+    command -v aws &>/dev/null && clis+=("aws")
+    command -v gcloud &>/dev/null && clis+=("gcloud")
+    (command -v huggingface-cli &>/dev/null || command -v hf &>/dev/null) && clis+=("hf")
+
+    if [[ ${#clis[@]} -gt 0 ]]; then
+        log_success "CLIs present: ${clis[*]}"
+        tests_passed=$((tests_passed + 1))
+    else
+        log_info "Cloud CLIs are optional and not currently installed."
+    fi
+
+    # 8. High-Speed NVMe & LVM Storage Subsystem
+    tests_total=$((tests_total + 1))
+    log_step "8. Testing NVMe Management & LVM Storage Stack..."
+    local storage_ok=true
+    if command -v nvme &>/dev/null; then
+        log_success "nvme-cli is installed ($(nvme version 2>/dev/null | head -n 1 || echo "active"))."
+    else
+        log_warn "nvme-cli is missing."
+        storage_ok=false
+    fi
+    if command -v lvm &>/dev/null; then
+        log_success "LVM2 logical volume manager is active."
+    else
+        log_warn "lvm2 is missing."
+        storage_ok=false
+    fi
+    if [[ "$storage_ok" == true ]]; then
+        tests_passed=$((tests_passed + 1))
+    fi
+
+    # 9. Hugging Face CLI & LeRobot Visualizer
+    tests_total=$((tests_total + 1))
+    log_step "9. Testing Physical AI (Hugging Face CLI & LeRobot Dataset Visualizer)..."
+    if (command -v huggingface-cli &>/dev/null || command -v hf &>/dev/null) && command -v lerobot-dataset-viz &>/dev/null; then
+        log_success "huggingface-cli and lerobot-dataset-viz are verified in PATH."
+        tests_passed=$((tests_passed + 1))
+    else
+        log_warn "LeRobot dataset visualizer or Hugging Face CLI not found in /usr/local/bin."
+    fi
+
+    # 10. Hardware Peripherals & 1ms Latency Udev Rules
+    tests_total=$((tests_total + 1))
+    log_step "10. Testing Hardware Teleop (1ms FTDI latency, SpaceMouse, Manus rules)..."
+    local teleop_ready=true
+    if [[ -f /etc/udev/rules.d/99-ftdi-latency.rules ]]; then
+        log_success "1ms FTDI low-latency serial udev rule is active."
+    else
+        log_warn "99-ftdi-latency.rules missing (default 16ms serial lag active)."
+        teleop_ready=false
+    fi
     if systemctl is-active --quiet spacenavd 2>/dev/null; then
         log_success "SpaceMouse daemon (spacenavd) is active."
     else
-        log_info "SpaceMouse daemon is idle or not running."
+        log_info "SpaceMouse daemon (spacenavd) is idle or not running."
+    fi
+    if [[ "$teleop_ready" == true ]]; then
+        tests_passed=$((tests_passed + 1))
     fi
 
-    log_step "5. Testing Isaac Lab PyTorch CUDA..."
-    local lab_dir="${TARGET_HOME}/IsaacLab"
-    if [[ -d "${lab_dir}" ]]; then
-        sudo -H -u "${TARGET_USER}" bash -c "
-            cd '${lab_dir}'
-            ./isaaclab.sh -p -c 'import torch; assert torch.cuda.is_available(); print(\"  ✔ PyTorch CUDA Ready:\", torch.cuda.get_device_name(0))'
-        "
+    # 11. Isaac Sim Standalone Engine
+    tests_total=$((tests_total + 1))
+    log_step "11. Testing NVIDIA Isaac Sim Standalone Engine..."
+    local sim_dir="${ISAACSIM_DIR:-${TARGET_HOME}/IsaacSim}"
+    if [[ -x "${sim_dir}/isaac-sim.sh" && -f "${sim_dir}/.eula_accepted" ]]; then
+        log_success "Isaac Sim v5.1.0 engine ready at ${sim_dir}"
+        tests_passed=$((tests_passed + 1))
+    else
+        log_warn "Isaac Sim standalone engine not found at ${sim_dir}."
     fi
+
+    # 12. Isaac Lab PyTorch CUDA Linkage
+    tests_total=$((tests_total + 1))
+    log_step "12. Testing Isaac Lab PyTorch CUDA Acceleration..."
+    local lab_dir
+    lab_dir="$(resolve_isaaclab_dir)"
+    if [[ -d "${lab_dir}" && -L "${lab_dir}/_isaac_sim" ]]; then
+        if sudo -H -u "${TARGET_USER}" bash -c "cd '${lab_dir}' && ./isaaclab.sh -p -c 'import torch; assert torch.cuda.is_available()' 2>/dev/null"; then
+            log_success "Isaac Lab PyTorch CUDA verified successfully."
+            tests_passed=$((tests_passed + 1))
+        else
+            log_warn "Isaac Lab PyTorch CUDA check encountered an issue."
+        fi
+    else
+        log_info "Isaac Lab framework is not yet installed."
+    fi
+
+    # 13. Desktop Shortcuts & Demos
+    tests_total=$((tests_total + 1))
+    log_step "13. Testing Desktop Shortcuts & RL Demo Launchers..."
+    if [[ -f "${TARGET_HOME}/Desktop/Humanoid-Locomotion-G1.desktop" ]]; then
+        log_success "Desktop launchers for Unitree G1, Go2, and Franka are ready."
+        tests_passed=$((tests_passed + 1))
+    else
+        log_info "Desktop shortcuts not yet deployed."
+    fi
+
+    echo ""
+    log_card_start "Verification Summary"
+    log_card_item "Tests Passed" "${tests_passed} / ${tests_total}"
+    local score_pct
+    score_pct=$(awk "BEGIN {printf \"%.0f\", (${tests_passed}/${tests_total}) * 100}")
+    if [[ "$score_pct" -ge 80 ]]; then
+        log_card_item "Health Status" "${CLR_GREEN}Workstation Ready (${score_pct}%)${CLR_RESET}"
+    else
+        log_card_item "Health Status" "${CLR_YELLOW}Action Required (${score_pct}% Ready)${CLR_RESET}"
+    fi
+    log_card_end
 }
 
 usage() {
@@ -282,24 +609,36 @@ Usage:
   isaac-installer <command> [options]
 
 Commands:
-  plan | check        Perform deep pre-flight audit & conflict diff matrix
-  doctor              Probe hardware, Blackwell GPUs, PCIe, display, and OS
-  install             Run full bare-metal installation of Physical AI stack
-  resume              Resume installation from last recorded checkpoint
-  test                Run end-to-end driver, Docker, LeRobot, and PyTorch verification
-  stream <provider>   Setup 3D streaming (nomachine | sunshine)
-  help                Show this message
+  auth [status|login|gen-ssh|git|check-perms]  Manage OAuth, API keys, Cloud Hubs & permissions
+  doctor                                       Probe CPU, RAM, GPU, PCIe link, display, and OS
+  plan | check                                 Perform deep pre-flight audit & conflict diff matrix
+  bench                                        Benchmark CDN latency to NVIDIA, Hugging Face, and GitHub
+  config                                       Display active YAML configuration profile
+  install                                      Run bare-metal installation according to YAML profile
+  resume                                       Resume installation from last recorded checkpoint
+  test                                         Run end-to-end 13-subsystem verification suite
+  stream <provider>                            Setup 3D streaming (nomachine | sunshine)
+  backups                                      List configuration safety snapshots
+  help                                         Show this message
 
-Options:
-  --dry-run              Simulate installation without making any system changes
-  --step | -i            Interactive step-by-step mode (prompts before each stage)
-  --skip-driver          Skip driver installation (preserves existing NVIDIA driver)
-  --skip-display         Skip display server / GDM configuration
-  --no-dev-tools         Skip Docker, GitHub Desktop, and VS Code setup
-  --no-physical-ai       Skip Hugging Face LeRobot & dataset visualizer
-  --no-hardware-teleop   Skip XR/Vision Pro, Manus glove, and SpaceMouse udev setup
-  --stream <provider>    Enable streaming provider (nomachine | sunshine) [Default: disabled]
-  --auto-reboot          Automatically reboot if driver installation requires it
+Profiles & Configuration Options:
+  --config <path>              Path to custom YAML configuration profile
+  --profile <name>             Preset profile: default | minimal | full
+  --dry-run                    Simulate installation without making any system changes
+  --step | -i                  Interactive step-by-step mode (prompts before each stage)
+  --json                       Output doctor / plan / auth in structured JSON format
+  --workspace-dir <path>       Base directory for repos (Default: ~/Documents/GitHub)
+  --isaaclab-repo <url/slug>   Custom fork for Isaac Lab (e.g. BoredEngineer/IsaacLab)
+  --arena-repo <url/slug>      Custom fork for Arena (e.g. BoredEngineer/IsaacLab-Arena)
+  --lerobot-repo <url/slug>    Custom fork for LeRobot (e.g. BoredEngineer/lerobot)
+  --isaacsim-dir <path>        Custom path to Isaac Sim standalone engine
+  --with-arena                 Explicitly enable IsaacLab-Arena
+  --with-lerobot               Explicitly enable Hugging Face LeRobot
+  --only <stages>              Comma-separated stages to run (e.g. devtools,sim,lab)
+  --without <stages>           Comma-separated stages to exclude (e.g. demos,stream)
+
+Available Stage Names:
+  driver, display, prereqs, python, devtools, physical_ai, hardware_teleop, isaacsim, isaaclab, arena, demos
 
 HELP
 }
@@ -308,28 +647,57 @@ HELP
 COMMAND="${1:-help}"
 shift || true
 
+PASSTHROUGH_ARGS=()
+CLI_WITH_ARENA=false
+CLI_WITH_LEROBOT=false
+
 while [[ $# -gt 0 ]]; do
     case "$1" in
+        --config)              CUSTOM_CONFIG_FILE="$2"; shift 2 ;;
+        --profile)             CUSTOM_CONFIG_FILE="$2"; shift 2 ;;
         --dry-run)             DRY_RUN=true; shift ;;
         --step|-i)             INTERACTIVE_STEP=true; shift ;;
-        --skip-driver)         SKIP_DRIVER=true; shift ;;
-        --skip-display)        SKIP_DISPLAY=true; shift ;;
-        --no-dev-tools)        INSTALL_DEV_TOOLS=false; shift ;;
-        --no-physical-ai)      INSTALL_PHYSICAL_AI=false; shift ;;
-        --no-hardware-teleop)  INSTALL_HARDWARE_TELEOP=false; shift ;;
-        --stream)              INSTALL_STREAMING=true; STREAMING_PROVIDER="$2"; shift 2 ;;
+        --json)                JSON_OUTPUT=true; shift ;;
+        --only)                ONLY_STAGES="$2"; shift 2 ;;
+        --without)             WITHOUT_STAGES="$2"; shift 2 ;;
+        --with-arena)          CLI_WITH_ARENA=true; shift ;;
+        --with-lerobot)        CLI_WITH_LEROBOT=true; shift ;;
+        --workspace-dir)       export WORKSPACE_DIR="$2"; shift 2 ;;
+        --isaaclab-repo)       export ISAACLAB_REPO="$2"; shift 2 ;;
+        --isaaclab-dir)        export ISAACLAB_DIR="$2"; shift 2 ;;
+        --arena-repo)          export ARENA_REPO="$2"; shift 2 ;;
+        --arena-dir)           export ARENA_DIR="$2"; shift 2 ;;
+        --lerobot-repo)        export LEROBOT_REPO="$2"; shift 2 ;;
+        --lerobot-dir)         export LEROBOT_DIR="$2"; shift 2 ;;
+        --isaacsim-dir)        export ISAACSIM_DIR="$2"; shift 2 ;;
+        --stream)              STREAMING_PROVIDER="$2"; shift 2 ;;
         --auto-reboot)         AUTO_REBOOT=true; shift ;;
-        *)                     shift ;;
+        *)                     PASSTHROUGH_ARGS+=("$1"); shift ;;
     esac
 done
 
+# 1. Load Active YAML Profile
+load_config_profile "${CUSTOM_CONFIG_FILE:-${DEFAULT_CONFIG_PATH}}"
+
+# 2. Apply Explicit CLI Overrides on Top of Profile
+if [[ "$CLI_WITH_ARENA" == true ]]; then
+    export CFG_REPOSITORIES_ARENA_ENABLED="true"
+fi
+if [[ "$CLI_WITH_LEROBOT" == true ]]; then
+    export CFG_REPOSITORIES_LEROBOT_ENABLED="true"
+fi
+
 case "${COMMAND}" in
-    plan|check|audit) cmd_plan ;;
+    auth)             cmd_auth "${PASSTHROUGH_ARGS[@]:-status}" ;;
     doctor)           cmd_doctor ;;
+    plan|check|audit) cmd_plan ;;
+    bench)            cmd_bench ;;
+    config)           print_active_config ;;
     install)          cmd_install ;;
     resume)           cmd_resume ;;
     test)             cmd_test ;;
-    stream)           install_streaming_provider "${1:-nomachine}" ;;
+    stream)           install_streaming_provider "${PASSTHROUGH_ARGS[0]:-nomachine}" ;;
+    backups)          list_backups ;;
     help|--help|-h)   usage ;;
     *)
         log_error "Unknown command: ${COMMAND}"

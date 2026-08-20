@@ -1,50 +1,83 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# hardware_teleop.sh - Physical AI Teleoperation, XR Headsets, Manus Gloves & Peripherals
+# hardware_teleop.sh - Declarative Teleoperation, XR & Peripheral Controller
 # ==============================================================================
 
 check_hardware_teleop() {
-    if [[ -f /etc/udev/rules.d/99-ftdi-latency.rules && -f /etc/udev/rules.d/99-manus-gloves.rules ]]; then
-        STAGE_CHECK_MSG="Hardware udev rules (Manus, RealSense, 1ms FTDI) already deployed"
+    local missing=()
+    local udev_dir="/etc/udev/rules.d"
+
+    if [[ "${CFG_TELEOPERATION_FTDI_1MS_LATENCY_RULE:-true}" == "true" ]]; then
+        [[ -f "${udev_dir}/99-ftdi-latency.rules" ]] || missing+=("1ms FTDI rule")
+    fi
+
+    if [[ "${CFG_TELEOPERATION_SPACEMOUSE_DAEMON:-false}" == "true" ]]; then
+        command -v spacenavd &>/dev/null || missing+=("spacenavd")
+    fi
+
+    if [[ "${CFG_TELEOPERATION_MANUS_VR_GLOVES:-false}" == "true" ]]; then
+        [[ -f "${udev_dir}/99-manus-gloves.rules" ]] || missing+=("Manus gloves rule")
+    fi
+
+    if [[ "${CFG_TELEOPERATION_REALSENSE_CAMERAS:-false}" == "true" ]]; then
+        [[ -f "${udev_dir}/99-realsense.rules" ]] || missing+=("RealSense rule")
+    fi
+
+    if [[ ${#missing[@]} -eq 0 ]]; then
+        STAGE_CHECK_MSG="Configured hardware teleop components are active"
         return 0
     else
-        STAGE_CHECK_MSG="Missing udev rules for Manus gloves, SpaceMouse, RealSense, or 1ms FTDI"
+        STAGE_CHECK_MSG="Missing components: ${missing[*]}"
         return 1
     fi
 }
 
 install_hardware_teleop() {
-    log_step "Configuring Physical AI Teleoperation, XR & Hardware Devices..."
+    log_step "Configuring Hardware Teleoperation & Peripherals from Profile..."
 
     local udev_template_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/../templates/udev-rules" && pwd)"
+    local udev_dest="/etc/udev/rules.d"
 
-    # 1. Install Peripherals Packages & Drivers
-    log_info "Installing peripheral daemons, CAN tools, and gamepad utilities..."
-    pkg_install \
-        spacenavd \
-        libspnav-dev \
-        spnavcfg \
-        can-utils \
-        iproute2 \
-        joystick \
-        jstest-gtk \
-        evtest \
-        libopenxr-dev \
-        libopenxr1
-
-    # Enable and start spacenavd (SpaceMouse daemon)
-    sudo systemctl enable --now spacenavd 2>/dev/null || true
-
-    # 2. Deploy Hardware Udev Rules (Manus, FTDI 1ms Latency, SpaceMouse, RealSense)
-    log_info "Installing hardware udev rules for Manus gloves, RealSense, and 1ms FTDI serial..."
-    if [[ -d "${udev_template_dir}" ]]; then
-        sudo cp "${udev_template_dir}"/*.rules /etc/udev/rules.d/
-        sudo udevadm control --reload-rules 2>/dev/null || true
-        sudo udevadm trigger 2>/dev/null || true
+    # 1. FTDI 1ms Latency Timer (For ALOHA & SO-100 arms)
+    if [[ "${CFG_TELEOPERATION_FTDI_1MS_LATENCY_RULE:-true}" == "true" ]]; then
+        log_info "Deploying 1ms FTDI low-latency serial udev rule..."
+        if [[ -f "${udev_template_dir}/99-ftdi-latency.rules" ]]; then
+            sudo cp "${udev_template_dir}/99-ftdi-latency.rules" "${udev_dest}/"
+        fi
     fi
 
-    # 3. Grant User Permissions to Hardware Device Groups
-    log_info "Adding ${TARGET_USER} to device groups (dialout, plugdev, input, video)..."
+    # 2. 3D SpaceMouse Daemon (Only if enabled in YAML)
+    if [[ "${CFG_TELEOPERATION_SPACEMOUSE_DAEMON:-false}" == "true" ]]; then
+        log_info "Installing SpaceMouse daemon (spacenavd)..."
+        pkg_install spacenavd libspnav-dev spnavcfg
+        sudo systemctl enable --now spacenavd 2>/dev/null || true
+        if [[ -f "${udev_template_dir}/99-spacenav.rules" ]]; then
+            sudo cp "${udev_template_dir}/99-spacenav.rules" "${udev_dest}/"
+        fi
+    fi
+
+    # 3. Manus VR Haptic Gloves (Only if enabled in YAML)
+    if [[ "${CFG_TELEOPERATION_MANUS_VR_GLOVES:-false}" == "true" ]]; then
+        log_info "Deploying Manus VR haptic gloves udev rule..."
+        if [[ -f "${udev_template_dir}/99-manus-gloves.rules" ]]; then
+            sudo cp "${udev_template_dir}/99-manus-gloves.rules" "${udev_dest}/"
+        fi
+    fi
+
+    # 4. Intel RealSense Depth Cameras (Only if enabled in YAML)
+    if [[ "${CFG_TELEOPERATION_REALSENSE_CAMERAS:-false}" == "true" ]]; then
+        log_info "Deploying Intel RealSense depth camera udev rule..."
+        if [[ -f "${udev_template_dir}/99-realsense.rules" ]]; then
+            sudo cp "${udev_template_dir}/99-realsense.rules" "${udev_dest}/"
+        fi
+    fi
+
+    # 5. Reload Udev
+    sudo udevadm control --reload-rules 2>/dev/null || true
+    sudo udevadm trigger 2>/dev/null || true
+
+    # 6. Device User Groups
+    log_info "Ensuring user group memberships for serial and USB devices..."
     for grp in dialout plugdev input video; do
         if getent group "$grp" >/dev/null; then
             sudo usermod -aG "$grp" "${TARGET_USER}"
@@ -54,15 +87,19 @@ install_hardware_teleop() {
         fi
     done
 
-    # 4. Install Isaac Teleop (XR / Quest / Vision Pro / Manus Retargeters)
-    log_info "Installing Isaac Teleop Framework (CloudXR, Apple Vision Pro, Meta Quest 3, Manus Gloves)..."
-    local lab_dir="${ISAACLAB_DIR:-${TARGET_HOME}/IsaacLab}"
-    if [[ -d "${lab_dir}" ]]; then
-        sudo -H -u "${TARGET_USER}" bash -c "
-            cd '${lab_dir}'
-            ./isaaclab.sh -p -m pip install 'isaacteleop[cloudxr,retargeters]~=1.0.0' rerun-sdk 2>/dev/null || true
-        "
+    # 7. XR / CloudXR Retargeters (Only if enabled in YAML)
+    if [[ "${CFG_TELEOPERATION_XR_CLOUDXR:-false}" == "true" ]]; then
+        log_info "Installing OpenXR development libraries and Isaac Teleop..."
+        pkg_install libopenxr-dev libopenxr1
+        local lab_dir
+        lab_dir="$(resolve_isaaclab_dir)"
+        if [[ -d "${lab_dir}" ]]; then
+            sudo -H -u "${TARGET_USER}" bash -c "
+                cd '${lab_dir}'
+                ./isaaclab.sh -p -m pip install 'isaacteleop[cloudxr,retargeters]~=1.0.0' 2>/dev/null || true
+            "
+        fi
     fi
 
-    log_success "Physical AI teleoperation stack and hardware device rules ready."
+    log_success "Hardware teleoperation configured according to active profile."
 }

@@ -1,35 +1,65 @@
+# ==============================================================================
+# Isaac Automator - Full Physical AI & Teleoperation Ecosystem (full-ecosystem.yaml)
+# ==============================================================================
+# Target: Complete Physical AI Lab workstation with LeRobot, Arena, Teleop & Cloud
+# ==============================================================================
+
 version: "1.0"
 profile_name: "full-ecosystem"
+description: "Full Physical AI, Multi-Agent Arena, and Teleoperation Workstation"
 
 hardware:
   force_gpu_index: 0
   enforce_x11: true
   auto_blacklist_nouveau: true
+  enable_nvme_storage_tools: true
 
-isaac_sim:
-  method: "standalone"
-  version: "5.1.0"
-  install_path: "~/IsaacSim"
-  accept_eula: true
+workspace:
+  root: "~/Documents/GitHub"
+  auto_register_github_desktop: true
 
-isaac_lab:
-  enabled: true
-  repo: "https://github.com/isaac-sim/IsaacLab.git"
-  branch: "main"
-  install_path: "~/IsaacLab"
+repositories:
+  isaaclab:
+    enabled: true
+    repo: "https://github.com/isaac-sim/IsaacLab.git"
+    branch: "main"
+  arena:
+    enabled: true
+    repo: "https://github.com/isaac-sim/IsaacLab-Arena.git"
+    branch: "release/0.1.1"
+  lerobot:
+    enabled: true
+    repo: "https://github.com/huggingface/lerobot.git"
+    branch: "main"
 
-isaaclab_arena:
-  enabled: true
-  repo: "https://github.com/isaac-sim/IsaacLab-Arena.git"
-  branch: "release/0.1.1"
-  install_path: "~/IsaacLab-Arena"
+simulation:
+  isaacsim:
+    enabled: true
+    version: "5.1.0"
+    install_dir: "~/IsaacSim"
+    accept_eula: true
 
-ecosystem:
-  demos: true
-  gr00t: true
-  lerobot: true
-  ros2_bridge: true
+devtools:
+  docker: true
+  nvidia_container_toolkit: true
+  vscode: true
+  github_desktop: true
+  chromium: true
+  discord: true
+  cloud_clis:
+    aws: true
+    gcloud: true
+    gh: true
+
+teleoperation:
+  ftdi_1ms_latency_rule: true
+  spacemouse_daemon: true
+  manus_vr_gloves: true
+  realsense_cameras: true
+  xr_cloudxr: true
 
 streaming:
-  enable_nomachine: true
-  enable_sunshine: true
+  provider: "none"                   # Change to "nomachine" or "sunshine" if remote streaming is needed
+
+demos:
+  desktop_shortcuts: true

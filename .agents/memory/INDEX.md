@@ -14,6 +14,8 @@ Master index of session memory checkpoints for Isaac Automator.
 | 2026-08-19 22:01 | `d4a8e2f1` | DevContainer Git & GitHub Authentication Strategy (Pattern B) | Implemented persistent Docker named volume for gh credentials, automated gh auth setup-git in setup.sh, and documented authentication architecture | [`20260819_220130_d4a8e2f1.md`](./sessions/20260819_220130_d4a8e2f1.md) |
 | 2026-08-19 22:08 | `e8f291a4` | DevContainer Git Auth Resolution & 4-Layer Defense-in-Depth | Fixed terminal prompt disabled error on git push with system gitconfig, attach hooks, shell guards, and named volume persistence | [`20260819_220815_e8f291a4.md`](./sessions/20260819_220815_e8f291a4.md) |
 | 2026-08-20 06:00 | `f2c3d4e5` | Universal Bare-Metal Isaac Installer & Blackwell Workstation Probe | Implemented modular bare-metal installer, Blackwell architecture detection, multi-GPU topology handling, dev tools stack, and verified live host probe | [`20260820_060000_f2c3d4e5.md`](./sessions/20260820_060000_f2c3d4e5.md) |
+| 2026-08-20 06:28 | `a9b8c7d6` | Unified OAuth, Cloud Hub Management & Master Architecture | Implemented auth subsystem (lib/modules/auth.sh) covering GitHub, Hugging Face, NGC, WandB, and user groups, added CDN latency benchmark, and updated master plan | [`20260820_062830_a9b8c7d6.md`](./sessions/20260820_062830_a9b8c7d6.md) |
+| 2026-08-20 08:11 | `b2c3d4e5` | Developer Fork Workflows, Atomic Multi-Engine Switching, and NVMe/LVM Bare-Metal Storage | Added support for personal repository forks, GitHub Desktop UI integration, POSIX atomic symlink switching for multi-version/custom Isaac Sim builds, and deep NVMe/LVM storage inspection | [`20260820_081100_b2c3d4e5.md`](./sessions/20260820_081100_b2c3d4e5.md) |
 
 
 

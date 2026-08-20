@@ -170,7 +170,53 @@ audit_all_components() {
     fi
     AUDIT_RESULTS+=("WebXR/Foxglove Browser|${browser_cur}|Chrome / Chromium|${browser_status}|${browser_risk}")
 
-    # 11. Hugging Face LeRobot & Visualizer
+    # Cloud CLIs (AWS & GCP)
+    local aws_cur="Missing"
+    local aws_status="OPTIONAL"
+    if command -v aws &>/dev/null; then
+        aws_cur="$(aws --version 2>&1 | awk '{print $1}' | cut -d/ -f2 || echo "Installed")"
+        aws_status="UP_TO_DATE"
+        SATISFIED_COUNT=$((SATISFIED_COUNT + 1))
+    fi
+    AUDIT_RESULTS+=("AWS CLI v2|${aws_cur}|Installed|${aws_status}|None")
+
+    local gcp_cur="Missing"
+    local gcp_status="OPTIONAL"
+    if command -v gcloud &>/dev/null; then
+        gcp_cur="Installed"
+        gcp_status="UP_TO_DATE"
+        SATISFIED_COUNT=$((SATISFIED_COUNT + 1))
+    fi
+    AUDIT_RESULTS+=("Google Cloud SDK (gcloud)|${gcp_cur}|Installed|${gcp_status}|None")
+
+    # NVMe CLI & LVM Storage Subsystem
+    local storage_cur="Missing"
+    local storage_status="MISSING"
+    if command -v nvme &>/dev/null && command -v lvm &>/dev/null; then
+        storage_cur="nvme + lvm2 active"
+        storage_status="UP_TO_DATE"
+        SATISFIED_COUNT=$((SATISFIED_COUNT + 1))
+    elif command -v nvme &>/dev/null; then
+        storage_cur="nvme-cli installed"
+        storage_status="UP_TO_DATE"
+        SATISFIED_COUNT=$((SATISFIED_COUNT + 1))
+    else
+        INSTALLS_FOUND=$((INSTALLS_FOUND + 1))
+    fi
+    AUDIT_RESULTS+=("NVMe & LVM Storage Tools|${storage_cur}|nvme-cli + lvm2|${storage_status}|None")
+
+    # 11. Hugging Face CLI & LeRobot Visualizer
+    local hfcli_cur="Missing"
+    local hfcli_status="MISSING"
+    if command -v huggingface-cli &>/dev/null || command -v hf &>/dev/null; then
+        hfcli_cur="Installed in PATH"
+        hfcli_status="UP_TO_DATE"
+        SATISFIED_COUNT=$((SATISFIED_COUNT + 1))
+    else
+        INSTALLS_FOUND=$((INSTALLS_FOUND + 1))
+    fi
+    AUDIT_RESULTS+=("Hugging Face CLI (hf)|${hfcli_cur}|Installed in PATH|${hfcli_status}|None")
+
     local lerobot_cur="Missing"
     local lerobot_status="MISSING"
     local lerobot_risk="None"
@@ -198,7 +244,8 @@ audit_all_components() {
     AUDIT_RESULTS+=("ALOHA/SO-100 1ms Latency|${ftdi_cur}|1ms Timer Rule|${ftdi_status}|${ftdi_risk}")
 
     # 13. Isaac Sim Engine
-    local sim_dir="${ISAACSIM_DIR:-${TARGET_HOME}/IsaacSim}"
+    local sim_dir
+    sim_dir="$(resolve_isaacsim_dir 2>/dev/null || echo "${TARGET_HOME}/IsaacSim")"
     local sim_cur="Missing"
     local sim_status="MISSING"
     local sim_risk="None"
@@ -212,7 +259,8 @@ audit_all_components() {
     AUDIT_RESULTS+=("NVIDIA Isaac Sim Engine|${sim_cur}|v5.1.0 Standalone|${sim_status}|${sim_risk}")
 
     # 14. Isaac Lab Framework
-    local lab_dir="${ISAACLAB_DIR:-${TARGET_HOME}/IsaacLab}"
+    local lab_dir
+    lab_dir="$(resolve_isaaclab_dir 2>/dev/null || echo "${TARGET_HOME}/IsaacLab")"
     local lab_cur="Missing"
     local lab_status="MISSING"
     local lab_risk="None"
@@ -224,6 +272,37 @@ audit_all_components() {
         INSTALLS_FOUND=$((INSTALLS_FOUND + 1))
     fi
     AUDIT_RESULTS+=("Isaac Lab Framework|${lab_cur}|Linked & Installed|${lab_status}|${lab_risk}")
+
+    # 15. GitHub Hub Authentication
+    local gh_auth_cur="Not Logged In"
+    local gh_auth_status="OPTIONAL"
+    local gh_auth_risk="Private robot URDFs/submodules may require auth"
+    if command -v gh &>/dev/null; then
+        if sudo -H -u "${TARGET_USER}" gh auth status &>/dev/null; then
+            gh_auth_cur="Authenticated"
+            gh_auth_status="UP_TO_DATE"
+            gh_auth_risk="None"
+            SATISFIED_COUNT=$((SATISFIED_COUNT + 1))
+        fi
+    elif [[ -n "${GITHUB_TOKEN:-}" || -n "${GH_TOKEN:-}" ]]; then
+        gh_auth_cur="Authenticated (Env)"
+        gh_auth_status="UP_TO_DATE"
+        gh_auth_risk="None"
+        SATISFIED_COUNT=$((SATISFIED_COUNT + 1))
+    fi
+    AUDIT_RESULTS+=("GitHub Hub Login (gh)|${gh_auth_cur}|Authenticated|${gh_auth_status}|${gh_auth_risk}")
+
+    # 16. Hugging Face Hub Authentication
+    local hf_auth_cur="Not Logged In"
+    local hf_auth_status="OPTIONAL"
+    local hf_auth_risk="Uploading LeRobot teleop datasets requires auth"
+    if [[ -f "${TARGET_HOME}/.cache/huggingface/token" || -n "${HF_TOKEN:-}" ]]; then
+        hf_auth_cur="Authenticated"
+        hf_auth_status="UP_TO_DATE"
+        hf_auth_risk="None"
+        SATISFIED_COUNT=$((SATISFIED_COUNT + 1))
+    fi
+    AUDIT_RESULTS+=("Hugging Face Hub (HF)|${hf_auth_cur}|Authenticated|${hf_auth_status}|${hf_auth_risk}")
 }
 
 # Pretty-print the audit diff matrix
@@ -261,4 +340,40 @@ print_audit_report() {
         echo -e "  ${CLR_GREEN}✔ Conflicts / Critical Risks:${CLR_RESET} 0 (All clear)"
     fi
     echo ""
+}
+
+# Export audit in JSON format
+export_audit_json() {
+    audit_all_components
+    python3 -c "
+import json
+rows = []
+raw = '''$(for r in "${AUDIT_RESULTS[@]}"; do echo "$r"; done)'''.strip().split('\n')
+for line in raw:
+    if not line: continue
+    parts = line.split('|')
+    rows.append({
+        'component': parts[0],
+        'host_state': parts[1],
+        'target_state': parts[2],
+        'status': parts[3],
+        'risk': parts[4] if len(parts) > 4 else 'None'
+    })
+
+data = {
+    'target_user': '${TARGET_USER}',
+    'os': '${OS_NAME} ${OS_VERSION}',
+    'gpu': '${GPU_NAME}',
+    'driver': '${DRIVER_VERSION}',
+    'free_disk_gb': int('${FREE_DISK_GB}' or 0),
+    'summary': {
+        'up_to_date': int('${SATISFIED_COUNT}'),
+        'missing': int('${INSTALLS_FOUND}'),
+        'upgrades_needed': int('${UPGRADES_FOUND}'),
+        'conflicts': int('${CONFLICTS_FOUND}')
+    },
+    'components': rows
+}
+print(json.dumps(data, indent=2))
+"
 }

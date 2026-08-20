@@ -1,35 +1,66 @@
+# ==============================================================================
+# Isaac Automator - Standard Interactive Workstation Profile (default-profile.yaml)
+# ==============================================================================
+# Target: Clean, high-performance Isaac Sim & Isaac Lab interactive workstation.
+# Bloat-free: VR gloves, SpaceMouse daemons, LeRobot, and Discord are DISABLED.
+# ==============================================================================
+
 version: "1.0"
-profile_name: "workstation-standard"
+profile_name: "default-workstation"
+description: "Standard clean Isaac Lab & Robotics development workstation"
 
 hardware:
   force_gpu_index: 0
   enforce_x11: true
   auto_blacklist_nouveau: true
+  enable_nvme_storage_tools: true
 
-isaac_sim:
-  method: "standalone" # standalone | pip | source | docker
-  version: "5.1.0"
-  install_path: "~/IsaacSim"
-  accept_eula: true
+workspace:
+  root: "~/Documents/GitHub"
+  auto_register_github_desktop: true
 
-isaac_lab:
-  enabled: true
-  repo: "https://github.com/isaac-sim/IsaacLab.git"
-  branch: "main"
-  install_path: "~/IsaacLab"
+repositories:
+  isaaclab:
+    enabled: true
+    repo: "https://github.com/isaac-sim/IsaacLab.git"
+    branch: "main"
+  arena:
+    enabled: false                   # Disabled by default in standard profile
+    repo: "https://github.com/isaac-sim/IsaacLab-Arena.git"
+    branch: "release/0.1.1"
+  lerobot:
+    enabled: false                   # Disabled by default in standard profile
+    repo: "https://github.com/huggingface/lerobot.git"
+    branch: "main"
 
-isaaclab_arena:
-  enabled: true
-  repo: "https://github.com/isaac-sim/IsaacLab-Arena.git"
-  branch: "release/0.1.1"
-  install_path: "~/IsaacLab-Arena"
+simulation:
+  isaacsim:
+    enabled: true
+    version: "5.1.0"
+    install_dir: "~/IsaacSim"
+    accept_eula: true
 
-ecosystem:
-  demos: true
-  gr00t: false
-  lerobot: false
-  ros2_bridge: false
+devtools:
+  docker: true
+  nvidia_container_toolkit: true
+  vscode: true
+  github_desktop: true
+  chromium: true
+  discord: false                     # Disabled by default
+  cloud_clis:
+    aws: false                       # Disabled by default
+    gcloud: false                    # Disabled by default
+    gh: true
+
+teleoperation:
+  ftdi_1ms_latency_rule: true        # Lightweight 1ms FTDI udev rule for arms
+  spacemouse_daemon: false           # Disabled (no background spacenavd)
+  manus_vr_gloves: false             # Disabled
+  realsense_cameras: false           # Disabled
+  xr_cloudxr: false                  # Disabled
 
 streaming:
-  enable_nomachine: false
-  enable_sunshine: false
+  provider: "none"                   # "none" | "nomachine" | "sunshine"
+
+demos:
+  desktop_shortcuts: true

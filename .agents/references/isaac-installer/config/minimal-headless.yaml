@@ -1,32 +1,62 @@
+# ==============================================================================
+# Isaac Automator - Minimal Headless Training / CI Server (minimal-headless.yaml)
+# ==============================================================================
+# Target: Headless cloud VM or CI/CD training server.
+# Zero GUI apps, zero desktop shortcuts, zero peripheral daemons.
+# ==============================================================================
+
 version: "1.0"
 profile_name: "minimal-headless"
+description: "Headless Isaac Sim & Isaac Lab RL training server"
 
 hardware:
   force_gpu_index: 0
-  enforce_x11: true
+  enforce_x11: false
   auto_blacklist_nouveau: true
+  enable_nvme_storage_tools: true
 
-isaac_sim:
-  method: "standalone"
-  version: "5.1.0"
-  install_path: "~/IsaacSim"
-  accept_eula: true
+workspace:
+  root: "~/workspace"
+  auto_register_github_desktop: false
 
-isaac_lab:
-  enabled: true
-  repo: "https://github.com/isaac-sim/IsaacLab.git"
-  branch: "main"
-  install_path: "~/IsaacLab"
+repositories:
+  isaaclab:
+    enabled: true
+    repo: "https://github.com/isaac-sim/IsaacLab.git"
+    branch: "main"
+  arena:
+    enabled: false
+  lerobot:
+    enabled: false
 
-isaaclab_arena:
-  enabled: false
+simulation:
+  isaacsim:
+    enabled: true
+    version: "5.1.0"
+    install_dir: "~/IsaacSim"
+    accept_eula: true
 
-ecosystem:
-  demos: false
-  gr00t: false
-  lerobot: false
-  ros2_bridge: false
+devtools:
+  docker: true
+  nvidia_container_toolkit: true
+  vscode: false
+  github_desktop: false
+  chromium: false
+  discord: false
+  cloud_clis:
+    aws: false
+    gcloud: false
+    gh: false
+
+teleoperation:
+  ftdi_1ms_latency_rule: false
+  spacemouse_daemon: false
+  manus_vr_gloves: false
+  realsense_cameras: false
+  xr_cloudxr: false
 
 streaming:
-  enable_nomachine: false
-  enable_sunshine: false
+  provider: "none"
+
+demos:
+  desktop_shortcuts: false

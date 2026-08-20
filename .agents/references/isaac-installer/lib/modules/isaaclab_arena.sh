@@ -3,13 +3,33 @@
 # isaaclab_arena.sh - IsaacLab-Arena Multi-Agent Benchmark Suite Installation
 # ==============================================================================
 
+resolve_arena_dir() {
+    if [[ -n "${ARENA_DIR:-}" ]]; then
+        echo "${ARENA_DIR}"
+        return 0
+    fi
+
+    # Check for existing clone
+    local existing
+    if existing="$(find_existing_repo "IsaacLab-Arena")"; then
+        echo "$existing"
+        return 0
+    fi
+
+    # Default to workspace root
+    local ws_base
+    ws_base="$(resolve_default_workspace_dir)"
+    echo "${ws_base}/IsaacLab-Arena"
+}
+
 check_isaaclab_arena() {
-    local arena_dir="${ARENA_DIR:-${TARGET_HOME}/IsaacLab-Arena}"
+    local arena_dir
+    arena_dir="$(resolve_arena_dir)"
     if [[ -d "${arena_dir}/.git" ]]; then
         STAGE_CHECK_MSG="IsaacLab-Arena benchmark suite already cloned at ${arena_dir}"
         return 0
     else
-        STAGE_CHECK_MSG="IsaacLab-Arena benchmark suite not cloned"
+        STAGE_CHECK_MSG="IsaacLab-Arena benchmark suite not cloned at ${arena_dir}"
         return 1
     fi
 }
@@ -17,28 +37,23 @@ check_isaaclab_arena() {
 install_isaaclab_arena() {
     log_step "Installing IsaacLab-Arena Benchmark Suite..."
 
-    local arena_dir="${ARENA_DIR:-${TARGET_HOME}/IsaacLab-Arena}"
+    local arena_dir
+    arena_dir="$(resolve_arena_dir)"
     local git_repo="${ARENA_REPO:-https://github.com/isaac-sim/IsaacLab-Arena.git}"
+    local official_upstream="https://github.com/isaac-sim/IsaacLab-Arena.git"
     local git_branch="${ARENA_BRANCH:-release/0.1.1}"
 
     if check_isaaclab_arena; then
         log_success "${STAGE_CHECK_MSG}."
+        register_github_desktop_repo "${arena_dir}"
         return 0
     fi
 
-    sudo -H -u "${TARGET_USER}" git config --global url."https://github.com/".insteadOf git@github.com: 2>/dev/null || true
+    # 1. Setup repository with Fork + Upstream support & Submodules
+    setup_git_repo_with_fork "${arena_dir}" "${git_repo}" "${official_upstream}" "${git_branch}" true
 
-    if [[ ! -d "${arena_dir}/.git" ]]; then
-        log_info "Cloning IsaacLab-Arena (${git_branch}) with submodules..."
-        sudo -H -u "${TARGET_USER}" git clone --depth 1 --recurse-submodules --shallow-submodules \
-            -b "${git_branch}" "${git_repo}" "${arena_dir}"
-    else
-        log_info "IsaacLab-Arena already exists at ${arena_dir}. Updating submodules..."
-        sudo -H -u "${TARGET_USER}" bash -c "
-            cd '${arena_dir}'
-            git submodule update --init --recursive --depth 1
-        " 2>/dev/null || true
-    fi
+    # 2. Register in GitHub Desktop
+    register_github_desktop_repo "${arena_dir}"
 
     log_success "IsaacLab-Arena successfully installed at ${arena_dir}."
 }
