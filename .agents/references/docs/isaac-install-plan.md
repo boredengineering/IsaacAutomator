@@ -1,318 +1,294 @@
-# Universal Isaac & Physical AI Installer Project Plan (`isaac-install-plan.md`)
+# Universal Isaac & Physical AI Installer Architecture Plan (`isaac-install-plan.md`)
 
-## 1. Project Mission & Bare-Metal Fallback Purpose
-
-The **Universal Isaac Installer (`isaac-installer`)** is the **zero-infrastructure, bare-metal provisioner** for robotics, Physical AI, and simulation engineers. When cloud deployers (AWS, GCP, Azure, Alibaba) or hosted container platforms (RunPod, Lambda Labs) are unavailable, cost-prohibitive, or prevented by data governance, this tool provisions a **freshly booted physical workstation running Ubuntu 22.04 LTS** into a state-of-the-art Physical AI, robotics teleoperation, and Isaac simulation station.
-
-### Target Environment & Hardware Scope:
-- **Hardware Architecture**: Bare-metal physical workstations or cluster servers (e.g. **NVIDIA Blackwell RTX PRO 6000 / RTX 5090 / GB200**, Ada Lovelace RTX 4090 / L40S / RTX 6000 Ada, and Ampere RTX 3090 / A100).
-- **Multi-GPU & Heterogeneous Setups**: Multi-GPU topology support (GPU 0 pinned for Vulkan viewport rendering; secondary GPUs allocated for parallel Reinforcement Learning simulation rollouts).
-- **Multi-NVMe High-Speed Storage**: Deep hardware probing for multiple PCIe Gen4/Gen5 NVMe SSDs and LVM2 volume groups.
-- **Base OS**: Fresh or pre-existing installation of Ubuntu 22.04 LTS (Jammy Jellyfish).
-- **Display Mode**: Native physical monitor (`DISPLAY=:0`) or headless server.
-- **Target Stack**: NVIDIA Drivers (Blackwell $\ge 570$, Ada $\ge 535$), Vulkan ICD, Docker CE + `nvidia-ctk`, Visual Studio Code, GitHub Desktop, Google Chrome / Chromium (WebXR/WebGPU), Discord, Hugging Face LeRobot (`[all,dataset_viz]`), `lerobot-dataset-viz` (Rerun.io & Foxglove), Teleoperation Peripherals (Apple Vision Pro, Meta Quest 3, Manus VR Gloves, 3D SpaceMouse, ALOHA/SO-100 1ms latency timer, Intel RealSense), NVIDIA Isaac Sim 5.1.0, Isaac Lab, and IsaacLab-Arena.
+> **Document Status**: Under Active Architectural Review  
+> **Target Platform**: Bare-Metal Workstations & Heterogeneous Physical AI Nodes (Ubuntu 22.04 LTS)  
+> **Compute Scope**: NVIDIA Blackwell (GB200 / RTX 5090 / RTX PRO 6000), Ada Lovelace (RTX 4090 / L40S / 6000 Ada), Ampere (RTX 3090 / A100)
 
 ---
 
-## 2. Concrete Project Structure
+## 1. Executive Summary & Vision
 
-The `isaac-installer` is structured as a modular, idempotent CLI repository:
+The **Universal Isaac Installer (`isaac-installer`)** is the zero-infrastructure, bare-metal provisioner for robotics, Physical AI, and simulation engineers. While `IsaacAutomator` handles public cloud instances (AWS, GCP, Azure, Alibaba), `isaac-installer` transforms a fresh or existing physical machine into a high-performance, open-ended robotics workstation.
+
+### The Real-World Developer Reality:
+In production robotics and Physical AI research, developers do **not** work in a static, monolithic sandbox. They:
+1. Maintain active Git forks of core frameworks (`IsaacLab`, `IsaacLab-Arena`, `lerobot`) and switch branches rapidly.
+2. Develop custom robot extensions, gym environments, and PhysX plugins across multiple distinct projects.
+3. Manage different Python dependencies across tasks without corrupting Isaac Sim's underlying runtime.
+4. Integrate real-time teleoperation hardware (ALOHA leader-follower arms, SpaceMouse, VR headsets, cameras) with sub-millisecond serial latency.
+5. Ingest and train on 100s of gigabytes of camera and policy trajectories without thermal or storage I/O bottlenecks.
+
+---
+
+## 2. Realistic System-Space vs. User-Space Decoupled Architecture
+
+A primary flaw of naive installer scripts is executing everything under `sudo`, polluting user directories, creating `root:root` permission locks in `~/.cache` and Python runtimes, and hardcoding global shell variables that break non-simulation workloads.
+
+`isaac-installer` enforces a strict **Two-Phase Privilege Boundary**:
+
+```mermaid
+flowchart TD
+    subgraph PHASE1 ["Phase 1: System Infrastructure (Privileged - Sudo Once)"]
+        D1["NVIDIA Driver (Blackwell 570+ / Ada 535+) & DKMS"]
+        D2["Vulkan ICD Runtime & X11 Display Server Configuration"]
+        D3["Hardware Udev Rules (1ms FTDI, RealSense, SpaceMouse, Manus)"]
+        D4["System Build Stack (GCC 11, CMake, Ninja, Git LFS, Vulkan Dev)"]
+        D5["Storage Provisioning (NVMe-CLI, LVM2 Volume Mounting on /data)"]
+        D6["User Group Membership (docker, dialout, plugdev, input, video, uinput)"]
+    end
+
+    subgraph PHASE2 ["Phase 2: Developer Workspace (Unprivileged - Target User)"]
+        U1["Toolchain Provisioning (UV, Miniforge/Micromamba, GitHub CLI)"]
+        U2["Smart Git Workspace (~/Documents/GitHub/<Org>/<Repo>) & Fork Remotes"]
+        U3["Dynamic Python Isolation & Environment Shims (isaaclab-env)"]
+        U4["Topological Extension Installation (omni.isaac.lab -> tasks -> rl)"]
+        U5["Downstream Package Linkage (IsaacLab-Arena, LeRobot, Rerun)"]
+        U6["IDE & Desktop Integration (VS Code Discovery, GitHub Desktop UI)"]
+    end
+
+    PHASE1 -- "System Ready (No Root Required Afterwards)" --> PHASE2
+```
+
+---
+
+## 3. Python Environment Architecture: The Environment Shim Pattern
+
+### The Problem with Global `setup_conda_env.sh`
+Sourcing Isaac Sim's `setup_conda_env.sh` globally in `~/.bashrc` mutates `PYTHONPATH` and `LD_LIBRARY_PATH` with Omniverse kit libraries. This causes **binary ABI crashes** when running standard Python tools, PyTorch models, or CLI utilities outside of Isaac Sim.
+
+### The Solution: Dynamic Environment Shimming (`isaaclab-env` & Virtualenv Hooks)
+
+Instead of contaminating the host shell, `isaac-installer` configures a **Scoped Environment Shim**:
+
+```mermaid
+flowchart LR
+    DEV["Developer / VS Code"] --> SHIM["isaaclab-env [command]"]
+    SHIM --> RUN["Subshell with Exported Omniverse Paths\n(EXP_PATH, RESOURCE_NAME, Vulkan ICD)"]
+    RUN --> EXEC["Executes Script / PyTorch / Gym Task"]
+    EXEC --> EXIT["Exits: Host Shell Remains 100% Clean"]
+```
+
+```text
+Host Shell (.bashrc)
+└── Clean Python / Conda / UV Environment (No Global Isaac Sim PYTHONPATH)
+    ├── Standard Python Projects (run independently without library collisions)
+    └── Scoped Invocation:
+        ├── Direct CLI:       isaaclab-env python train.py --task Isaac-Cartpole-v0
+        ├── Conda Activate:   conda activate isaaclab (sources env-vars on activation only)
+        └── Project Virtual:  source ~/workspaces/robot_project/.venv/bin/activate_isaac
+```
+
+### Topological Extension Installation Order
+
+To guarantee stability, extensions and downstream packages must be compiled and linked in strict topological dependency order:
+
+```mermaid
+flowchart TD
+    T0["0. Base Python 3.10 Runtime (UV / Conda) + Pip / Wheel"]
+    T1["1. Pinned PyTorch CUDA (torch==2.5.1+cu124 matching GPU Arch)"]
+    T2["2. Core Extension: source/extensions/omni.isaac.lab"]
+    T3["3. Asset Extension: source/extensions/omni.isaac.lab_assets"]
+    T4["4. Tasks Extension: source/extensions/omni.isaac.lab_tasks"]
+    T5["5. RL Extension: source/extensions/omni.isaac.lab_rl"]
+    T6["6. RL Frameworks (rsl_rl, skrl, rl_games, stable-baselines3)"]
+    T7["7. Benchmark Suite (IsaacLab-Arena via editable pip -e .)"]
+    T8["8. Physical AI / Imitation Learning (LeRobot [all,dataset_viz])"]
+
+    T0 --> T1 --> T2 --> T3 --> T4 --> T5 --> T6 --> T7 --> T8
+```
+
+---
+
+## 4. Open-Ended Developer Fork & Multi-Repo Workflows
+
+In active robotics development, researchers frequently work across custom branches and organizational forks.
+
+### Dual-Remote Git Topology
+For every cloned repository (`IsaacLab`, `IsaacLab-Arena`, `lerobot`, `rsl_rl`):
+- `origin`: Developer's personal or lab fork (Read/Write for branches, commits, PRs).
+- `upstream`: Official NVIDIA or Hugging Face repository (Read-only for tracking and syncing).
+
+```text
+~/Documents/GitHub/
+├── BoredEngineer/
+│   ├── IsaacLab/               [origin: BoredEngineer/IsaacLab | upstream: isaac-sim/IsaacLab]
+│   ├── IsaacLab-Arena/         [origin: BoredEngineer/IsaacLab-Arena | upstream: isaac-sim/IsaacLab-Arena]
+│   └── lerobot/                [origin: BoredEngineer/lerobot | upstream: huggingface/lerobot]
+└── custom_extensions/
+    └── omni.isaac.custom_task/ [User's proprietary robot manipulation tasks]
+```
+
+### Submodule Optimization:
+- Large upstream submodules (`rsl_rl`, `Arena-Assets`) are initialized with `--depth 1 --recurse-submodules --shallow-submodules` to avoid pulling gigabytes of unused commit history while preserving branch switching capabilities.
+- Automated URL rewrites ensure SSH authentication gracefully falls back to HTTPS for automated/CI runs.
+
+---
+
+## 5. Teleoperation, Real-Time Serial & Peripherals Subsystem
+
+Robotics teleoperation requires deterministic, low-latency communication with physical actuators, microcontrollers, and sensory devices.
+
+```mermaid
+flowchart TD
+    subgraph TELEOP_DEVICES ["Physical Devices & Interfaces"]
+        ARM["ALOHA / SO-100 Robot Arms (FTDI Serial)"]
+        SPACEMOUSE["3Dconnexion SpaceMouse (USB HID)"]
+        CAMERA["Intel RealSense / OAK-D Depth Cameras"]
+        VR["Apple Vision Pro / Meta Quest 3 / Manus Gloves"]
+    end
+
+    subgraph UDEV_RULES ["System Udev Rules (/etc/udev/rules.d/)"]
+        R1["99-ftdi-latency.rules: latency_timer = 1ms (reduces 16ms jitter)"]
+        R2["99-spacenav.rules: User group permissions for spacenavd"]
+        R3["99-realsense.rules: Hardware video stream decoders"]
+        R4["99-manus-gloves.rules: OpenXR / Bluetooth HID permissions"]
+    end
+
+    subgraph PERMISSIONS ["User Permissions"]
+        G["Groups: dialout, plugdev, input, video, uinput"]
+    end
+
+    TELEOP_DEVICES --> UDEV_RULES --> PERMISSIONS
+```
+
+### 1ms FTDI Serial Latency Rule:
+Standard Linux kernel drivers default USB-to-serial devices (`/dev/ttyUSB*`) to a **16ms buffer latency timer**. In closed-loop robot control, this causes severe latency and packet drops. The installer enforces:
+```udev
+ACTION=="add", SUBSYSTEM=="usb-serial", DRIVER=="ftdi_sio", ATTR{latency_timer}="1"
+```
+
+---
+
+## 6. High-Throughput NVMe Storage, Datasets & USD Asset Cache
+
+Physical AI training and multi-camera simulation create massive I/O traffic.
+
+```text
+/data (Mounted on High-Speed PCIe Gen4/Gen5 NVMe SSD)
+├── isaac_cache/
+│   ├── ov_data/           # Cached Omniverse USD assets (G1, Go2, Franka, Warehouses)
+│   └── shader_cache/      # Pre-compiled Vulkan / RTX shader cache (sub-2s startup)
+├── datasets/
+│   ├── lerobot/           # Multi-camera HDF5/Zarr teleoperation trajectories
+│   └── rsl_rl_logs/       # Reinforcement learning checkpoints and tensorboard runs
+└── models/
+    └── pretrained_checkpoints/ # Hugging Face LeRobot & Foundation policy weights
+```
+
+---
+
+## 7. Concrete Project Structure
 
 ```text
 isaac-installer/
 ├── bin/
-│   └── isaac-installer            # Main CLI entrypoint (executable dispatcher)
+│   ├── isaac-installer            # CLI dispatcher (doctor, plan, install, sim, auth, test)
+│   └── isaaclab-env               # Dynamic runtime environment shim
 ├── config/
-│   ├── default-profile.yaml       # Default interactive workstation preset
-│   ├── minimal-headless.yaml      # Headless training / CI server preset
-│   └── full-ecosystem.yaml        # Full stack preset (+ Physical AI, Teleop, Demos)
+│   ├── default-profile.yaml       # Standard interactive robotics workstation preset
+│   ├── minimal-headless.yaml      # Headless RL training / CI cluster node preset
+│   └── full-ecosystem.yaml        # Full stack (+ LeRobot, Arena, SpaceMouse, Manus VR)
 ├── lib/
 │   ├── core/
-│   │   ├── logging.sh             # Modern UI, Unicode box cards, elapsed step timers
-│   │   ├── detect.sh              # Hardware, Blackwell GPU, NVMe drives, LVM, Wayland/X11
-│   │   ├── audit.sh               # Deep 20-component audit, version diff matrix & JSON export
-│   │   ├── state.sh               # JSON state machine & reboot-resumption engine
-│   │   ├── network.sh             # Network pre-flight & CDN latency benchmarking
-│   │   ├── backup.sh              # Safety configuration snapshots & restore engine
-│   │   ├── git_workspace.sh       # Smart repo discovery, fork wiring & GitHub Desktop registry
-│   │   └── package_manager.sh     # Abstract apt/dnf/pacman package manager wrapper
+│   │   ├── logging.sh             # Unicode UI cards, color palette, failure log tailing
+│   │   ├── detect.sh              # Blackwell/Ada GPU, NVMe SSDs, LVM, Wayland/X11
+│   │   ├── audit.sh               # 20-component pre-flight audit diff matrix
+│   │   ├── state.sh               # JSON state machine & reboot resumption
+│   │   ├── network.sh             # CDN latency pre-flight benchmark
+│   │   ├── backup.sh              # Safety configuration snapshots & rollback
+│   │   ├── git_workspace.sh       # Dual-remote fork topology & GitHub Desktop integration
+│   │   └── package_manager.sh     # Abstract package manager wrapper
 │   ├── modules/
-│   │   ├── driver.sh              # NVIDIA driver (Blackwell 570+ / Ada 535+), DKMS, nouveau blacklist
-│   │   ├── display.sh             # X11 enforcement, GDM Wayland toggle, virtual EDID (headless)
-│   │   ├── system_prereqs.sh      # Vulkan runtime, GCC 11/G++ 11 alternatives, CMake, Git LFS
-│   │   ├── conda.sh               # Miniforge / uv Python environment isolation
-│   │   ├── dev_tools.sh           # Docker CE, nvidia-ctk, nvme-cli, lvm2, VS Code, Chrome, Discord
-│   │   ├── physical_ai.sh         # Hugging Face CLI (hf), LeRobot, lerobot-dataset-viz, FFmpeg
-│   │   ├── hardware_teleop.sh     # XR Headsets, Manus gloves, SpaceMouse, 1ms FTDI udev rules
-│   │   ├── isaacsim.sh            # Standalone ZIP engine extraction, multi-version registry, EULA
-│   │   ├── isaaclab.sh            # Isaac Lab core, fork upstream wiring & PyTorch verification
+│   │   ├── driver.sh              # NVIDIA drivers (570+ / 535+), DKMS, nouveau blacklist
+│   │   ├── display.sh             # X11 enforcement, virtual EDID (headless display)
+│   │   ├── system_prereqs.sh      # Vulkan runtime, GCC 11, CMake, Ninja, Git LFS
+│   │   ├── conda.sh               # UV toolchain & Miniforge/Micromamba isolation
+│   │   ├── dev_tools.sh           # Docker CE, nvidia-ctk, nvme-cli, lvm2, VS Code, Chrome
+│   │   ├── physical_ai.sh         # Hugging Face CLI, LeRobot, Rerun.io dataset viz
+│   │   ├── hardware_teleop.sh     # 1ms FTDI rules, SpaceMouse, RealSense, Manus VR
+│   │   ├── isaacsim.sh            # Standalone ZIP engine extraction, multi-version registry
+│   │   ├── isaaclab.sh            # Topological extension installer & PyTorch verification
 │   │   ├── isaaclab_arena.sh      # Arena multi-agent benchmark suite with depth-1 submodules
-│   │   ├── auth.sh                # Unified OAuth, API key, Cloud Hubs & SSH key generator
-│   │   ├── streaming.sh           # Hardware streaming (NoMachine, Sunshine NVENC) [Opt-in]
-│   │   ├── demos.sh               # Desktop shortcuts (.desktop) and RL launchers (G1, Go2, Franka)
-│   │   └── ecosystem.sh           # Isaac-GR00T, ROS 2 Humble bridge packages
+│   │   ├── auth.sh                # Unified OAuth, Cloud Hubs (GH, HF, NGC, WandB)
+│   │   ├── streaming.sh           # Hardware streaming (NoMachine, Sunshine NVENC)
+│   │   ├── demos.sh               # Desktop shortcuts (.desktop) and RL launchers
+│   │   └── ecosystem.sh           # Isaac-GR00T, ROS 2 Humble/Jazzy bridge
 │   └── templates/
 │       ├── xorg.conf.template     # Dummy display template for headless servers
 │       ├── vdisplay.edid          # 1080p60 EDID binary for headless GPU rendering
-│       ├── udev-rules/            # Hardware device udev rules
-│       │   ├── 99-ftdi-latency.rules   # 1ms latency timer for ALOHA / SO-100 arms
-│       │   ├── 99-manus-gloves.rules   # Manus VR haptic gloves
-│       │   ├── 99-spacenav.rules       # 3Dconnexion SpaceMouse
-│       │   └── 99-realsense.rules      # Intel RealSense depth cameras
+│       ├── udev-rules/            # Hardware device udev rules (FTDI, SpaceMouse, RealSense)
 │       └── desktop-shortcuts/     # Desktop launcher templates (.desktop.template)
-└── README.md                      # Complete human operator manual and quickstart
+└── README.md                      # Operator manual and quickstart
 ```
 
 ---
 
-## 3. Comprehensive Master Authentication, OAuth & Permissions Matrix
+## 8. Authentication & Permissions Matrix
 
-This matrix maps **every single software component** across `isaac-installer` and `IsaacAutomator` that requires authentication, user action, OAuth, API keys, licensing, or local host permissions:
-
-```mermaid
-flowchart TD
-    subgraph CLOUD ["1. Public Cloud & Infrastructure (IsaacAutomator)"]
-        AWS["AWS: AWS_ACCESS_KEY_ID / SECRET_ACCESS_KEY / region"]
-        GCP["GCP: gcloud auth login / GOOGLE_APPLICATION_CREDENTIALS"]
-        AZ["Azure: az login (OAuth) / Service Principal"]
-        ALI["Alibaba Cloud: ALICLOUD_ACCESS_KEY / SECRET_KEY"]
-        RP["RunPod: RUNPOD_API_KEY (~/.runpod/config.toml)"]
-        TF["Terraform State: GCS/S3 Backend lock credentials"]
-    end
-
-    subgraph HUBS ["2. AI Foundation Hubs & Repositories"]
-        GH["GitHub: gh auth login (OAuth/PAT) + SSH keypair"]
-        NGC["NVIDIA NGC: ngc config set + docker login nvcr.io"]
-        HF["Hugging Face: HF_TOKEN / huggingface-cli (Write/Read)"]
-        WANDB["Weights & Biases: WANDB_API_KEY / wandb login"]
-    end
-
-    subgraph HW_STREAM ["3. Remote Streaming & Teleoperation"]
-        SUN["Sunshine: Web UI admin setup (https://localhost:47990) + Moonlight PIN pairing"]
-        NX["NoMachine: Linux user account password (Port 4000)"]
-        KASM["KasmVNC / noVNC: HTTP basic auth / VNC password"]
-        XR["Apple Vision Pro / Quest: CloudXR WebXR pairing"]
-    end
-
-    subgraph HOST_PERMS ["4. Local Host Machine Security & Permissions"]
-        SUDO["Sudo Privileges: Passwordless sudoers rule"]
-        DOCK["Docker Group: usermod -aG docker $USER"]
-        UDEV["Hardware Udev Groups: dialout, plugdev, input, video, uinput"]
-        EULA["NVIDIA EULA: .eula_accepted file touch"]
-    end
-```
-
-### Detailed Provider Matrix:
-
-| Category | Component / Service | Required Credentials / Token | Interactive Flow (Browser/TUI) | Automated / Headless Flow |
+| Category | Component / Service | Required Credentials | Interactive Flow | Automated / Headless Flow |
 | :--- | :--- | :--- | :--- | :--- |
-| **Code & Repos** | **GitHub** | OAuth Token / PAT / SSH Key | `gh auth login -w` (8-char device code) | Reads `$GITHUB_TOKEN` / `$GH_TOKEN`, runs `gh auth setup-git`, uses `~/.ssh/id_ed25519`. |
-| **Foundation Hub** | **Hugging Face Hub** | User Access Token (Read/Write) | `huggingface-cli login` | Reads `$HF_TOKEN` and writes to `~/.cache/huggingface/token`. |
-| **Container Cloud**| **NVIDIA NGC (`nvcr.io`)** | NGC API Key (`$oauthtoken`) | `ngc config set` prompt | `echo "$NGC_API_KEY" \| docker login nvcr.io -u '$oauthtoken' --password-stdin`. |
-| **RL Tracking** | **Weights & Biases** | WandB API Key | `wandb login` | Reads `$WANDB_API_KEY` and populates `~/.netrc`. |
-| **Cloud Deployer** | **Google Cloud (GCP)** | ADC OAuth / Service Account | `gcloud auth application-default login` | Reads `$GOOGLE_APPLICATION_CREDENTIALS` and `$CLOUDSDK_CORE_PROJECT`. |
-| **Cloud Deployer** | **AWS** | Access Key & Secret Key | `aws configure` | Reads `$AWS_ACCESS_KEY_ID`, `$AWS_SECRET_ACCESS_KEY`, `$AWS_DEFAULT_REGION`. |
-| **Cloud Deployer** | **Azure** | Azure Subscription / SP | `az login` | Reads `$AZURE_CLIENT_ID`, `$AZURE_CLIENT_SECRET`, `$AZURE_TENANT_ID`. |
-| **Cloud Deployer** | **Alibaba Cloud** | Access Key & Secret Key | `aliyun configure` | Reads `$ALICLOUD_ACCESS_KEY`, `$ALICLOUD_SECRET_KEY`, `$ALICLOUD_REGION`. |
-| **Cloud Deployer** | **RunPod** | RunPod API Key | CLI prompt | Reads `$RUNPOD_API_KEY` stored in `~/.runpod/config.toml`. |
-| **Remote 3D** | **Sunshine Streaming** | Admin User / Password / PIN | Opens `https://localhost:47990` + Moonlight PIN | Auto-generates local admin credentials. |
-| **Remote 3D** | **NoMachine** | Linux User Password | OS authentication dialog on port 4000 | Checks that `$TARGET_USER` has a password configured. |
-| **Host Security** | **Docker Group** | User group membership | Automatic | Adds user via `usermod -aG docker $TARGET_USER`. |
-| **Host Security** | **Robotics Serial (USB)**| Group `dialout`, `tty` | Automatic | Grants access to Dynamixel, ALOHA & SO-100 leader-follower arms. |
-| **Host Security** | **Peripherals (`plugdev`)**| Group `plugdev`, `input`, `video`, `uinput` | Automatic | Grants access to SpaceMouse, RealSense, Manus VR gloves. |
-| **Licensing** | **Omniverse EULA** | EULA Acceptance | Automatic | Touches `~/IsaacSim/.eula_accepted`. |
+| **Code & Repos** | **GitHub** | OAuth Token / PAT / SSH Key | `gh auth login -w` | `$GITHUB_TOKEN` / `$GH_TOKEN` + `gh auth setup-git` |
+| **Foundation Hub** | **Hugging Face Hub** | User Access Token (Read/Write) | `huggingface-cli login` | `$HF_TOKEN` -> `~/.cache/huggingface/token` |
+| **Container Cloud**| **NVIDIA NGC (`nvcr.io`)** | NGC API Key (`$oauthtoken`) | `ngc config set` | `echo "$NGC_API_KEY" \| docker login nvcr.io -u '$oauthtoken' --password-stdin` |
+| **RL Tracking** | **Weights & Biases** | WandB API Key | `wandb login` | Reads `$WANDB_API_KEY` -> `~/.netrc` |
+| **Host Security** | **Docker Group** | User group membership | Automatic | `usermod -aG docker $TARGET_USER` |
+| **Host Security** | **Robotics Serial (USB)**| Group `dialout`, `tty` | Automatic | Grants access to Dynamixel, ALOHA, SO-100 arms |
+| **Host Security** | **Peripherals (`plugdev`)**| Group `plugdev`, `input`, `video`, `uinput` | Automatic | Grants access to SpaceMouse, RealSense, Manus VR |
+| **Licensing** | **Omniverse EULA** | EULA Acceptance | Automatic | Touches `${ISAACSIM_DIR}/.eula_accepted` |
 
 ---
 
-## 4. Bare-Metal High-Speed Storage Subsystem (NVMe-CLI & LVM2)
+## 9. 13-Subsystem End-to-End Verification Suite (`test`)
 
-Physical AI and Isaac Sim workstations generate massive I/O load (multi-camera 60fps teleop datasets, USD geometry caches, and parallel RL replay buffers).
+The verification suite runs granular, non-destructive health checks across 13 core subsystems:
 
-```mermaid
-flowchart TD
-    subgraph NVME_USE ["NVMe-CLI Real-World Use Cases"]
-        U1["1. Thermal Throttling Diagnostics (nvme smart-log)\n• Under 4096 parallel env RL load, SSDs hit 75°C-85°C\n• Monitors composite temp and thermal transition counts"]
-        U2["2. Wear-Leveling & TBW Endurance Tracking\n• Continuous teleop video recording writes 100s GB/day\n• Monitors percentage_used and available_spare blocks"]
-        U3["3. PCIe Bus Link Error Detection (nvme error-log)\n• Identifies PCIe lane downgrades and CRC errors before dataset corruption"]
-    end
-
-    subgraph LVM_USE ["LVM2 Real-World Use Cases"]
-        L1["1. Dual/Quad NVMe RAID0 Striping (14,000+ MB/s)\n• Stripes 2x NVMe drives for 2x PyTorch DataLoader batch loading"]
-        L2["2. Zero-Downtime Live Volume Expansion (lvextend)\n• Add new NVMe drive and expand /data while Isaac Sim is running"]
-        L3["3. Instant 0.01s CoW Snapshots (lvcreate -s)\n• Snapshot 500GB USD assets before running destructive experiments"]
-    end
-```
-
-### Integrated Storage Tools:
-- **`nvme-cli`**: Hardware telemetry, SMART logs, namespace management, secure sanitize.
-- **`lvm2`**: Physical volume (`pvcreate`), Volume group (`vgcreate`), and Logical volume (`lvcreate`) automation.
-- **`smartmontools` (`smartctl`)**: S.M.A.R.T. disk reliability daemon.
-- **`fio`**: High-performance asynchronous NVMe read/write IOPS benchmark.
-- **`iotop`**: Live process-level disk I/O throughput monitoring.
+1. **NVIDIA Driver & GPU Topology**: Driver version ($\ge 535$ or $\ge 570$), PCIe Link speed (Gen4/Gen5 x16), persistence mode.
+2. **Display Server**: X11 server active or virtual EDID configured (`DISPLAY=:0`), Wayland disabled for Omniverse compatibility.
+3. **Build Prerequisites**: GCC 11, G++ 11, CMake $\ge 3.22$, Ninja, Git LFS.
+4. **Vulkan Runtime**: `vulkaninfo` device enumeration, ICD configuration (`/etc/vulkan/icd.d/nvidia_icd.json`).
+5. **Docker & GPU Passthrough**: Docker daemon status, `nvidia-ctk` runtime test (`nvidia-smi` inside container).
+6. **Developer Tools**: VS Code, GitHub Desktop, Google Chrome / Chromium, `gh`, `aws`, `gcloud`, `hf`.
+7. **Storage & I/O Stack**: NVMe SMART health telemetry, LVM2 volume groups, mount permissions on `/data`.
+8. **Python Runtime & UV**: Python 3.10 runtime, `uv` package manager binary and cache health.
+9. **Physical AI & LeRobot**: Hugging Face token validity, `lerobot` import, Rerun.io visualizer binary.
+10. **Hardware Teleop**: 1ms FTDI latency timer verification, user membership in `dialout`, `plugdev`, `input`.
+11. **Isaac Sim Standalone Engine**: Executable verification, `.eula_accepted` presence, Kit Carbonite core load.
+12. **Isaac Lab PyTorch CUDA Linkage**: GPU tensor allocation, CUDA device name match, extension import sanity.
+13. **IsaacLab-Arena & Demos**: Gymnasium multi-agent environment registration, 50-step headless PhysX tensor rollout.
 
 ---
 
-## 5. Developer Fork Workflows & GitHub Desktop Integration
+## 10. Critical Architectural Review & Open Questions
 
-Robotics developers frequently maintain personal or organizational forks of `IsaacLab`, `IsaacLab-Arena`, and `lerobot`.
+The following architectural points require specific team and stakeholder review during the next development iterations:
 
-```mermaid
-flowchart TD
-    DEV["Robotics Engineer"]
-    
-    subgraph REMOTES ["Dual-Remote Git Topology"]
-        ORIGIN["origin (Push / Branches / PRs)\nhttps://github.com/YOUR_FORK/IsaacLab.git"]
-        UPSTREAM["upstream (Pull / Sync)\nhttps://github.com/isaac-sim/IsaacLab.git"]
-    end
-    
-    DEV -- git push origin --> ORIGIN
-    DEV -- git pull upstream --> UPSTREAM
-    
-    subgraph GHD ["GitHub Desktop UI"]
-        AUTO["Automatic Registration: github-desktop --add '<repo_path>'\n• Standard directory: ~/Documents/GitHub/<Owner>/<Repo>\n• Instant visual diffs, branching, staging and PR reviews"]
-    end
-    
-    ORIGIN --> AUTO
-```
+### Review Point 1: Two-Phase CLI Separation (`sys-provision` vs `dev-setup`)
+- **Question**: Should the installer CLI be explicitly split into two top-level subcommands:
+  - `sudo isaac-installer sys-provision` (runs strictly as root: drivers, udev, packages, storage).
+  - `isaac-installer dev-setup` (runs strictly as target user: git clones, uv envs, extensions, shortcuts)?
+- **Tradeoff**: Clean privilege boundary and 0% risk of root cache pollution vs. single-command convenience.
 
-### CLI Workspace & Fork Flags:
-- `--workspace-dir <path>`: Base folder for all repositories (Default: `~/Documents/GitHub`).
-- `--isaaclab-repo <slug>`: Personal fork for Isaac Lab (e.g. `BoredEngineer/IsaacLab`).
-- `--arena-repo <slug>`: Personal fork for IsaacLab-Arena (e.g. `BoredEngineer/IsaacLab-Arena`).
-- `--lerobot-repo <slug>`: Personal fork for LeRobot (e.g. `BoredEngineer/lerobot`).
+### Review Point 2: Python Environment Isolation Strategy
+- **Question**: Should `isaac-installer` default to:
+  - **Strategy A**: Isolated Conda environment (`conda create -n isaaclab python=3.10`) with `uv pip` acceleration inside.
+  - **Strategy B**: Pure `uv venv` virtualenv (`~/.venvs/isaaclab`) with lightweight shell shims.
+  - **Strategy C**: DevContainer / OCI container on bare-metal with bind-mounted GPU and X11 sockets.
+- **Tradeoff**: Conda provides system-level CUDA/C++ dependency isolation; UV provides 10x faster package resolution; DevContainers provide 100% reproducibility across machines.
 
----
+### Review Point 3: Sourced Environment Shims vs Monolithic Shell Pollution
+- **Question**: How should Omniverse runtime paths be exposed to IDEs (VS Code / Cursor / PyCharm)?
+  - Via a `.env` file in the workspace root.
+  - Via dynamic wrapper script (`bin/isaaclab-env`).
+  - Via Conda `etc/conda/activate.d/isaac_sim.sh` hooks that activate only when entering the conda environment.
 
-## 6. Multi-Version Coexistence & Atomic Symlink Switching (`sim`)
-
-To support side-by-side installations of Isaac Sim versions (4.2.0, 4.5.0, 5.1.0) and custom source builds (custom PhysX plugins, specialized sensor ray-tracers):
-
-### POSIX Atomic `rename()` Symlink Staging:
-```bash
-# 1. Create staging symlink
-ln -s "/path/to/custom-isaacsim" "${lab_dir}/_isaac_sim.tmp.$$"
-
-# 2. Atomic kernel rename (never absent for even a single microsecond)
-mv -Tf "${lab_dir}/_isaac_sim.tmp.$$" "${lab_dir}/_isaac_sim"
-
-# 3. GPU Acceleration Smoke Test & Automated Rollback Guard
-./isaaclab.sh -p -c "import torch; assert torch.cuda.is_available()"
-```
-
-### Subcommands:
-```bash
-./bin/isaac-installer sim list      # Discover all installed Isaac Sim versions on host
-./bin/isaac-installer sim switch    # Interactively switch active engine linked to Isaac Lab
-```
+### Review Point 4: Downstream Dependency Management (Submodules vs Wheels)
+- **Question**: Should downstream RL dependencies (like `rsl_rl`, `skrl`, `rl_games`) be managed as editable git submodules or pinned PyPI wheels?
+  - Submodules allow modifying the RL algorithm source code directly during research.
+  - Wheels provide faster and more predictable installs.
 
 ---
 
-## 7. IsaacLab-Arena Multi-Agent Benchmark Architecture
-
-`IsaacLab-Arena` layers on top of `IsaacLab` and `IsaacSim` in a 3-tier structure:
-
-$$\text{IsaacSim (Engine)} \xleftarrow{\text{Atomic Symlink}} \text{IsaacLab (Core)} \xleftarrow{\text{Editable pip -e}} \text{IsaacLab-Arena (Multi-Agent Benchmarks)}$$
-
-1. **Depth-1 Shallow Submodules**: Fetches `rsl_rl`, `Arena-Assets`, and `skrl` with `--depth 1` (reduces size from 12GB to <800MB).
-2. **Editable Inter-Package Registration**: Uses `pip install -e` so local edits in `~/Documents/GitHub/BoredEngineer/IsaacLab-Arena` are immediately active in simulation.
-3. **Multi-GPU Viewport & Physics Splitting**: Pins GPU 0 for Omniverse rendering while distributing parallel environment instances across secondary GPUs.
-4. **Hugging Face LeRobot Policy Bridge**: Ingests trained imitation learning policies (`ACT`, `Diffusion`) directly into Arena gym environments for automated success-rate benchmarking.
-
----
-
-
----
-
-## 8. Python Environment Architecture: Conda, UV & Dual-Hybrid Isolation
-
-To eliminate reliance on Isaac Sim's monolithic embedded Python (`IsaacSim/kit/python/bin/python3`) and ensure standard `conda activate isaaclab` or `source .venv/bin/activate` workflows:
-
-```mermaid
-flowchart TD
-    subgraph A1 ["Approach 1: Conda Environment"]
-        C1["Miniforge / Conda: conda create -n isaaclab python=3.10"]
-        C2["Install PyTorch CUDA via Conda/Pip"]
-        C3["Source Isaac Sim Environment & pip install -e IsaacLab"]
-    end
-
-    subgraph A2 ["Approach 2: Pure UV Virtualenv"]
-        U1["UV: uv venv ~/.venvs/isaaclab --python 3.10"]
-        U2["uv pip install torch torchvision --index-url cu124"]
-        U3["uv pip install -e IsaacLab & IsaacLab-Arena"]
-    end
-
-    subgraph A3 ["Approach 3: Dual Hybrid (Recommended)"]
-        H1["Conda Environment (isaaclab) for System & CUDA Isolation"]
-        H2["UV (uv pip) inside Conda for 10x-faster Rust package resolution"]
-        H3["Zero-downtime editable linkage to /home/tarfy/IsaacSim"]
-    end
-```
-
-### Comparative Analysis:
-
-| Criteria | Approach 1: Dedicated Conda | Approach 2: Pure UV Virtualenv | Approach 3: Dual Hybrid (Recommended) |
-| :--- | :--- | :--- | :--- |
-| **Environment Management** | `conda activate isaaclab` | `source ~/.venvs/isaaclab/bin/activate` or `uv run` | `conda activate isaaclab` |
-| **Package Install Speed** | Moderate (Standard Pip/Conda) | **Blazing Fast** (<15s with Rust cache) | **Blazing Fast** (`uv pip` inside Conda) |
-| **Python Version** | Pinned **Python 3.10.15** | Pinned **Python 3.10.15** | Pinned **Python 3.10.15** |
-| **PyTorch CUDA Link** | `torch==2.5.1+cu124` | `torch==2.5.1+cu124` | `torch==2.5.1+cu124` (Blackwell optimized) |
-| **Isaac Sim Linkage** | Sourced via `${ISAACSIM_DIR}/setup_conda_env.sh` | Sourced via `.env` / wrapper | Sourced via `${ISAACSIM_DIR}/setup_conda_env.sh` |
-| **IsaacLab-Arena** | `pip install -e` in conda | `uv pip install -e` in venv | `uv pip install -e` in conda |
-| **VS Code Auto-Detect** | Instant (`~/.conda/envs/isaaclab/bin/python`) | Instant (`~/.venvs/isaaclab/bin/python`) | Instant (`~/.conda/envs/isaaclab/bin/python`) |
-
-### Dual-Hybrid Implementation Workflow:
-```bash
-# 1. Create Isolated Python 3.10 Environment with Miniforge
-conda create -n isaaclab python=3.10 -y
-
-# 2. Use UV inside the Conda environment for ultra-fast dependency resolution:
-conda activate isaaclab
-uv pip install torch==2.5.1 torchvision --index-url https://download.pytorch.org/whl/cu124
-
-# 3. Link your standalone Isaac Sim engine (/home/tarfy/IsaacSim)
-source /home/tarfy/IsaacSim/setup_conda_env.sh
-
-# 4. Install Isaac Lab & IsaacLab-Arena in editable mode
-cd ~/Documents/GitHub/IsaacLab
-uv pip install -e source/extensions/omni.isaac.lab
-uv pip install -e source/extensions/omni.isaac.lab_tasks
-uv pip install -e source/extensions/omni.isaac.lab_assets
-uv pip install -e source/extensions/omni.isaac.lab_rl
-
-cd ~/Documents/GitHub/IsaacLab-Arena
-uv pip install -e .
-```
-
----
-
-## 9. Pre-Flight Validation, Conflict Detection & Idempotency
-
-### Pre-Flight Audit (`plan`)
-Runs a non-destructive 20-component diff comparison comparing host states vs target states:
-```bash
-./bin/isaac-installer plan
-./bin/isaac-installer plan --json
-```
-
-### 13-Subsystem Verification Suite (`test`)
-Runs an end-to-end verification covering:
-1. NVIDIA Driver & GPU Topology
-2. Display Server (X11 Compliance)
-3. GCC 11 & Vulkan Dev Headers
-4. Git & Git Large File Storage (Git LFS)
-5. Docker CE & NVIDIA GPU Passthrough
-6. Developer Applications (VS Code, Chrome, Discord, GitHub Desktop)
-7. Cloud & Ecosystem CLIs (`gh`, `aws`, `gcloud`, `hf`)
-8. NVMe Management & LVM2 Storage Stack
-9. Hugging Face CLI & LeRobot Dataset Visualizer
-10. Hardware Teleop (1ms FTDI rule, SpaceMouse, Manus)
-11. NVIDIA Isaac Sim Standalone Engine
-12. Isaac Lab PyTorch CUDA Linkage
-13. Desktop Shortcuts & RL Demos
-
----
-
-## 10. Implementation Roadmap & Status
+## 11. Implementation Roadmap
 
 - [x] **Core CLI & Unicode UI Engine** (`bin/isaac-installer`, `lib/core/logging.sh`)
 - [x] **Deep Hardware, NVMe & Multi-GPU Discovery** (`lib/core/detect.sh`)
@@ -325,54 +301,8 @@ Runs an end-to-end verification covering:
 - [x] **Hugging Face LeRobot & `lerobot-dataset-viz`** (`lib/modules/physical_ai.sh`)
 - [x] **Hardware Teleop Peripherals & 1ms Low-Latency Serial** (`lib/modules/hardware_teleop.sh`)
 - [x] **Multi-Version Isaac Sim Detection & Atomic Symlink Switcher** (`lib/modules/isaacsim.sh`)
-- [x] **Isaac Lab & IsaacLab-Arena Multi-Agent Linking** (`lib/modules/isaaclab.sh`, `lib/modules/isaaclab_arena.sh`)
+- [x] **Topological Isaac Lab & Arena Linking** (`lib/modules/isaaclab.sh`, `lib/modules/isaaclab_arena.sh`)
 - [x] **13-Subsystem End-to-End Verification Suite** (`cmd_test`)
+- [ ] **Two-Phase Privilege Boundary Refactor (`sys-provision` vs `dev-setup`)**
+- [ ] **Dynamic Environment Shim Implementation (`isaaclab-env` & activation hooks)**
 - [ ] **Multi-Agent Skills Registration** (`.agents/skills/isaac-baremetal-installer/SKILL.md`)
-
----
-
-## 11. Backburner Features (Low Priority / Future Iterations)
-
-The following architectural concepts represent high-value long-term force multipliers, but are **strictly low priority / backburner** and will not block initial production release.
-
-```mermaid
-flowchart LR
-    subgraph BACKBURNER ["Backburner Features (Low Priority)"]
-        B1["1. USD Asset Pre-Cacher\n(Offline simulation without AWS CDN lag)"]
-        B2["2. ROS 2 & CycloneDDS Tuning\n(Zero-copy IPC & network buffer tuning)"]
-        B3["3. Low-Latency Kernel Tuning\n(CPU governor & GPU persistence mode)"]
-        B4["4. Task / Robot Scaffolder CLI\n(Boilerplate generator for Isaac Lab gym tasks)"]
-        B5["5. Diagnostic Support Bundle\n(1-click encrypted debug tarball for AI/remote teams)"]
-        B6["6. CLI Self-Update Engine\n(Seamless upstream updates & profile migration)"]
-    end
-```
-
-### 1. Local Omniverse USD Asset Pre-Cacher (`cache preload`)
-- **Concept**: Pre-download and cache essential USD robot models (Unitree G1, Go2, H1, Franka Panda, UR10) and environments (warehouse, tabletop) directly to local NVMe storage (`~/.local/share/ov/data/Isaac/5.1/`).
-- **Goal**: Enable 100% offline, zero-internet robotics simulation bootable in under 2 seconds without streaming assets on-the-fly from NVIDIA Omniverse AWS servers.
-- **Priority**: Low / Backburner.
-
-### 2. ROS 2 Humble / Jazzy & CycloneDDS High-Throughput Network Tuning (`ros2`)
-- **Concept**: Install native ROS 2 Humble / Jazzy, configure Isaac ROS bridges (`ros2_bridge`), and apply `sysctl` Linux UDP network buffer tuning (`net.core.rmem_max=2147483647`) to prevent dropped frames when publishing 4x 1080p camera feeds from Isaac Sim to ROS 2 nodes.
-- **Goal**: Seamless hardware-in-the-loop bridge for physical robot deployment.
-- **Priority**: Low / Backburner.
-
-### 3. Low-Latency Linux Kernel & GPU Performance Tuning (`tune`)
-- **Concept**: Set CPU frequency governor to `performance` across all cores (`cpupower frequency-set -g performance`), enable NVIDIA GPU persistence mode (`nvidia-smi -pm 1`), and configure Linux Transparent HugePages (`transparent_hugepage=madvise`) for PyTorch memory allocators.
-- **Goal**: Eliminate micro-stutters during compute-intensive RL physics steps.
-- **Priority**: Low / Backburner.
-
-### 4. Custom Task & Robot Scaffolder CLI (`new`)
-- **Concept**: Interactive CLI generator (`./bin/isaac-installer new task ReachTarget --robot g1`) that scaffolds clean, standardized Isaac Lab gym task folders (`task_cfg.py`, `env_cfg.py`, `mdp/rewards.py`, `mdp/observations.py`, `rsl_rl_cfg.py`) and launch scripts.
-- **Goal**: Speed up new environment development from days to seconds.
-- **Priority**: Low / Backburner.
-
-### 5. Automated Diagnostic Support Bundle (`doctor --bundle`)
-- **Concept**: Bundle sanitized `nvidia-smi`, `dmesg`, `vulkaninfo`, `lsblk`, NVMe SMART health, and Omniverse crash logs into a single compressed `isaac-diagnostics.tar.gz` archive.
-- **Goal**: Allow remote lab teams and AI coding agents to diagnose crashes in seconds.
-- **Priority**: Low / Backburner.
-
-### 6. Seamless Self-Update & Profile Migrator (`update`)
-- **Concept**: CLI command (`./bin/isaac-installer update`) that pulls latest installer updates from GitHub, resolves merge conflicts with local YAML profiles, and runs schema migration checks.
-- **Goal**: Keep bare-metal workstations up-to-date across Isaac Sim releases without losing custom fork configurations.
-- **Priority**: Low / Backburner.
