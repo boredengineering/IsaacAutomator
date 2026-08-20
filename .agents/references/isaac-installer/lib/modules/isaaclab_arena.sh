@@ -4,22 +4,8 @@
 # ==============================================================================
 
 resolve_arena_dir() {
-    if [[ -n "${ARENA_DIR:-}" ]]; then
-        echo "${ARENA_DIR}"
-        return 0
-    fi
-
-    # Check for existing clone
-    local existing
-    if existing="$(find_existing_repo "IsaacLab-Arena")"; then
-        echo "$existing"
-        return 0
-    fi
-
-    # Default to workspace root
-    local ws_base
-    ws_base="$(resolve_default_workspace_dir)"
-    echo "${ws_base}/IsaacLab-Arena"
+    local git_repo="${ARENA_REPO:-https://github.com/isaac-sim/IsaacLab-Arena.git}"
+    resolve_repo_dest_path "IsaacLab-Arena" "${git_repo}" "${ARENA_DIR:-}"
 }
 
 check_isaaclab_arena() {
@@ -42,17 +28,12 @@ install_isaaclab_arena() {
     local lab_dir
     lab_dir="$(resolve_isaaclab_dir)"
     local git_repo="${ARENA_REPO:-https://github.com/isaac-sim/IsaacLab-Arena.git}"
-    local official_upstream="https://github.com/isaac-sim/IsaacLab-Arena.git"
+    local official_upstream="${ARENA_UPSTREAM:-https://github.com/isaac-sim/IsaacLab-Arena.git}"
     local git_branch="${ARENA_BRANCH:-release/0.1.1}"
-
-    if check_isaaclab_arena; then
-        log_success "${STAGE_CHECK_MSG}."
-        register_github_desktop_repo "${arena_dir}"
-        return 0
-    fi
+    local git_tag="${ARENA_TAG:-}"
 
     # 1. Setup repository with Fork + Upstream support & Submodules
-    setup_git_repo_with_fork "${arena_dir}" "${git_repo}" "${official_upstream}" "${git_branch}" true
+    setup_git_repo_with_fork "${arena_dir}" "${git_repo}" "${official_upstream}" "${git_branch}" "${git_tag}" true
 
     # 2. Editable pip install into Isaac Lab python runtime
     if [[ -d "${lab_dir}" && -x "${lab_dir}/isaaclab.sh" ]]; then

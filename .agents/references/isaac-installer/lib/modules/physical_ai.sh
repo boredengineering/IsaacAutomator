@@ -4,20 +4,8 @@
 # ==============================================================================
 
 resolve_lerobot_dir() {
-    if [[ -n "${LEROBOT_DIR:-}" ]]; then
-        echo "${LEROBOT_DIR}"
-        return 0
-    fi
-
-    local existing
-    if existing="$(find_existing_repo "lerobot")"; then
-        echo "$existing"
-        return 0
-    fi
-
-    local ws_base
-    ws_base="$(resolve_default_workspace_dir)"
-    echo "${ws_base}/lerobot"
+    local git_repo="${LEROBOT_REPO:-https://github.com/huggingface/lerobot.git}"
+    resolve_repo_dest_path "lerobot" "${git_repo}" "${LEROBOT_DIR:-}"
 }
 
 check_physical_ai() {
@@ -41,8 +29,9 @@ install_physical_ai_stack() {
     local lerobot_dir
     lerobot_dir="$(resolve_lerobot_dir)"
     local git_repo="${LEROBOT_REPO:-https://github.com/huggingface/lerobot.git}"
-    local official_upstream="https://github.com/huggingface/lerobot.git"
+    local official_upstream="${LEROBOT_UPSTREAM:-https://github.com/huggingface/lerobot.git}"
     local git_branch="${LEROBOT_BRANCH:-main}"
+    local git_tag="${LEROBOT_TAG:-}"
 
     # 1. Install System Video Codec Libraries (Required for LeRobot & PyAV)
     log_info "Installing FFmpeg development libraries for high-throughput video encoding..."
@@ -103,7 +92,7 @@ HFCLI
     fi
 
     # 4. Setup LeRobot Git repository with Fork + Upstream support
-    setup_git_repo_with_fork "${lerobot_dir}" "${git_repo}" "${official_upstream}" "${git_branch}" false
+    setup_git_repo_with_fork "${lerobot_dir}" "${git_repo}" "${official_upstream}" "${git_branch}" "${git_tag}" false
 
     # 5. Install editable package
     sudo -H -u "${TARGET_USER}" bash -c "

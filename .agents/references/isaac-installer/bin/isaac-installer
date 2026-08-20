@@ -654,6 +654,10 @@ Commands:
   auth [status|login|gen-ssh|git|check-perms]  Manage OAuth, API keys, Cloud Hubs & permissions
   doctor                                       Probe CPU, RAM, GPU, PCIe link, display, and OS
   plan | check                                 Perform deep pre-flight audit & conflict diff matrix
+  drift                                        Audit workspace directory hierarchy & remote state drift
+  repair | fix                                 Automatically reconcile and heal workspace drift
+  lab [status|list-tags|switch|sync]           Manage Isaac Lab versioning, tags, and fork synchronization
+  sim [list|switch]                            Discover & switch active Isaac Sim engines
   bench                                        Benchmark CDN latency to NVIDIA, Hugging Face, and GitHub
   config                                       Display active YAML configuration profile
   install                                      Run bare-metal installation according to YAML profile
@@ -671,9 +675,17 @@ Profiles & Configuration Options:
   --step | -i                  Interactive step-by-step mode (prompts before each stage)
   --json                       Output doctor / plan / auth in structured JSON format
   --workspace-dir <path>       Base directory for repos (Default: ~/Documents/GitHub)
+  --workspace-layout <type>    Layout hierarchy strategy: auto | org | flat
+  --workspace-owner <owner>    Default GitHub organization / user folder name
   --isaaclab-repo <url/slug>   Custom fork for Isaac Lab (e.g. BoredEngineer/IsaacLab)
+  --isaaclab-tag <tag>         Pin specific Isaac Lab release tag (e.g. v2.3.0)
+  --isaaclab-branch <branch>   Custom branch for Isaac Lab (e.g. main)
   --arena-repo <url/slug>      Custom fork for Arena (e.g. BoredEngineer/IsaacLab-Arena)
+  --arena-tag <tag>            Pin specific Arena release tag (e.g. v0.1.1)
+  --arena-branch <branch>      Custom branch for Arena
   --lerobot-repo <url/slug>    Custom fork for LeRobot (e.g. BoredEngineer/lerobot)
+  --lerobot-tag <tag>          Pin specific LeRobot release tag
+  --lerobot-branch <branch>    Custom branch for LeRobot
   --isaacsim-dir <path>        Custom path to Isaac Sim standalone engine
   --with-arena                 Explicitly enable IsaacLab-Arena
   --with-lerobot               Explicitly enable Hugging Face LeRobot
@@ -706,11 +718,19 @@ while [[ $# -gt 0 ]]; do
         --with-arena)          CLI_WITH_ARENA=true; shift ;;
         --with-lerobot)        CLI_WITH_LEROBOT=true; shift ;;
         --workspace-dir)       export WORKSPACE_DIR="$2"; shift 2 ;;
+        --workspace-layout)    export WORKSPACE_LAYOUT="$2"; shift 2 ;;
+        --workspace-owner)     export WORKSPACE_DEFAULT_OWNER="$2"; shift 2 ;;
         --isaaclab-repo)       export ISAACLAB_REPO="$2"; shift 2 ;;
+        --isaaclab-tag)        export ISAACLAB_TAG="$2"; shift 2 ;;
+        --isaaclab-branch)     export ISAACLAB_BRANCH="$2"; shift 2 ;;
         --isaaclab-dir)        export ISAACLAB_DIR="$2"; shift 2 ;;
         --arena-repo)          export ARENA_REPO="$2"; shift 2 ;;
+        --arena-tag)           export ARENA_TAG="$2"; shift 2 ;;
+        --arena-branch)        export ARENA_BRANCH="$2"; shift 2 ;;
         --arena-dir)           export ARENA_DIR="$2"; shift 2 ;;
         --lerobot-repo)        export LEROBOT_REPO="$2"; shift 2 ;;
+        --lerobot-tag)         export LEROBOT_TAG="$2"; shift 2 ;;
+        --lerobot-branch)      export LEROBOT_BRANCH="$2"; shift 2 ;;
         --lerobot-dir)         export LEROBOT_DIR="$2"; shift 2 ;;
         --isaacsim-dir)        export ISAACSIM_DIR="$2"; shift 2 ;;
         --stream)              STREAMING_PROVIDER="$2"; shift 2 ;;
@@ -734,6 +754,10 @@ case "${COMMAND}" in
     auth)             cmd_auth "${PASSTHROUGH_ARGS[@]:-status}" ;;
     doctor)           cmd_doctor ;;
     plan|check|audit) cmd_plan ;;
+    drift)            print_drift_report ;;
+    repair|fix)       repair_workspace_drift ;;
+    lab)              cmd_lab "${PASSTHROUGH_ARGS[@]:-status}" ;;
+    sim)              cmd_sim "${PASSTHROUGH_ARGS[@]:-list}" ;;
     bench)            cmd_bench ;;
     config)           print_active_config ;;
     install)          cmd_install ;;

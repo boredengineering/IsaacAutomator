@@ -16,21 +16,29 @@ hardware:
 
 workspace:
   root: "~/Documents/GitHub"
+  layout: "auto"                     # "auto" | "org" | "flat"
+  default_owner: "BoredEngineer"
   auto_register_github_desktop: true
 
 repositories:
   isaaclab:
     enabled: true
     repo: "https://github.com/isaac-sim/IsaacLab.git"
+    upstream: "https://github.com/isaac-sim/IsaacLab.git"
     branch: "main"
+    tag: ""
   arena:
     enabled: true
     repo: "https://github.com/isaac-sim/IsaacLab-Arena.git"
+    upstream: "https://github.com/isaac-sim/IsaacLab-Arena.git"
     branch: "release/0.1.1"
+    tag: ""
   lerobot:
     enabled: true
     repo: "https://github.com/huggingface/lerobot.git"
+    upstream: "https://github.com/huggingface/lerobot.git"
     branch: "main"
+    tag: ""
 
 simulation:
   isaacsim:

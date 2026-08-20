@@ -17,13 +17,16 @@ hardware:
 
 workspace:
   root: "~/workspace"
+  layout: "flat"
   auto_register_github_desktop: false
 
 repositories:
   isaaclab:
     enabled: true
     repo: "https://github.com/isaac-sim/IsaacLab.git"
+    upstream: "https://github.com/isaac-sim/IsaacLab.git"
     branch: "main"
+    tag: ""
   arena:
     enabled: false
   lerobot:

@@ -109,3 +109,90 @@ install_isaac_sim() {
 
     log_success "Isaac Sim ${zip_version} successfully installed at ${install_dir}."
 }
+
+# ==============================================================================
+# CLI Subcommands for Isaac Sim Multi-Version Management (`isaac-installer sim ...`)
+# ==============================================================================
+
+cmd_sim() {
+    local subcmd="${1:-list}"
+    shift || true
+
+    detect_target_user
+
+    case "$subcmd" in
+        list)
+            log_header "Discovered Isaac Sim Engine Installations"
+            local found=0
+
+            # 1. Standard ~/IsaacSim
+            if [[ -x "${TARGET_HOME}/IsaacSim/isaac-sim.sh" ]]; then
+                echo -e "  ● ${CLR_BOLD}${TARGET_HOME}/IsaacSim${CLR_RESET} (Standard Standalone)"
+                found=$((found + 1))
+            fi
+
+            # 2. Omniverse packages
+            if [[ -d "${TARGET_HOME}/.local/share/ov/pkg" ]]; then
+                while IFS= read -r pkg; do
+                    if [[ -n "$pkg" && -x "${pkg}/isaac-sim.sh" ]]; then
+                        echo -e "  ● ${CLR_BOLD}${pkg}${CLR_RESET} (Omniverse Launcher)"
+                        found=$((found + 1))
+                    fi
+                done < <(find "${TARGET_HOME}/.local/share/ov/pkg" -maxdepth 1 -type d -name "isaac*sim*" 2>/dev/null)
+            fi
+
+            # 3. System-wide
+            if [[ -x "/opt/nvidia/isaac-sim/isaac-sim.sh" ]]; then
+                echo -e "  ● ${CLR_BOLD}/opt/nvidia/isaac-sim${CLR_RESET} (System-Wide)"
+                found=$((found + 1))
+            fi
+
+            if [[ "$found" -eq 0 ]]; then
+                log_info "No Isaac Sim installations detected on host."
+                log_info "Run 'sudo ./bin/isaac-installer install' to download and install."
+            else
+                echo ""
+                log_info "Active Engine Linked to Isaac Lab:"
+                local lab_dir
+                lab_dir="$(resolve_isaaclab_dir)"
+                if [[ -L "${lab_dir}/_isaac_sim" ]]; then
+                    echo -e "  ↳ ${CLR_GREEN}$(readlink -f "${lab_dir}/_isaac_sim")${CLR_RESET}"
+                else
+                    echo -e "  ↳ ${CLR_YELLOW}None (Run ./bin/isaac-installer sim switch <path>)${CLR_RESET}"
+                fi
+            fi
+            ;;
+
+        switch)
+            local target_sim="${1:-}"
+            if [[ -z "$target_sim" ]]; then
+                log_error "Usage: ./bin/isaac-installer sim switch <path-to-isaac-sim>"
+                return 1
+            fi
+
+            target_sim="$(expand_tilde_path "$target_sim")"
+            if [[ ! -x "${target_sim}/isaac-sim.sh" ]]; then
+                log_error "Path ${target_sim} is not a valid Isaac Sim installation (missing isaac-sim.sh)."
+                return 1
+            fi
+
+            local lab_dir
+            lab_dir="$(resolve_isaaclab_dir)"
+            if [[ ! -d "${lab_dir}" ]]; then
+                log_error "Isaac Lab directory not found at ${lab_dir}."
+                return 1
+            fi
+
+            log_info "Atomically switching Isaac Lab engine -> ${target_sim}..."
+            ln -sfn "${target_sim}" "${lab_dir}/_isaac_sim.tmp.$$"
+            mv -Tf "${lab_dir}/_isaac_sim.tmp.$$" "${lab_dir}/_isaac_sim"
+            chown -h "${TARGET_USER}:${TARGET_USER}" "${lab_dir}/_isaac_sim"
+
+            log_success "Active engine switched to ${target_sim}."
+            ;;
+
+        *)
+            echo "Usage: ./bin/isaac-installer sim [list|switch <path>]"
+            ;;
+    esac
+}
