@@ -183,8 +183,8 @@ get_repo_info() {
         branch=\$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo 'HEAD')
         tag=\$(git describe --tags --exact-match 2>/dev/null || echo '')
         commit=\$(git rev-parse HEAD 2>/dev/null || echo '')
-        origin=\$(git remote get-url origin 2>/dev/null || echo '')
-        upstream=\$(git remote get-url upstream 2>/dev/null || echo '')
+        origin=\$(git remote get-url origin 2>/dev/null || git config --get remote.origin.url 2>/dev/null || echo '')
+        upstream=\$(git remote get-url upstream 2>/dev/null || git config --get remote.upstream.url 2>/dev/null || echo '')
         dirty=false
         if [[ -n \$(git status --porcelain 2>/dev/null) ]]; then dirty=true; fi
 

@@ -224,8 +224,12 @@ print_drift_report() {
 
     for item in "${DRIFT_ITEMS[@]}"; do
         IFS='|' read -r repo dtype cur target desc <<< "$item"
+        local display_cur="$cur"
+        local display_target="$target"
+        if [[ ${#display_cur} -gt 32 ]]; then display_cur="...${display_cur: -29}"; fi
+        if [[ ${#display_target} -gt 32 ]]; then display_target="...${display_target: -29}"; fi
         printf "%-18s | ${CLR_YELLOW}%-18s${CLR_RESET} | %-32s | ${CLR_GREEN}%-32s${CLR_RESET}\n" \
-            "$repo" "$dtype" "$(basename "$cur")" "$(basename "$target")"
+            "$repo" "$dtype" "$display_cur" "$display_target"
         echo -e "   ${CLR_DIM}↳ ${desc}${CLR_RESET}"
     done
     echo "----------------------------------------------------------------------------------------------------------------------"
@@ -269,7 +273,13 @@ repair_workspace_drift() {
 
             ORIGIN_MISMATCH)
                 log_info "Re-wiring origin remote on ${repo} -> ${target}..."
-                sudo -H -u "${TARGET_USER}" git -C "$(find_existing_repo "$repo")" remote set-url origin "$target" 2>/dev/null || true
+                local repo_dir
+                repo_dir="$(find_existing_repo "$repo")"
+                if sudo -H -u "${TARGET_USER}" git -C "$repo_dir" remote | grep -q '^origin$'; then
+                    sudo -H -u "${TARGET_USER}" git -C "$repo_dir" remote set-url origin "$target" 2>/dev/null || true
+                else
+                    sudo -H -u "${TARGET_USER}" git -C "$repo_dir" remote add origin "$target" 2>/dev/null || true
+                fi
                 log_success "Origin remote updated to ${target}."
                 ;;
 
@@ -277,7 +287,11 @@ repair_workspace_drift() {
                 log_info "Adding canonical upstream remote on ${repo} -> ${target}..."
                 local repo_dir
                 repo_dir="$(find_existing_repo "$repo")"
-                sudo -H -u "${TARGET_USER}" git -C "$repo_dir" remote add upstream "$target" 2>/dev/null || true
+                if sudo -H -u "${TARGET_USER}" git -C "$repo_dir" remote | grep -q '^upstream$'; then
+                    sudo -H -u "${TARGET_USER}" git -C "$repo_dir" remote set-url upstream "$target" 2>/dev/null || true
+                else
+                    sudo -H -u "${TARGET_USER}" git -C "$repo_dir" remote add upstream "$target" 2>/dev/null || true
+                fi
                 sudo -H -u "${TARGET_USER}" git -C "$repo_dir" config remote.upstream.pushurl "PUSH_DISABLED_CANONICAL_UPSTREAM" 2>/dev/null || true
                 sudo -H -u "${TARGET_USER}" git -C "$repo_dir" fetch upstream 2>/dev/null || true
                 log_success "Upstream remote wired and push-protected."
