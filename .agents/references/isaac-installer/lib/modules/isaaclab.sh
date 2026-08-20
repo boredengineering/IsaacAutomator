@@ -117,7 +117,7 @@ cmd_lab() {
     shift || true
 
     local lab_dir
-    lab_dir="$(resolve_isaaclab_dir)"
+    lab_dir="$(resolve_active_repo_dir "IsaacLab" "${ISAACLAB_REPO:-}" "${ISAACLAB_DIR:-}")"
 
     case "$subcmd" in
         status)

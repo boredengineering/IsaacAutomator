@@ -83,7 +83,7 @@ find_existing_repo() {
     return 1
 }
 
-# Resolves the exact destination folder for a repository taking layout into account
+# Resolves the exact target destination folder for a repository taking layout into account
 resolve_repo_dest_path() {
     local repo_name="$1"        # e.g. "IsaacLab"
     local repo_slug="${2:-}"    # e.g. "BoredEngineer/IsaacLab" or "https://..."
@@ -97,18 +97,11 @@ resolve_repo_dest_path() {
         return 0
     fi
 
-    # 2. Check if an existing clone already exists anywhere on disk
-    local existing
-    if existing="$(find_existing_repo "$repo_name")"; then
-        echo "$existing"
-        return 0
-    fi
-
-    # 3. Base workspace root (e.g. /home/tarfy/Documents/GitHub)
+    # 2. Base workspace root (e.g. /home/tarfy/Documents/GitHub)
     local ws_root
     ws_root="$(resolve_default_workspace_dir)"
 
-    # 4. Determine layout strategy ("auto" | "org" | "flat")
+    # 3. Determine layout strategy ("auto" | "org" | "flat")
     local layout="${WORKSPACE_LAYOUT:-${CFG_WORKSPACE_LAYOUT:-auto}}"
     local owner
     owner="$(extract_repo_owner "$repo_slug")"
@@ -147,6 +140,21 @@ resolve_repo_dest_path() {
 
     # Fallback to flat
     echo "${ws_root}/${repo_name}"
+}
+
+# Resolves currently active on-disk path or target destination path
+resolve_active_repo_dir() {
+    local repo_name="$1"
+    local repo_slug="${2:-}"
+    local explicit_path="${3:-}"
+
+    local existing
+    if existing="$(find_existing_repo "$repo_name")"; then
+        echo "$existing"
+        return 0
+    fi
+
+    resolve_repo_dest_path "$repo_name" "$repo_slug" "$explicit_path"
 }
 
 # Register a cloned or discovered repository with GitHub Desktop

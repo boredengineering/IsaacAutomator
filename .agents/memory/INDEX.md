@@ -26,6 +26,8 @@ Master index of session memory checkpoints for Isaac Automator.
 | 2026-08-20 23:11 | `e6f7a8b9` | Conda envs_dirs Registration for Multi-Conda and User Miniconda Discovery | Registered /opt/conda/envs in conda envs_dirs so ~/miniconda3 and system conda recognize named isaaclab env directly | [`20260820_231145_e6f7a8b9.md`](./sessions/20260820_231145_e6f7a8b9.md) |
 | 2026-08-20 23:14 | `f7a8b9c0` | Dynamic User Conda Discovery & Native Named Environment Creation | Auto-discovers user's ~/miniconda3 and creates named isaaclab environment natively without hardcoded paths | [`20260820_231402_f7a8b9c0.md`](./sessions/20260820_231402_f7a8b9c0.md) |
 | 2026-08-20 23:26 | `a8b9c0d1` | Automated Detection & Self-Healing of Mislocated Conda and isaaclab.sh Integration | Added CONDA_ENV_MISLOCATED/MISSING drift detection, automated cleanup of orphaned /opt/conda, and official ./isaaclab.sh --install integration | [`20260820_232600_a8b9c0d1.md`](./sessions/20260820_232600_a8b9c0d1.md) |
+| 2026-08-20 23:30 | `b9c0d1e2` | Fix Target Path Resolution for Desired Workspace Hierarchy Migration | Fixed resolve_repo_dest_path so it calculates target layout without returning the existing flat clone | [`20260820_233005_b9c0d1e2.md`](./sessions/20260820_233005_b9c0d1e2.md) |
+
 
 
 
