@@ -24,6 +24,8 @@ Master index of session memory checkpoints for Isaac Automator.
 | 2026-08-20 22:57 | `c4d5e6f7` | Arena 0.3.0, LeRobot Conflict Strategy, Custom Sim Builds, and Auto-Forking | Configured Arena 0.3.0-prerelease, LeRobot environment isolation, custom source built Isaac Sim, multi-engine switching (6.0.1/5.1.0), and GitHub fork auto-creation | [`20260820_225735_c4d5e6f7.md`](./sessions/20260820_225735_c4d5e6f7.md) |
 | 2026-08-20 23:02 | `d5e6f7a8` | Confirmation of Isaac Lab v3.0.0-beta2 Dependency on Isaac Sim 6.0.1 and Tag Pinning | Confirmed v3.0.0-beta2 requires Isaac Sim 6.0.1 and Python 3.12, pinned tag in default/full YAML profiles | [`20260820_230200_d5e6f7a8.md`](./sessions/20260820_230200_d5e6f7a8.md) |
 | 2026-08-20 23:11 | `e6f7a8b9` | Conda envs_dirs Registration for Multi-Conda and User Miniconda Discovery | Registered /opt/conda/envs in conda envs_dirs so ~/miniconda3 and system conda recognize named isaaclab env directly | [`20260820_231145_e6f7a8b9.md`](./sessions/20260820_231145_e6f7a8b9.md) |
+| 2026-08-20 23:14 | `f7a8b9c0` | Dynamic User Conda Discovery & Native Named Environment Creation | Auto-discovers user's ~/miniconda3 and creates named isaaclab environment natively without hardcoded paths | [`20260820_231402_f7a8b9c0.md`](./sessions/20260820_231402_f7a8b9c0.md) |
+
 
 
 

@@ -46,19 +46,25 @@ install_isaac_lab() {
 
     # 3. Execute Isaac Lab Installer & Topological Extension Setup
     log_info "Installing Isaac Lab extensions in topological order..."
-    local conda_py="/opt/conda/envs/isaaclab/bin/python"
+    local env_path
+    env_path="$(resolve_conda_env_path "isaaclab")"
+    local conda_py="${env_path}/bin/python"
     local uv_bin
     uv_bin="$(command -v uv || echo "${TARGET_HOME}/.local/bin/uv")"
 
     if [[ -x "${conda_py}" && -x "${uv_bin}" ]]; then
-        log_info "Accelerating extension installation into 'isaaclab' Conda environment via UV..."
+        log_info "Accelerating extension installation into 'isaaclab' Conda environment (${conda_py}) via UV..."
         sudo -H -u "${TARGET_USER}" bash -c "
             cd '${lab_dir}'
             # Topological installation order: Base -> Assets -> Tasks -> RL
             for ext in source/extensions/omni.isaac.lab \
                        source/extensions/omni.isaac.lab_assets \
                        source/extensions/omni.isaac.lab_tasks \
-                       source/extensions/omni.isaac.lab_rl; do
+                       source/extensions/omni.isaac.lab_rl \
+                       source/isaaclab \
+                       source/isaaclab_assets \
+                       source/isaaclab_tasks \
+                       source/isaaclab_rl; do
                 if [[ -d \"\$ext\" ]]; then
                     echo \"  ↳ Linking \$ext...\"
                     '${uv_bin}' pip install --python '${conda_py}' -e \"\$ext\" 2>/dev/null || true

@@ -3,11 +3,10 @@
 # conda.sh - Hybrid Conda Named Environment + UV Pip Engine & Activation Hooks
 # ==============================================================================
 
-CONDA_ROOT="/opt/conda"
 CONDA_ENV_NAME="isaaclab"
 
 resolve_target_python_version() {
-    local sim_version="${SIMULATION_VERSION:-${CFG_SIMULATION_ISAACSIM_VERSION:-5.1.0}}"
+    local sim_version="${SIMULATION_VERSION:-${CFG_SIMULATION_ISAACSIM_VERSION:-6.0.1}}"
     if [[ "$sim_version" == 6.* ]]; then
         echo "3.12"
     else
@@ -15,20 +14,76 @@ resolve_target_python_version() {
     fi
 }
 
+resolve_conda_bin() {
+    detect_target_user
+
+    # 1. Check user PATH
+    local user_conda
+    user_conda="$(sudo -H -u "${TARGET_USER}" bash -l -c "command -v conda 2>/dev/null" || true)"
+    if [[ -n "$user_conda" && -x "$user_conda" ]]; then
+        echo "$user_conda"
+        return 0
+    fi
+
+    # 2. Check standard user and system paths
+    for dir in "${TARGET_HOME}/miniconda3" "${TARGET_HOME}/miniforge3" "${TARGET_HOME}/anaconda3" "${TARGET_HOME}/.conda" "/opt/conda"; do
+        if [[ -x "${dir}/bin/conda" ]]; then
+            echo "${dir}/bin/conda"
+            return 0
+        fi
+    done
+
+    # Default fallback when installing fresh Miniforge
+    echo "${TARGET_HOME}/miniforge3/bin/conda"
+}
+
+resolve_conda_env_path() {
+    local env_name="${1:-isaaclab}"
+    detect_target_user
+    local conda_bin
+    conda_bin="$(resolve_conda_bin)"
+
+    if [[ -x "$conda_bin" ]]; then
+        local detected_path
+        detected_path="$(sudo -H -u "${TARGET_USER}" "$conda_bin" env list --json 2>/dev/null | python3 -c "
+import sys, json
+try:
+    data = json.load(sys.stdin)
+    for p in data.get('envs', []):
+        if p.endswith('/${env_name}') or p.endswith('\\\\${env_name}'):
+            print(p)
+            break
+except:
+    pass
+" 2>/dev/null || true)"
+        if [[ -n "$detected_path" && -d "$detected_path" ]]; then
+            echo "$detected_path"
+            return 0
+        fi
+    fi
+
+    local conda_root
+    conda_root="$(dirname "$(dirname "$conda_bin")")"
+    echo "${conda_root}/envs/${env_name}"
+}
+
 check_python_env() {
     local py_ver
     py_ver="$(resolve_target_python_version)"
-    local env_path="${CONDA_ROOT}/envs/${CONDA_ENV_NAME}"
+    local conda_bin
+    conda_bin="$(resolve_conda_bin)"
+    local env_path
+    env_path="$(resolve_conda_env_path "${CONDA_ENV_NAME}")"
 
     local missing=()
     command -v uv &>/dev/null || missing+=("uv package manager")
-    [[ -x "${CONDA_ROOT}/bin/conda" ]] || missing+=("Miniforge at ${CONDA_ROOT}")
+    [[ -x "${conda_bin}" ]] || missing+=("Conda binary (${conda_bin})")
     [[ -d "${env_path}" && -x "${env_path}/bin/python" ]] || missing+=("Conda environment '${CONDA_ENV_NAME}' (Python ${py_ver})")
     [[ -f "${env_path}/etc/conda/activate.d/00_isaaclab_env.sh" ]] || missing+=("Conda activation hooks")
     command -v isaaclab-env &>/dev/null || missing+=("isaaclab-env CLI shim")
 
     if [[ ${#missing[@]} -eq 0 ]]; then
-        STAGE_CHECK_MSG="Hybrid Conda '${CONDA_ENV_NAME}' (Python ${py_ver}) + UV and clean activation hooks already configured"
+        STAGE_CHECK_MSG="Hybrid Conda '${CONDA_ENV_NAME}' (Python ${py_ver}) + UV and clean activation hooks already configured at ${env_path}"
         return 0
     else
         STAGE_CHECK_MSG="Missing components: ${missing[*]}"
@@ -37,12 +92,15 @@ check_python_env() {
 }
 
 install_python_env() {
-    log_step "Configuring Hybrid Python Runtime (Conda Named Env + UV Acceleration)..."
+    log_step "Configuring Hybrid Python Runtime (Named Conda Env '${CONDA_ENV_NAME}' + UV Acceleration)..."
     detect_target_user
 
     local py_ver
     py_ver="$(resolve_target_python_version)"
-    local env_path="${CONDA_ROOT}/envs/${CONDA_ENV_NAME}"
+    local conda_bin
+    conda_bin="$(resolve_conda_bin)"
+    local conda_root
+    conda_root="$(dirname "$(dirname "$conda_bin")")"
     local sim_dir="${ISAACSIM_DIR:-${TARGET_HOME}/IsaacSim}"
 
     # 1. Install UV (Fast Rust-based Python package manager)
@@ -52,41 +110,28 @@ install_python_env() {
         sudo ln -sf "${TARGET_HOME}/.local/bin/uv" /usr/local/bin/uv 2>/dev/null || true
     fi
 
-    # 2. Install Miniforge into /opt/conda for multi-environment isolation
-    if [[ ! -x "${CONDA_ROOT}/bin/conda" ]]; then
-        log_info "Installing Miniforge into ${CONDA_ROOT}..."
+    # 2. Install Miniforge if no user Conda exists
+    if [[ ! -x "${conda_bin}" ]]; then
+        log_info "No Conda installation detected. Installing Miniforge into ${conda_root}..."
         local installer_url="https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh"
         wget -q -O /tmp/miniforge.sh "${installer_url}"
-        sudo bash /tmp/miniforge.sh -b -p "${CONDA_ROOT}"
+        sudo -H -u "${TARGET_USER}" bash /tmp/miniforge.sh -b -p "${conda_root}"
         rm -f /tmp/miniforge.sh
-        sudo chown -R "${TARGET_USER}:${TARGET_USER}" "${CONDA_ROOT}"
-
-        cat << 'CONDA_PROF' | sudo tee /etc/profile.d/conda.sh >/dev/null
-if [ -x /opt/conda/bin/conda ]; then
-    export PATH="/opt/conda/bin:$PATH"
-fi
-CONDA_PROF
-        sudo chmod 644 /etc/profile.d/conda.sh
+        sudo -H -u "${TARGET_USER}" "${conda_bin}" init bash 2>/dev/null || true
+    else
+        log_info "Using detected Conda installation: ${conda_bin}"
     fi
 
-    # Initialize conda for user and register /opt/conda/envs in search paths
-    sudo -H -u "${TARGET_USER}" bash -c "
-        if ! grep -q 'conda initialize' ~/.bashrc 2>/dev/null; then
-            ${CONDA_ROOT}/bin/conda init bash 2>/dev/null || true
-        fi
-        # Register /opt/conda/envs in conda envs_dirs so 'conda activate isaaclab' works from user's miniconda/base
-        if command -v conda &>/dev/null; then
-            conda config --append envs_dirs '${CONDA_ROOT}/envs' 2>/dev/null || true
-        fi
-        ${CONDA_ROOT}/bin/conda config --append envs_dirs '${CONDA_ROOT}/envs' 2>/dev/null || true
-    "
+    # 3. Create or Verify Native Named Conda Environment ('isaaclab')
+    local env_path
+    env_path="$(resolve_conda_env_path "${CONDA_ENV_NAME}")"
 
-    # 3. Create or Verify Named Conda Environment ('isaaclab')
     if [[ ! -d "${env_path}" || ! -x "${env_path}/bin/python" ]]; then
-        log_info "Creating central named Conda environment '${CONDA_ENV_NAME}' with Python ${py_ver}..."
-        sudo -H -u "${TARGET_USER}" "${CONDA_ROOT}/bin/conda" create -y -n "${CONDA_ENV_NAME}" python="${py_ver}" pip
+        log_info "Creating named Conda environment '${CONDA_ENV_NAME}' with Python ${py_ver} in ${conda_root}..."
+        sudo -H -u "${TARGET_USER}" "${conda_bin}" create -y -n "${CONDA_ENV_NAME}" python="${py_ver}" pip
+        env_path="$(resolve_conda_env_path "${CONDA_ENV_NAME}")"
     else
-        log_info "Conda environment '${CONDA_ENV_NAME}' already exists."
+        log_info "Named Conda environment '${CONDA_ENV_NAME}' already exists at ${env_path}."
     fi
 
     # 4. Accelerate PyTorch + CUDA Installation using UV inside Conda Env
@@ -104,12 +149,11 @@ CONDA_PROF
 
     # 5. Configure Scoped Activation Hooks (Guarantees Zero Global Shell Contamination)
     log_info "Configuring scoped Conda activation hooks in ${env_path}/etc/conda/..."
-    mkdir -p "${env_path}/etc/conda/activate.d"
-    mkdir -p "${env_path}/etc/conda/deactivate.d"
+    sudo -H -u "${TARGET_USER}" mkdir -p "${env_path}/etc/conda/activate.d" "${env_path}/etc/conda/deactivate.d"
 
-    cat << HOOK_ACT | sudo tee "${env_path}/etc/conda/activate.d/00_isaaclab_env.sh" >/dev/null
+    cat << HOOK_ACT | sudo -H -u "${TARGET_USER}" tee "${env_path}/etc/conda/activate.d/00_isaaclab_env.sh" >/dev/null
 #!/usr/bin/env bash
-# Scoped Omniverse Environment Variables (Active only while 'isaaclab' is activated)
+# Scoped Omniverse Environment Variables (Active only while '${CONDA_ENV_NAME}' is activated)
 export _OLD_ISAAC_EXP_PATH="\${EXP_PATH:-}"
 export _OLD_ISAAC_PATH="\${ISAAC_PATH:-}"
 export _OLD_CARB_APP_PATH="\${CARB_APP_PATH:-}"
@@ -120,9 +164,9 @@ export ISAAC_PATH="${sim_dir}"
 export CARB_APP_PATH="${sim_dir}/kit"
 export VK_ICD_FILENAMES="/etc/vulkan/icd.d/nvidia_icd.json"
 HOOK_ACT
-    sudo chmod 755 "${env_path}/etc/conda/activate.d/00_isaaclab_env.sh"
+    chmod 755 "${env_path}/etc/conda/activate.d/00_isaaclab_env.sh"
 
-    cat << HOOK_DEACT | sudo tee "${env_path}/etc/conda/deactivate.d/00_isaaclab_env.sh" >/dev/null
+    cat << HOOK_DEACT | sudo -H -u "${TARGET_USER}" tee "${env_path}/etc/conda/deactivate.d/00_isaaclab_env.sh" >/dev/null
 #!/usr/bin/env bash
 # Cleanly restore previous shell environment upon 'conda deactivate'
 if [[ -n "\${_OLD_ISAAC_EXP_PATH}" ]]; then export EXP_PATH="\${_OLD_ISAAC_EXP_PATH}"; else unset EXP_PATH; fi
@@ -131,46 +175,44 @@ if [[ -n "\${_OLD_CARB_APP_PATH}" ]]; then export CARB_APP_PATH="\${_OLD_CARB_AP
 if [[ -n "\${_OLD_VK_ICD_FILENAMES}" ]]; then export VK_ICD_FILENAMES="\${_OLD_VK_ICD_FILENAMES}"; else unset VK_ICD_FILENAMES; fi
 unset _OLD_ISAAC_EXP_PATH _OLD_ISAAC_PATH _OLD_CARB_APP_PATH _OLD_VK_ICD_FILENAMES
 HOOK_DEACT
-    sudo chmod 755 "${env_path}/etc/conda/deactivate.d/00_isaaclab_env.sh"
-
-    sudo chown -R "${TARGET_USER}:${TARGET_USER}" "${env_path}/etc" 2>/dev/null || true
+    chmod 755 "${env_path}/etc/conda/deactivate.d/00_isaaclab_env.sh"
 
     # 6. Deploy Zero-Activation CLI Shim (/usr/local/bin/isaaclab-env)
     log_info "Deploying zero-activation CLI shim: /usr/local/bin/isaaclab-env..."
-    cat << 'SHIM' | sudo tee /usr/local/bin/isaaclab-env >/dev/null
+    cat << SHIM | sudo tee /usr/local/bin/isaaclab-env >/dev/null
 #!/usr/bin/env bash
 # ==============================================================================
 # isaaclab-env - Scoped Runner for Headless Scripts, CI/CD, and Terminal Executions
 # ==============================================================================
 set -e
 
-SIM_PATH="${ISAACSIM_DIR:-$HOME/IsaacSim}"
-export EXP_PATH="${SIM_PATH}/apps"
-export ISAAC_PATH="${SIM_PATH}"
-export CARB_APP_PATH="${SIM_PATH}/kit"
+SIM_PATH="\${ISAACSIM_DIR:-\$HOME/IsaacSim}"
+export EXP_PATH="\${SIM_PATH}/apps"
+export ISAAC_PATH="\${SIM_PATH}"
+export CARB_APP_PATH="\${SIM_PATH}/kit"
 export VK_ICD_FILENAMES="/etc/vulkan/icd.d/nvidia_icd.json"
 
-CONDA_PY="/opt/conda/envs/isaaclab/bin/python"
+CONDA_PY="${env_path}/bin/python"
 
-if [[ $# -eq 0 ]]; then
+if [[ \$# -eq 0 ]]; then
     echo "Usage: isaaclab-env <command> [args...]"
     echo "Example: isaaclab-env python scripts/reinforcement_learning/rsl_rl/train.py --task Isaac-Ant-v0"
     exit 1
 fi
 
-if [[ "$1" == "python" || "$1" == "python3" ]]; then
+if [[ "\$1" == "python" || "\$1" == "python3" ]]; then
     shift
-    if [[ -x "${CONDA_PY}" ]]; then
-        export PATH="/opt/conda/envs/isaaclab/bin:$PATH"
-        exec "${CONDA_PY}" "$@"
+    if [[ -x "\${CONDA_PY}" ]]; then
+        export PATH="${env_path}/bin:\$PATH"
+        exec "\${CONDA_PY}" "\$@"
     else
-        exec python3 "$@"
+        exec python3 "\$@"
     fi
 else
-    if [[ -x "${CONDA_PY}" ]]; then
-        export PATH="/opt/conda/envs/isaaclab/bin:$PATH"
+    if [[ -x "\${CONDA_PY}" ]]; then
+        export PATH="${env_path}/bin:\$PATH"
     fi
-    exec "$@"
+    exec "\$@"
 fi
 SHIM
     sudo chmod 0755 /usr/local/bin/isaaclab-env
@@ -180,6 +222,6 @@ SHIM
     cp -f /usr/local/bin/isaaclab-env "$(dirname "$0")/../bin/isaaclab-env" 2>/dev/null || true
     chmod 0755 "$(dirname "$0")/../bin/isaaclab-env" 2>/dev/null || true
 
-    log_success "Hybrid Python environment ('${CONDA_ENV_NAME}' + UV + Scoped Hooks) ready."
+    log_success "Hybrid Python environment ('${CONDA_ENV_NAME}' at ${env_path} + UV + Scoped Hooks) ready."
 }
 
