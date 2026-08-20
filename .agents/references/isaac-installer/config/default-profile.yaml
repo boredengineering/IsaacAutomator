@@ -27,8 +27,8 @@ repositories:
     enabled: true
     repo: "BoredEngineer/IsaacLab"
     upstream: "https://github.com/isaac-sim/IsaacLab.git"
-    branch: "main"
-    tag: ""                          # e.g. "v3.0.0-beta2" (empty = use branch)
+    branch: ""
+    tag: "v3.0.0-beta2"                  # Exact pinned tag for Arena 0.3.0 & Isaac Sim 6.0.1
   arena:
     enabled: true
     repo: "BoredEngineer/IsaacLab-Arena"

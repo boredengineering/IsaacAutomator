@@ -26,8 +26,8 @@ repositories:
     enabled: true
     repo: "BoredEngineer/IsaacLab"
     upstream: "https://github.com/isaac-sim/IsaacLab.git"
-    branch: "main"
-    tag: ""
+    branch: ""
+    tag: "v3.0.0-beta2"
   arena:
     enabled: true
     repo: "BoredEngineer/IsaacLab-Arena"
