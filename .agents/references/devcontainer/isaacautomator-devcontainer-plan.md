@@ -294,3 +294,146 @@ if __name__ == "__main__":
    * Run non-interactive plan tests for GCP (`./deploy-gcp`), AWS, and Azure inside the DevContainer.
 4. **Phase 4: Documentation & Operator Guide**
    * Update `README.md` and `AGENTS.md` with instructions for launching via VS Code DevContainers, GitHub Codespaces, and Cursor.
+
+---
+
+## 8. Multi-Agent MCP & Robotics Skills Architecture (v2.0 Expansion)
+
+To empower AI coding agents (Google Antigravity, Claude Code, Cursor) to manage both cloud infrastructure and local physical bare-metal workstations, the DevContainer environment is expanded with specialized **Model Context Protocol (MCP) Servers** and **Robotics Agent Skills**.
+
+```mermaid
+flowchart TD
+    subgraph IDEAgents ["AI Agent Orchestration Layer"]
+        AGY["Google Antigravity (/root/.gemini)"]
+        CLAUDE["Claude Code (/root/.claude)"]
+    end
+
+    subgraph ConfigLayer ["Unified Configuration Bridge"]
+        SETUP["setup.sh Bootstrap Hook"]
+        MCP_JSON[".mcp.json (Workspace Root)"]
+        SKILLS_JSON[".agents/skills.json"]
+    end
+
+    subgraph MCPServers ["Integrated MCP Servers"]
+        TF_MCP["terraform (IaC Provider Engine)"]
+        ANS_MCP["ansible (Playbook & Role Linting)"]
+        GCP_MCP["gcp-cloud (Cloud Compute & IAM)"]
+        PW_MCP["playwright (noVNC & WebRTC GUI Testing)"]
+        DOCKER_MCP["docker-engine (GPU Container Passthrough)"]
+        HW_MCP["linux-hardware-probe (GPU, PCIe & Vulkan Inspector)"]
+        DOCS_MCP["nvidia-isaac-docs (Isaac Sim/Lab API Retriever)"]
+    end
+
+    subgraph SkillsCatalog ["Robotics & Infrastructure Skills"]
+        SKILL_AUTO["isaac-automator (Deploy, Connect, Lifecycle)"]
+        SKILL_BARE["isaac-baremetal-installer (Physical Host Probe & Fallback)"]
+        SKILL_ROS["ros2-isaac-bridge (ROS 2 Humble & DDS Tuning)"]
+        SKILL_STREAM["gpu-teleoperation-streaming (Sunshine / NVENC)"]
+        SKILL_NV["335+ Official NVIDIA Accelerated Skills"]
+    end
+
+    IDEAgents --> ConfigLayer
+    ConfigLayer --> MCPServers
+    ConfigLayer --> SkillsCatalog
+```
+
+---
+
+### 8.1 Target MCP Servers Specification
+
+In addition to the 4 core DevOps MCP servers (`terraform`, `ansible`, `gcp-cloud`, `playwright`), the DevContainer adds:
+
+| MCP Server | Runtime / Package | Purpose & Capabilities | Configuration Entry |
+| :--- | :--- | :--- | :--- |
+| **`docker-engine`** | Node.js (`@modelcontextprotocol/server-docker`) | Direct programmatic control to inspect GPU containers, check Docker socket status, and manage NVIDIA container runtime. | `npx -y @modelcontextprotocol/server-docker` |
+| **`linux-hardware-probe`** | Python / Shell bridge | Deep inspection of PCIe lane width, GPU VRAM allocation, Vulkan ICD loader status, display server sockets (`$DISPLAY`), and Secure Boot state. | `python3 /app/src/python/mcp/hw_probe.py` |
+| **`nvidia-isaac-docs`** | Node / Local vector index | Fast semantic lookup and API retriever for Isaac Sim, Isaac Lab, and Omniverse Kit extensions. | `node /app/src/mcp/isaac-docs/index.js` |
+
+#### Updated `.mcp.json` (Workspace Root):
+```json
+{
+  "mcpServers": {
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest", "--headless", "--no-sandbox"]
+    },
+    "terraform": {
+      "command": "/usr/local/bin/terraform-mcp-server",
+      "args": ["stdio", "--toolsets=all"]
+    },
+    "ansible": {
+      "command": "npx",
+      "args": ["-y", "@ansible/ansible-mcp-server", "--stdio"]
+    },
+    "gcp-cloud": {
+      "command": "npx",
+      "args": ["-y", "@google-cloud/gcloud-mcp"]
+    },
+    "docker-engine": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-docker"]
+    }
+  }
+}
+```
+
+---
+
+### 8.2 Robotics Agent Skills Catalog
+
+The agent skills ecosystem is structured into distinct functional domains:
+
+1. **`isaac-baremetal-installer` (`.agents/skills/isaac-baremetal-installer/SKILL.md`)**:
+   - Diagnoses fresh Ubuntu 22.04 bare-metal physical machines.
+   - Automatically probes NVIDIA drivers, DKMS, Vulkan, and GDM/Wayland.
+   - Guides the installation of Isaac Sim (standalone/pip/source), Isaac Lab, and Arena when cloud methods are unavailable.
+2. **`ros2-isaac-bridge` (`.agents/skills/ros2-isaac-bridge/SKILL.md`)**:
+   - Configures ROS 2 Humble/Iron on the host or inside containers.
+   - Tunes CycloneDDS / FastDDS for low-latency simulation data exchange.
+   - Configures camera, lidar, and joint state publishers between Omniverse and ROS.
+3. **`gpu-teleoperation-streaming` (`.agents/skills/gpu-teleoperation-streaming/SKILL.md`)**:
+   - Manages Sunshine NVENC server and Moonlight client pairing.
+   - Configures WebRTC hardware encoding in KasmVNC for browser-based 3D control.
+
+---
+
+### 8.3 DevContainer Setup Automation (`.devcontainer/setup.sh`)
+
+The bootstrap script is upgraded to automatically register and synchronize all MCP servers and skills for both **Google Antigravity** and **Claude Code**:
+
+```bash
+# 1. Antigravity MCP Sync
+mkdir -p /root/.gemini/config
+cp "${WORKSPACE_DIR}/.mcp.json" /root/.gemini/config/mcp_config.json
+
+# 2. Claude Code MCP Pre-Registration (User Scope)
+if command -v claude &>/dev/null; then
+    claude mcp add --scope user terraform -- /usr/local/bin/terraform-mcp-server stdio --toolsets=all 2>/dev/null || true
+    claude mcp add --scope user playwright -- npx -y @playwright/mcp@latest --headless --no-sandbox 2>/dev/null || true
+    claude mcp add --scope user ansible -- npx -y @ansible/ansible-mcp-server --stdio 2>/dev/null || true
+    claude mcp add --scope user gcp-cloud -- npx -y @google-cloud/gcloud-mcp 2>/dev/null || true
+    claude mcp add --scope user docker-engine -- npx -y @modelcontextprotocol/server-docker 2>/dev/null || true
+fi
+
+# 3. Skills Registration (.agents/skills.json)
+cat << 'JSON_EOF' > "${WORKSPACE_DIR}/.agents/skills.json"
+{
+  "entries": [
+    { "path": ".agents/skills/isaac-automator" },
+    { "path": ".agents/skills/isaac-baremetal-installer" },
+    { "path": ".agents/skills/ros2-isaac-bridge" },
+    { "path": ".agents/skills/gpu-teleoperation-streaming" },
+    { "path": ".agents/skills" }
+  ]
+}
+JSON_EOF
+```
+
+---
+
+### 8.4 Phase 5 Rollout: Robotics MCPs & Skills
+- [ ] Add `@modelcontextprotocol/server-docker` to `.mcp.json` and `.devcontainer/setup.sh`.
+- [ ] Author `isaac-baremetal-installer`, `ros2-isaac-bridge`, and `gpu-teleoperation-streaming` skill definitions in `.agents/skills/`.
+- [ ] Validate Docker socket passthrough inside DevContainer (`/var/run/docker.sock`).
+- [ ] Verify seamless multi-agent tool execution across both Antigravity and Claude Code.
+
