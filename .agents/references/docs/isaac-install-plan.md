@@ -52,51 +52,157 @@ flowchart TD
 
 ---
 
-## 3. Python Environment Architecture: The Environment Shim Pattern
+## 3. Python Environment Architecture: Hybrid Conda + UV Pip Model
 
-### The Problem with Global `setup_conda_env.sh`
-Sourcing Isaac Sim's `setup_conda_env.sh` globally in `~/.bashrc` mutates `PYTHONPATH` and `LD_LIBRARY_PATH` with Omniverse kit libraries. This causes **binary ABI crashes** when running standard Python tools, PyTorch models, or CLI utilities outside of Isaac Sim.
+### 3.1 The Isaac Sim Pip Package vs. Standalone Engine Rationale
 
-### The Solution: Dynamic Environment Shimming (`isaaclab-env` & Virtualenv Hooks)
+NVIDIA introduced `pip install isaacsim` (and modular wheels `isaacsim-rl`, `isaacsim-kernel`) on PyPI. While appealing for small CI test scripts, in real-world robotics development it presents severe landmines:
 
-Instead of contaminating the host shell, `isaac-installer` configures a **Scoped Environment Shim**:
+| Dimension | `pip install isaacsim` | Standalone Engine (`~/IsaacSim` + `_isaac_sim`) |
+| :--- | :--- | :--- |
+| **PyTorch & CUDA ABI Compatibility** | Bundles fixed C++ Carbonite symbols that clash with custom PyTorch versions, causing silent `SIGSEGV` or symbol errors. | Completely decoupled; runs with matched system CUDA drivers and runtime libraries. |
+| **Vulkan Shaders & Kit Assets** | Lacks full native Omniverse asset packs and precompiled shader caches; causes renderer stutter and warmup failures. | Ships complete native USD assets, MaterialX shaders, and pre-warmed Vulkan pipelines. |
+| **Download Reliability & Size** | 10+ separate multi-gigabyte wheels from PyPI; frequently times out or fails checksums on standard connections. | Single verified high-speed CDN archive or local cache with resume support. |
+| **Isaac Lab Ecosystem Linkage** | Experimental; unsupported by many research extensions. | **The official gold standard**; expects `_isaac_sim` symlink with native `isaac-sim.sh` and `python.sh`. |
+
+> **Architectural Decision**: `isaac-installer` strictly provisions the **Standalone Isaac Sim Engine** and links it into Isaac Lab via the POSIX `_isaac_sim` atomic symlink standard.
+
+---
+
+### 3.2 Conda vs. UV: Ergonomics vs. Speed Trade-Offs
+
+In robotics workflows, developers move constantly between different project directories, ROS 2 workspaces, dataset stores, and IDEs.
+
+```mermaid
+flowchart TD
+    subgraph CONDA_MODEL ["Conda / Mamba (Environment-Centric)"]
+        C1["Named Envs in central location (~/.conda/envs/isaaclab)"]
+        C2["Global activation from ANY folder: conda activate isaaclab"]
+        C3["Auto-discovered by VS Code, Cursor, PyCharm, Jupyter"]
+        C4["Manages non-Python C/C++ libs (libGL, FFmpeg, CUDA toolkit)"]
+        C5["Downside: Standard solver and pip are notoriously slow"]
+    end
+
+    subgraph UV_MODEL ["UV (Project / Directory-Centric)"]
+        U1["Local directory .venv by default (requires full path or cd)"]
+        U2["Blazing fast installer (10x-50x faster than standard pip)"]
+        U3["Does NOT manage system C/C++ binaries or CUDA drivers"]
+        U4["Perfect for fast lockfiles and isolated CI/CD pipelines"]
+        U5["Downside: Extra friction when moving between arbitrary terminal folders"]
+    end
+```
+
+#### The Friction Points:
+1. **The UV Friction Point**: UV defaults to directory-local virtual environments (`.venv`). If a developer is in `~/Documents` or a ROS 2 workspace, they cannot simply type `uv activate isaaclab`. They must either pass `--directory`, supply the full path (`source ~/Documents/GitHub/BoredEngineer/IsaacLab/.venv/bin/activate`), or maintain custom aliases.
+2. **The Conda Friction Point**: Standard `conda install` and `pip install` inside Conda are slow, take 10–20 minutes to resolve large wheels like PyTorch and torchvision, and can fail with timeout errors on large extension builds.
+
+---
+
+### 3.3 The Solution: The Hybrid Conda + UV Pip Acceleration Model
+
+We unify the global convenience of Conda with the blazing resolution speed of UV:
 
 ```mermaid
 flowchart LR
-    DEV["Developer / VS Code"] --> SHIM["isaaclab-env [command]"]
-    SHIM --> RUN["Subshell with Exported Omniverse Paths\n(EXP_PATH, RESOURCE_NAME, Vulkan ICD)"]
-    RUN --> EXEC["Executes Script / PyTorch / Gym Task"]
-    EXEC --> EXIT["Exits: Host Shell Remains 100% Clean"]
+    DEV["Developer / IDE / Terminal"] --> CONDA["Conda Named Environment\n('conda activate isaaclab')"]
+    CONDA --> UV["UV Package Engine\n('uv pip install --python $CONDA_PREFIX/bin/python')"]
+    UV --> EXT["Topological Editable Extensions\n(omni.isaac.lab, Arena, LeRobot)"]
+    EXT --> RUNTIME["High-Performance Isaac Lab Runtime"]
 ```
 
 ```text
-Host Shell (.bashrc)
-└── Clean Python / Conda / UV Environment (No Global Isaac Sim PYTHONPATH)
-    ├── Standard Python Projects (run independently without library collisions)
-    └── Scoped Invocation:
-        ├── Direct CLI:       isaaclab-env python train.py --task Isaac-Cartpole-v0
-        ├── Conda Activate:   conda activate isaaclab (sources env-vars on activation only)
-        └── Project Virtual:  source ~/workspaces/robot_project/.venv/bin/activate_isaac
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│ Hybrid Architecture Highlights:                                                        │
+│                                                                                        │
+│ 1. Central Named Environment:                                                          │
+│    • Created via Miniforge/Conda: `conda create -y -n isaaclab python=3.10`            │
+│    • Globally accessible from ANY terminal directory: `conda activate isaaclab`        │
+│    • Automatically discovered by VS Code, Cursor, and PyCharm interpreters.            │
+│                                                                                        │
+│ 2. Sub-Second UV Package Acceleration:                                                 │
+│    • Packages inside the Conda environment are installed via `uv pip`:                 │
+│      `uv pip install --python "$CONDA_PREFIX/bin/python" torch==2.5.1+cu124`           │
+│    • Editable extensions are installed in seconds:                                     │
+│      `uv pip install --python "$CONDA_PREFIX/bin/python" -e source/extensions/...`     │
+│    • Eliminates the 15-minute conda solver wait and pip timeout failures.              │
+└────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Topological Extension Installation Order
+---
+
+### 3.4 Shell Cleanliness & Scoped Activation Hook Guarantee
+
+A major trap in manual Isaac Lab setups is sourcing `setup_conda_env.sh` inside `~/.bashrc`. This permanently pollutes the host shell with Omniverse `PYTHONPATH` and `LD_LIBRARY_PATH`, breaking non-simulation Python packages and system utilities.
+
+`isaac-installer` guarantees **Zero Shell Contamination** using scoped Conda activation hooks:
+
+```text
+/opt/conda/envs/isaaclab/etc/conda/
+├── activate.d/
+│   └── 00_isaaclab_env.sh      <-- Scopes Omniverse paths ONLY upon 'conda activate isaaclab'
+└── deactivate.d/
+    └── 00_isaaclab_env.sh      <-- Completely unsets and restores previous shell state upon 'deactivate'
+```
+
+#### Hook Implementation Logic:
+* **Upon `conda activate isaaclab`**:
+  Exports scoped variables:
+  ```bash
+  export EXP_PATH="${ISAACSIM_DIR}/apps"
+  export ISAAC_PATH="${ISAACSIM_DIR}"
+  export CARB_APP_PATH="${ISAACSIM_DIR}/kit"
+  export VK_ICD_FILENAMES="/etc/vulkan/icd.d/nvidia_icd.json"
+  ```
+* **Upon `conda deactivate`**:
+  Restores original `PYTHONPATH`, `LD_LIBRARY_PATH`, and unsets all Omniverse environment variables.
+* **Global `~/.bashrc`**:
+  Remains **100% untouched and clean**. Non-Isaac terminals are never affected by simulation library paths.
+
+---
+
+### 3.5 Developer Interaction Modes
+
+The hybrid model supports all four primary robotics development workflows:
+
+| Workflow Mode | Command / Invocation | Use Case |
+| :--- | :--- | :--- |
+| **1. Global Interactive Terminal** | `conda activate isaaclab`<br>`python scripts/reinforcement_learning/rsl_rl/train.py --task Isaac-Ant-v0` | Day-to-day interactive RL training and development from any directory. |
+| **2. Zero-Activation CLI Shim** | `isaaclab-env python train.py --task Isaac-Cartpole-v0` | Headless execution, bash scripts, tmux workers, or CI/CD pipelines without manual activation. |
+| **3. Bundled Sim Runner** | `./isaaclab.sh -p scripts/tutorials/00_sim/create_empty.py` | Official standalone Isaac Lab bundled scripts. |
+| **4. IDE / Debugger** | Select `/opt/conda/envs/isaaclab/bin/python` in IDE | Visual Studio Code, Cursor, PyCharm interactive breakpoints and linting. |
+
+---
+
+### 3.6 Topological Extension Installation Order
 
 To guarantee stability, extensions and downstream packages must be compiled and linked in strict topological dependency order:
 
 ```mermaid
 flowchart TD
-    T0["0. Base Python 3.10 Runtime (UV / Conda) + Pip / Wheel"]
-    T1["1. Pinned PyTorch CUDA (torch==2.5.1+cu124 matching GPU Arch)"]
+    T0["0. Base Python 3.10 Runtime (Conda Env 'isaaclab')"]
+    T1["1. Accelerated PyTorch CUDA via UV (torch==2.5.1+cu124 matching GPU Arch)"]
     T2["2. Core Extension: source/extensions/omni.isaac.lab"]
     T3["3. Asset Extension: source/extensions/omni.isaac.lab_assets"]
     T4["4. Tasks Extension: source/extensions/omni.isaac.lab_tasks"]
     T5["5. RL Extension: source/extensions/omni.isaac.lab_rl"]
     T6["6. RL Frameworks (rsl_rl, skrl, rl_games, stable-baselines3)"]
-    T7["7. Benchmark Suite (IsaacLab-Arena via editable pip -e .)"]
+    T7["7. Benchmark Suite (IsaacLab-Arena via uv pip -e .)"]
     T8["8. Physical AI / Imitation Learning (LeRobot [all,dataset_viz])"]
 
     T0 --> T1 --> T2 --> T3 --> T4 --> T5 --> T6 --> T7 --> T8
 ```
+
+---
+
+### 3.7 Verification & Audit Plan for Hybrid Model
+
+Before writing the implementation code for this subsystem, the following verification gates are established:
+
+1. **Discovery Gate**: Check if Conda (`/opt/conda/bin/conda` or `~/miniconda3/bin/conda` or `~/.local/share/mamba/bin/mamba`) and UV (`~/.cargo/bin/uv` or `/usr/local/bin/uv`) are installed. If missing, auto-install in Phase 2.
+2. **Environment Creation Gate**: Verify `conda env list` contains `isaaclab` with matching Python version (`3.10` for Sim 5.1, `3.12` for Sim 6.0).
+3. **PyTorch Tensor Gate**: Run `uv pip` to verify `torch.cuda.is_available()` returns `True` and recognizes active GPU (RTX 4090 / Blackwell).
+4. **Shell Isolation Gate**: Open a clean non-Conda subshell and assert that `PYTHONPATH` and `LD_LIBRARY_PATH` contain zero references to Omniverse Kit directories.
+5. **Activation Hook Gate**: Assert that `conda activate isaaclab` exports `EXP_PATH` and `CARB_APP_PATH`, and `conda deactivate` restores the previous environment.
 
 ---
 
@@ -455,9 +561,9 @@ The following architectural points require specific team and stakeholder review 
 - [x] **Hardware Teleop Peripherals & 1ms Low-Latency Serial** (`lib/modules/hardware_teleop.sh`)
 - [x] **Multi-Version Isaac Sim Detection & Atomic Symlink Switcher** (`lib/modules/isaacsim.sh`)
 - [x] **13-Subsystem End-to-End Verification Suite** (`cmd_test`)
-- [ ] **Workspace Hierarchy Engine (`~/Documents/GitHub/<Owner>/<Repo>`)** (`lib/core/git_workspace.sh`)
-- [ ] **Dual-Remote Fork & Tag/Branch Management (`lab switch`, `lab sync`)** (`lib/modules/isaaclab.sh`)
-- [ ] **State Tracking, Drift Reconciliation & Self-Healing Engine (`repair` / `fix`)** (`lib/core/state.sh`)
+- [x] **Workspace Hierarchy Engine (`~/Documents/GitHub/<Owner>/<Repo>`)** (`lib/core/git_workspace.sh`)
+- [x] **Dual-Remote Fork & Tag/Branch Management (`lab switch`, `lab sync`)** (`lib/modules/isaaclab.sh`)
+- [x] **State Tracking, Drift Reconciliation & Self-Healing Engine (`repair` / `fix`)** (`lib/core/state.sh`)
+- [ ] **Hybrid Conda Named Environment + UV Pip Engine & Activation Hooks** (`lib/modules/conda.sh`)
 - [ ] **Two-Phase Privilege Boundary Refactor (`sys-provision` vs `dev-setup`)**
-- [ ] **Dynamic Environment Shim Implementation (`isaaclab-env` & activation hooks)**
 - [ ] **Multi-Agent Skills Registration** (`.agents/skills/isaac-baremetal-installer/SKILL.md`)
