@@ -288,8 +288,55 @@ for d in drifts:
     if [[ "$arena_enabled" == "true" ]]; then
         if [[ -z "$arena_existing" || ! -d "${arena_existing}/.git" ]]; then
             DRIFT_ITEMS+=("IsaacLab-Arena|REPO_MISSING|None|${arena_target_path}|IsaacLab-Arena repository is not cloned on disk")
-        elif [[ "$arena_existing" != "$arena_target_path" ]]; then
-            DRIFT_ITEMS+=("IsaacLab-Arena|PATH_MISLOCATED|${arena_existing}|${arena_target_path}|Arena located at flat or legacy path instead of desired hierarchy")
+        else
+            if [[ "$arena_existing" != "$arena_target_path" ]]; then
+                DRIFT_ITEMS+=("IsaacLab-Arena|PATH_MISLOCATED|${arena_existing}|${arena_target_path}|Arena located at flat or legacy path instead of desired hierarchy")
+            fi
+
+            local arena_info
+            arena_info="$(get_repo_info "$arena_existing")"
+            local arena_desired_ref="${ARENA_TAG:-${ARENA_BRANCH:-release/0.1.1}}"
+            local arena_origin_norm="$(normalize_git_url "${ARENA_REPO:-https://github.com/boredengineering/IsaacLab-Arena.git}")"
+            local arena_upstream_norm="$(normalize_git_url "${ARENA_UPSTREAM:-https://github.com/isaac-sim/IsaacLab-Arena.git}")"
+
+            local arena_drift
+            arena_drift=$(python3 -c "
+import json
+info = json.loads('''${arena_info}''')
+desired_origin = '${arena_origin_norm}'
+desired_upstream = '${arena_upstream_norm}'
+desired_ref = '${arena_desired_ref}'
+
+def clean_url(u):
+    if not u: return ''
+    return u.rstrip('/').removesuffix('.git').lower()
+
+cur_origin = info.get('origin', '')
+cur_upstream = info.get('upstream', '')
+
+drifts = []
+if desired_origin and cur_origin and clean_url(cur_origin) != clean_url(desired_origin):
+    drifts.append(f'ORIGIN_MISMATCH|{cur_origin}|{desired_origin}|Origin remote points to unexpected URL')
+
+if clean_url(desired_origin) != clean_url(desired_upstream):
+    if not cur_upstream:
+        drifts.append(f'UPSTREAM_MISSING|None|{desired_upstream}|Upstream canonical remote not wired')
+    elif clean_url(cur_upstream) != clean_url(desired_upstream):
+        drifts.append(f'UPSTREAM_MISMATCH|{cur_upstream}|{desired_upstream}|Upstream remote points to unexpected URL')
+
+active_ref = info.get('tag') if info.get('tag') else info.get('branch')
+if desired_ref and active_ref and active_ref != desired_ref:
+    drifts.append(f'REF_DRIFT|{active_ref}|{desired_ref}|Active ref differs from target YAML ref')
+
+for d in drifts:
+    print(d)
+" 2>/dev/null || true)
+
+            while IFS= read -r line; do
+                if [[ -n "$line" ]]; then
+                    DRIFT_ITEMS+=("IsaacLab-Arena|${line}")
+                fi
+            done <<< "$arena_drift"
         fi
     fi
 
@@ -303,8 +350,55 @@ for d in drifts:
     if [[ "$lerobot_enabled" == "true" ]]; then
         if [[ -z "$lerobot_existing" || ! -d "${lerobot_existing}/.git" ]]; then
             DRIFT_ITEMS+=("LeRobot|REPO_MISSING|None|${lerobot_target_path}|LeRobot repository is not cloned on disk")
-        elif [[ "$lerobot_existing" != "$lerobot_target_path" ]]; then
-            DRIFT_ITEMS+=("LeRobot|PATH_MISLOCATED|${lerobot_existing}|${lerobot_target_path}|LeRobot located at flat or legacy path instead of desired hierarchy")
+        else
+            if [[ "$lerobot_existing" != "$lerobot_target_path" ]]; then
+                DRIFT_ITEMS+=("LeRobot|PATH_MISLOCATED|${lerobot_existing}|${lerobot_target_path}|LeRobot located at flat or legacy path instead of desired hierarchy")
+            fi
+
+            local lerobot_info
+            lerobot_info="$(get_repo_info "$lerobot_existing")"
+            local lerobot_desired_ref="${LEROBOT_TAG:-${LEROBOT_BRANCH:-main}}"
+            local lerobot_origin_norm="$(normalize_git_url "${LEROBOT_REPO:-https://github.com/huggingface/lerobot.git}")"
+            local lerobot_upstream_norm="$(normalize_git_url "${LEROBOT_UPSTREAM:-https://github.com/huggingface/lerobot.git}")"
+
+            local lerobot_drift
+            lerobot_drift=$(python3 -c "
+import json
+info = json.loads('''${lerobot_info}''')
+desired_origin = '${lerobot_origin_norm}'
+desired_upstream = '${lerobot_upstream_norm}'
+desired_ref = '${lerobot_desired_ref}'
+
+def clean_url(u):
+    if not u: return ''
+    return u.rstrip('/').removesuffix('.git').lower()
+
+cur_origin = info.get('origin', '')
+cur_upstream = info.get('upstream', '')
+
+drifts = []
+if desired_origin and cur_origin and clean_url(cur_origin) != clean_url(desired_origin):
+    drifts.append(f'ORIGIN_MISMATCH|{cur_origin}|{desired_origin}|Origin remote points to unexpected URL')
+
+if clean_url(desired_origin) != clean_url(desired_upstream):
+    if not cur_upstream:
+        drifts.append(f'UPSTREAM_MISSING|None|{desired_upstream}|Upstream canonical remote not wired')
+    elif clean_url(cur_upstream) != clean_url(desired_upstream):
+        drifts.append(f'UPSTREAM_MISMATCH|{cur_upstream}|{desired_upstream}|Upstream remote points to unexpected URL')
+
+active_ref = info.get('tag') if info.get('tag') else info.get('branch')
+if desired_ref and active_ref and active_ref != desired_ref:
+    drifts.append(f'REF_DRIFT|{active_ref}|{desired_ref}|Active ref differs from target YAML ref')
+
+for d in drifts:
+    print(d)
+" 2>/dev/null || true)
+
+            while IFS= read -r line; do
+                if [[ -n "$line" ]]; then
+                    DRIFT_ITEMS+=("LeRobot|${line}")
+                fi
+            done <<< "$lerobot_drift"
         fi
     fi
 
@@ -430,7 +524,7 @@ repair_workspace_drift() {
                         install_isaaclab_arena
                         ;;
                     LeRobot)
-                        install_lerobot
+                        install_physical_ai_stack
                         ;;
                 esac
                 log_success "${repo} provisioned."
