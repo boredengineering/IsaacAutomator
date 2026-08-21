@@ -90,4 +90,74 @@ sudo ./bin/isaac-installer install \
 
 # Check Cloud Hubs, OAuth & user permissions:
 ./bin/isaac-installer auth status
+
+# Audit workspace state and remote drift:
+./bin/isaac-installer drift
+
+# Automatically reconcile and heal workspace drift:
+sudo ./bin/isaac-installer repair
+```
+
+---
+
+## Dual-Remote Fork Topology & Development Workflows
+
+When developing physical AI and robotics models, developers need access to their personal GitHub fork for pushing custom experiments and branches, while simultaneously pulling official releases, tags, and PR changes from NVIDIA upstream.
+
+`isaac-installer` automatically configures this **Dual-Remote Git Topology**:
+
+```text
+=== Git Remotes (.git/config) ===
+origin    https://github.com/boredengineering/IsaacLab.git (fetch & push allowed)
+upstream  https://github.com/isaac-sim/IsaacLab.git (fetch only)
+          🔒 pushurl: PUSH_DISABLED_CANONICAL_UPSTREAM
+```
+
+### Day-to-Day Developer Workflows:
+
+#### Workflow A: Developing Features & Opening Upstream PRs
+```bash
+# 1. Switch to your main branch
+git checkout main
+
+# 2. Sync your local main with NVIDIA upstream/main and push to your fork:
+./bin/isaac-installer lab sync
+
+# 3. Create your new feature branch:
+git checkout -b feature/my-new-robot
+
+# 4. Make edits, train models, commit changes:
+git add .
+git commit -m "feat: implement custom humanoid task"
+
+# 5. Push your feature branch to your personal fork (Push is allowed):
+git push -u origin feature/my-new-robot
+
+# 6. Open a Pull Request from boredengineering/IsaacLab -> isaac-sim/IsaacLab
+# (Via GitHub Desktop or 'gh pr create')
+```
+
+#### Workflow B: Pinned Release Tags (e.g. Isaac Sim 6.0 Compatibility)
+```bash
+# To switch to a different official release tag:
+./bin/isaac-installer lab list-tags
+./bin/isaac-installer lab switch v3.0.0-beta2
+```
+
+### Dual-Remote CLI Commands:
+```bash
+# View active branch, tag, commit, and upstream sync telemetry:
+./bin/isaac-installer lab status
+
+# Inspect full remote URLs and push guards:
+./bin/isaac-installer lab remotes
+
+# Synchronize branch with upstream:
+./bin/isaac-installer lab sync
+
+# Abort an in-progress rebase or merge:
+./bin/isaac-installer lab sync --abort
+
+# Re-wire origin remote to another fork or organization:
+./bin/isaac-installer lab fork boredengineering/IsaacLab
 ```
