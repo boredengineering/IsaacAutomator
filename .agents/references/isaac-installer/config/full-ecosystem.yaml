@@ -17,7 +17,7 @@ hardware:
 workspace:
   root: "~/Documents/GitHub"
   layout: "auto"                     # "auto" | "org" | "flat"
-  default_owner: "boredengineering"
+  default_owner: "BoredEngineer"
   auto_register_github_desktop: true
   auto_create_fork: true
 
