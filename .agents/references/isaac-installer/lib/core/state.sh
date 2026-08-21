@@ -3,14 +3,26 @@
 # state.sh - Persistent State Ledger, Drift Detection & Self-Healing Engine
 # ==============================================================================
 
-STATE_DIR="${TARGET_HOME:-$HOME}/.isaac-installer"
-STATE_FILE="${STATE_DIR}/state.json"
-RESUME_SERVICE="/etc/systemd/system/isaac-installer-resume.service"
+resolve_state_dir() {
+    detect_target_user
+    echo "${TARGET_HOME}/.isaac-installer"
+}
+
+resolve_state_file() {
+    detect_target_user
+    echo "${TARGET_HOME}/.isaac-installer/state.json"
+}
 
 init_state() {
-    mkdir -p "${STATE_DIR}"
-    if [[ ! -f "${STATE_FILE}" ]]; then
-        cat << JSON > "${STATE_FILE}"
+    detect_target_user
+    local state_dir
+    state_dir="$(resolve_state_dir)"
+    local state_file
+    state_file="$(resolve_state_file)"
+
+    mkdir -p "${state_dir}"
+    if [[ ! -f "${state_file}" ]]; then
+        cat << JSON > "${state_file}"
 {
   "current_stage": "init",
   "stages_completed": [],
@@ -20,13 +32,15 @@ init_state() {
   "repositories": {}
 }
 JSON
-        chown -R "${TARGET_USER}:${TARGET_USER}" "${STATE_DIR}" 2>/dev/null || true
+        chown -R "${TARGET_USER}:${TARGET_USER}" "${state_dir}" 2>/dev/null || true
     fi
 }
 
 get_current_stage() {
-    if [[ -f "${STATE_FILE}" ]]; then
-        grep -o '"current_stage": *"[^"]*"' "${STATE_FILE}" | cut -d'"' -f4
+    local state_file
+    state_file="$(resolve_state_file)"
+    if [[ -f "${state_file}" ]]; then
+        grep -o '"current_stage": *"[^"]*"' "${state_file}" | cut -d'"' -f4
     else
         echo "init"
     fi
@@ -34,8 +48,10 @@ get_current_stage() {
 
 is_stage_completed() {
     local stage_name="$1"
-    if [[ -f "${STATE_FILE}" ]]; then
-        grep -q "\"${stage_name}\"" "${STATE_FILE}"
+    local state_file
+    state_file="$(resolve_state_file)"
+    if [[ -f "${state_file}" ]]; then
+        grep -q "\"${stage_name}\"" "${state_file}"
     else
         return 1
     fi
@@ -44,12 +60,16 @@ is_stage_completed() {
 set_stage() {
     local next_stage="$1"
     init_state
+    local state_file
+    state_file="$(resolve_state_file)"
+    local state_dir
+    state_dir="$(resolve_state_dir)"
     
     local updated_json
     updated_json=$(python3 -c "
 import json, datetime
 try:
-    with open('${STATE_FILE}', 'r') as f:
+    with open('${state_file}', 'r') as f:
         data = json.load(f)
 except Exception:
     data = {'stages_completed': []}
@@ -67,8 +87,8 @@ if '${next_stage}' == 'completed':
 
 print(json.dumps(data, indent=2))
 ")
-    echo "$updated_json" > "${STATE_FILE}"
-    chown -R "${TARGET_USER}:${TARGET_USER}" "${STATE_DIR}" 2>/dev/null || true
+    echo "$updated_json" > "${state_file}"
+    chown -R "${TARGET_USER}:${TARGET_USER}" "${state_dir}" 2>/dev/null || true
 }
 
 # Updates the persistent ledger with repository state
@@ -81,10 +101,15 @@ update_repo_ledger() {
     local linked_sim="${6:-}"
 
     init_state
+    local state_file
+    state_file="$(resolve_state_file)"
+    local state_dir
+    state_dir="$(resolve_state_dir)"
+
     python3 -c "
 import json, datetime
 try:
-    with open('${STATE_FILE}', 'r') as f:
+    with open('${state_file}', 'r') as f:
         data = json.load(f)
 except Exception:
     data = {}
@@ -102,10 +127,69 @@ data['repositories']['${repo_key}'] = {
 }
 data['updated_at'] = datetime.datetime.utcnow().isoformat() + 'Z'
 
-with open('${STATE_FILE}', 'w') as f:
+with open('${state_file}', 'w') as f:
     json.dump(data, f, indent=2)
 "
-    chown -R "${TARGET_USER}:${TARGET_USER}" "${STATE_DIR}" 2>/dev/null || true
+    chown -R "${TARGET_USER}:${TARGET_USER}" "${state_dir}" 2>/dev/null || true
+}
+
+# Takes a full snapshot of active workspace state and writes it to state.json
+sync_state_ledger() {
+    detect_target_user
+    init_state
+    local state_file
+    state_file="$(resolve_state_file)"
+    local state_dir
+    state_dir="$(resolve_state_dir)"
+
+    local lab_existing
+    lab_existing="$(find_existing_repo "IsaacLab" || echo "")"
+    local lab_info="{\"exists\": false}"
+    if [[ -n "$lab_existing" ]]; then
+        lab_info="$(get_repo_info "$lab_existing")"
+    fi
+
+    local arena_existing
+    arena_existing="$(find_existing_repo "IsaacLab-Arena" || echo "")"
+    local arena_info="{\"exists\": false}"
+    if [[ -n "$arena_existing" ]]; then
+        arena_info="$(get_repo_info "$arena_existing")"
+    fi
+
+    local conda_env
+    conda_env="$(resolve_conda_env_path "isaaclab" 2>/dev/null || echo "")"
+    local sim_dir="${ISAACSIM_DIR:-${TARGET_HOME}/IsaacSim}"
+
+    python3 -c "
+import json, datetime
+try:
+    with open('${state_file}', 'r') as f:
+        data = json.load(f)
+except Exception:
+    data = {}
+
+data['updated_at'] = datetime.datetime.utcnow().isoformat() + 'Z'
+data['target_user'] = '${TARGET_USER}'
+data['workspace_root'] = '$(resolve_default_workspace_dir)'
+data['simulation'] = {
+    'version': '${ISAACSIM_VERSION:-6.0.1}',
+    'install_dir': '${sim_dir}',
+    'exists': $([[ -d "$sim_dir" ]] && echo "True" || echo "False")
+}
+data['conda'] = {
+    'env_name': 'isaaclab',
+    'env_path': '${conda_env}',
+    'exists': $([[ -d "$conda_env" && -x "$conda_env/bin/python" ]] && echo "True" || echo "False")
+}
+data['repositories'] = {
+    'isaaclab': json.loads('''${lab_info}'''),
+    'arena': json.loads('''${arena_info}''')
+}
+
+with open('${state_file}', 'w') as f:
+    json.dump(data, f, indent=2)
+" 2>/dev/null || true
+    chown -R "${TARGET_USER}:${TARGET_USER}" "${state_dir}" 2>/dev/null || true
 }
 
 # ==============================================================================
@@ -123,28 +207,32 @@ audit_workspace_drift() {
     local layout="${WORKSPACE_LAYOUT:-${CFG_WORKSPACE_LAYOUT:-auto}}"
 
     # 1. Audit Isaac Lab
+    local lab_enabled="${CFG_REPOSITORIES_ISAACLAB_ENABLED:-true}"
     local lab_target_path
-    lab_target_path="$(resolve_repo_dest_path "IsaacLab" "${ISAACLAB_REPO:-https://github.com/isaac-sim/IsaacLab.git}" "${ISAACLAB_DIR:-}")"
+    lab_target_path="$(resolve_repo_dest_path "IsaacLab" "${ISAACLAB_REPO:-https://github.com/boredengineering/IsaacLab.git}" "${ISAACLAB_DIR:-}")"
     local lab_existing
     lab_existing="$(find_existing_repo "IsaacLab" || echo "")"
 
-    if [[ -n "$lab_existing" ]]; then
-        if [[ "$lab_existing" != "$lab_target_path" ]]; then
-            DRIFT_ITEMS+=("IsaacLab|PATH_MISLOCATED|${lab_existing}|${lab_target_path}|Repository located at flat or legacy path instead of desired hierarchy")
-        fi
+    if [[ "$lab_enabled" == "true" ]]; then
+        if [[ -z "$lab_existing" || ! -d "${lab_existing}/.git" ]]; then
+            DRIFT_ITEMS+=("IsaacLab|REPO_MISSING|None|${lab_target_path}|Isaac Lab repository is not cloned or installed on disk")
+        else
+            if [[ "$lab_existing" != "$lab_target_path" ]]; then
+                DRIFT_ITEMS+=("IsaacLab|PATH_MISLOCATED|${lab_existing}|${lab_target_path}|Repository located at flat or legacy path instead of desired hierarchy")
+            fi
 
-        local lab_info
-        lab_info="$(get_repo_info "$lab_existing")"
-        local desired_ref="${ISAACLAB_TAG:-${ISAACLAB_BRANCH:-main}}"
-        
-        # Check remotes & ref drift
-        local desired_origin_norm
-        desired_origin_norm="$(normalize_git_url "${ISAACLAB_REPO:-https://github.com/isaac-sim/IsaacLab.git}")"
-        local desired_upstream_norm
-        desired_upstream_norm="$(normalize_git_url "${ISAACLAB_UPSTREAM:-https://github.com/isaac-sim/IsaacLab.git}")"
+            local lab_info
+            lab_info="$(get_repo_info "$lab_existing")"
+            local desired_ref="${ISAACLAB_TAG:-${ISAACLAB_BRANCH:-main}}"
+            
+            # Check remotes & ref drift
+            local desired_origin_norm
+            desired_origin_norm="$(normalize_git_url "${ISAACLAB_REPO:-https://github.com/boredengineering/IsaacLab.git}")"
+            local desired_upstream_norm
+            desired_upstream_norm="$(normalize_git_url "${ISAACLAB_UPSTREAM:-https://github.com/isaac-sim/IsaacLab.git}")"
 
-        local drift_check
-        drift_check=$(python3 -c "
+            local drift_check
+            drift_check=$(python3 -c "
 import json
 info = json.loads('''${lab_info}''')
 desired_origin = '${desired_origin_norm}'
@@ -176,37 +264,48 @@ for d in drifts:
     print(d)
 " 2>/dev/null || true)
 
-        while IFS= read -r line; do
-            if [[ -n "$line" ]]; then
-                DRIFT_ITEMS+=("IsaacLab|${line}")
-            fi
-        done <<< "$drift_check"
+            while IFS= read -r line; do
+                if [[ -n "$line" ]]; then
+                    DRIFT_ITEMS+=("IsaacLab|${line}")
+                fi
+            done <<< "$drift_check"
 
-        # Check symlink
-        local sim_dir="${ISAACSIM_DIR:-${TARGET_HOME}/IsaacSim}"
-        if [[ ! -L "${lab_existing}/_isaac_sim" ]] || [[ "$(readlink -f "${lab_existing}/_isaac_sim" 2>/dev/null)" != "${sim_dir}" ]]; then
-            DRIFT_ITEMS+=("IsaacLab|BROKEN_SYMLINK|${lab_existing}/_isaac_sim|${sim_dir}|_isaac_sim symlink broken or points to stale engine")
+            # Check symlink
+            local sim_dir="${ISAACSIM_DIR:-${TARGET_HOME}/IsaacSim}"
+            if [[ ! -L "${lab_existing}/_isaac_sim" ]] || [[ "$(readlink -f "${lab_existing}/_isaac_sim" 2>/dev/null)" != "${sim_dir}" ]]; then
+                DRIFT_ITEMS+=("IsaacLab|BROKEN_SYMLINK|${lab_existing}/_isaac_sim|${sim_dir}|_isaac_sim symlink broken or points to stale engine")
+            fi
         fi
     fi
 
     # 2. Audit IsaacLab-Arena
+    local arena_enabled="${CFG_REPOSITORIES_ARENA_ENABLED:-true}"
     local arena_target_path
-    arena_target_path="$(resolve_repo_dest_path "IsaacLab-Arena" "${ARENA_REPO:-https://github.com/isaac-sim/IsaacLab-Arena.git}" "${ARENA_DIR:-}")"
+    arena_target_path="$(resolve_repo_dest_path "IsaacLab-Arena" "${ARENA_REPO:-https://github.com/boredengineering/IsaacLab-Arena.git}" "${ARENA_DIR:-}")"
     local arena_existing
     arena_existing="$(find_existing_repo "IsaacLab-Arena" || echo "")"
 
-    if [[ -n "$arena_existing" && "$arena_existing" != "$arena_target_path" ]]; then
-        DRIFT_ITEMS+=("IsaacLab-Arena|PATH_MISLOCATED|${arena_existing}|${arena_target_path}|Arena located at flat or legacy path instead of desired hierarchy")
+    if [[ "$arena_enabled" == "true" ]]; then
+        if [[ -z "$arena_existing" || ! -d "${arena_existing}/.git" ]]; then
+            DRIFT_ITEMS+=("IsaacLab-Arena|REPO_MISSING|None|${arena_target_path}|IsaacLab-Arena repository is not cloned on disk")
+        elif [[ "$arena_existing" != "$arena_target_path" ]]; then
+            DRIFT_ITEMS+=("IsaacLab-Arena|PATH_MISLOCATED|${arena_existing}|${arena_target_path}|Arena located at flat or legacy path instead of desired hierarchy")
+        fi
     fi
 
     # 3. Audit LeRobot
+    local lerobot_enabled="${CFG_REPOSITORIES_LEROBOT_ENABLED:-false}"
     local lerobot_target_path
     lerobot_target_path="$(resolve_repo_dest_path "lerobot" "${LEROBOT_REPO:-https://github.com/huggingface/lerobot.git}" "${LEROBOT_DIR:-}")"
     local lerobot_existing
     lerobot_existing="$(find_existing_repo "lerobot" || echo "")"
 
-    if [[ -n "$lerobot_existing" && "$lerobot_existing" != "$lerobot_target_path" ]]; then
-        DRIFT_ITEMS+=("LeRobot|PATH_MISLOCATED|${lerobot_existing}|${lerobot_target_path}|LeRobot located at flat or legacy path instead of desired hierarchy")
+    if [[ "$lerobot_enabled" == "true" ]]; then
+        if [[ -z "$lerobot_existing" || ! -d "${lerobot_existing}/.git" ]]; then
+            DRIFT_ITEMS+=("LeRobot|REPO_MISSING|None|${lerobot_target_path}|LeRobot repository is not cloned on disk")
+        elif [[ "$lerobot_existing" != "$lerobot_target_path" ]]; then
+            DRIFT_ITEMS+=("LeRobot|PATH_MISLOCATED|${lerobot_existing}|${lerobot_target_path}|LeRobot located at flat or legacy path instead of desired hierarchy")
+        fi
     fi
 
     # 4. Audit Conda Environment Drift
@@ -283,6 +382,7 @@ repair_workspace_drift() {
 
     if [[ ${#DRIFT_ITEMS[@]} -eq 0 ]]; then
         log_success "No drift detected. Workspace is healthy and clean."
+        sync_state_ledger
         return 0
     fi
 
@@ -293,6 +393,22 @@ repair_workspace_drift() {
         log_step "Reconciling [${repo}]: ${dtype}..."
 
         case "$dtype" in
+            REPO_MISSING)
+                log_info "Provisioning missing repository [${repo}] -> ${target}..."
+                case "$repo" in
+                    IsaacLab)
+                        install_isaac_lab
+                        ;;
+                    IsaacLab-Arena)
+                        install_isaaclab_arena
+                        ;;
+                    LeRobot)
+                        install_lerobot
+                        ;;
+                esac
+                log_success "${repo} provisioned."
+                ;;
+
             PATH_MISLOCATED)
                 log_info "Migrating ${cur} -> ${target}..."
                 if [[ -d "$target" ]]; then
@@ -310,23 +426,19 @@ repair_workspace_drift() {
                 log_info "Re-wiring origin remote on ${repo} -> ${target}..."
                 local repo_dir
                 repo_dir="$(find_existing_repo "$repo")"
-                if sudo -H -u "${TARGET_USER}" git -C "$repo_dir" remote | grep -q '^origin$'; then
-                    sudo -H -u "${TARGET_USER}" git -C "$repo_dir" remote set-url origin "$target" 2>/dev/null || true
-                else
-                    sudo -H -u "${TARGET_USER}" git -C "$repo_dir" remote add origin "$target" 2>/dev/null || true
-                fi
+                sudo -H -u "${TARGET_USER}" git -C "$repo_dir" config --global --add safe.directory "$repo_dir" 2>/dev/null || true
+                sudo -H -u "${TARGET_USER}" git -C "$repo_dir" remote set-url origin "$target" 2>/dev/null || \
+                sudo -H -u "${TARGET_USER}" git -C "$repo_dir" remote add origin "$target" 2>/dev/null || true
                 log_success "Origin remote updated to ${target}."
                 ;;
 
-            UPSTREAM_MISSING)
+            UPSTREAM_MISSING|UPSTREAM_MISMATCH)
                 log_info "Adding canonical upstream remote on ${repo} -> ${target}..."
                 local repo_dir
                 repo_dir="$(find_existing_repo "$repo")"
-                if sudo -H -u "${TARGET_USER}" git -C "$repo_dir" remote | grep -q '^upstream$'; then
-                    sudo -H -u "${TARGET_USER}" git -C "$repo_dir" remote set-url upstream "$target" 2>/dev/null || true
-                else
-                    sudo -H -u "${TARGET_USER}" git -C "$repo_dir" remote add upstream "$target" 2>/dev/null || true
-                fi
+                sudo -H -u "${TARGET_USER}" git -C "$repo_dir" config --global --add safe.directory "$repo_dir" 2>/dev/null || true
+                sudo -H -u "${TARGET_USER}" git -C "$repo_dir" remote set-url upstream "$target" 2>/dev/null || \
+                sudo -H -u "${TARGET_USER}" git -C "$repo_dir" remote add upstream "$target" 2>/dev/null || true
                 sudo -H -u "${TARGET_USER}" git -C "$repo_dir" config remote.upstream.pushurl "PUSH_DISABLED_CANONICAL_UPSTREAM" 2>/dev/null || true
                 sudo -H -u "${TARGET_USER}" git -C "$repo_dir" fetch upstream 2>/dev/null || true
                 log_success "Upstream remote wired and push-protected."
@@ -377,25 +489,22 @@ repair_workspace_drift() {
         esac
     done
 
-    # Re-index Python runtime after healing using official ./isaaclab.sh --install in healed Conda env
+    # Run extension installation and sync ledger
     local lab_dir
-    lab_dir="$(resolve_isaaclab_dir)"
-    if [[ -d "${lab_dir}" && -x "${lab_dir}/isaaclab.sh" ]]; then
+    lab_dir="$(resolve_active_repo_dir "IsaacLab")"
+    if [[ -d "$lab_dir" && -x "$lab_dir/isaaclab.sh" ]]; then
         log_step "Running official ./isaaclab.sh --install in healed Conda environment..."
         local env_path
-        env_path="$(resolve_conda_env_path "isaaclab" 2>/dev/null || echo "")"
-        if [[ -x "${env_path}/bin/python" ]]; then
-            sudo -H -u "${TARGET_USER}" bash -c "
-                export CONDA_PREFIX='${env_path}'
-                export PATH='${env_path}/bin:\$PATH'
+        env_path="$(resolve_conda_env_path "isaaclab")"
+        if [[ -d "$env_path" ]]; then
+            sudo -H -u "${TARGET_USER}" PATH="${env_path}/bin:${PATH}" CONDA_PREFIX="${env_path}" bash -c "
                 cd '${lab_dir}'
                 ./isaaclab.sh --install
             " 2>/dev/null || true
-        else
-            sudo -H -u "${TARGET_USER}" bash -c "cd '${lab_dir}' && ./isaaclab.sh --install" 2>/dev/null || true
         fi
     fi
 
+    sync_state_ledger
     log_success "Workspace reconciliation complete. All drift resolved."
 }
 
