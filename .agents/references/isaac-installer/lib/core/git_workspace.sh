@@ -190,9 +190,10 @@ get_repo_info() {
     git config --global --add safe.directory "${repo_path}" 2>/dev/null || true
     sudo -H -u "${TARGET_USER}" git config --global --add safe.directory "${repo_path}" 2>/dev/null || true
 
-    local branch tag commit origin upstream dirty
+    local branch tag tags commit origin upstream dirty
     branch="$(sudo -H -u "${TARGET_USER}" git -C "${repo_path}" rev-parse --abbrev-ref HEAD 2>/dev/null || echo 'HEAD')"
     tag="$(sudo -H -u "${TARGET_USER}" git -C "${repo_path}" describe --tags --exact-match 2>/dev/null || echo '')"
+    tags="$(sudo -H -u "${TARGET_USER}" git -C "${repo_path}" tag --points-at HEAD 2>/dev/null | tr '\n' ',' | sed 's/,$//')"
     commit="$(sudo -H -u "${TARGET_USER}" git -C "${repo_path}" rev-parse HEAD 2>/dev/null || echo '')"
     origin="$(sudo -H -u "${TARGET_USER}" git -C "${repo_path}" config --get remote.origin.url 2>/dev/null || echo '')"
     upstream="$(sudo -H -u "${TARGET_USER}" git -C "${repo_path}" config --get remote.upstream.url 2>/dev/null || echo '')"
@@ -208,6 +209,7 @@ print(json.dumps({
     'path': '''${repo_path}''',
     'branch': '''${branch}''',
     'tag': '''${tag}''',
+    'tags': [t.strip() for t in '''${tags}'''.split(',') if t.strip()],
     'commit': '''${commit}''',
     'origin': '''${origin}''',
     'upstream': '''${upstream}''',

@@ -256,9 +256,22 @@ if clean_url(desired_origin) != clean_url(desired_upstream):
     elif clean_url(cur_upstream) != clean_url(desired_upstream):
         drifts.append(f'UPSTREAM_MISMATCH|{cur_upstream}|{desired_upstream}|Upstream remote points to unexpected URL')
 
-active_ref = info.get('tag') if info.get('tag') else info.get('branch')
-if desired_ref and active_ref and active_ref != desired_ref:
-    drifts.append(f'REF_DRIFT|{active_ref}|{desired_ref}|Active ref differs from target YAML ref')
+active_tags = info.get('tags', [])
+cur_branch = info.get('branch', '')
+cur_tag = info.get('tag', '')
+
+if desired_ref:
+    is_matching = False
+    if desired_ref in active_tags:
+        is_matching = True
+    elif cur_branch == desired_ref or cur_branch == f'release/{desired_ref}':
+        is_matching = True
+    elif cur_tag == desired_ref:
+        is_matching = True
+    
+    if not is_matching:
+        active_ref = cur_tag if cur_tag else cur_branch
+        drifts.append(f'REF_DRIFT|{active_ref}|{desired_ref}|Active ref differs from target YAML ref')
 
 for d in drifts:
     print(d)
@@ -324,9 +337,22 @@ if clean_url(desired_origin) != clean_url(desired_upstream):
     elif clean_url(cur_upstream) != clean_url(desired_upstream):
         drifts.append(f'UPSTREAM_MISMATCH|{cur_upstream}|{desired_upstream}|Upstream remote points to unexpected URL')
 
-active_ref = info.get('tag') if info.get('tag') else info.get('branch')
-if desired_ref and active_ref and active_ref != desired_ref:
-    drifts.append(f'REF_DRIFT|{active_ref}|{desired_ref}|Active ref differs from target YAML ref')
+active_tags = info.get('tags', [])
+cur_branch = info.get('branch', '')
+cur_tag = info.get('tag', '')
+
+if desired_ref:
+    is_matching = False
+    if desired_ref in active_tags:
+        is_matching = True
+    elif cur_branch == desired_ref or cur_branch == f'release/{desired_ref}':
+        is_matching = True
+    elif cur_tag == desired_ref:
+        is_matching = True
+    
+    if not is_matching:
+        active_ref = cur_tag if cur_tag else cur_branch
+        drifts.append(f'REF_DRIFT|{active_ref}|{desired_ref}|Active ref differs from target YAML ref')
 
 for d in drifts:
     print(d)
@@ -386,9 +412,22 @@ if clean_url(desired_origin) != clean_url(desired_upstream):
     elif clean_url(cur_upstream) != clean_url(desired_upstream):
         drifts.append(f'UPSTREAM_MISMATCH|{cur_upstream}|{desired_upstream}|Upstream remote points to unexpected URL')
 
-active_ref = info.get('tag') if info.get('tag') else info.get('branch')
-if desired_ref and active_ref and active_ref != desired_ref:
-    drifts.append(f'REF_DRIFT|{active_ref}|{desired_ref}|Active ref differs from target YAML ref')
+active_tags = info.get('tags', [])
+cur_branch = info.get('branch', '')
+cur_tag = info.get('tag', '')
+
+if desired_ref:
+    is_matching = False
+    if desired_ref in active_tags:
+        is_matching = True
+    elif cur_branch == desired_ref or cur_branch == f'release/{desired_ref}':
+        is_matching = True
+    elif cur_tag == desired_ref:
+        is_matching = True
+    
+    if not is_matching:
+        active_ref = cur_tag if cur_tag else cur_branch
+        drifts.append(f'REF_DRIFT|{active_ref}|{desired_ref}|Active ref differs from target YAML ref')
 
 for d in drifts:
     print(d)
