@@ -126,7 +126,9 @@ audit_all_components() {
     local py_status="MISSING"
     local py_risk="None"
     local py_target="Miniforge + UV"
-    if [[ -x /opt/conda/bin/conda && -d /opt/conda/envs/isaaclab ]]; then
+    local conda_bin="$(resolve_conda_bin 2>/dev/null || echo "")"
+    local env_path="$(resolve_conda_env_path "isaaclab" 2>/dev/null || echo "")"
+    if [[ -x "$conda_bin" && -d "$env_path" ]]; then
         if command -v uv &>/dev/null; then
             py_cur="Conda ('isaaclab') + UV"
             py_status="UP_TO_DATE"

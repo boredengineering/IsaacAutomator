@@ -284,8 +284,10 @@ auth_login_provider() {
             ;;
         huggingface|hf)
             log_step "Authenticating Hugging Face Hub..."
+            local conda_bin="$(resolve_conda_bin 2>/dev/null || echo "")"
+            local conda_root="$(dirname "$(dirname "$conda_bin")" 2>/dev/null || echo "${TARGET_HOME}/miniconda3")"
             sudo -H -u "${TARGET_USER}" bash -c "
-                source /opt/conda/etc/profile.d/conda.sh 2>/dev/null || true
+                source '${conda_root}/etc/profile.d/conda.sh' 2>/dev/null || true
                 if conda info --envs 2>/dev/null | grep -q 'lerobot'; then
                     conda run -n lerobot huggingface-cli login
                 elif command -v huggingface-cli &>/dev/null; then
@@ -322,8 +324,10 @@ NGC_CFG
         wandb)
             log_step "Authenticating Weights & Biases..."
             echo -e "\nGet your WandB API key at: ${CLR_CYAN}https://wandb.ai/authorize${CLR_RESET}\n"
+            local conda_bin="$(resolve_conda_bin 2>/dev/null || echo "")"
+            local conda_root="$(dirname "$(dirname "$conda_bin")" 2>/dev/null || echo "${TARGET_HOME}/miniconda3")"
             sudo -H -u "${TARGET_USER}" bash -c "
-                source /opt/conda/etc/profile.d/conda.sh 2>/dev/null || true
+                source '${conda_root}/etc/profile.d/conda.sh' 2>/dev/null || true
                 if command -v wandb &>/dev/null; then
                     wandb login
                 elif command -v pip3 &>/dev/null; then

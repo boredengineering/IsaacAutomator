@@ -15,8 +15,10 @@ install_ecosystem_extensions() {
         pkg_install ffmpeg libavcodec-dev libavformat-dev libswscale-dev libavdevice-dev
 
         # Create isolated conda env
+        local conda_bin="$(resolve_conda_bin 2>/dev/null || echo "")"
+        local conda_root="$(dirname "$(dirname "$conda_bin")" 2>/dev/null || echo "${TARGET_HOME}/miniconda3")"
         sudo -H -u "${TARGET_USER}" bash -c "
-            source /opt/conda/etc/profile.d/conda.sh
+            source '${conda_root}/etc/profile.d/conda.sh' 2>/dev/null || true
             if ! conda info --envs | grep -q 'gr00t'; then
                 conda create -y -n gr00t python=3.10
                 conda install -y -n gr00t ffmpeg -c conda-forge
@@ -27,7 +29,7 @@ install_ecosystem_extensions() {
         if [[ ! -d "${lerobot_dir}" ]]; then
             sudo -H -u "${TARGET_USER}" git clone https://github.com/huggingface/lerobot.git "${lerobot_dir}"
             sudo -H -u "${TARGET_USER}" bash -c "
-                source /opt/conda/etc/profile.d/conda.sh
+                source '${conda_root}/etc/profile.d/conda.sh' 2>/dev/null || true
                 conda run -n gr00t --cwd '${lerobot_dir}' pip install -e .
             "
         fi
@@ -36,7 +38,7 @@ install_ecosystem_extensions() {
         if [[ ! -d "${gr00t_dir}" ]]; then
             sudo -H -u "${TARGET_USER}" git clone https://github.com/NVIDIA/Isaac-GR00T "${gr00t_dir}"
             sudo -H -u "${TARGET_USER}" bash -c "
-                source /opt/conda/etc/profile.d/conda.sh
+                source '${conda_root}/etc/profile.d/conda.sh' 2>/dev/null || true
                 conda run -n gr00t --cwd '${gr00t_dir}' pip install -e . --no-build-isolation
             "
         fi

@@ -38,6 +38,8 @@ Master index of session memory checkpoints for Isaac Automator.
 | 2026-08-21 01:55 | `4e5f6a7b` | Implementation of Option A (Official ./isaaclab.sh --conda) & Clean Script Sourcing | Implemented Option A in plan and codebase with subshell conda.sh sourcing and ./isaaclab.sh --conda delegation | [`20260821_015525_4e5f6a7b.md`](./sessions/20260821_015525_4e5f6a7b.md) |
 | 2026-08-21 02:09 | `5f6a7b8c` | Update scripts/INDEX.md with setup-isaaclab02.sh & Incorporate Zombie Guard | Cataloged setup-isaaclab02.sh in scripts index and integrated conda run -n & zombie guard patterns | [`20260821_020905_5f6a7b8c.md`](./sessions/20260821_020905_5f6a7b8c.md) |
 | 2026-08-21 02:14 | `6a7b8c9d` | Documentation of Scripting Failure Modes & Implementation Verification | Expanded Section 3.4.2 in isaac-install-plan.md with failure modes and verified installer implementation | [`20260821_021425_6a7b8c9d.md`](./sessions/20260821_021425_6a7b8c9d.md) |
+| 2026-08-21 02:23 | `7b8c9d0e` | Root Cause Resolution: Elimination of /opt/conda Resolution Trap | Pinned resolve_conda_env_path strictly to user miniconda3, sanitized environments.txt, purged static paths | [`20260821_022340_7b8c9d0e.md`](./sessions/20260821_022340_7b8c9d0e.md) |
+
 
 
 

@@ -48,8 +48,10 @@ install_physical_ai_stack() {
 
     # 2. Create/Configure 'lerobot' Conda Environment with visualization extras
     log_info "Configuring 'lerobot' Python environment with dataset visualization & Rerun.io..."
+    local conda_bin="$(resolve_conda_bin 2>/dev/null || echo "")"
+    local conda_root="$(dirname "$(dirname "$conda_bin")" 2>/dev/null || echo "${TARGET_HOME}/miniconda3")"
     sudo -H -u "${TARGET_USER}" bash -c "
-        source /opt/conda/etc/profile.d/conda.sh 2>/dev/null || true
+        source '${conda_root}/etc/profile.d/conda.sh' 2>/dev/null || true
         if ! conda info --envs 2>/dev/null | grep -q 'lerobot'; then
             conda create -y -n lerobot python=3.10
         fi
@@ -60,24 +62,24 @@ install_physical_ai_stack() {
     "
 
     # 3. Create global symlink or wrapper for 'lerobot-dataset-viz' and 'huggingface-cli'
-    cat << 'VIZ' | sudo tee /usr/local/bin/lerobot-dataset-viz >/dev/null
+    cat << VIZ | sudo tee /usr/local/bin/lerobot-dataset-viz >/dev/null
 #!/usr/bin/env bash
-source /opt/conda/etc/profile.d/conda.sh 2>/dev/null || true
+source '${conda_root}/etc/profile.d/conda.sh' 2>/dev/null || true
 if conda info --envs 2>/dev/null | grep -q 'lerobot'; then
-    exec conda run -n lerobot lerobot-dataset-viz "$@"
+    exec conda run -n lerobot lerobot-dataset-viz "\$@"
 else
-    exec python3 -m lerobot.scripts.visualize_dataset "$@"
+    exec python3 -m lerobot.scripts.visualize_dataset "\$@"
 fi
 VIZ
     sudo chmod 0755 /usr/local/bin/lerobot-dataset-viz
 
-    cat << 'HFCLI' | sudo tee /usr/local/bin/huggingface-cli >/dev/null
+    cat << HFCLI | sudo tee /usr/local/bin/huggingface-cli >/dev/null
 #!/usr/bin/env bash
-source /opt/conda/etc/profile.d/conda.sh 2>/dev/null || true
+source '${conda_root}/etc/profile.d/conda.sh' 2>/dev/null || true
 if conda info --envs 2>/dev/null | grep -q 'lerobot'; then
-    exec conda run -n lerobot huggingface-cli "$@"
+    exec conda run -n lerobot huggingface-cli "\$@"
 elif command -v pip3 &>/dev/null; then
-    exec python3 -m huggingface_hub.cli.core "$@"
+    exec python3 -m huggingface_hub.cli.core "\$@"
 else
     echo "huggingface-cli requires Python/Conda environment." >&2
     exit 1
@@ -96,7 +98,7 @@ HFCLI
 
     # 5. Install editable package
     sudo -H -u "${TARGET_USER}" bash -c "
-        source /opt/conda/etc/profile.d/conda.sh 2>/dev/null || true
+        source '${conda_root}/etc/profile.d/conda.sh' 2>/dev/null || true
         if conda info --envs 2>/dev/null | grep -q 'lerobot'; then
             conda run -n lerobot --cwd '${lerobot_dir}' pip install -e '.[all,dataset_viz]' 2>/dev/null || true
         fi

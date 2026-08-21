@@ -10,7 +10,21 @@ export ISAAC_PATH="${SIM_PATH}"
 export CARB_APP_PATH="${SIM_PATH}/kit"
 export VK_ICD_FILENAMES="/etc/vulkan/icd.d/nvidia_icd.json"
 
-CONDA_PY="/opt/conda/envs/isaaclab/bin/python"
+CONDA_PY=""
+CONDA_ENV_DIR=""
+
+for p in "$HOME/miniconda3/envs/isaaclab" "$HOME/miniforge3/envs/isaaclab" "$HOME/anaconda3/envs/isaaclab" "$HOME/.conda/envs/isaaclab"; do
+    if [[ -x "${p}/bin/python" ]]; then
+        CONDA_PY="${p}/bin/python"
+        CONDA_ENV_DIR="${p}"
+        break
+    fi
+done
+
+if [[ -z "$CONDA_PY" && -x "/opt/conda/envs/isaaclab/bin/python" ]]; then
+    CONDA_PY="/opt/conda/envs/isaaclab/bin/python"
+    CONDA_ENV_DIR="/opt/conda/envs/isaaclab"
+fi
 
 if [[ $# -eq 0 ]]; then
     echo "Usage: isaaclab-env <command> [args...]"
@@ -18,17 +32,18 @@ if [[ $# -eq 0 ]]; then
     exit 1
 fi
 
+if [[ -n "$CONDA_ENV_DIR" ]]; then
+    export PATH="${CONDA_ENV_DIR}/bin:$PATH"
+    export CONDA_PREFIX="${CONDA_ENV_DIR}"
+fi
+
 if [[ "$1" == "python" || "$1" == "python3" ]]; then
     shift
     if [[ -x "${CONDA_PY}" ]]; then
-        export PATH="/opt/conda/envs/isaaclab/bin:$PATH"
         exec "${CONDA_PY}" "$@"
     else
         exec python3 "$@"
     fi
 else
-    if [[ -x "${CONDA_PY}" ]]; then
-        export PATH="/opt/conda/envs/isaaclab/bin:$PATH"
-    fi
     exec "$@"
 fi

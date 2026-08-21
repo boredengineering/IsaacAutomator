@@ -42,26 +42,6 @@ resolve_conda_env_path() {
     detect_target_user
     local conda_bin
     conda_bin="$(resolve_conda_bin)"
-
-    if [[ -x "$conda_bin" ]]; then
-        local detected_path
-        detected_path="$(sudo -H -u "${TARGET_USER}" "$conda_bin" env list --json 2>/dev/null | python3 -c "
-import sys, json
-try:
-    data = json.load(sys.stdin)
-    for p in data.get('envs', []):
-        if p.endswith('/${env_name}') or p.endswith('\\\\${env_name}'):
-            print(p)
-            break
-except:
-    pass
-" 2>/dev/null || true)"
-        if [[ -n "$detected_path" && -d "$detected_path" ]]; then
-            echo "$detected_path"
-            return 0
-        fi
-    fi
-
     local conda_root
     conda_root="$(dirname "$(dirname "$conda_bin")")"
     echo "${conda_root}/envs/${env_name}"
@@ -105,11 +85,16 @@ install_python_env() {
     local lab_dir
     lab_dir="$(resolve_active_repo_dir "IsaacLab" 2>/dev/null || resolve_repo_dest_path "IsaacLab" 2>/dev/null || echo "")"
 
-    # 1. Clean up any legacy or orphaned /opt/conda system directory
+    # 1. Clean up any legacy or orphaned /opt/conda system directory and environments.txt entries
     if [[ -d "/opt/conda" ]]; then
         log_info "Purging orphaned system /opt/conda to maintain pure user miniconda3 runtime..."
         rm -rf /opt/conda 2>/dev/null || true
     fi
+    for env_txt in "${TARGET_HOME}/.conda/environments.txt" "/root/.conda/environments.txt"; do
+        if [[ -f "$env_txt" ]]; then
+            sed -i '\|/opt/conda|d' "$env_txt" 2>/dev/null || true
+        fi
+    done
 
     # 2. Install Miniforge if no user Conda exists
     if [[ ! -x "${conda_bin}" ]]; then

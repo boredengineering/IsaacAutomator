@@ -314,8 +314,8 @@ for d in drifts:
     local user_env_path
     user_env_path="$(resolve_conda_env_path "isaaclab" 2>/dev/null || echo "")"
 
-    if [[ -d "/opt/conda/envs/isaaclab" && "$user_env_path" != "/opt/conda/envs/isaaclab" ]]; then
-        DRIFT_ITEMS+=("CondaEnv|CONDA_ENV_MISLOCATED|/opt/conda/envs/isaaclab|${user_env_path}|Orphaned /opt/conda/envs/isaaclab found outside user's active Conda")
+    if [[ -d "/opt/conda/envs/isaaclab" || -d "/opt/conda" ]]; then
+        DRIFT_ITEMS+=("CondaEnv|CONDA_ENV_MISLOCATED|/opt/conda/envs/isaaclab|${user_env_path}|Orphaned /opt/conda system environment found outside user's active Conda")
     fi
 
     if [[ -n "$user_env_path" && (! -d "$user_env_path" || ! -x "$user_env_path/bin/python") ]]; then
@@ -465,11 +465,13 @@ repair_workspace_drift() {
                 ;;
 
             CONDA_ENV_MISLOCATED)
-                log_info "Cleaning up orphaned system Conda environment ${cur}..."
-                rm -rf "$cur" 2>/dev/null || true
-                if [[ -d "/opt/conda" && -z "$(ls -A /opt/conda/envs 2>/dev/null)" ]]; then
-                    rm -rf "/opt/conda" 2>/dev/null || true
-                fi
+                log_info "Cleaning up orphaned system Conda environment and /opt/conda..."
+                rm -rf "/opt/conda" 2>/dev/null || true
+                for env_txt in "${TARGET_HOME}/.conda/environments.txt" "/root/.conda/environments.txt"; do
+                    if [[ -f "$env_txt" ]]; then
+                        sed -i '\|/opt/conda|d' "$env_txt" 2>/dev/null || true
+                    fi
+                done
                 log_info "Provisioning native named Conda environment in user's Conda (${target})..."
                 install_python_env
                 log_success "Conda environment mislocation healed."
