@@ -307,16 +307,34 @@ Physical AI pipelines (Isaac Sim, Isaac Lab, LeRobot, TensorRT, RSL-RL) merge mo
 
 ---
 
-#### 4. Isaac Sim 6.0 Environment Scripts: `setup_conda_env.sh` vs `setup_python_env.sh` Analysis:
+#### 4. Dual-Mode Isaac Sim Engine Architecture (Pip Package vs Standalone Symlink):
 
-A critical architectural change between Isaac Sim 5.x and 6.0.1 lies in how environment setup scripts handle Python runtime paths:
+Physical AI practitioners require the flexibility to run Isaac Sim and Isaac Lab across two primary engine paradigms:
 
-* **What `setup_python_env.sh` Does (Raw Kit Injection)**:
-  `setup_python_env.sh` injects Kit's C++ libraries into `LD_LIBRARY_PATH` and adds all Omniverse extensions (`exts/isaacsim.simulation_app`, `kit/kernel/py`, `extscache/*`) into `PYTHONPATH`. Crucially, it ALSO adds `$SCRIPT_DIR/kit/python/lib/python3.12` and its `site-packages`.
-* **The Hazard of a Naive Symlink**:
-  If `setup_conda_env.sh` is simply symlinked to `setup_python_env.sh`, Kit's bundled Python 3.12 standard library will shadow Conda's Python 3.12 standard library (`/home/tarfy/miniconda3/envs/isaaclab/lib/python3.12/`). This causes symbol collisions, `ssl`/`ctypes` import failures, and package version conflicts.
-* **The Verified Bridge Implementation**:
-  `setup_conda_env.sh` must execute `setup_python_env.sh` to acquire Omniverse extensions and Carbonite paths, but **filter out** `$SCRIPT_DIR/kit/python/lib/python3.12` from `PYTHONPATH`:
+1. **Native Pip / Wheel Package Mode** (`pip install "isaacsim[all,extscache]==6.0.1" --extra-index-url https://pypi.nvidia.com`):
+   * Isaac Sim modules are compiled as standalone wheels hosted directly inside the Conda environment’s `site-packages`.
+   * Requires no directory symlinks (`_isaac_sim`), no shell bridges, and no `PYTHONPATH` exports.
+2. **Standalone Binary / Symlink Mode** (`_isaac_sim -> ~/IsaacSim`):
+   * Uses the pre-extracted Isaac Sim standalone distribution containing the full Omniverse Kit executable, PhysX, and extensions.
+   * Essential for customized simulator builds, offline cloud VM deployments, and shared storage environments.
+
+---
+
+#### 5. The 3-Pillar Solution for Standalone Symlink Mode in Isaac Lab 3.0:
+
+In Isaac Sim 6.0, NVIDIA removed `setup_conda_env.sh` and replaced it with `setup_python_env.sh`. When Isaac Lab 3.0 runs in standalone symlink mode, it requires the following three pillars to operate deterministically:
+
+```mermaid
+flowchart LR
+    P1["Pillar 1:\nFiltering setup_conda_env.sh in _isaac_sim"]
+    P2["Pillar 2:\nScoped activate.d hooks in Conda"]
+    P3["Pillar 3:\nConda .pth site-packages registration"]
+
+    P1 & P2 & P3 --> SUCCESS["✔ Symlink Mode works via ./isaaclab.sh AND direct 'python train.py'"]
+```
+
+* **Pillar 1: The Pure Filtering Bridge (`_isaac_sim/setup_conda_env.sh`)**:
+  `setup_conda_env.sh` sources `setup_python_env.sh` to extract Omniverse extensions and Carbonite paths, but **filters out** `$SCRIPT_DIR/kit/python/lib/python3.12` from `PYTHONPATH` to prevent shadowing Conda's Python 3.12 standard library:
   ```bash
   #!/usr/bin/env bash
   SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -334,6 +352,36 @@ A critical architectural change between Isaac Sim 5.x and 6.0.1 lies in how envi
   # Strip Kit Python standard libraries to preserve Conda Python 3.12 runtime purity
   export PYTHONPATH=$(echo "$PYTHONPATH" | tr ':' '\n' | grep -v "${SCRIPT_DIR}/kit/python/lib/python3.12" | grep -v "${SCRIPT_DIR}/kit/python/lib/python3.11" | tr '\n' ':' | sed 's/:$//')
   ```
+
+* **Pillar 2: Scoped Conda Activation Hooks (`activate.d/00_isaaclab_env.sh`)**:
+  When `conda activate isaaclab` is called, it automatically injects `CARB_APP_PATH`, `EXP_PATH`, `ISAAC_PATH`, `VK_ICD_FILENAMES`, and `LD_LIBRARY_PATH`, restoring them upon `conda deactivate`.
+
+* **Pillar 3: Conda `.pth` Path Registration (`isaacsim_standalone.pth`)**:
+  Registers Isaac Sim's standalone extensions directly into `<conda_env>/lib/python3.12/site-packages/isaacsim_standalone.pth`, enabling direct Python execution (`python scripts/reinforcement_learning/train.py`) without requiring the `isaaclab.sh` wrapper script:
+  ```text
+  /home/tarfy/IsaacSim/python_packages
+  /home/tarfy/IsaacSim/exts/isaacsim.simulation_app
+  /home/tarfy/IsaacSim/kit/kernel/py
+  /home/tarfy/IsaacSim/kit/plugins/bindings-python
+  /home/tarfy/IsaacSim/exts/omni.isaac.core_archive/pip_prebundle
+  /home/tarfy/IsaacSim/exts/omni.pip.compute/pip_prebundle
+  /home/tarfy/IsaacSim/exts/omni.pip.cloud/pip_prebundle
+  ```
+
+---
+
+#### 6. Production Automated Integration Plan in `isaac-installer`:
+
+To eliminate manual workarounds and make the installer 100% resilient across both modes:
+
+1. **Automated Dual-Mode Engine Provisioning**:
+   - `lib/modules/isaacsim.sh` will dynamically provision both Pillar 1 (`setup_conda_env.sh`) and Pillar 3 (`isaacsim_standalone.pth`) during the `isaacsim` and `conda` stages.
+2. **Automated Self-Healing Drift Detection (`lib/core/state.sh`)**:
+   - **`SIM_BRIDGE_MISSING`**: Emitted if `~/IsaacSim` exists but `setup_conda_env.sh` is missing. Healed by auto-generating the filtering bridge script.
+   - **`SIM_PTH_MISSING`**: Emitted if `~/IsaacSim` exists but `isaacsim_standalone.pth` is missing from Conda site-packages. Healed by auto-generating the `.pth` file.
+   - **`BROKEN_SYMLINK`**: Reconnects `_isaac_sim` to `~/IsaacSim` and automatically ensures both bridge and `.pth` files are synchronized.
+3. **Execution Mode Agnostic**:
+   - Works flawlessly whether invoked via `./isaaclab.sh train ...`, `python -m isaaclab.train`, or `isaaclab-env python ...`.
 
 ---
 

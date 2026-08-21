@@ -87,6 +87,27 @@ EOF
             sudo chown "${TARGET_USER}:${TARGET_USER}" "${sim_dir}/setup_conda_env.sh" 2>/dev/null || true
         fi
     fi
+
+    # Deploy Pillar 3: isaacsim_standalone.pth in Conda environment site-packages
+    local env_path
+    env_path="$(resolve_conda_env_path "isaaclab" 2>/dev/null || echo "${TARGET_HOME}/miniconda3/envs/isaaclab")"
+    if [[ -d "${env_path}" ]]; then
+        local sp_dir
+        sp_dir=$(find "${env_path}/lib" -maxdepth 2 -type d -name "site-packages" 2>/dev/null | head -n 1)
+        if [[ -d "${sp_dir}" && (! -f "${sp_dir}/isaacsim_standalone.pth" || $(wc -l < "${sp_dir}/isaacsim_standalone.pth" 2>/dev/null) -lt 3) ]]; then
+            log_info "Deploying standalone Isaac Sim .pth link in ${sp_dir}/isaacsim_standalone.pth..."
+            cat << PTH | sudo -H -u "${TARGET_USER}" tee "${sp_dir}/isaacsim_standalone.pth" >/dev/null
+${sim_dir}/python_packages
+${sim_dir}/exts/isaacsim.simulation_app
+${sim_dir}/kit/kernel/py
+${sim_dir}/kit/plugins/bindings-python
+${sim_dir}/exts/omni.isaac.core_archive/pip_prebundle
+${sim_dir}/exts/omni.pip.compute/pip_prebundle
+${sim_dir}/exts/omni.pip.cloud/pip_prebundle
+PTH
+            sudo chown "${TARGET_USER}:${TARGET_USER}" "${sp_dir}/isaacsim_standalone.pth" 2>/dev/null || true
+        fi
+    fi
 }
 
 check_isaac_sim() {
