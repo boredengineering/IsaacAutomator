@@ -35,6 +35,8 @@ Master index of session memory checkpoints for Isaac Automator.
 | 2026-08-21 00:26 | `1b2c3d4e` | Implementation of REPO_MISSING Drift Detection & Dynamic State Ledger Sync | Added REPO_MISSING drift detection, dynamic state.json resolution, and automated ledger synchronization | [`20260821_002655_1b2c3d4e.md`](./sessions/20260821_002655_1b2c3d4e.md) |
 | 2026-08-21 00:30 | `2c3d4e5f` | Explanation of Git Fork Tag Isolation & Two-Tier Fallback Clone Strategy | Documented why GitHub forks omit upstream tags and how installer two-tier fallback fetches and checks out tags | [`20260821_003015_2c3d4e5f.md`](./sessions/20260821_003015_2c3d4e5f.md) |
 | 2026-08-21 01:15 | `3d4e5f6a` | Direct Conda Provisioning Subcommand & envs_dirs Registration | Ensured conda config append envs_dirs in install_python_env and documented fast --only python command | [`20260821_011505_3d4e5f6a.md`](./sessions/20260821_011505_3d4e5f6a.md) |
+| 2026-08-21 01:55 | `4e5f6a7b` | Implementation of Option A (Official ./isaaclab.sh --conda) & Clean Script Sourcing | Implemented Option A in plan and codebase with subshell conda.sh sourcing and ./isaaclab.sh --conda delegation | [`20260821_015525_4e5f6a7b.md`](./sessions/20260821_015525_4e5f6a7b.md) |
+
 
 
 

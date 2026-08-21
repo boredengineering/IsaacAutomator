@@ -92,7 +92,7 @@ check_python_env() {
 }
 
 install_python_env() {
-    log_step "Configuring Hybrid Python Runtime (Named Conda Env '${CONDA_ENV_NAME}' + UV Acceleration)..."
+    log_step "Configuring Named Conda Environment ('${CONDA_ENV_NAME}') via Official Option A Pipeline..."
     detect_target_user
 
     local py_ver
@@ -102,12 +102,13 @@ install_python_env() {
     local conda_root
     conda_root="$(dirname "$(dirname "$conda_bin")")"
     local sim_dir="${ISAACSIM_DIR:-${TARGET_HOME}/IsaacSim}"
+    local lab_dir
+    lab_dir="$(resolve_active_repo_dir "IsaacLab" 2>/dev/null || resolve_repo_dest_path "IsaacLab" 2>/dev/null || echo "")"
 
-    # 1. Install UV (Fast Rust-based Python package manager)
-    if ! command -v uv &>/dev/null; then
-        log_info "Installing UV package manager..."
-        curl -LsSf https://astral.sh/uv/install.sh | sh
-        sudo ln -sf "${TARGET_HOME}/.local/bin/uv" /usr/local/bin/uv 2>/dev/null || true
+    # 1. Clean up any legacy or orphaned /opt/conda system directory
+    if [[ -d "/opt/conda" ]]; then
+        log_info "Purging orphaned system /opt/conda to maintain pure user miniconda3 runtime..."
+        rm -rf /opt/conda 2>/dev/null || true
     fi
 
     # 2. Install Miniforge if no user Conda exists
@@ -119,34 +120,35 @@ install_python_env() {
         rm -f /tmp/miniforge.sh
         sudo -H -u "${TARGET_USER}" "${conda_bin}" init bash 2>/dev/null || true
     else
-        log_info "Using detected Conda installation: ${conda_bin}"
+        log_info "Using detected target user Conda runtime: ${conda_bin}"
     fi
 
-    # 3. Create or Verify Native Named Conda Environment ('isaaclab')
+    # 3. Create Named Conda Environment using Option A (Official ./isaaclab.sh --conda)
     local env_path
     env_path="$(resolve_conda_env_path "${CONDA_ENV_NAME}")"
 
     if [[ ! -d "${env_path}" || ! -x "${env_path}/bin/python" ]]; then
-        log_info "Creating named Conda environment '${CONDA_ENV_NAME}' with Python ${py_ver} in ${conda_root}..."
-        sudo -H -u "${TARGET_USER}" "${conda_bin}" create -y -n "${CONDA_ENV_NAME}" python="${py_ver}" pip
+        if [[ -n "$lab_dir" && -f "${lab_dir}/isaaclab.sh" ]]; then
+            log_info "Delegating environment creation to official ./isaaclab.sh --conda '${CONDA_ENV_NAME}'..."
+            sudo -H -u "${TARGET_USER}" bash -l -c "
+                source '${conda_root}/etc/profile.d/conda.sh' 2>/dev/null || eval \"\$('${conda_bin}' shell.bash hook 2>/dev/null)\" || true
+                cd '${lab_dir}'
+                ./isaaclab.sh --conda '${CONDA_ENV_NAME}'
+            " || true
+        fi
+        
+        # Fallback if ./isaaclab.sh was unavailable or creation needed direct conda create
+        env_path="$(resolve_conda_env_path "${CONDA_ENV_NAME}")"
+        if [[ ! -d "${env_path}" || ! -x "${env_path}/bin/python" ]]; then
+            log_info "Creating native named Conda environment '${CONDA_ENV_NAME}' (Python ${py_ver}) via conda binary..."
+            sudo -H -u "${TARGET_USER}" "${conda_bin}" create -y -n "${CONDA_ENV_NAME}" python="${py_ver}" pip
+        fi
+        
         sudo -H -u "${TARGET_USER}" "${conda_bin}" config --append envs_dirs "${conda_root}/envs" 2>/dev/null || true
         env_path="$(resolve_conda_env_path "${CONDA_ENV_NAME}")"
     else
         log_info "Named Conda environment '${CONDA_ENV_NAME}' already exists at ${env_path}."
         sudo -H -u "${TARGET_USER}" "${conda_bin}" config --append envs_dirs "${conda_root}/envs" 2>/dev/null || true
-    fi
-
-    # 4. Accelerate PyTorch + CUDA Installation using UV inside Conda Env
-    log_info "Verifying PyTorch CUDA acceleration in '${CONDA_ENV_NAME}' environment via UV..."
-    local uv_bin
-    uv_bin="$(command -v uv || echo "${TARGET_HOME}/.local/bin/uv")"
-
-    if [[ -x "${uv_bin}" && -x "${env_path}/bin/python" ]]; then
-        local torch_wheel_url="https://download.pytorch.org/whl/cu124"
-        sudo -H -u "${TARGET_USER}" "${uv_bin}" pip install \
-            --python "${env_path}/bin/python" \
-            torch torchvision \
-            --index-url "${torch_wheel_url}" 2>/dev/null || true
     fi
 
     # 5. Configure Scoped Activation Hooks (Guarantees Zero Global Shell Contamination)

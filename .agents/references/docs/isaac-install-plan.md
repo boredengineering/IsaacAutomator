@@ -185,6 +185,34 @@ A major trap in manual Isaac Lab setups is sourcing `setup_conda_env.sh` inside 
 
 ---
 
+### 3.4.2 Conda Scripting Architecture: Shell Functions, Sudo Context, and Provisioning Strategies
+
+Conda behaves differently in non-interactive scripts and multi-user (`sudo`) environments compared to interactive developer shells. Understanding these mechanics is crucial for reliable automation:
+
+#### 1. The 3 Architectural Realities of Conda Scripting:
+* **`conda activate` is a Shell Function, Not a Binary**:
+  The command `conda` is an executable binary (e.g. `~/miniconda3/bin/conda`), but `conda activate` is a dynamic bash function injected only when shell initialization scripts run. Non-interactive scripts (or `sudo -H -u <user>` subshells) do not load `~/.bashrc` automatically. Therefore, scripts MUST explicitly execute `source <conda_root>/etc/profile.d/conda.sh` before invoking `conda activate`.
+* **User Context & `envs_dirs` Registration**:
+  When run via `sudo`, creating environments in `/opt/conda` places them outside the target developer's default `envs_dirs` (`~/miniconda3/envs`). In `conda env list`, these appear as **unnamed path-only environments** (blank name column), causing `conda activate <name>` to fail with `EnvironmentNameNotFound`. Environments must be created directly under `<User_Home>/miniconda3/envs/<name>`.
+* **Clean Subshell Sourcing**:
+  To execute commands inside an environment during automated provisioning, the runner must execute:
+  ```bash
+  sudo -H -u <user> bash -l -c "
+      source ~/miniconda3/etc/profile.d/conda.sh
+      conda activate isaaclab
+      ./isaaclab.sh --install
+  "
+  ```
+
+#### 2. Architectural Comparison: Provisioning Strategies
+
+| Strategy | Mechanism | Pros | Cons | Status |
+| :--- | :--- | :--- | :--- | :--- |
+| **Option A (Official Isaac Lab Delegated)** | Run `sudo -H -u <user> ./isaaclab.sh --conda isaaclab` directly from the Isaac Lab repository. | • 100% compliant with NVIDIA's upstream scripts.<br>• Native named environment in `~/miniconda3/envs/isaaclab`.<br>• Safest and most predictable for Isaac Lab. | Requires IsaacLab repo to be cloned first. | **SELECTED (Primary)** |
+| **Option B (Fast Hybrid UV + Native Conda)** | Run `conda create -y -n isaaclab python=3.12 pip`, then fast-download PyTorch CUDA wheels via `uv pip`. | • 10x faster package download speeds.<br>• Works before repo clone. | Extra tooling dependency (`uv`). | **Documented Alternative** |
+
+---
+
 ### 3.5 Developer Interaction Modes
 
 The hybrid model supports all four primary robotics development workflows:

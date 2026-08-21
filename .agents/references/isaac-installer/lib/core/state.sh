@@ -496,11 +496,17 @@ repair_workspace_drift() {
         log_step "Running official ./isaaclab.sh --install in healed Conda environment..."
         local env_path
         env_path="$(resolve_conda_env_path "isaaclab")"
+        local conda_bin
+        conda_bin="$(resolve_conda_bin)"
+        local conda_root
+        conda_root="$(dirname "$(dirname "$conda_bin")")"
         if [[ -d "$env_path" ]]; then
-            sudo -H -u "${TARGET_USER}" PATH="${env_path}/bin:${PATH}" CONDA_PREFIX="${env_path}" bash -c "
+            sudo -H -u "${TARGET_USER}" bash -l -c "
+                source '${conda_root}/etc/profile.d/conda.sh' 2>/dev/null || eval \"\$('${conda_bin}' shell.bash hook 2>/dev/null)\" || true
+                conda activate isaaclab 2>/dev/null || true
                 cd '${lab_dir}'
                 ./isaaclab.sh --install
-            " 2>/dev/null || true
+            " || true
         fi
     fi
 
