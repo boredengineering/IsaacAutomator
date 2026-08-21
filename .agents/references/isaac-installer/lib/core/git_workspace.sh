@@ -305,9 +305,30 @@ ensure_github_fork() {
     # Fork does not exist; check if auto_create_fork is enabled and gh is authenticated
     local auto_create="${WORKSPACE_AUTO_CREATE_FORK:-${CFG_WORKSPACE_AUTO_CREATE_FORK:-true}}"
     if [[ "$auto_create" == "true" ]] && command -v gh &>/dev/null && sudo -H -u "${TARGET_USER}" gh auth status &>/dev/null; then
-        log_info "GitHub fork ${requested_fork_url} not found. Automatically creating fork of ${official_upstream_url} via GitHub CLI..."
-        if sudo -H -u "${TARGET_USER}" gh repo fork "${official_upstream_url}" --clone=false --default-branch-only 2>/dev/null; then
-            log_success "Fork successfully created on GitHub under your account."
+        local req_owner
+        req_owner="$(extract_repo_owner "$requested_fork_url")"
+        local user_login
+        user_login="$(sudo -H -u "${TARGET_USER}" gh api user -q .login 2>/dev/null || echo "")"
+        
+        log_info "GitHub fork ${requested_fork_url} not found. Programmatically creating fork of ${official_upstream_url} via GitHub CLI..."
+
+        local fork_success=false
+        if [[ -n "$req_owner" && -n "$user_login" && "${req_owner,,}" != "${user_login,,}" ]]; then
+            # Attempt to create fork under specified organization
+            if sudo -H -u "${TARGET_USER}" gh repo fork "${official_upstream_url}" --org "${req_owner}" --clone=false --default-branch-only 2>/dev/null; then
+                fork_success=true
+            fi
+        fi
+
+        if [[ "$fork_success" == false ]]; then
+            # Attempt to create fork under authenticated personal user account
+            if sudo -H -u "${TARGET_USER}" gh repo fork "${official_upstream_url}" --clone=false --default-branch-only 2>/dev/null; then
+                fork_success=true
+            fi
+        fi
+
+        if [[ "$fork_success" == true ]]; then
+            log_success "Fork successfully created on GitHub."
             echo "$requested_fork_url"
             return 0
         fi

@@ -229,8 +229,46 @@ if sync.get('has_upstream'):
             log_success "Sync complete."
             ;;
 
+        fork)
+            local target_fork="${1:-}"
+            if [[ -z "$target_fork" ]]; then
+                log_error "Usage: ./bin/isaac-installer lab fork <owner/repo or url>"
+                return 1
+            fi
+
+            log_header "Re-wiring Isaac Lab Origin to Fork: ${target_fork}"
+            local official_upstream="${ISAACLAB_UPSTREAM:-https://github.com/isaac-sim/IsaacLab.git}"
+            local resolved_fork
+            resolved_fork="$(ensure_github_fork "$target_fork" "$official_upstream")"
+
+            sudo -H -u "${TARGET_USER}" bash -c "
+                cd '${lab_dir}'
+                git remote set-url origin '${resolved_fork}' 2>/dev/null || git remote add origin '${resolved_fork}' 2>/dev/null
+                git fetch origin 2>/dev/null || true
+            "
+            log_success "Origin remote re-wired to ${resolved_fork}."
+            ;;
+
+        remotes)
+            log_header "Isaac Lab Dual-Remote Topology Configuration"
+            if [[ ! -d "${lab_dir}/.git" ]]; then
+                log_error "Isaac Lab repository not found at ${lab_dir}."
+                return 1
+            fi
+
+            sudo -H -u "${TARGET_USER}" bash -c "
+                cd '${lab_dir}'
+                echo '=== Git Remotes ==='
+                git remote -v
+                echo ''
+                echo '=== Upstream Push Protection ==='
+                push_url=\$(git config --get remote.upstream.pushurl || echo 'UNPROTECTED')
+                echo \"Upstream Push URL: \${push_url}\"
+            "
+            ;;
+
         *)
-            echo "Usage: ./bin/isaac-installer lab [status|list-tags|switch <ref>|sync [--rebase]]"
+            echo "Usage: ./bin/isaac-installer lab [status|list-tags|switch <ref>|sync [--rebase]|fork <owner/repo>|remotes]"
             ;;
     esac
 }
