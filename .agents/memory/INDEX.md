@@ -41,6 +41,8 @@ Master index of session memory checkpoints for Isaac Automator.
 | 2026-08-21 02:23 | `7b8c9d0e` | Root Cause Resolution: Elimination of /opt/conda Resolution Trap | Pinned resolve_conda_env_path strictly to user miniconda3, sanitized environments.txt, purged static paths | [`20260821_022340_7b8c9d0e.md`](./sessions/20260821_022340_7b8c9d0e.md) |
 | 2026-08-21 02:25 | `8c9d0e1f` | Auto-Accept Conda Terms of Service & Classic Solver Fallback | Injected CONDA_PLUGINS_AUTO_ACCEPT_TOS, pre-authorized ToS channels, and configured classic solver | [`20260821_022548_8c9d0e1f.md`](./sessions/20260821_022548_8c9d0e1f.md) |
 | 2026-08-21 02:43 | `9d0e1f2a` | Physical AI C++ Runtime Guide & CONDA_NO_PLUGINS Safeguards | Added Section 3.7 C++ ABI Guide to plan and injected CONDA_NO_PLUGINS=true across installer | [`20260821_024315_9d0e1f2a.md`](./sessions/20260821_024315_9d0e1f2a.md) |
+| 2026-08-21 02:45 | `a1b2c3d4` | Milestone: Full Verification of Isaac Lab 3.0 Import & Native Conda | Verified successful import of isaaclab pointing to editable source in user miniconda3 runtime | [`20260821_024515_a1b2c3d4.md`](./sessions/20260821_024515_a1b2c3d4.md) |
+
 
 
 
