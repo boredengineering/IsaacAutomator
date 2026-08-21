@@ -207,23 +207,57 @@ if sync.get('has_upstream'):
             ;;
 
         sync)
-            local rebase_flag="${1:-}"
+            local sync_mode="${1:-}"
             log_header "Syncing Isaac Lab with Upstream Releases"
             if [[ ! -d "${lab_dir}/.git" ]]; then
                 log_error "Isaac Lab repository not found at ${lab_dir}."
                 return 1
             fi
 
+            if [[ "$sync_mode" == "--abort" || "$sync_mode" == "abort" ]]; then
+                log_info "Aborting any in-progress rebase or merge..."
+                sudo -H -u "${TARGET_USER}" bash -c "
+                    cd '${lab_dir}'
+                    git rebase --abort 2>/dev/null || git merge --abort 2>/dev/null || true
+                "
+                log_success "Rebase/merge aborted. Working tree restored."
+                return 0
+            fi
+
             sudo -H -u "${TARGET_USER}" bash -c "
                 cd '${lab_dir}'
+                curr_branch=\$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo 'main')
+                
+                # If on a release tag branch, warn against blind rebasing against main
+                if [[ \"\$curr_branch\" == release/v* || \"\$curr_branch\" == v* ]]; then
+                    echo -e '\e[33m[!] Currently on pinned release branch:\e[0m ' \"\$curr_branch\"
+                    echo '    Release tag branches track immutable release points.'
+                    echo '    Fetching latest upstream tags...'
+                    git fetch --tags upstream
+                    echo '    To switch to a newer release tag, use: ./bin/isaac-installer lab switch <tag>'
+                    echo '    Available tags can be viewed with:    ./bin/isaac-installer lab list-tags'
+                    echo ''
+                    echo '    If you want to sync your main development branch, switch to main first:'
+                    echo '      git checkout main && ./bin/isaac-installer lab sync'
+                    exit 0
+                fi
+
+                echo 'Fetching latest upstream branches and tags...'
                 git fetch --tags upstream
                 git fetch upstream main
-                if [[ '${rebase_flag}' == '--rebase' ]]; then
-                    echo 'Rebasing current branch against upstream/main...'
+
+                if [[ '${sync_mode}' == '--rebase' ]]; then
+                    echo \"Rebasing '\${curr_branch}' against upstream/main...\"
                     git rebase upstream/main
                 else
-                    echo 'Merging upstream/main into current branch...'
-                    git merge upstream/main
+                    echo \"Fast-forward merging upstream/main into '\${curr_branch}'...\"
+                    git merge --ff-only upstream/main 2>/dev/null || git merge upstream/main
+                fi
+
+                # Optionally push synced branch to personal origin fork
+                if git remote | grep -q '^origin$'; then
+                    echo \"Pushing synced '\${curr_branch}' to personal origin fork...\"
+                    git push origin \"\${curr_branch}\" 2>/dev/null || true
                 fi
             "
             log_success "Sync complete."
