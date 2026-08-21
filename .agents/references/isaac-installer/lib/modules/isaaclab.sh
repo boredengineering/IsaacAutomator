@@ -82,6 +82,7 @@ install_isaac_lab() {
         export SHELL=/bin/bash
         export USER='${TARGET_USER}'
         export HOME='${TARGET_HOME}'
+        export CONDA_NO_PLUGINS=true
         source '${conda_root}/etc/profile.d/conda.sh' 2>/dev/null || true
         cd '${lab_dir}'
         '${conda_bin}' run -n '${CONDA_ENV_NAME:-isaaclab}' ./isaaclab.sh -i

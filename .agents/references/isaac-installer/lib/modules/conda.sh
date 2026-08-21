@@ -125,6 +125,7 @@ install_python_env() {
     # Pre-configure Conda ToS auto-acceptance, classic solver & conda-forge priority
     sudo -H -u "${TARGET_USER}" bash -c "
         unset LD_LIBRARY_PATH
+        export CONDA_NO_PLUGINS=true
         export CONDA_PLUGINS_AUTO_ACCEPT_TOS=yes
         export CONDA_SOLVER=classic
         '${conda_bin}' config --set auto_accept_tos true 2>/dev/null || true
@@ -141,6 +142,7 @@ install_python_env() {
                 export SHELL=/bin/bash
                 export USER='${TARGET_USER}'
                 export HOME='${TARGET_HOME}'
+                export CONDA_NO_PLUGINS=true
                 export CONDA_PLUGINS_AUTO_ACCEPT_TOS=yes
                 export CONDA_SOLVER=classic
                 unset LD_LIBRARY_PATH
@@ -155,6 +157,7 @@ install_python_env() {
         if [[ ! -d "${env_path}" || ! -x "${env_path}/bin/python" ]]; then
             log_info "Creating native named Conda environment '${CONDA_ENV_NAME}' (Python ${py_ver}) via conda binary..."
             sudo -H -u "${TARGET_USER}" bash -c "
+                export CONDA_NO_PLUGINS=true
                 export CONDA_PLUGINS_AUTO_ACCEPT_TOS=yes
                 export CONDA_SOLVER=classic
                 unset LD_LIBRARY_PATH

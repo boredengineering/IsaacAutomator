@@ -277,15 +277,47 @@ flowchart TD
     T8["8. Physical AI / Imitation Learning (LeRobot [all,dataset_viz])"]
 
     T0 --> T1 --> T2 --> T3 --> T4 --> T5 --> T6 --> T7 --> T8
-```
+---
+
+### 3.7 Physical AI C++ Runtime, Dynamic Linker & ABI Compatibility Guide
+
+Physical AI pipelines (Isaac Sim, Isaac Lab, LeRobot, TensorRT, RSL-RL) merge modern Python wrappers with complex C++ shared libraries (`.so`), CUDA kernels, and Vulkan GPU surfaces. Understanding the dynamic linker (`ld.so`) and C++ runtime interactions is essential for debugging and long-term pipeline planning:
+
+#### 1. The `libstdc++.so.6` & `GLIBCXX` Symbol Conflict:
+* **The Root Cause**:
+  Linux distributions (such as Ubuntu 22.04 LTS) ship with a base GNU C++ standard library (`/lib/x86_64-linux-gnu/libstdc++.so.6`) providing symbols up to `GLIBCXX_3.4.30` (GCC 11/12). Modern pre-compiled binaries (e.g. `conda-libmamba-solver`, PyTorch CUDA 12.4 C++ extensions, Hugging Face Rust/C++ bindings) are compiled against GCC 13/14, requiring `GLIBCXX_3.4.31` or higher.
+* **The Dynamic Linker Collision**:
+  When Python loads a C++ module, Linux searches system library paths first. If the system's older `libstdc++.so.6` is loaded before Conda's newer `miniconda3/lib/libstdc++.so.6`, the dynamic linker throws:
+  ```text
+  Error while loading conda entry point: conda-libmamba-solver: version GLIBCXX_3.4.31 not found
+  ```
+* **Architectural Safeguards**:
+  1. **Disable Broken Entry Points in Automation**: Set `export CONDA_NO_PLUGINS=true` and `export CONDA_SOLVER=classic` to bypass libmamba C++ entry point crashes during headless scripting.
+  2. **Conda-Forge Library Precedence**: Use `conda install -c conda-forge libstdcxx-ng` or prioritize `${conda_root}/lib` in runtime environments when C++ extensions require modern symbols.
 
 ---
 
-### 3.7 Verification & Audit Plan for Hybrid Model
+#### 2. NVIDIA Carbonite & Vulkan Loader Path Architecture:
+* **Carbonite Framework (`libcarb.so`, `libomni.ext.so`)**:
+  Isaac Sim's core engine relies on Carbonite plugins located in `_isaac_sim/kit`. Standard Python runs fail with `SIGSEGV` or unresolved symbols unless `CARB_APP_PATH` and `EXP_PATH` point to Isaac Sim's kit and app directories.
+* **Vulkan GPU Surface Driver (`VK_ICD_FILENAMES`)**:
+  Omniverse Kit renders via Vulkan hardware layers. Setting `VK_ICD_FILENAMES="/etc/vulkan/icd.d/nvidia_icd.json"` inside scoped activation hooks (`activate.d/00_isaaclab_env.sh`) ensures simulation viewports link directly to the NVIDIA hardware driver rather than CPU software fallbacks (`llvmpipe`).
+
+---
+
+#### 3. CUDA Runtime & TensorRT Linkage Matrix:
+* **PyTorch + CUDA Wheel Alignment**:
+  Robotics stacks require strict CUDA toolkit alignment. PyTorch wheels pinned to `cu124` (`torch==2.5.1+cu124`) match modern Ada Lovelace (RTX 4090) and Blackwell hardware architectures while remaining compatible with NVIDIA Driver 550+.
+* **Downstream Physical AI Isolation**:
+  Downstream modules like LeRobot (imitation learning) and Isaac-GR00T maintain their own package requirements (`lerobot[all,dataset_viz]`, Rerun.io). Keeping them isolated in designated Conda environments prevents dependency collisions with Isaac Lab's core extensions.
+
+---
+
+### 3.8 Verification & Audit Plan for Hybrid Model
 
 Before writing the implementation code for this subsystem, the following verification gates are established:
 
-1. **Discovery Gate**: Check if Conda (`/opt/conda/bin/conda` or `~/miniconda3/bin/conda` or `~/.local/share/mamba/bin/mamba`) and UV (`~/.cargo/bin/uv` or `/usr/local/bin/uv`) are installed. If missing, auto-install in Phase 2.
+1. **Discovery Gate**: Check if Conda (`~/miniconda3/bin/conda` or `~/.local/share/mamba/bin/mamba`) and UV (`~/.cargo/bin/uv` or `/usr/local/bin/uv`) are installed.
 2. **Environment Creation Gate**: Verify `conda env list` contains `isaaclab` with matching Python version (`3.10` for Sim 5.1, `3.12` for Sim 6.0).
 3. **PyTorch Tensor Gate**: Run `uv pip` to verify `torch.cuda.is_available()` returns `True` and recognizes active GPU (RTX 4090 / Blackwell).
 4. **Shell Isolation Gate**: Open a clean non-Conda subshell and assert that `PYTHONPATH` and `LD_LIBRARY_PATH` contain zero references to Omniverse Kit directories.
