@@ -63,6 +63,8 @@ Master index of session memory checkpoints for Isaac Automator.
 | 2026-08-21 08:44 | `b3c4d5e6` | IsaacLab-Arena & NVIDIA Isaac-GR00T Foundation Model Stack | Codified Arena composable architecture and GR00T N1.7 VLA in plan and YAMLs | [`20260821_084440_b3c4d5e6.md`](./sessions/20260821_084440_b3c4d5e6.md) |
 | 2026-08-21 09:03 | `c4d5e6f7` | NVIDIA Isaac-GR00T Installer Module & Master Plan Blueprint | Built gr00t.sh module, uv sync engine, ZeroMQ serving CLI, and master docs | [`20260821_090340_c4d5e6f7.md`](./sessions/20260821_090340_c4d5e6f7.md) |
 | 2026-08-21 09:11 | `d5e6f7a8` | Decoupled Standalone Workspace with Submodule Bridging Engine | Built arena submodules link-standalone / restore-pinned and Section 5.4 plan | [`20260821_091120_d5e6f7a8.md`](./sessions/20260821_091120_d5e6f7a8.md) |
+| 2026-08-21 09:13 | `e6f7a8b9` | Architectural Critique: Python Editable Bridge vs Directory Symlinks | Added non-invasive editable bridge, safe unlink reset, and tradeoff matrix | [`20260821_091340_e6f7a8b9.md`](./sessions/20260821_091340_e6f7a8b9.md) |
+
 
 
 

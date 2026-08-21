@@ -887,16 +887,30 @@ cd /workspaces/IsaacAutomator/.agents/references/isaac-installer
 # 1. Audit Submodule vs Standalone Alignment:
 ./bin/isaac-installer arena submodules status
 
-# 2. Switch Arena to Standalone Development Mode (Instant Live Edits):
-# Swaps submodules/IsaacLab and submodules/Isaac-GR00T to point to your standalone repos
+# 2. Strategy A [RECOMMENDED]: Non-Invasive Python Editable Bridge (Zero Symlinks, Zero Git Dirt):
+# Registers standalone IsaacLab, Isaac-GR00T, and IsaacLab-Arena into Python site-packages.
+# Git submodules remain 100% clean and untouched!
+./bin/isaac-installer arena submodules editable-bridge
+
+# 3. Strategy B: In-Place Directory Symlinks (For legacy path-relative code):
 ./bin/isaac-installer arena submodules link-standalone
 
-# 3. Restore Exact Upstream Pinned Commit SHAs (for CI/CD or benchmark replication):
-./bin/isaac-installer arena submodules restore-pinned
+# 4. Reversible Reset: Unlink Symlinks & Restore Exact Upstream Pinned Commits:
+./bin/isaac-installer arena submodules unlink
 
-# 4. Update the Submodule Pin in Arena to Match Current Standalone HEAD:
+# 5. Update the Submodule Pin in Arena to Match Current Standalone HEAD:
 ./bin/isaac-installer arena submodules update-pin Isaac-GR00T
 ```
+
+### Architectural Critique: Symlinks vs Python Editable Bridge Mode
+
+| Dimension | **Strategy A: Python Editable Bridge (`editable-bridge`)** | **Strategy B: In-Place Directory Symlinks (`link-standalone`)** |
+| :--- | :--- | :--- |
+| **Git Repository Cleanliness** | **100% Clean**: `git status` in Arena is never polluted. | **Dirty**: Shows `typechange: submodules/IsaacLab` in git status. |
+| **Live Development** | **Instant**: Changes in standalone `Isaac-GR00T` reflect live. | **Instant**: Changes reflect live via filesystem pointer. |
+| **Accidental Commit Risk** | **0% Risk**: Submodules are not modified. | **Risk**: Accidental `git commit -a` could stage symlink. |
+| **Reversibility** | **Instant**: Standard `pip install` state. | **Instant**: Reversible with `./bin/isaac-installer arena submodules unlink`. |
+| **Recommendation** | **PRIMARY DEFAULT**: Cleanest, industry-standard approach. | **OPT-IN**: Used only if code requires hardcoded relative paths. |
 
 ---
 

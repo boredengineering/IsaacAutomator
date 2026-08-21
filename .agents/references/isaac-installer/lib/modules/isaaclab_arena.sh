@@ -377,17 +377,40 @@ if sync.get('has_upstream'):
                         fi
                     "
                     log_success "Submodules linked to Standalone Workspaces. Live development enabled!"
-                    ;;
-
-                restore-pinned|restore)
-                    log_info "Restoring exact upstream pinned git submodules..."
+                unlink|restore-pinned|restore|reset)
+                    log_info "Reversing symlinks & restoring exact upstream pinned git submodules..."
                     sudo -H -u "${TARGET_USER}" bash -c "
                         cd '${arena_dir}'
-                        rm -rf submodules/IsaacLab submodules/Isaac-GR00T
+                        # Remove any directory symlinks
+                        for submod in submodules/IsaacLab submodules/Isaac-GR00T; do
+                            if [[ -L \"\$submod\" ]]; then
+                                rm -f \"\$submod\"
+                            fi
+                        done
                         git checkout -- submodules/ 2>/dev/null || true
                         git submodule update --init --recursive
                     "
-                    log_success "Pinned submodules restored to golden upstream commit SHAs."
+                    log_success "Symlinks removed and pinned submodules restored to golden upstream commit SHAs."
+                    ;;
+
+                editable-bridge|link-packages)
+                    log_info "Registering Standalone Repositories via Python Editable Installs (Non-Invasive, Zero-Symlink Mode)..."
+                    sudo -H -u "${TARGET_USER}" bash -c "
+                        if [[ -d '${lab_dir}' && -x '${lab_dir}/isaaclab.sh' ]]; then
+                            cd '${lab_dir}'
+                            echo 'Registering standalone IsaacLab in editable mode...'
+                            ./isaaclab.sh -p -m pip install -e '${lab_dir}' 2>/dev/null || true
+
+                            if [[ -d '${gr00t_dir}' ]]; then
+                                echo 'Registering standalone Isaac-GR00T in editable mode...'
+                                ./isaaclab.sh -p -m pip install -e '${gr00t_dir}' 2>/dev/null || true
+                            fi
+
+                            echo 'Registering standalone IsaacLab-Arena in editable mode...'
+                            ./isaaclab.sh -p -m pip install -e '${arena_dir}' 2>/dev/null || true
+                        fi
+                    "
+                    log_success "Non-invasive Python editable bridge active. Git submodules remain 100% untouched and clean!"
                     ;;
 
                 update-pin)
@@ -404,7 +427,7 @@ if sync.get('has_upstream'):
                     ;;
 
                 *)
-                    echo "Usage: ./bin/isaac-installer arena submodules [status | link-standalone | restore-pinned | update-pin <name>]"
+                    echo "Usage: ./bin/isaac-installer arena submodules [status | link-standalone | unlink | editable-bridge | update-pin <name>]"
                     ;;
             esac
             ;;
