@@ -758,6 +758,95 @@ flowchart TD
 
 ---
 
+### Step-by-Step Isaac-GR00T Installation & Verification Plan:
+
+```mermaid
+flowchart TD
+    subgraph STAGE1 ["1. Host Prerequisites & System Libraries"]
+        P1["git-lfs (git lfs install for parquet files)"]
+        P2["FFmpeg 4-7 runtime (required by torchcodec)"]
+        P3["Astral uv Package Manager (curl -LsSf https://astral.sh/uv/install.sh | sh)"]
+        P4["Hugging Face Token Auth (huggingface-cli login / gated Cosmos-Reason2-2B access)"]
+        P1 & P2 & P3 & P4 --> CLONE
+    end
+
+    subgraph STAGE2 ["2. Repository Provisioning & Dual-Remote Topology"]
+        CLONE["git clone --recurse-submodules https://github.com/NVIDIA/Isaac-GR00T.git\n~/Documents/GitHub/boredengineering/Isaac-GR00T"]
+        R1["origin: https://github.com/boredengineering/Isaac-GR00T.git (Push Allowed)"]
+        R2["upstream: https://github.com/NVIDIA/Isaac-GR00T.git (Push Locked)"]
+        GHD["github-desktop --add <repo_path>"]
+        CLONE --> R1 & R2 --> GHD --> SYNC
+    end
+
+    subgraph STAGE3 ["3. Python 3.12 Virtual Environment & Lockfile Sync"]
+        SYNC["uv sync --python 3.12\n(Installs PyTorch 2.7, flash-attn, torchcodec, Transformers 4.57.3)"]
+        CUDA_FIX["export CUDA_HOME=/usr/local/cuda"]
+        SYNC --> CUDA_FIX --> TEST1
+    end
+
+    subgraph STAGE4 ["4. 4-Stage Verification & Benchmark Suite"]
+        TEST1["Gate 1: uv run python -c 'import gr00t; print(SUCCESS)'"]
+        TEST2["Gate 2: Hugging Face Gated Model Access Validation"]
+        TEST3["Gate 3: Standalone Open-Loop Inference on DROID Sample (demo_data/droid_sample)"]
+        TEST4["Gate 4: ZeroMQ Policy Server Round-Trip Latency Benchmark"]
+        TEST1 --> TEST2 --> TEST3 --> TEST4
+    end
+```
+
+#### Detailed Installation Commands:
+
+```bash
+# 1. System Dependencies & Git LFS
+sudo apt-get update && sudo apt-get install -y git-lfs ffmpeg
+git lfs install
+
+# 2. Clone Isaac-GR00T with Submodules & Wire Dual-Remote Topology
+git clone --recurse-submodules https://github.com/NVIDIA/Isaac-GR00T.git ~/Documents/GitHub/boredengineering/Isaac-GR00T
+cd ~/Documents/GitHub/boredengineering/Isaac-GR00T
+
+git remote rename origin upstream
+git remote add origin https://github.com/boredengineering/Isaac-GR00T.git
+git config remote.upstream.pushurl PUSH_DISABLED_CANONICAL_UPSTREAM
+github-desktop --add ~/Documents/GitHub/boredengineering/Isaac-GR00T
+
+# 3. Provision Isolated Python 3.12 Environment with uv
+uv sync --python 3.12
+
+# 4. Hugging Face Access & Token Login (Gated Cosmos-Reason2-2B VLM)
+uv run huggingface-cli login
+
+# 5. Execute 4-Stage Verification Suite
+# Gate 1: Core Import
+uv run python -c "import gr00t; print('✔ GR00T Core Module Imported Successfully')"
+
+# Gate 2 & 3: Standalone Zero-Shot Inference on DROID Sample
+uv run python scripts/deployment/standalone_inference_script.py \
+  --model-path nvidia/GR00T-N1.7-3B \
+  --dataset-path demo_data/droid_sample \
+  --embodiment-tag OXE_DROID_RELATIVE_EEF_RELATIVE_JOINT \
+  --traj-ids 1 2 \
+  --inference-mode pytorch \
+  --execution-horizon 8
+
+# Gate 4: Server-Client ZeroMQ Serving Test (Optional)
+uv run python gr00t/eval/run_gr00t_server.py \
+  --model-path nvidia/GR00T-N1.7-3B \
+  --embodiment-tag OXE_DROID_RELATIVE_EEF_RELATIVE_JOINT \
+  --device cuda:0 &
+SERVER_PID=$!
+sleep 5
+uv run python gr00t/eval/open_loop_eval.py \
+  --dataset-path demo_data/droid_sample \
+  --embodiment-tag OXE_DROID_RELATIVE_EEF_RELATIVE_JOINT \
+  --host 127.0.0.1 \
+  --port 5555 \
+  --traj-ids 1 \
+  --execution-horizon 8
+kill $SERVER_PID
+```
+
+---
+
 ## 6. State Tracking, Drift Detection & Self-Healing Engine
 
 When workstations evolve over time, repositories get misplaced (e.g. flat `GitHub/IsaacLab` vs `GitHub/BoredEngineer/IsaacLab`), remotes point to wrong URLs, branches drift, or symlinks break.

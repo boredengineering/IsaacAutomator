@@ -30,6 +30,7 @@ source "${LIB_MODULES}/hardware_teleop.sh"
 source "${LIB_MODULES}/isaacsim.sh"
 source "${LIB_MODULES}/isaaclab.sh"
 source "${LIB_MODULES}/isaaclab_arena.sh"
+source "${LIB_MODULES}/gr00t.sh"
 source "${LIB_MODULES}/auth.sh"
 source "${LIB_MODULES}/streaming.sh"
 source "${LIB_MODULES}/demos.sh"
@@ -98,6 +99,19 @@ is_stage_selected() {
             [[ "${CFG_PHYSICAL_AI_ENABLED:-false}" == "true" ]] && lerobot_active=true
 
             if [[ "$lerobot_active" != true ]]; then
+                STAGE_CHECK_MSG="Disabled in profile (${CONFIG_FILE})"
+                return 1
+            fi
+            ;;
+        gr00t)
+            local gr00t_active=false
+            [[ "${CFG_REPOSITORIES_GR00T_ENABLED:-false}" == "true" ]] && gr00t_active=true
+            [[ "${CFG_REPOSITORIES_GR00T:-false}" == "true" ]] && gr00t_active=true
+            [[ "${CFG_GR00T_ENABLED:-false}" == "true" ]] && gr00t_active=true
+            [[ "${CFG_GR00T:-false}" == "true" ]] && gr00t_active=true
+            [[ "${CFG_REPOSITORIES_ISAAC_GR00T_ENABLED:-false}" == "true" ]] && gr00t_active=true
+
+            if [[ "$gr00t_active" != true ]]; then
                 STAGE_CHECK_MSG="Disabled in profile (${CONFIG_FILE})"
                 return 1
             fi
@@ -398,8 +412,9 @@ cmd_install() {
     # Stage 6: Isaac Lab
     evaluate_and_run_stage "isaaclab" "Isaac Lab clone, _isaac_sim link & PyTorch verification" check_isaac_lab install_isaac_lab
 
-    # Stage 7: IsaacLab-Arena
+    # Stage 7: IsaacLab-Arena & Isaac-GR00T
     evaluate_and_run_stage "arena" "IsaacLab-Arena benchmark suite" check_isaaclab_arena install_isaaclab_arena
+    evaluate_and_run_stage "gr00t" "NVIDIA Isaac-GR00T Foundation Model Stack & Python 3.12" check_gr00t install_gr00t
 
     # Stage 8: Demos & Desktop Shortcuts
     evaluate_and_run_stage "demos" "Desktop .desktop launchers for Unitree G1, Go2 & Franka" check_demos install_demos_and_shortcuts
@@ -658,6 +673,7 @@ Commands:
   repair | fix                                 Automatically reconcile and heal workspace drift
   lab [status|list-tags|switch|sync|fork]      Manage Isaac Lab versioning, tags, and fork synchronization
   arena [status|list-tags|switch|sync|fork]    Manage IsaacLab-Arena versioning, tags, and fork synchronization
+  gr00t [status|infer|server|test|fork]        Manage NVIDIA Isaac-GR00T VLA model, serving & inference
   sim [list|switch]                            Discover & switch active Isaac Sim engines
   bench                                        Benchmark CDN latency to NVIDIA, Hugging Face, and GitHub
   config                                       Display active YAML configuration profile
@@ -687,14 +703,18 @@ Profiles & Configuration Options:
   --lerobot-repo <url/slug>    Custom fork for LeRobot (e.g. BoredEngineer/lerobot)
   --lerobot-tag <tag>          Pin specific LeRobot release tag
   --lerobot-branch <branch>    Custom branch for LeRobot
+  --gr00t-repo <url/slug>      Custom fork for Isaac-GR00T (e.g. BoredEngineer/Isaac-GR00T)
+  --gr00t-tag <tag>            Pin specific Isaac-GR00T release tag
+  --gr00t-branch <branch>      Custom branch for Isaac-GR00T
   --isaacsim-dir <path>        Custom path to Isaac Sim standalone engine
   --with-arena                 Explicitly enable IsaacLab-Arena
   --with-lerobot               Explicitly enable Hugging Face LeRobot
+  --with-gr00t                 Explicitly enable NVIDIA Isaac-GR00T VLA Stack
   --only <stages>              Comma-separated stages to run (e.g. devtools,sim,lab)
   --without <stages>           Comma-separated stages to exclude (e.g. demos,stream)
 
 Available Stage Names:
-  driver, display, prereqs, python, devtools, physical_ai, hardware_teleop, isaacsim, isaaclab, arena, demos
+  driver, display, prereqs, python, devtools, physical_ai, hardware_teleop, isaacsim, isaaclab, arena, gr00t, demos
 
 HELP
 }
@@ -706,6 +726,7 @@ shift || true
 PASSTHROUGH_ARGS=()
 CLI_WITH_ARENA=false
 CLI_WITH_LEROBOT=false
+CLI_WITH_GR00T=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -718,6 +739,7 @@ while [[ $# -gt 0 ]]; do
         --without)             WITHOUT_STAGES="$2"; shift 2 ;;
         --with-arena)          CLI_WITH_ARENA=true; shift ;;
         --with-lerobot)        CLI_WITH_LEROBOT=true; shift ;;
+        --with-gr00t)          CLI_WITH_GR00T=true; shift ;;
         --workspace-dir)       export WORKSPACE_DIR="$2"; shift 2 ;;
         --workspace-layout)    export WORKSPACE_LAYOUT="$2"; shift 2 ;;
         --workspace-owner)     export WORKSPACE_DEFAULT_OWNER="$2"; shift 2 ;;
@@ -733,6 +755,10 @@ while [[ $# -gt 0 ]]; do
         --lerobot-tag)         export LEROBOT_TAG="$2"; shift 2 ;;
         --lerobot-branch)      export LEROBOT_BRANCH="$2"; shift 2 ;;
         --lerobot-dir)         export LEROBOT_DIR="$2"; shift 2 ;;
+        --gr00t-repo)          export GR00T_REPO="$2"; shift 2 ;;
+        --gr00t-tag)           export GR00T_TAG="$2"; shift 2 ;;
+        --gr00t-branch)        export GR00T_BRANCH="$2"; shift 2 ;;
+        --gr00t-dir)           export GR00T_DIR="$2"; shift 2 ;;
         --isaacsim-dir)        export ISAACSIM_DIR="$2"; shift 2 ;;
         --stream)              STREAMING_PROVIDER="$2"; shift 2 ;;
         --auto-reboot)         AUTO_REBOOT=true; shift ;;
@@ -750,6 +776,9 @@ fi
 if [[ "$CLI_WITH_LEROBOT" == true ]]; then
     export CFG_REPOSITORIES_LEROBOT_ENABLED="true"
 fi
+if [[ "$CLI_WITH_GR00T" == true ]]; then
+    export CFG_REPOSITORIES_GR00T_ENABLED="true"
+fi
 
 case "${COMMAND}" in
     auth)             cmd_auth "${PASSTHROUGH_ARGS[@]:-status}" ;;
@@ -759,6 +788,7 @@ case "${COMMAND}" in
     repair|fix)       repair_workspace_drift ;;
     lab)              cmd_lab "${PASSTHROUGH_ARGS[@]:-status}" ;;
     arena)            cmd_arena "${PASSTHROUGH_ARGS[@]:-status}" ;;
+    gr00t)            cmd_gr00t "${PASSTHROUGH_ARGS[@]:-status}" ;;
     sim)              cmd_sim "${PASSTHROUGH_ARGS[@]:-list}" ;;
     bench)            cmd_bench ;;
     config)           print_active_config ;;

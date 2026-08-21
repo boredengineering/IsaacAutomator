@@ -184,3 +184,24 @@ git push -u origin feature/my-new-robot
 # Run Arena validation and benchmark smoke test:
 ./bin/isaac-installer arena test
 ```
+
+#### NVIDIA Isaac-GR00T (`gr00t`):
+```bash
+# View active Isaac-GR00T repository and model status:
+./bin/isaac-installer gr00t status
+
+# Run open-loop standalone inference on DROID demo dataset:
+./bin/isaac-installer gr00t infer
+
+# Launch ZeroMQ policy server (Port 5555):
+./bin/isaac-installer gr00t server 5555
+
+# Inspect GR00T remote URLs and push guards:
+./bin/isaac-installer gr00t remotes
+
+# Re-wire GR00T origin remote to your personal fork:
+./bin/isaac-installer gr00t fork boredengineering/Isaac-GR00T
+
+# Run core validation and test suite:
+./bin/isaac-installer gr00t test
+```
