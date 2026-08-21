@@ -341,6 +341,11 @@ for d in drifts:
             if [[ ! -f "$act_hook" || $(grep -c "VK_ICD_FILENAMES=/etc/vulkan" "$act_hook" 2>/dev/null || true) -gt 0 ]]; then
                 DRIFT_ITEMS+=("CondaEnv|VULKAN_HOOK_DRIFT|Static / Missing Hook|${act_hook}|Conda activation hook missing or contains hardcoded invalid Vulkan ICD path")
             fi
+
+            local deact_hook="${user_env_path}/etc/conda/deactivate.d/00_isaaclab_env.sh"
+            if [[ ! -f "$deact_hook" || $(grep -c "unset PYTHONPATH" "$deact_hook" 2>/dev/null || true) -eq 0 ]]; then
+                DRIFT_ITEMS+=("CondaEnv|DEACT_HOOK_DRIFT|Missing Sanitization|${deact_hook}|Conda deactivation hook missing 'unset PYTHONPATH' isolation")
+            fi
         fi
     fi
 
@@ -514,10 +519,10 @@ repair_workspace_drift() {
                 log_success "Isaac Sim bridge and .pth link reconciled."
                 ;;
 
-            VULKAN_HOOK_DRIFT)
-                log_info "Healing Conda environment activation hooks with dynamic Vulkan resolution..."
+            VULKAN_HOOK_DRIFT|DEACT_HOOK_DRIFT)
+                log_info "Healing Conda environment activation & deactivation hooks..."
                 install_python_env
-                log_success "Conda activation hooks healed."
+                log_success "Conda activation and deactivation hooks healed."
                 ;;
 
             EMPTY_CASE_DUPLICATE)

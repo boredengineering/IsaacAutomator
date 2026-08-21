@@ -416,7 +416,28 @@ Modern Anaconda/Conda releases bundle commercial cloud and telemetry plugins int
 
 ---
 
-#### 9. Production Automated Integration Plan in `isaac-installer`:
+#### 9. Cross-Python Version Isolation & `PYTHONPATH` Sanitization Protocol:
+
+When operating in heterogeneous Python environments (e.g. Miniconda Base running Python 3.14 and Isaac Lab running Python 3.12), environment variable leakage represents a primary failure mode:
+
+* **The Cross-Version Binary Collision**:
+  Omniverse Kit bundles CPython 3.12 wheels (`extscache/omni.kit.pip_archive...cp312/pip_prebundle`). If `PYTHONPATH` is exported globally into the interactive shell, any process using a different Python version (including the base Conda executable `/home/tarfy/miniconda3/bin/python`) will attempt to load the `cp312` compiled C-extensions (`_pydantic_core.so`, `_rust.so`). This causes immediate `ModuleNotFoundError` crashes during `conda deactivate` and `conda env list`.
+* **The Two-Tier Isolation Protocol**:
+  1. **Tier 1 (Targeted `.pth` Registration)**: Extension paths are declared exclusively inside `<conda_env>/lib/python3.12/site-packages/isaacsim_standalone.pth`, ensuring they are loaded strictly by the Python 3.12 interpreter and never leak into the parent shell environment.
+  2. **Tier 2 (Mandatory Deactivation Sanitization)**: The deactivation hook (`deactivate.d/00_isaaclab_env.sh`) executes an unconditional `unset PYTHONPATH`, guaranteeing that the base shell returns to an uncontaminated state upon exit:
+     ```bash
+     #!/usr/bin/env bash
+     if [[ -n "${_OLD_ISAAC_EXP_PATH}" ]]; then export EXP_PATH="${_OLD_ISAAC_EXP_PATH}"; else unset EXP_PATH; fi
+     if [[ -n "${_OLD_ISAAC_PATH}" ]]; then export ISAAC_PATH="${_OLD_ISAAC_PATH}"; else unset ISAAC_PATH; fi
+     if [[ -n "${_OLD_CARB_APP_PATH}" ]]; then export CARB_APP_PATH="${_OLD_CARB_APP_PATH}"; else unset CARB_APP_PATH; fi
+     if [[ -n "${_OLD_VK_ICD_FILENAMES}" ]]; then export VK_ICD_FILENAMES="${_OLD_VK_ICD_FILENAMES}"; else unset VK_ICD_FILENAMES; fi
+     unset _OLD_ISAAC_EXP_PATH _OLD_ISAAC_PATH _OLD_CARB_APP_PATH _OLD_VK_ICD_FILENAMES
+     unset PYTHONPATH
+     ```
+
+---
+
+#### 10. Production Automated Integration Plan in `isaac-installer`:
 
 To eliminate manual workarounds and make the installer 100% resilient across both modes:
 
