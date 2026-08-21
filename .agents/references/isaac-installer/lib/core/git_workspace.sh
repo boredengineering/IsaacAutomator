@@ -211,7 +211,7 @@ print(json.dumps({
     'commit': '''${commit}''',
     'origin': '''${origin}''',
     'upstream': '''${upstream}''',
-    'dirty': ${dirty}
+    'dirty': True if '${dirty}' == 'true' else False
 }))
 " 2>/dev/null || echo "{\"exists\": false}"
 }
