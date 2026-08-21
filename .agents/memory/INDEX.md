@@ -60,6 +60,8 @@ Master index of session memory checkpoints for Isaac Automator.
 | 2026-08-21 07:13 | `e5f6a7b8` | Master Plan Documentation of Workflows A & B for Dual-Remote Topology | Added step-by-step developer loops for feature PRs and pinned tags to plan | [`20260821_071335_e5f6a7b8.md`](./sessions/20260821_071335_e5f6a7b8.md) |
 | 2026-08-21 07:14 | `f6a7b8c9` | Update isaac-installer README.md with Dual-Remote Fork Topology | Added Dual-Remote workflows, CLI suite, and push guards to user-facing README | [`20260821_071418_f6a7b8c9.md`](./sessions/20260821_071418_f6a7b8c9.md) |
 | 2026-08-21 07:16 | `a2b3c4d5` | Complete Dual-Remote Fork Topology & CLI Suite for IsaacLab-Arena | Implemented arena CLI suite (status, sync, switch, fork, remotes, test) | [`20260821_071628_a2b3c4d5.md`](./sessions/20260821_071628_a2b3c4d5.md) |
+| 2026-08-21 08:44 | `b3c4d5e6` | IsaacLab-Arena & NVIDIA Isaac-GR00T Foundation Model Stack | Codified Arena composable architecture and GR00T N1.7 VLA in plan and YAMLs | [`20260821_084440_b3c4d5e6.md`](./sessions/20260821_084440_b3c4d5e6.md) |
+
 
 
 

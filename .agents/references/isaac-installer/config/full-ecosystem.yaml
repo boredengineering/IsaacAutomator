@@ -41,6 +41,17 @@ repositories:
     branch: "main"
     tag: "v0.4.3"
     isolated_env: true               # Dedicated 'lerobot' conda env to prevent GR00T/numpy conflicts
+  gr00t:
+    enabled: true
+    repo: "boredengineering/Isaac-GR00T"
+    upstream: "https://github.com/NVIDIA/Isaac-GR00T.git"
+    branch: "main"
+    tag: ""
+    model_path: "nvidia/GR00T-N1.7-3B"
+    vlm_backbone: "nvidia/Cosmos-Reason2-2B"
+    server_host: "127.0.0.1"
+    server_port: 5555
+    isolated_env: true               # Dedicated 'gr00t' Python 3.12 / torchcodec env
 
 simulation:
   isaacsim:

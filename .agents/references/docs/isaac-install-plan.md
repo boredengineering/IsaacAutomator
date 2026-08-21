@@ -648,6 +648,116 @@ flowchart TD
 
 ---
 
+## 5.2 IsaacLab-Arena Composable Task & Multi-Embodiment Benchmark Architecture
+
+**IsaacLab-Arena** (`isaac-sim/IsaacLab-Arena`) is an open-source extension to NVIDIA Isaac Lab for simplified task curation and generalist robot policy evaluation at scale. Instead of monolithic environment classes where robots, objects, and tasks are hardcoded, Arena provides a **Composable Triplet Architecture**:
+
+```mermaid
+flowchart TD
+    subgraph COMPOSABLES ["Composable Primitives"]
+        EMBODIMENT["1. Embodiments\n(Unitree G1, Fourier GR1, Franka Panda, ANYmal-D, Spot)"]
+        SCENE["2. Semantic Scene Graph\n(Kitchen, Tabletop, Warehouse, Rough Terrain)"]
+        TASK["3. Task Grammar\n(Sequential Skills: Walk -> Pick -> Walk -> Place -> Close)"]
+    end
+
+    subgraph BUILDER ["Arena Dynamic Builder (ArenaEnvBuilder)"]
+        CFG["ArenaEnvBuilderCfg (CLI & Python API)"]
+        ENV["ManagerBasedRLEnv / DirectRLEnv Assembly"]
+        COMPOSABLES --> CFG --> ENV
+    end
+
+    subgraph WORKFLOWS ["Evaluation & Training Pipelines"]
+        RUNNER["isaaclab_arena/evaluation/policy_runner.py"]
+        RL_PIPES["Parallel PhysX GPU Rollouts (4,096 Actors)"]
+        GR00T_PIPES["GR00T VLA Zero-Shot & Finetuned Inference"]
+        ENV --> RUNNER --> RL_PIPES & GR00T_PIPES
+    end
+```
+
+### Key Capabilities & Workflows:
+1. **LEGO-like On-the-Fly Composition**: Mix and match robot bodies, scene assets, and reward grammars at runtime without maintaining thousands of duplicate YAML/Python configs.
+2. **Sequential Task Chaining**: Chain atomic skills (e.g. `Pick` + `Walk` + `Place` + `Close Door`) for long-horizon evaluation.
+3. **Core Validation Workflows**:
+   - **Zero-Action Tensor Rollout**:
+     ```bash
+     python isaaclab_arena/evaluation/policy_runner.py \
+       --policy_type zero_action \
+       --num_steps 50 \
+       --num_envs 16 \
+       cube_goal_pose
+     ```
+   - **Live Omniverse Kit GUI Rollout**:
+     ```bash
+     python isaaclab_arena/evaluation/policy_runner.py \
+       --viz kit \
+       --policy_type zero_action \
+       --num_steps 200 \
+       cube_goal_pose
+     ```
+   - **Target Embodiments**:
+     - **Unitree G1 Humanoid Loco-Manipulation** (`isaaclab_arena_g1`)
+     - **Fourier GR1 Microwave Door Opening** (`isaaclab_arena_environments`)
+     - **Franka Emika Panda Object Lift** (`isaaclab_arena_examples`)
+
+---
+
+## 5.3 NVIDIA Isaac-GR00T Foundation Model Stack (N1.7 General Availability)
+
+**NVIDIA Isaac-GR00T** (`NVIDIA/Isaac-GR00T`) is an open Vision-Language-Action (VLA) foundation model designed for generalist humanoid robot skills and cross-embodiment manipulation.
+
+```mermaid
+flowchart TD
+    subgraph INPUTS ["Multimodal Inputs"]
+        LANG["Task Language Instruction\n('Pick up the red mug and place it in the tray')"]
+        VIDEO["Multi-Camera Video Streams (RGB)\n(Decoded via torchcodec + FFmpeg)"]
+        STATE["Proprioceptive Robot State (Joints / Relative EEF)"]
+    end
+
+    subgraph BACKBONE ["GR00T N1.7 Neural Architecture"]
+        VLM["Cosmos-Reason2-2B (Qwen3-VL Multimodal Backbone)\nPre-trained on 20K hrs EgoScale Human Videos"]
+        DIT["Diffusion Transformer Action Head (DiT)\nFlow-Matching Action Denoising (40-step horizon)"]
+        INPUTS --> VLM --> DIT
+    end
+
+    subgraph OUTPUTS ["Cross-Embodiment Actuation"]
+        EEF["Relative End-Effector Trajectories"]
+        SONIC["GEAR-SONIC Whole-Body Controller (UNITREE_G1_SONIC)\nDecodes Latent Tokens -> Full-Body Joint Commands"]
+        DIT --> EEF & SONIC
+    end
+```
+
+### Technical Specifications & Architecture:
+* **Model Checkpoint**: `nvidia/GR00T-N1.7-3B` (Hugging Face gated checkpoint).
+* **VLM Backbone**: `nvidia/Cosmos-Reason2-2B` (Qwen3-VL native aspect ratio, flexible token resolution).
+* **Action Space**: Relative End-Effector (EEF) action space shared across human video priors and robot embodiments.
+* **Humanoid Whole-Body Control (SONIC)**: Uses the `UNITREE_G1_SONIC` embodiment tag with the GEAR-SONIC whole-body controller to produce synchronized bimanual manipulation and footstep placement.
+
+### Operational Deployment Modes:
+1. **Server-Client Architecture (ZeroMQ Transport)**:
+   - *GPU Policy Server (Port 5555)*:
+     ```bash
+     uv run python gr00t/eval/run_gr00t_server.py \
+       --model-path nvidia/GR00T-N1.7-3B \
+       --embodiment-tag OXE_DROID_RELATIVE_EEF_RELATIVE_JOINT \
+       --device cuda:0
+     ```
+   - *Client Open-Loop Evaluation*:
+     ```bash
+     uv run python gr00t/eval/open_loop_eval.py \
+       --dataset-path demo_data/droid_sample \
+       --embodiment-tag OXE_DROID_RELATIVE_EEF_RELATIVE_JOINT \
+       --host 127.0.0.1 \
+       --port 5555 \
+       --traj-ids 1 2 \
+       --execution-horizon 8
+     ```
+2. **Fine-Tuning Engine (`launch_finetune.py`)**:
+   - Supports multi-dataset mixtures with alpha weighting (`--ds_weights_alpha`), state dropout (`--state_dropout_prob`), and Weights & Biases telemetry.
+   - Dataset Schema: LeRobot v2 format + `meta/modality.json` for state/action splitting.
+3. **Video Backend**: Accelerated H.264 video decoding via `torchcodec==0.8.0` with FFmpeg 4–7 compatibility layer.
+
+---
+
 ## 6. State Tracking, Drift Detection & Self-Healing Engine
 
 When workstations evolve over time, repositories get misplaced (e.g. flat `GitHub/IsaacLab` vs `GitHub/BoredEngineer/IsaacLab`), remotes point to wrong URLs, branches drift, or symlinks break.
@@ -912,7 +1022,9 @@ The following architectural points require specific team and stakeholder review 
 - [x] **Multi-Version Isaac Sim Detection & Atomic Symlink Switcher** (`lib/modules/isaacsim.sh`)
 - [x] **13-Subsystem End-to-End Verification Suite** (`cmd_test`)
 - [x] **Workspace Hierarchy Engine (`~/Documents/GitHub/<Owner>/<Repo>`)** (`lib/core/git_workspace.sh`)
-- [x] **Dual-Remote Fork & Tag/Branch Management (`lab switch`, `lab sync`)** (`lib/modules/isaaclab.sh`)
+- [ ] **Dual-Remote Fork & Tag/Branch Management (`lab switch`, `lab sync`)** (`lib/modules/isaaclab.sh`)
+- [x] **IsaacLab-Arena Composable Task & Benchmark Suite (`arena status`, `arena test`)** (`lib/modules/isaaclab_arena.sh`)
+- [ ] **NVIDIA Isaac-GR00T VLA Model Integration & ZeroMQ Serving** (`lib/modules/gr00t.sh`)
 - [x] **State Tracking, Drift Reconciliation & Self-Healing Engine (`repair` / `fix`)** (`lib/core/state.sh`)
 - [ ] **Hybrid Conda Named Environment + UV Pip Engine & Activation Hooks** (`lib/modules/conda.sh`)
 - [ ] **Two-Phase Privilege Boundary Refactor (`sys-provision` vs `dev-setup`)**

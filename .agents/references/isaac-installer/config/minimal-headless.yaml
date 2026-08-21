@@ -31,6 +31,8 @@ repositories:
     enabled: false
   lerobot:
     enabled: false
+  gr00t:
+    enabled: false
 
 simulation:
   isaacsim:
