@@ -122,6 +122,18 @@ install_python_env() {
         fi
     fi
 
+    # Pre-configure Conda ToS auto-acceptance, classic solver & conda-forge priority
+    sudo -H -u "${TARGET_USER}" bash -c "
+        unset LD_LIBRARY_PATH
+        export CONDA_PLUGINS_AUTO_ACCEPT_TOS=yes
+        export CONDA_SOLVER=classic
+        '${conda_bin}' config --set auto_accept_tos true 2>/dev/null || true
+        '${conda_bin}' config --set solver classic 2>/dev/null || true
+        '${conda_bin}' config --add channels conda-forge 2>/dev/null || true
+        '${conda_bin}' tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main 2>/dev/null || true
+        '${conda_bin}' tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r 2>/dev/null || true
+    " || true
+
     if [[ ! -d "${env_path}" || ! -x "${env_path}/bin/python" ]]; then
         if [[ -n "$lab_dir" && -f "${lab_dir}/isaaclab.sh" ]]; then
             log_info "Delegating environment creation to official ./isaaclab.sh --conda '${CONDA_ENV_NAME}'..."
@@ -129,6 +141,9 @@ install_python_env() {
                 export SHELL=/bin/bash
                 export USER='${TARGET_USER}'
                 export HOME='${TARGET_HOME}'
+                export CONDA_PLUGINS_AUTO_ACCEPT_TOS=yes
+                export CONDA_SOLVER=classic
+                unset LD_LIBRARY_PATH
                 source '${conda_root}/etc/profile.d/conda.sh' 2>/dev/null || eval \"\$('${conda_bin}' shell.bash hook 2>/dev/null)\" || true
                 cd '${lab_dir}'
                 SHELL=/bin/bash ./isaaclab.sh --conda '${CONDA_ENV_NAME}'
@@ -139,7 +154,12 @@ install_python_env() {
         env_path="$(resolve_conda_env_path "${CONDA_ENV_NAME}")"
         if [[ ! -d "${env_path}" || ! -x "${env_path}/bin/python" ]]; then
             log_info "Creating native named Conda environment '${CONDA_ENV_NAME}' (Python ${py_ver}) via conda binary..."
-            sudo -H -u "${TARGET_USER}" "${conda_bin}" create -y -n "${CONDA_ENV_NAME}" python="${py_ver}" pip
+            sudo -H -u "${TARGET_USER}" bash -c "
+                export CONDA_PLUGINS_AUTO_ACCEPT_TOS=yes
+                export CONDA_SOLVER=classic
+                unset LD_LIBRARY_PATH
+                '${conda_bin}' create -y -n '${CONDA_ENV_NAME}' python='${py_ver}' pip -c conda-forge
+            "
         fi
         
         sudo -H -u "${TARGET_USER}" "${conda_bin}" config --append envs_dirs "${conda_root}/envs" 2>/dev/null || true
