@@ -176,6 +176,24 @@ install_python_env() {
     log_info "Configuring scoped Conda activation hooks in ${env_path}/etc/conda/..."
     sudo -H -u "${TARGET_USER}" mkdir -p "${env_path}/etc/conda/activate.d" "${env_path}/etc/conda/deactivate.d"
 
+    local vk_icd=""
+    for icd_candidate in /usr/share/vulkan/icd.d/nvidia_icd.json \
+                         /etc/vulkan/icd.d/nvidia_icd.json \
+                         /usr/share/vulkan/icd.d/nvidia.json \
+                         /etc/vulkan/icd.d/nvidia.json; do
+        if [[ -f "$icd_candidate" ]]; then
+            vk_icd="$icd_candidate"
+            break
+        fi
+    done
+
+    local vk_line=""
+    if [[ -n "$vk_icd" ]]; then
+        vk_line="export VK_ICD_FILENAMES=\"${vk_icd}\""
+    else
+        vk_line="# VK_ICD_FILENAMES unset (using Vulkan loader auto-discovery)"
+    fi
+
     cat << HOOK_ACT | sudo -H -u "${TARGET_USER}" tee "${env_path}/etc/conda/activate.d/00_isaaclab_env.sh" >/dev/null
 #!/usr/bin/env bash
 # Scoped Omniverse Environment Variables (Active only while '${CONDA_ENV_NAME}' is activated)
@@ -187,7 +205,7 @@ export _OLD_VK_ICD_FILENAMES="\${VK_ICD_FILENAMES:-}"
 export EXP_PATH="${sim_dir}/apps"
 export ISAAC_PATH="${sim_dir}"
 export CARB_APP_PATH="${sim_dir}/kit"
-export VK_ICD_FILENAMES="/etc/vulkan/icd.d/nvidia_icd.json"
+${vk_line}
 HOOK_ACT
     chmod 755 "${env_path}/etc/conda/activate.d/00_isaaclab_env.sh"
 
@@ -215,7 +233,7 @@ SIM_PATH="\${ISAACSIM_DIR:-\$HOME/IsaacSim}"
 export EXP_PATH="\${SIM_PATH}/apps"
 export ISAAC_PATH="\${SIM_PATH}"
 export CARB_APP_PATH="\${SIM_PATH}/kit"
-export VK_ICD_FILENAMES="/etc/vulkan/icd.d/nvidia_icd.json"
+${vk_line}
 
 CONDA_PY="${env_path}/bin/python"
 
