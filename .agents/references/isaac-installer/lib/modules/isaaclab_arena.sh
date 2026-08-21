@@ -301,12 +301,147 @@ if sync.get('has_upstream'):
             "
             ;;
 
+        submodules|submod)
+            local submod_action="${1:-status}"
+            shift || true
+
+            log_header "IsaacLab-Arena Submodule & Standalone Workspace Bridging"
+            if [[ ! -d "${arena_dir}/.git" ]]; then
+                log_error "IsaacLab-Arena repository not found at ${arena_dir}."
+                return 1
+            fi
+
+            local gr00t_dir
+            gr00t_dir="$(resolve_active_repo_dir "Isaac-GR00T" "${GR00T_REPO:-}" "${GR00T_DIR:-}")"
+
+            case "$submod_action" in
+                status)
+                    echo "=== Submodule & Standalone Alignment Matrix ==="
+                    for submod_name in "IsaacLab" "Isaac-GR00T"; do
+                        local target_standalone=""
+                        if [[ "$submod_name" == "IsaacLab" ]]; then target_standalone="${lab_dir}"; fi
+                        if [[ "$submod_name" == "Isaac-GR00T" ]]; then target_standalone="${gr00t_dir}"; fi
+
+                        local submod_path="${arena_dir}/submodules/${submod_name}"
+                        echo -e "\n● Submodule: \e[1m${submod_name}\e[0m (Path: ${submod_path})"
+                        
+                        if [[ -L "${submod_path}" ]]; then
+                            local link_target
+                            link_target="$(readlink -f "${submod_path}" || true)"
+                            echo -e "  Mode:              \e[32mSTANDALONE_LINKED (Symlink to ${link_target})\e[0m"
+                            echo "  Live Edits:        Active (Edits in standalone repo propagate instantly)"
+                        elif [[ -d "${submod_path}/.git" || -f "${submod_path}/.git" ]]; then
+                            local sub_commit
+                            sub_commit="$(git -C "${submod_path}" rev-parse --short HEAD 2>/dev/null || echo 'unknown')"
+                            echo "  Mode:              PINNED_SUBMODULE (Commit: ${sub_commit})"
+                            if [[ -d "${target_standalone}/.git" ]]; then
+                                local sa_commit
+                                sa_commit="$(git -C "${target_standalone}" rev-parse --short HEAD 2>/dev/null || echo 'unknown')"
+                                echo "  Standalone HEAD:   ${sa_commit} (${target_standalone})"
+                                if [[ "$sub_commit" == "$sa_commit" ]]; then
+                                    echo -e "  Alignment:         \e[32mIN SYNC (Exact commit match)\e[0m"
+                                else
+                                    echo -e "  Alignment:         \e[33mPIN_DIVERGENCE (Standalone is on different commit)\e[0m"
+                                    echo "                     To link standalone live: ./bin/isaac-installer arena submodules link-standalone"
+                                fi
+                            fi
+                        else
+                            echo -e "  Mode:              \e[31mUNINITIALIZED\e[0m"
+                            echo "                     Run: git submodule update --init --recursive or link-standalone"
+                        fi
+                    done
+                    echo ""
+                    ;;
+
+                link-standalone|link)
+                    log_info "Linking IsaacLab-Arena submodules to Standalone Developer Workspaces..."
+                    sudo -H -u "${TARGET_USER}" bash -c "
+                        mkdir -p '${arena_dir}/submodules'
+                        
+                        if [[ -d '${lab_dir}' ]]; then
+                            echo 'Linking submodules/IsaacLab -> ${lab_dir}'
+                            rm -rf '${arena_dir}/submodules/IsaacLab'
+                            ln -sfn '${lab_dir}' '${arena_dir}/submodules/IsaacLab'
+                        fi
+
+                        if [[ -d '${gr00t_dir}' ]]; then
+                            echo 'Linking submodules/Isaac-GR00T -> ${gr00t_dir}'
+                            rm -rf '${arena_dir}/submodules/Isaac-GR00T'
+                            ln -sfn '${gr00t_dir}' '${arena_dir}/submodules/Isaac-GR00T'
+                        fi
+
+                        # Re-index editable pip installs
+                        if [[ -d '${lab_dir}' && -x '${lab_dir}/isaaclab.sh' ]]; then
+                            cd '${lab_dir}'
+                            ./isaaclab.sh -p -m pip install -e '${arena_dir}' 2>/dev/null || true
+                        fi
+                    "
+                    log_success "Submodules linked to Standalone Workspaces. Live development enabled!"
+                    ;;
+
+                restore-pinned|restore)
+                    log_info "Restoring exact upstream pinned git submodules..."
+                    sudo -H -u "${TARGET_USER}" bash -c "
+                        cd '${arena_dir}'
+                        rm -rf submodules/IsaacLab submodules/Isaac-GR00T
+                        git checkout -- submodules/ 2>/dev/null || true
+                        git submodule update --init --recursive
+                    "
+                    log_success "Pinned submodules restored to golden upstream commit SHAs."
+                    ;;
+
+                update-pin)
+                    local target_name="${1:-}"
+                    if [[ -z "$target_name" ]]; then
+                        log_error "Usage: ./bin/isaac-installer arena submodules update-pin <IsaacLab|Isaac-GR00T>"
+                        return 1
+                    fi
+                    sudo -H -u "${TARGET_USER}" bash -c "
+                        cd '${arena_dir}'
+                        git add 'submodules/${target_name}'
+                    "
+                    log_success "Submodule pin updated in git index."
+                    ;;
+
+                *)
+                    echo "Usage: ./bin/isaac-installer arena submodules [status | link-standalone | restore-pinned | update-pin <name>]"
+                    ;;
+            esac
+            ;;
+
+        play)
+            local task_name="${1:-cube_goal_pose}"
+            log_header "Running IsaacLab-Arena Policy in Live Kit Viewport (--viz kit)"
+            sudo -H -u "${TARGET_USER}" bash -c "
+                cd '${arena_dir}'
+                if [[ -d '${lab_dir}' && -x '${lab_dir}/isaaclab.sh' ]]; then
+                    ${lab_dir}/isaaclab.sh -p isaaclab_arena/evaluation/policy_runner.py --viz kit --policy_type zero_action --num_steps 200 '${task_name}'
+                else
+                    python isaaclab_arena/evaluation/policy_runner.py --viz kit --policy_type zero_action --num_steps 200 '${task_name}'
+                fi
+            "
+            ;;
+
+        run|infer)
+            local task_name="${1:-cube_goal_pose}"
+            local steps="${2:-50}"
+            log_header "Running IsaacLab-Arena Headless Rollout (${steps} steps)"
+            sudo -H -u "${TARGET_USER}" bash -c "
+                cd '${arena_dir}'
+                if [[ -d '${lab_dir}' && -x '${lab_dir}/isaaclab.sh' ]]; then
+                    ${lab_dir}/isaaclab.sh -p isaaclab_arena/evaluation/policy_runner.py --policy_type zero_action --num_steps '${steps}' --num_envs 16 '${task_name}'
+                else
+                    python isaaclab_arena/evaluation/policy_runner.py --policy_type zero_action --num_steps '${steps}' --num_envs 16 '${task_name}'
+                fi
+            "
+            ;;
+
         test)
             test_isaaclab_arena
             ;;
 
         *)
-            echo "Usage: ./bin/isaac-installer arena [status|list-tags|switch <ref>|sync [--rebase]|fork <owner/repo>|remotes|test]"
+            echo "Usage: ./bin/isaac-installer arena [status|list-tags|switch <ref>|sync [--rebase]|fork <owner/repo>|remotes|submodules [status|link-standalone|restore-pinned]|play <task>|run <task>|test]"
             ;;
     esac
 }

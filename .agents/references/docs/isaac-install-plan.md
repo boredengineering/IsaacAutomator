@@ -847,6 +847,59 @@ kill $SERVER_PID
 
 ---
 
+## 5.4 Decoupled Standalone Workspace with Atomic Submodule Bridging & Pinned Commit Management
+
+### The Architecture Problem: Nested Submodules vs Standalone Development
+
+Upstream `isaac-sim/IsaacLab-Arena` relies on Git submodules (`submodules/IsaacLab` and `submodules/Isaac-GR00T`) pinned to exact upstream commit SHAs.
+
+However, robotics developers need to build, modify, test, and commit to **`Isaac-GR00T`** (e.g. creating custom VLA heads, modifying modality configs, fine-tuning new embodiments) and **`IsaacLab`** (custom robot actuators, sensor plugins) **as first-class standalone repositories** with full branches and push access, outside the awkward detached-HEAD confines of nested submodules.
+
+```mermaid
+flowchart TD
+    subgraph STANDALONE ["Standalone Developer Workspaces (~/Documents/GitHub/boredengineering/)"]
+        LAB["IsaacLab (Standalone Git Repo & Fork)\n• Develop custom actuators & sensors\n• Branch: feature/my-actuator\n• Origin: boredengineering/IsaacLab"]
+        GR00T["Isaac-GR00T (Standalone Git Repo & Fork)\n• Develop custom VLA heads & finetune\n• Branch: feature/g1-custom-head\n• Origin: boredengineering/Isaac-GR00T"]
+        ARENA["IsaacLab-Arena (Standalone Git Repo & Fork)\n• Compose tasks, benchmark suites, policy runner\n• Branch: main / release/0.3.0"]
+    end
+
+    subgraph BRIDGING ["Submodule Linking & Alignment Engine (isaac-installer arena submodules)"]
+        MODE_DEV["Development Mode (Symlink / Editable Bridge):\nArena links submodules/Isaac-GR00T -> Standalone Isaac-GR00T\nArena links submodules/IsaacLab -> Standalone IsaacLab\n✅ Live edits propagate instantaneously!"]
+        MODE_PIN["Reproducibility Mode (Pinned Snapshot):\nArena uses internal git submodules at exact upstream commit SHAs\n✅ 100% deterministic benchmark replication!"]
+        AUDIT["Submodule Drift Telemetry:\nReports commit delta between Standalone HEAD vs Pinned Submodule SHA"]
+    end
+
+    subgraph RUNTIMES ["Unified Python Execution Environments"]
+        ENV_LAB["conda activate isaaclab (Isaac Lab 3.0 / Arena Runtime)"]
+        ENV_GR00T["uv / conda run (Isaac-GR00T Python 3.12 Runtime)"]
+        ZMQ["ZeroMQ Socket Bridge (127.0.0.1:5555)"]
+        ENV_GR00T <-->|Action Tokens & Observations| ZMQ <-->|Policy Inference| ENV_LAB
+    end
+
+    STANDALONE --> BRIDGING --> RUNTIMES
+```
+
+### Submodule & Standalone Bridging Operations:
+
+```bash
+cd /workspaces/IsaacAutomator/.agents/references/isaac-installer
+
+# 1. Audit Submodule vs Standalone Alignment:
+./bin/isaac-installer arena submodules status
+
+# 2. Switch Arena to Standalone Development Mode (Instant Live Edits):
+# Swaps submodules/IsaacLab and submodules/Isaac-GR00T to point to your standalone repos
+./bin/isaac-installer arena submodules link-standalone
+
+# 3. Restore Exact Upstream Pinned Commit SHAs (for CI/CD or benchmark replication):
+./bin/isaac-installer arena submodules restore-pinned
+
+# 4. Update the Submodule Pin in Arena to Match Current Standalone HEAD:
+./bin/isaac-installer arena submodules update-pin Isaac-GR00T
+```
+
+---
+
 ## 6. State Tracking, Drift Detection & Self-Healing Engine
 
 When workstations evolve over time, repositories get misplaced (e.g. flat `GitHub/IsaacLab` vs `GitHub/BoredEngineer/IsaacLab`), remotes point to wrong URLs, branches drift, or symlinks break.

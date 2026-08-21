@@ -181,6 +181,21 @@ git push -u origin feature/my-new-robot
 # Re-wire Arena origin remote to your personal fork:
 ./bin/isaac-installer arena fork boredengineering/IsaacLab-Arena
 
+# Audit submodules vs standalone repository alignment:
+./bin/isaac-installer arena submodules status
+
+# Link Arena submodules to standalone developer workspaces (Live Edits):
+./bin/isaac-installer arena submodules link-standalone
+
+# Restore exact upstream pinned commit SHAs (CI/CD replication):
+./bin/isaac-installer arena submodules restore-pinned
+
+# Run Arena policy in live 3D Kit viewport (--viz kit):
+./bin/isaac-installer arena play cube_goal_pose
+
+# Run Arena headless rollout:
+./bin/isaac-installer arena run cube_goal_pose 50
+
 # Run Arena validation and benchmark smoke test:
 ./bin/isaac-installer arena test
 ```
