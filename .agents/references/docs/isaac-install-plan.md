@@ -583,6 +583,39 @@ flowchart TD
 
 ---
 
+### Dual-Remote Day-to-Day Developer Workflows:
+
+#### Workflow A: Developing Features & Opening Upstream PRs
+```bash
+# 1. Switch to your main branch
+git checkout main
+
+# 2. Sync your local main with NVIDIA upstream/main and push to your fork:
+./bin/isaac-installer lab sync
+
+# 3. Create your new feature branch:
+git checkout -b feature/my-new-robot
+
+# 4. Make edits, train models, commit changes:
+git add .
+git commit -m "feat: implement custom humanoid task"
+
+# 5. Push your feature branch to your personal fork (Push is allowed):
+git push -u origin feature/my-new-robot
+
+# 6. Open a Pull Request from boredengineering/IsaacLab -> isaac-sim/IsaacLab
+# (Via GitHub Desktop or 'gh pr create')
+```
+
+#### Workflow B: Pinned Release Tags (e.g. Isaac Sim 6.0 Compatibility)
+```bash
+# To switch to a different official release tag:
+./bin/isaac-installer lab list-tags
+./bin/isaac-installer lab switch v3.0.0-beta2
+```
+
+---
+
 ## 5.1 Custom Source-Built Isaac Sim & Multi-Version Coexistence (6.0.1 & 5.1.0)
 
 For advanced physical AI teams compiling Isaac Sim from source (or maintaining custom USD/PhysX builds), or teams needing both 6.0.1 and 5.1.0 on the same machine:
