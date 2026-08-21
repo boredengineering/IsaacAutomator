@@ -656,7 +656,8 @@ Commands:
   plan | check                                 Perform deep pre-flight audit & conflict diff matrix
   drift                                        Audit workspace directory hierarchy & remote state drift
   repair | fix                                 Automatically reconcile and heal workspace drift
-  lab [status|list-tags|switch|sync]           Manage Isaac Lab versioning, tags, and fork synchronization
+  lab [status|list-tags|switch|sync|fork]      Manage Isaac Lab versioning, tags, and fork synchronization
+  arena [status|list-tags|switch|sync|fork]    Manage IsaacLab-Arena versioning, tags, and fork synchronization
   sim [list|switch]                            Discover & switch active Isaac Sim engines
   bench                                        Benchmark CDN latency to NVIDIA, Hugging Face, and GitHub
   config                                       Display active YAML configuration profile
@@ -757,6 +758,7 @@ case "${COMMAND}" in
     drift)            print_drift_report ;;
     repair|fix)       repair_workspace_drift ;;
     lab)              cmd_lab "${PASSTHROUGH_ARGS[@]:-status}" ;;
+    arena)            cmd_arena "${PASSTHROUGH_ARGS[@]:-status}" ;;
     sim)              cmd_sim "${PASSTHROUGH_ARGS[@]:-list}" ;;
     bench)            cmd_bench ;;
     config)           print_active_config ;;

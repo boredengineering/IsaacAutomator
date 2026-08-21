@@ -145,6 +145,8 @@ git push -u origin feature/my-new-robot
 ```
 
 ### Dual-Remote CLI Commands:
+
+#### Isaac Lab (`lab`):
 ```bash
 # View active branch, tag, commit, and upstream sync telemetry:
 ./bin/isaac-installer lab status
@@ -160,4 +162,25 @@ git push -u origin feature/my-new-robot
 
 # Re-wire origin remote to another fork or organization:
 ./bin/isaac-installer lab fork boredengineering/IsaacLab
+```
+
+#### IsaacLab-Arena (`arena`):
+```bash
+# View active Arena branch, tag, commit, and sync status:
+./bin/isaac-installer arena status
+
+# Inspect Arena remote URLs and push guards:
+./bin/isaac-installer arena remotes
+
+# Synchronize Arena branch with upstream:
+./bin/isaac-installer arena sync
+
+# Switch Arena release tags/branches:
+./bin/isaac-installer arena switch release/0.3.0
+
+# Re-wire Arena origin remote to your personal fork:
+./bin/isaac-installer arena fork boredengineering/IsaacLab-Arena
+
+# Run Arena validation and benchmark smoke test:
+./bin/isaac-installer arena test
 ```
