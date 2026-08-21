@@ -133,8 +133,10 @@ install_python_env() {
         '${conda_bin}' config --add channels conda-forge 2>/dev/null || true
         '${conda_bin}' tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main 2>/dev/null || true
         '${conda_bin}' tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r 2>/dev/null || true
-        # Clean up broken / incompatible base auth plugins that trigger pydantic_core entry point errors
-        '${conda_bin}' remove -n base anaconda-cloud-auth conda-anaconda-tos anaconda-channel-guide -y 2>/dev/null || true
+        # Repair / reinstall pydantic and pydantic-core in base to restore compiled Rust C-extensions
+        if [[ -x "${conda_root}/bin/pip" ]]; then
+            '${conda_root}/bin/pip' install --force-reinstall pydantic pydantic-core 2>/dev/null || true
+        fi
     " || true
 
     if [[ ! -d "${env_path}" || ! -x "${env_path}/bin/python" ]]; then

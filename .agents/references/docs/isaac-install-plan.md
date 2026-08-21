@@ -395,7 +395,28 @@ When rendering Omniverse Kit viewports in Isaac Lab 3.0 (via `--viz kit`), the V
 
 ---
 
-#### 8. Production Automated Integration Plan in `isaac-installer`:
+#### 8. Conda Base Plugin Registry & Rust C-Extension (`pydantic-core`) Resilience:
+
+Modern Anaconda/Conda releases bundle commercial cloud and telemetry plugins into the `base` environment (e.g. `anaconda-cloud-auth`, `conda-anaconda-tos`, `anaconda-channel-guide`). Every time `conda` executes (`conda activate`, `conda deactivate`), its entry point scanner initializes these plugins.
+
+* **The `_pydantic_core` Failure Mode**:
+  These plugins rely on Pydantic v2, which requires a compiled Rust C-extension (`_pydantic_core.cpython-*.so`). If the base environment's Rust binary was compiled against a different Python version or corrupted during base updates, Conda outputs:
+  ```text
+  Error while loading conda entry point: anaconda-auth (No module named 'pydantic_core._pydantic_core')
+  Error while loading conda entry point: conda-anaconda-tos (No module named 'pydantic_core._pydantic_core')
+  ```
+* **The Two Architectural Remedies**:
+  1. **Rust Binary Reinstallation (`base` repair)**:
+     Reinstalling native wheels for `pydantic` and `pydantic-core` restores the compiled Rust `.so` module in base:
+     ```bash
+     ~/miniconda3/bin/pip install --force-reinstall pydantic pydantic-core
+     ```
+  2. **Headless & CI/CD Plugin Suppression**:
+     Exporting `CONDA_NO_PLUGINS=true` suppresses the external entry point scanner entirely. This provides faster CLI execution (~300ms reduction per command) and complete immunity against broken third-party plugins.
+
+---
+
+#### 9. Production Automated Integration Plan in `isaac-installer`:
 
 To eliminate manual workarounds and make the installer 100% resilient across both modes:
 

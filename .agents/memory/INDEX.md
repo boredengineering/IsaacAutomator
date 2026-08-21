@@ -48,6 +48,8 @@ Master index of session memory checkpoints for Isaac Automator.
 | 2026-08-21 03:51 | `e5f6a7b8` | Vulkan ICD Manifest Resolution & Isaac Lab 3.0 Viz Debugging | Fixed hardcoded VK_ICD_FILENAMES to use dynamic discovery, restoring Kit viewport rendering | [`20260821_035130_e5f6a7b8.md`](./sessions/20260821_035130_e5f6a7b8.md) |
 | 2026-08-21 04:05 | `f6a7b8c9` | Permanent Dynamic Vulkan Discovery & Self-Healing in Installer | Codified dynamic runtime Vulkan probing and automated self-healing drift engine | [`20260821_040505_f6a7b8c9.md`](./sessions/20260821_040505_f6a7b8c9.md) |
 | 2026-08-21 06:34 | `a7b8c9d0` | Conda Base Plugin Entry Point Cleanup (Pydantic-Core Conflict) | Sanitized base environment by removing conflicting commercial auth plugins | [`20260821_063437_a7b8c9d0.md`](./sessions/20260821_063437_a7b8c9d0.md) |
+| 2026-08-21 06:37 | `b8c9d0e1` | Master Plan Documentation of Pydantic-Core Conflict & Base Repair | Added Section 3.7.5 to plan and automated force-reinstall of base pydantic-core | [`20260821_063712_b8c9d0e1.md`](./sessions/20260821_063712_b8c9d0e1.md) |
+
 
 
 
