@@ -64,6 +64,10 @@ check_isaac_sim() {
         if [[ ! -f "${install_dir}/.eula_accepted" ]]; then
             sudo -H -u "${TARGET_USER}" touch "${install_dir}/.eula_accepted" 2>/dev/null || true
         fi
+        # Isaac Sim 6.0 setup_conda_env.sh compatibility shim (renamed by NVIDIA to setup_python_env.sh)
+        if [[ -f "${install_dir}/setup_python_env.sh" && ! -f "${install_dir}/setup_conda_env.sh" ]]; then
+            sudo -H -u "${TARGET_USER}" ln -sf "${install_dir}/setup_python_env.sh" "${install_dir}/setup_conda_env.sh" 2>/dev/null || true
+        fi
         STAGE_CHECK_MSG="Isaac Sim engine already installed and verified at ${install_dir}"
         return 0
     else
