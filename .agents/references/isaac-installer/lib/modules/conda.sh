@@ -233,6 +233,7 @@ if [[ -n "${_OLD_ISAAC_PATH}" ]]; then export ISAAC_PATH="${_OLD_ISAAC_PATH}"; e
 if [[ -n "${_OLD_CARB_APP_PATH}" ]]; then export CARB_APP_PATH="${_OLD_CARB_APP_PATH}"; else unset CARB_APP_PATH; fi
 if [[ -n "${_OLD_VK_ICD_FILENAMES}" ]]; then export VK_ICD_FILENAMES="${_OLD_VK_ICD_FILENAMES}"; else unset VK_ICD_FILENAMES; fi
 unset _OLD_ISAAC_EXP_PATH _OLD_ISAAC_PATH _OLD_CARB_APP_PATH _OLD_VK_ICD_FILENAMES
+unset PYTHONPATH
 HOOK_DEACT
     chmod 755 "${env_path}/etc/conda/deactivate.d/00_isaaclab_env.sh"
 

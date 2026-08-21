@@ -49,6 +49,8 @@ Master index of session memory checkpoints for Isaac Automator.
 | 2026-08-21 04:05 | `f6a7b8c9` | Permanent Dynamic Vulkan Discovery & Self-Healing in Installer | Codified dynamic runtime Vulkan probing and automated self-healing drift engine | [`20260821_040505_f6a7b8c9.md`](./sessions/20260821_040505_f6a7b8c9.md) |
 | 2026-08-21 06:34 | `a7b8c9d0` | Conda Base Plugin Entry Point Cleanup (Pydantic-Core Conflict) | Sanitized base environment by removing conflicting commercial auth plugins | [`20260821_063437_a7b8c9d0.md`](./sessions/20260821_063437_a7b8c9d0.md) |
 | 2026-08-21 06:37 | `b8c9d0e1` | Master Plan Documentation of Pydantic-Core Conflict & Base Repair | Added Section 3.7.5 to plan and automated force-reinstall of base pydantic-core | [`20260821_063712_b8c9d0e1.md`](./sessions/20260821_063712_b8c9d0e1.md) |
+| 2026-08-21 06:42 | `c9d0e1f2` | Root Cause Resolution: PYTHONPATH Leakage from cp312 Prebundle | Identified omni.kit.pip_archive cp312 leak to base Python 3.14 and fixed deactivation hook | [`20260821_064255_c9d0e1f2.md`](./sessions/20260821_064255_c9d0e1f2.md) |
+
 
 
 
