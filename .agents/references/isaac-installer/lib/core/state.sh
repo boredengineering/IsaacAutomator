@@ -502,10 +502,12 @@ repair_workspace_drift() {
         conda_root="$(dirname "$(dirname "$conda_bin")")"
         if [[ -d "$env_path" ]]; then
             sudo -H -u "${TARGET_USER}" bash -l -c "
-                source '${conda_root}/etc/profile.d/conda.sh' 2>/dev/null || eval \"\$('${conda_bin}' shell.bash hook 2>/dev/null)\" || true
-                conda activate isaaclab 2>/dev/null || true
+                export SHELL=/bin/bash
+                export USER='${TARGET_USER}'
+                export HOME='${TARGET_HOME}'
+                source '${conda_root}/etc/profile.d/conda.sh' 2>/dev/null || true
                 cd '${lab_dir}'
-                ./isaaclab.sh --install
+                '${conda_bin}' run -n isaaclab ./isaaclab.sh -i
             " || true
         fi
     fi

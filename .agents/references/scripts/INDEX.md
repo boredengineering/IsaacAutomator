@@ -14,6 +14,7 @@ Master catalog of installation scripts, setup modules, and supporting configurat
 | [`setup-lfs.sh`](./setup-lfs.sh) | Stage 3: Git LFS | `installer.sh` (`run_lfs`) | Installs & initializes `git-lfs` | Active |
 | [`setup-isaacsim.sh`](./setup-isaacsim.sh) | Stage 4: Isaac Sim | `installer.sh` (`run_isaacsim`) | Downloads/builds Isaac Sim, accepts EULA, pins GPU 0 | Active |
 | [`setup-isaaclab.sh`](./setup-isaaclab.sh) | Stage 5: Isaac Lab | `installer.sh` (`run_isaaclab`) | Clones & installs Isaac Lab, symlinks `_isaac_sim` | Active |
+| [`setup-isaaclab02.sh`](./setup-isaaclab02.sh) | Stage 5 Alternative: Robust Conda Runner | Standalone / Reference | Creates Conda env via `./isaaclab.sh --conda`, uses `conda run -n` for zero-activation install | Reference Pattern |
 | [`setup-isaaclab-arena.sh`](./setup-isaaclab-arena.sh) | Stage 6: IsaacLab-Arena | `installer.sh` (`run_arena`) | Clones & installs IsaacLab-Arena multi-agent benchmarks | Active |
 | [`setup-demos.sh`](./setup-demos.sh) | Stage 7: Demos & Shortcuts | `installer.sh` (`run_demos`) | Creates desktop shortcuts & demo launchers | Active |
 | [`setup-gr00t.sh`](./setup-gr00t.sh) | Stage 8: Isaac-GR00T (Optional) | `installer.sh` (`run_gr00t`) | Installs GR00T policy/model dependencies | Optional |
@@ -77,3 +78,32 @@ flowchart TD
     
     INSTALLER -->|completed| FINISH["Clean Crontab & Complete Setup"]
 ```
+
+---
+
+## 3. Notable Architectural Solutions & Patterns
+
+### [`setup-isaaclab02.sh`](./setup-isaaclab02.sh) - Robust Conda & Zero-Activation Pattern
+This script implements several key engineering solutions for automated, non-interactive Conda execution:
+
+1. **`conda run -n <env>` (Zero-Activation Execution)**:
+   Avoids interactive `conda activate` subshell limitations in automation by invoking binaries directly through Conda:
+   ```bash
+   conda run -n isaaclab ./isaaclab.sh -i
+   conda run -n isaaclab python -c "import torch; print(torch.__version__)"
+   ```
+2. **Zombie Environment Health Guard**:
+   Detects corrupted or partially initialized Conda environments using an active Python probe before recreating:
+   ```bash
+   if conda env list | awk '{print $1}' | grep -qx "$CONDA_ENV_NAME"; then
+       if ! conda run -n "$CONDA_ENV_NAME" python --version &>/dev/null; then
+           conda env remove -n "$CONDA_ENV_NAME" -y || true
+           rm -rf "/opt/conda/envs/$CONDA_ENV_NAME"
+       fi
+   fi
+   ```
+3. **Environment Identity Enforcement**:
+   Explicitly exports `SHELL=/bin/bash`, `USER`, and `HOME` within `sudo -H -u <user>` subshells to prevent wrapper tool failures.
+4. **Quoted Heredoc Syntax (`<<'EOF'`)**:
+   Prevents accidental parameter expansion at caller time, ensuring internal variables and `awk` commands evaluate only within the subshell.
+

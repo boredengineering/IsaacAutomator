@@ -73,16 +73,18 @@ install_isaac_lab() {
         "
     fi
 
-    log_info "Running native ./isaaclab.sh --install in active '${CONDA_ENV_NAME:-isaaclab}' Conda environment..."
+    log_info "Running native ./isaaclab.sh --install inside Conda environment via conda run..."
     local conda_bin
     conda_bin="$(resolve_conda_bin)"
     local conda_root
     conda_root="$(dirname "$(dirname "$conda_bin")")"
     sudo -H -u "${TARGET_USER}" bash -l -c "
-        source '${conda_root}/etc/profile.d/conda.sh' 2>/dev/null || eval \"\$('${conda_bin}' shell.bash hook 2>/dev/null)\" || true
-        conda activate '${CONDA_ENV_NAME:-isaaclab}' 2>/dev/null || true
+        export SHELL=/bin/bash
+        export USER='${TARGET_USER}'
+        export HOME='${TARGET_HOME}'
+        source '${conda_root}/etc/profile.d/conda.sh' 2>/dev/null || true
         cd '${lab_dir}'
-        ./isaaclab.sh --install
+        '${conda_bin}' run -n '${CONDA_ENV_NAME:-isaaclab}' ./isaaclab.sh -i
     " || true
 
     # 4. Verify PyTorch CUDA Tensors

@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# setup-isaaclab_v8.sh (Using conda specific python for the isaaclab -i step)
+
+# --- Configuration ---
+TARGET_USER="ubuntu"
+TARGET_HOME="$(getent passwd "$TARGET_USER" | cut -d: -f6)"
+WORKDIR="$TARGET_HOME"
+ISAACSIM_PATH="$TARGET_HOME/isaacsim"
+ISAACLAB_DIR="$WORKDIR/IsaacLab"
+CONDA_ENV_NAME="isaaclab"
+
+# --- Root guard ---
+if [[ "$EUID" -ne 0 ]]; then
+  echo "❌ This script must be run as root (sudo)"
+  exit 1
+fi
+
+# --- System dependencies ---
+echo "▶ Installing system dependencies"
+apt-get update -y
+apt-get install -y --no-install-recommends git cmake build-essential
+
+# --- Repo Setup ---
+cd "$TARGET_HOME"
+if [[ ! -d "$ISAACLAB_DIR/.git" ]]; then
+  echo "▶ Cloning IsaacLab repository"
+  sudo -H -u "$TARGET_USER" git clone https://github.com/isaac-sim/IsaacLab.git "$ISAACLAB_DIR"
+fi
+
+SYMLINK_PATH="$ISAACLAB_DIR/_isaac_sim"
+if [[ ! -L "$SYMLINK_PATH" ]]; then
+  echo "▶ Creating _isaac_sim symlink"
+  sudo -H -u "$TARGET_USER" ln -s "$ISAACSIM_PATH" "$SYMLINK_PATH"
+fi
+
+# --- Environment Setup (The Fix) ---
+echo "▶ Setting up Conda and installing Isaac Lab extensions"
+
+# Use QUOTED Heredoc to protect 'awk' and internal variables
+sudo -H -u "$TARGET_USER" bash <<'EOF'
+set -euo pipefail
+
+# 1. Force environment identity to prevent 'unknown' error
+export SHELL=/bin/bash
+export TERM=xterm-256color
+export USER="ubuntu"
+export HOME="/home/ubuntu"
+export ISAACLAB_DIR="/home/ubuntu/IsaacLab"
+export CONDA_ENV_NAME="isaaclab"
+
+# 2. Load Conda
+source /opt/conda/etc/profile.d/conda.sh
+cd "$ISAACLAB_DIR"
+
+# 3. Zombie Environment Guard (Fixed AWK syntax)
+ENV_HEALTHY=false
+if conda env list | awk '{print $1}' | grep -qx "$CONDA_ENV_NAME"; then
+  echo "▶ Conda environment '$CONDA_ENV_NAME' exists. Checking health..."
+  
+  if conda run -n "$CONDA_ENV_NAME" python --version &>/dev/null; then
+    echo "▶ Environment is healthy."
+    ENV_HEALTHY=true
+  else
+    echo "▶ Detected broken environment! Removing for a clean slate..."
+    conda env remove -n "$CONDA_ENV_NAME" -y || true
+    rm -rf "/opt/conda/envs/$CONDA_ENV_NAME"
+  fi
+fi
+
+# 4. Create environment
+if [ "$ENV_HEALTHY" = false ]; then
+  echo "▶ Creating conda environment: $CONDA_ENV_NAME"
+  # Force SHELL identity into the internal wrapper
+  SHELL=/bin/bash ./isaaclab.sh --conda "$CONDA_ENV_NAME"
+fi
+
+# 5. Build extensions
+echo "▶ Building extensions (This may take 10+ minutes)..."
+# Force the use of the conda-specific python for the install
+conda run -n "$CONDA_ENV_NAME" ./isaaclab.sh -i
+
+# 6. Post-Installation Health Check
+echo "▶ Running Post-Install Verification..."
+# Use conda run to ensure we are actually hitting the environment we just built
+if conda run -n "$CONDA_ENV_NAME" python -c "import torch; print('PyTorch Version:', torch.__version__)" &>/dev/null; then
+    echo "✅ Verification Passed: PyTorch is successfully installed in $CONDA_ENV_NAME."
+else
+    echo "❌ Verification Failed: torch not found in environment '$CONDA_ENV_NAME'."
+    # Debug: show where python is pointing
+    conda run -n "$CONDA_ENV_NAME" which python
+    exit 1
+fi
+EOF
+
+echo "✅ Isaac Lab installation complete"

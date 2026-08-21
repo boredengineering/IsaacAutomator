@@ -127,13 +127,26 @@ install_python_env() {
     local env_path
     env_path="$(resolve_conda_env_path "${CONDA_ENV_NAME}")"
 
+    # Zombie Environment Health Guard
+    if [[ -d "${env_path}" ]]; then
+        log_info "Checking health of existing Conda environment '${CONDA_ENV_NAME}'..."
+        if ! sudo -H -u "${TARGET_USER}" "${conda_bin}" run -n "${CONDA_ENV_NAME}" python --version &>/dev/null; then
+            log_warn "Detected broken or corrupted Conda environment '${CONDA_ENV_NAME}'. Purging for clean recreation..."
+            sudo -H -u "${TARGET_USER}" "${conda_bin}" env remove -n "${CONDA_ENV_NAME}" -y 2>/dev/null || true
+            rm -rf "${env_path}" 2>/dev/null || true
+        fi
+    fi
+
     if [[ ! -d "${env_path}" || ! -x "${env_path}/bin/python" ]]; then
         if [[ -n "$lab_dir" && -f "${lab_dir}/isaaclab.sh" ]]; then
             log_info "Delegating environment creation to official ./isaaclab.sh --conda '${CONDA_ENV_NAME}'..."
             sudo -H -u "${TARGET_USER}" bash -l -c "
+                export SHELL=/bin/bash
+                export USER='${TARGET_USER}'
+                export HOME='${TARGET_HOME}'
                 source '${conda_root}/etc/profile.d/conda.sh' 2>/dev/null || eval \"\$('${conda_bin}' shell.bash hook 2>/dev/null)\" || true
                 cd '${lab_dir}'
-                ./isaaclab.sh --conda '${CONDA_ENV_NAME}'
+                SHELL=/bin/bash ./isaaclab.sh --conda '${CONDA_ENV_NAME}'
             " || true
         fi
         
@@ -147,7 +160,7 @@ install_python_env() {
         sudo -H -u "${TARGET_USER}" "${conda_bin}" config --append envs_dirs "${conda_root}/envs" 2>/dev/null || true
         env_path="$(resolve_conda_env_path "${CONDA_ENV_NAME}")"
     else
-        log_info "Named Conda environment '${CONDA_ENV_NAME}' already exists at ${env_path}."
+        log_info "Named Conda environment '${CONDA_ENV_NAME}' is healthy at ${env_path}."
         sudo -H -u "${TARGET_USER}" "${conda_bin}" config --append envs_dirs "${conda_root}/envs" 2>/dev/null || true
     fi
 
