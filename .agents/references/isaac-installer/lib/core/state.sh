@@ -322,7 +322,29 @@ for d in drifts:
         DRIFT_ITEMS+=("CondaEnv|CONDA_ENV_MISSING|None|${user_env_path}|Named 'isaaclab' Conda environment missing in user's Conda runtime")
     fi
 
-    # 5. Audit Case-Drift Duplicate Directories in Workspace Root
+    # 5. Audit Standalone Isaac Sim Bridge, .pth link & Vulkan Hook Drift
+    local sim_dir
+    sim_dir="$(resolve_isaacsim_dir 2>/dev/null || echo "")"
+    if [[ -n "$sim_dir" && -d "$sim_dir" ]]; then
+        if [[ -f "${sim_dir}/setup_python_env.sh" && ! -f "${sim_dir}/setup_conda_env.sh" ]]; then
+            DRIFT_ITEMS+=("IsaacSim|SIM_BRIDGE_MISSING|None|${sim_dir}/setup_conda_env.sh|Isaac Sim 6.0 setup_conda_env.sh bridge script missing")
+        fi
+
+        if [[ -n "$user_env_path" && -d "$user_env_path" ]]; then
+            local sp_dir
+            sp_dir=$(find "${user_env_path}/lib" -maxdepth 2 -type d -name "site-packages" 2>/dev/null | head -n 1)
+            if [[ -d "$sp_dir" && ! -f "${sp_dir}/isaacsim_standalone.pth" ]]; then
+                DRIFT_ITEMS+=("IsaacSim|SIM_PTH_MISSING|None|${sp_dir}/isaacsim_standalone.pth|isaacsim_standalone.pth missing from Conda site-packages")
+            fi
+
+            local act_hook="${user_env_path}/etc/conda/activate.d/00_isaaclab_env.sh"
+            if [[ ! -f "$act_hook" || $(grep -c "VK_ICD_FILENAMES=/etc/vulkan" "$act_hook" 2>/dev/null || true) -gt 0 ]]; then
+                DRIFT_ITEMS+=("CondaEnv|VULKAN_HOOK_DRIFT|Static / Missing Hook|${act_hook}|Conda activation hook missing or contains hardcoded invalid Vulkan ICD path")
+            fi
+        fi
+    fi
+
+    # 6. Audit Case-Drift Duplicate Directories in Workspace Root
     if [[ -d "${ws_root}" ]]; then
         for dir in "${ws_root}"/*; do
             if [[ -d "$dir" ]]; then
@@ -481,7 +503,21 @@ repair_workspace_drift() {
             CONDA_ENV_MISSING)
                 log_info "Provisioning named Conda environment in user's Conda (${target})..."
                 install_python_env
-                log_success "Named 'isaaclab' Conda environment created."
+                log_success "Conda environment provisioned."
+                ;;
+
+            SIM_BRIDGE_MISSING|SIM_PTH_MISSING)
+                log_info "Reconciling Isaac Sim bridge and site-packages .pth link..."
+                local sim_dir
+                sim_dir="$(resolve_isaacsim_dir)"
+                deploy_isaacsim_conda_bridge "$sim_dir"
+                log_success "Isaac Sim bridge and .pth link reconciled."
+                ;;
+
+            VULKAN_HOOK_DRIFT)
+                log_info "Healing Conda environment activation hooks with dynamic Vulkan resolution..."
+                install_python_env
+                log_success "Conda activation hooks healed."
                 ;;
 
             EMPTY_CASE_DUPLICATE)

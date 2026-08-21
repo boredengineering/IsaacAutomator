@@ -194,46 +194,69 @@ install_python_env() {
         vk_line="# VK_ICD_FILENAMES unset (using Vulkan loader auto-discovery)"
     fi
 
-    cat << HOOK_ACT | sudo -H -u "${TARGET_USER}" tee "${env_path}/etc/conda/activate.d/00_isaaclab_env.sh" >/dev/null
+    cat << 'HOOK_ACT' | sudo -H -u "${TARGET_USER}" tee "${env_path}/etc/conda/activate.d/00_isaaclab_env.sh" >/dev/null
 #!/usr/bin/env bash
-# Scoped Omniverse Environment Variables (Active only while '${CONDA_ENV_NAME}' is activated)
-export _OLD_ISAAC_EXP_PATH="\${EXP_PATH:-}"
-export _OLD_ISAAC_PATH="\${ISAAC_PATH:-}"
-export _OLD_CARB_APP_PATH="\${CARB_APP_PATH:-}"
-export _OLD_VK_ICD_FILENAMES="\${VK_ICD_FILENAMES:-}"
+# Scoped Omniverse Environment Variables (Active only while Conda environment is activated)
+export _OLD_ISAAC_EXP_PATH="${EXP_PATH:-}"
+export _OLD_ISAAC_PATH="${ISAAC_PATH:-}"
+export _OLD_CARB_APP_PATH="${CARB_APP_PATH:-}"
+export _OLD_VK_ICD_FILENAMES="${VK_ICD_FILENAMES:-}"
 
-export EXP_PATH="${sim_dir}/apps"
-export ISAAC_PATH="${sim_dir}"
-export CARB_APP_PATH="${sim_dir}/kit"
-${vk_line}
+export EXP_PATH="${ISAAC_PATH:-$HOME/IsaacSim}/apps"
+export ISAAC_PATH="${ISAAC_PATH:-$HOME/IsaacSim}"
+export CARB_APP_PATH="${ISAAC_PATH}/kit"
+
+# Dynamic Vulkan ICD Manifest Resolution (Avoids hardcoded path failures across driver updates)
+if [ -f /usr/share/vulkan/icd.d/nvidia_icd.json ]; then
+    export VK_ICD_FILENAMES="/usr/share/vulkan/icd.d/nvidia_icd.json"
+elif [ -f /etc/vulkan/icd.d/nvidia_icd.json ]; then
+    export VK_ICD_FILENAMES="/etc/vulkan/icd.d/nvidia_icd.json"
+elif [ -f /usr/share/vulkan/icd.d/nvidia.json ]; then
+    export VK_ICD_FILENAMES="/usr/share/vulkan/icd.d/nvidia.json"
+elif [ -f /etc/vulkan/icd.d/nvidia.json ]; then
+    export VK_ICD_FILENAMES="/etc/vulkan/icd.d/nvidia.json"
+else
+    unset VK_ICD_FILENAMES
+fi
 HOOK_ACT
     chmod 755 "${env_path}/etc/conda/activate.d/00_isaaclab_env.sh"
 
-    cat << HOOK_DEACT | sudo -H -u "${TARGET_USER}" tee "${env_path}/etc/conda/deactivate.d/00_isaaclab_env.sh" >/dev/null
+    cat << 'HOOK_DEACT' | sudo -H -u "${TARGET_USER}" tee "${env_path}/etc/conda/deactivate.d/00_isaaclab_env.sh" >/dev/null
 #!/usr/bin/env bash
 # Cleanly restore previous shell environment upon 'conda deactivate'
-if [[ -n "\${_OLD_ISAAC_EXP_PATH}" ]]; then export EXP_PATH="\${_OLD_ISAAC_EXP_PATH}"; else unset EXP_PATH; fi
-if [[ -n "\${_OLD_ISAAC_PATH}" ]]; then export ISAAC_PATH="\${_OLD_ISAAC_PATH}"; else unset ISAAC_PATH; fi
-if [[ -n "\${_OLD_CARB_APP_PATH}" ]]; then export CARB_APP_PATH="\${_OLD_CARB_APP_PATH}"; else unset CARB_APP_PATH; fi
-if [[ -n "\${_OLD_VK_ICD_FILENAMES}" ]]; then export VK_ICD_FILENAMES="\${_OLD_VK_ICD_FILENAMES}"; else unset VK_ICD_FILENAMES; fi
+if [[ -n "${_OLD_ISAAC_EXP_PATH}" ]]; then export EXP_PATH="${_OLD_ISAAC_EXP_PATH}"; else unset EXP_PATH; fi
+if [[ -n "${_OLD_ISAAC_PATH}" ]]; then export ISAAC_PATH="${_OLD_ISAAC_PATH}"; else unset ISAAC_PATH; fi
+if [[ -n "${_OLD_CARB_APP_PATH}" ]]; then export CARB_APP_PATH="${_OLD_CARB_APP_PATH}"; else unset CARB_APP_PATH; fi
+if [[ -n "${_OLD_VK_ICD_FILENAMES}" ]]; then export VK_ICD_FILENAMES="${_OLD_VK_ICD_FILENAMES}"; else unset VK_ICD_FILENAMES; fi
 unset _OLD_ISAAC_EXP_PATH _OLD_ISAAC_PATH _OLD_CARB_APP_PATH _OLD_VK_ICD_FILENAMES
 HOOK_DEACT
     chmod 755 "${env_path}/etc/conda/deactivate.d/00_isaaclab_env.sh"
 
     # 6. Deploy Zero-Activation CLI Shim (/usr/local/bin/isaaclab-env)
     log_info "Deploying zero-activation CLI shim: /usr/local/bin/isaaclab-env..."
-    cat << SHIM | sudo tee /usr/local/bin/isaaclab-env >/dev/null
+    cat << 'SHIM' | sudo tee /usr/local/bin/isaaclab-env >/dev/null
 #!/usr/bin/env bash
 # ==============================================================================
 # isaaclab-env - Scoped Runner for Headless Scripts, CI/CD, and Terminal Executions
 # ==============================================================================
 set -e
 
-SIM_PATH="\${ISAACSIM_DIR:-\$HOME/IsaacSim}"
-export EXP_PATH="\${SIM_PATH}/apps"
-export ISAAC_PATH="\${SIM_PATH}"
-export CARB_APP_PATH="\${SIM_PATH}/kit"
-${vk_line}
+SIM_PATH="${ISAACSIM_DIR:-$HOME/IsaacSim}"
+export EXP_PATH="${SIM_PATH}/apps"
+export ISAAC_PATH="${SIM_PATH}"
+export CARB_APP_PATH="${SIM_PATH}/kit"
+
+if [ -f /usr/share/vulkan/icd.d/nvidia_icd.json ]; then
+    export VK_ICD_FILENAMES="/usr/share/vulkan/icd.d/nvidia_icd.json"
+elif [ -f /etc/vulkan/icd.d/nvidia_icd.json ]; then
+    export VK_ICD_FILENAMES="/etc/vulkan/icd.d/nvidia_icd.json"
+elif [ -f /usr/share/vulkan/icd.d/nvidia.json ]; then
+    export VK_ICD_FILENAMES="/usr/share/vulkan/icd.d/nvidia.json"
+elif [ -f /etc/vulkan/icd.d/nvidia.json ]; then
+    export VK_ICD_FILENAMES="/etc/vulkan/icd.d/nvidia.json"
+else
+    unset VK_ICD_FILENAMES
+fi
 
 CONDA_PY="${env_path}/bin/python"
 

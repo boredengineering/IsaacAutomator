@@ -370,7 +370,32 @@ flowchart LR
 
 ---
 
-#### 6. Production Automated Integration Plan in `isaac-installer`:
+#### 7. Vulkan Hardware Surface Resolution & Dynamic Loader Discovery:
+
+When rendering Omniverse Kit viewports in Isaac Lab 3.0 (via `--viz kit`), the Vulkan loader (`libvulkan.so`) queries the system for an Installable Client Driver (ICD) JSON manifest.
+
+* **The Ubuntu / Debian Path Divergence**:
+  On Ubuntu and Debian systems using standard NVIDIA proprietary drivers (550+ / 560+ / 570+), the driver manifest is located at `/usr/share/vulkan/icd.d/nvidia_icd.json`. Setting a static path to `/etc/vulkan/icd.d/nvidia_icd.json` forces the loader to look exclusively at a non-existent file, causing `vkCreateInstance failed with ERROR_INCOMPATIBLE_DRIVER`.
+* **The Dynamic Runtime Discovery Pattern**:
+  Activation hooks and runner shims must probe standard candidate paths dynamically at shell initialization:
+  ```bash
+  if [ -f /usr/share/vulkan/icd.d/nvidia_icd.json ]; then
+      export VK_ICD_FILENAMES="/usr/share/vulkan/icd.d/nvidia_icd.json"
+  elif [ -f /etc/vulkan/icd.d/nvidia_icd.json ]; then
+      export VK_ICD_FILENAMES="/etc/vulkan/icd.d/nvidia_icd.json"
+  elif [ -f /usr/share/vulkan/icd.d/nvidia.json ]; then
+      export VK_ICD_FILENAMES="/usr/share/vulkan/icd.d/nvidia.json"
+  elif [ -f /etc/vulkan/icd.d/nvidia.json ]; then
+      export VK_ICD_FILENAMES="/etc/vulkan/icd.d/nvidia.json"
+  else
+      unset VK_ICD_FILENAMES
+  fi
+  ```
+  Unsetting `VK_ICD_FILENAMES` when no explicit match is found permits the Vulkan loader to execute its native fallback multi-directory search without crashing.
+
+---
+
+#### 8. Production Automated Integration Plan in `isaac-installer`:
 
 To eliminate manual workarounds and make the installer 100% resilient across both modes:
 
