@@ -18,7 +18,7 @@ hardware:
 workspace:
   root: "~/Documents/GitHub"
   layout: "auto"                     # "auto" | "org" | "flat"
-  default_owner: "boredengineering"  # GitHub user / org namespace
+  default_owner: "BoredEngineer"  # GitHub user / org namespace
   auto_register_github_desktop: true
   auto_create_fork: true             # Automatically create GitHub fork if missing via gh CLI
 

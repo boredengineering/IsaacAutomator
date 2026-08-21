@@ -30,6 +30,8 @@ Master index of session memory checkpoints for Isaac Automator.
 | 2026-08-20 23:33 | `c0d1e2f3` | Robust Remote Re-Wiring and Upstream Sync Verification in Self-Healing Engine | Fixed idempotent remote set-url/add and git config fallback for upstream/origin remotes | [`20260820_233325_c0d1e2f3.md`](./sessions/20260820_233325_c0d1e2f3.md) |
 | 2026-08-20 23:35 | `d1e2f3a4` | Eliminate Git Dubious Ownership & Safe.Directory Blockers in Sudo Remote Re-Wiring | Added safe.directory configuration and clean_url normalization for rock-solid remote detection | [`20260820_233510_d1e2f3a4.md`](./sessions/20260820_233510_d1e2f3a4.md) |
 | 2026-08-20 23:40 | `e2f3a4b5` | Exhaustive Mental Model & Fix for Fork Export Variables and boredengineering Namespace | Fixed unexported config variables, aligned boredengineering namespace, and fixed GitHub Desktop GUI session bridge | [`20260820_234005_e2f3a4b5.md`](./sessions/20260820_234005_e2f3a4b5.md) |
+| 2026-08-21 00:19 | `f3a4b5c6` | Case-Insensitive Workspace Directory Discovery & Duplicate Case-Drift Cleanup | Added case-insensitive owner matching and automatic cleanup of duplicate case folders | [`20260821_001950_f3a4b5c6.md`](./sessions/20260821_001950_f3a4b5c6.md) |
+
 
 
 

@@ -222,6 +222,26 @@ for d in drifts:
     if [[ -n "$user_env_path" && (! -d "$user_env_path" || ! -x "$user_env_path/bin/python") ]]; then
         DRIFT_ITEMS+=("CondaEnv|CONDA_ENV_MISSING|None|${user_env_path}|Named 'isaaclab' Conda environment missing in user's Conda runtime")
     fi
+
+    # 5. Audit Case-Drift Duplicate Directories in Workspace Root
+    if [[ -d "${ws_root}" ]]; then
+        for dir in "${ws_root}"/*; do
+            if [[ -d "$dir" ]]; then
+                local bname="$(basename "$dir")"
+                local lower_bname="${bname,,}"
+                for other in "${ws_root}"/*; do
+                    if [[ -d "$other" && "$dir" != "$other" ]]; then
+                        local other_bname="$(basename "$other")"
+                        if [[ "${other_bname,,}" == "$lower_bname" ]]; then
+                            if [[ -z "$(ls -A "$other" 2>/dev/null)" ]]; then
+                                DRIFT_ITEMS+=("Workspace|EMPTY_CASE_DUPLICATE|${other}|${dir}|Empty case-duplicate directory found in workspace root")
+                            fi
+                        fi
+                    fi
+                done
+            fi
+        done
+    fi
 }
 
 print_drift_report() {
@@ -347,6 +367,12 @@ repair_workspace_drift() {
                 log_info "Provisioning named Conda environment in user's Conda (${target})..."
                 install_python_env
                 log_success "Named 'isaaclab' Conda environment created."
+                ;;
+
+            EMPTY_CASE_DUPLICATE)
+                log_info "Cleaning empty duplicate folder ${cur}..."
+                rmdir "$cur" 2>/dev/null || rm -rf "$cur" 2>/dev/null || true
+                log_success "Cleaned duplicate folder ${cur}."
                 ;;
         esac
     done

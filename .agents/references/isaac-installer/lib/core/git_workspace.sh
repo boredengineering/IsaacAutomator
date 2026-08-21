@@ -113,6 +113,15 @@ resolve_repo_dest_path() {
         owner="$(sudo -H -u "${TARGET_USER}" gh api user -q .login 2>/dev/null || sudo -H -u "${TARGET_USER}" git config --get user.name 2>/dev/null || echo "")"
     fi
 
+    # Case-insensitive match against existing owner folders on disk (prevents BoredEngineer vs boredengineering duplicates)
+    if [[ -n "$owner" && -d "${ws_root}" ]]; then
+        local existing_owner_dir
+        existing_owner_dir="$(find "${ws_root}" -maxdepth 1 -mindepth 1 -type d -iname "${owner}" 2>/dev/null | head -n 1 || true)"
+        if [[ -n "$existing_owner_dir" && -d "$existing_owner_dir" ]]; then
+            owner="$(basename "$existing_owner_dir")"
+        fi
+    fi
+
     case "$layout" in
         org)
             if [[ -n "$owner" ]]; then
@@ -125,12 +134,6 @@ resolve_repo_dest_path() {
             return 0
             ;;
         auto|*)
-            # If ~/Documents/GitHub/<Owner> already exists on disk, adopt that folder structure!
-            if [[ -n "$owner" && -d "${ws_root}/${owner}" ]]; then
-                echo "${ws_root}/${owner}/${repo_name}"
-                return 0
-            fi
-            # If owner is known, default to organized structure
             if [[ -n "$owner" ]]; then
                 echo "${ws_root}/${owner}/${repo_name}"
                 return 0
