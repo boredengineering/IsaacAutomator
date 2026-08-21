@@ -43,6 +43,8 @@ Master index of session memory checkpoints for Isaac Automator.
 | 2026-08-21 02:43 | `9d0e1f2a` | Physical AI C++ Runtime Guide & CONDA_NO_PLUGINS Safeguards | Added Section 3.7 C++ ABI Guide to plan and injected CONDA_NO_PLUGINS=true across installer | [`20260821_024315_9d0e1f2a.md`](./sessions/20260821_024315_9d0e1f2a.md) |
 | 2026-08-21 02:45 | `a1b2c3d4` | Milestone: Full Verification of Isaac Lab 3.0 Import & Native Conda | Verified successful import of isaaclab pointing to editable source in user miniconda3 runtime | [`20260821_024515_a1b2c3d4.md`](./sessions/20260821_024515_a1b2c3d4.md) |
 | 2026-08-21 02:50 | `b2c3d4e5` | Isaac Sim 6.0 setup_conda_env.sh Compatibility Shim & Kit Discovery | Automated creation of setup_conda_env.sh -> setup_python_env.sh symlink for Isaac Lab 3.0 | [`20260821_025040_b2c3d4e5.md`](./sessions/20260821_025040_b2c3d4e5.md) |
+| 2026-08-21 03:07 | `c3d4e5f6` | In-Depth Analysis of setup_conda_env.sh vs setup_python_env.sh | Documented PYTHONPATH filtering mechanics and implemented deploy_isaacsim_conda_bridge | [`20260821_030748_c3d4e5f6.md`](./sessions/20260821_030748_c3d4e5f6.md) |
+
 
 
 

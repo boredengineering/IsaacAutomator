@@ -55,6 +55,40 @@ resolve_isaacsim_dir() {
     fi
 }
 
+deploy_isaacsim_conda_bridge() {
+    local sim_dir="$1"
+    detect_target_user
+
+    if [[ -f "${sim_dir}/setup_python_env.sh" ]]; then
+        if [[ ! -f "${sim_dir}/setup_conda_env.sh" || -L "${sim_dir}/setup_conda_env.sh" ]]; then
+            log_info "Deploying robust Isaac Sim 6.0 Conda runtime bridge (${sim_dir}/setup_conda_env.sh)..."
+            rm -f "${sim_dir}/setup_conda_env.sh" 2>/dev/null || true
+            cat << 'EOF' | sudo -H -u "${TARGET_USER}" tee "${sim_dir}/setup_conda_env.sh" >/dev/null
+#!/usr/bin/env bash
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+if [ -n "$ZSH_VERSION" ]; then
+    SCRIPT_DIR="$( cd "$( dirname "$0" )" && pwd )"
+fi
+MY_DIR="$(realpath -s "$SCRIPT_DIR")"
+
+export CARB_APP_PATH="${SCRIPT_DIR}/kit"
+export EXP_PATH="${MY_DIR}/apps"
+export ISAAC_PATH="${MY_DIR}"
+
+CURRENT_DIR="$(pwd)"
+cd "${SCRIPT_DIR}"
+. ./setup_python_env.sh
+cd "${CURRENT_DIR}"
+
+# Strip Kit Python standard libraries to preserve Conda Python 3.12 runtime purity
+export PYTHONPATH=$(echo "$PYTHONPATH" | tr ':' '\n' | grep -v "${SCRIPT_DIR}/kit/python/lib/python3.12" | grep -v "${SCRIPT_DIR}/kit/python/lib/python3.11" | tr '\n' ':' | sed 's/:$//')
+EOF
+            sudo chmod 755 "${sim_dir}/setup_conda_env.sh"
+            sudo chown "${TARGET_USER}:${TARGET_USER}" "${sim_dir}/setup_conda_env.sh" 2>/dev/null || true
+        fi
+    fi
+}
+
 check_isaac_sim() {
     local install_dir
     install_dir="$(resolve_isaacsim_dir)"
@@ -64,10 +98,8 @@ check_isaac_sim() {
         if [[ ! -f "${install_dir}/.eula_accepted" ]]; then
             sudo -H -u "${TARGET_USER}" touch "${install_dir}/.eula_accepted" 2>/dev/null || true
         fi
-        # Isaac Sim 6.0 setup_conda_env.sh compatibility shim (renamed by NVIDIA to setup_python_env.sh)
-        if [[ -f "${install_dir}/setup_python_env.sh" && ! -f "${install_dir}/setup_conda_env.sh" ]]; then
-            sudo -H -u "${TARGET_USER}" ln -sf "${install_dir}/setup_python_env.sh" "${install_dir}/setup_conda_env.sh" 2>/dev/null || true
-        fi
+        # Deploy Isaac Sim 6.0 Conda Runtime Bridge
+        deploy_isaacsim_conda_bridge "${install_dir}"
         STAGE_CHECK_MSG="Isaac Sim engine already installed and verified at ${install_dir}"
         return 0
     else

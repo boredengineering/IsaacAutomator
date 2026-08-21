@@ -44,11 +44,8 @@ install_isaac_lab() {
     mv -Tf "${lab_dir}/_isaac_sim.tmp.$$" "${lab_dir}/_isaac_sim"
     chown -h "${TARGET_USER}:${TARGET_USER}" "${lab_dir}/_isaac_sim"
 
-    # Isaac Sim 6.0 setup_conda_env.sh compatibility shim (renamed by NVIDIA to setup_python_env.sh)
-    if [[ -f "${sim_dir}/setup_python_env.sh" && ! -f "${sim_dir}/setup_conda_env.sh" ]]; then
-        log_info "Creating Isaac Sim 6.0 setup_conda_env.sh compatibility shim..."
-        sudo -H -u "${TARGET_USER}" ln -sf "${sim_dir}/setup_python_env.sh" "${sim_dir}/setup_conda_env.sh" 2>/dev/null || true
-    fi
+    # Deploy Isaac Sim 6.0 Conda Runtime Bridge
+    deploy_isaacsim_conda_bridge "${sim_dir}"
 
     # 3. Execute Isaac Lab Installer & Topological Extension Setup
     log_info "Installing Isaac Lab extensions in topological order..."

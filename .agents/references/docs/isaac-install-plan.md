@@ -305,11 +305,35 @@ Physical AI pipelines (Isaac Sim, Isaac Lab, LeRobot, TensorRT, RSL-RL) merge mo
 
 ---
 
-#### 3. CUDA Runtime & TensorRT Linkage Matrix:
-* **PyTorch + CUDA Wheel Alignment**:
-  Robotics stacks require strict CUDA toolkit alignment. PyTorch wheels pinned to `cu124` (`torch==2.5.1+cu124`) match modern Ada Lovelace (RTX 4090) and Blackwell hardware architectures while remaining compatible with NVIDIA Driver 550+.
-* **Downstream Physical AI Isolation**:
-  Downstream modules like LeRobot (imitation learning) and Isaac-GR00T maintain their own package requirements (`lerobot[all,dataset_viz]`, Rerun.io). Keeping them isolated in designated Conda environments prevents dependency collisions with Isaac Lab's core extensions.
+---
+
+#### 4. Isaac Sim 6.0 Environment Scripts: `setup_conda_env.sh` vs `setup_python_env.sh` Analysis:
+
+A critical architectural change between Isaac Sim 5.x and 6.0.1 lies in how environment setup scripts handle Python runtime paths:
+
+* **What `setup_python_env.sh` Does (Raw Kit Injection)**:
+  `setup_python_env.sh` injects Kit's C++ libraries into `LD_LIBRARY_PATH` and adds all Omniverse extensions (`exts/isaacsim.simulation_app`, `kit/kernel/py`, `extscache/*`) into `PYTHONPATH`. Crucially, it ALSO adds `$SCRIPT_DIR/kit/python/lib/python3.12` and its `site-packages`.
+* **The Hazard of a Naive Symlink**:
+  If `setup_conda_env.sh` is simply symlinked to `setup_python_env.sh`, Kit's bundled Python 3.12 standard library will shadow Conda's Python 3.12 standard library (`/home/tarfy/miniconda3/envs/isaaclab/lib/python3.12/`). This causes symbol collisions, `ssl`/`ctypes` import failures, and package version conflicts.
+* **The Verified Bridge Implementation**:
+  `setup_conda_env.sh` must execute `setup_python_env.sh` to acquire Omniverse extensions and Carbonite paths, but **filter out** `$SCRIPT_DIR/kit/python/lib/python3.12` from `PYTHONPATH`:
+  ```bash
+  #!/usr/bin/env bash
+  SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+  MY_DIR="$(realpath -s "$SCRIPT_DIR")"
+
+  export CARB_APP_PATH="${SCRIPT_DIR}/kit"
+  export EXP_PATH="${MY_DIR}/apps"
+  export ISAAC_PATH="${MY_DIR}"
+
+  CURRENT_DIR="$(pwd)"
+  cd "${SCRIPT_DIR}"
+  . ./setup_python_env.sh
+  cd "${CURRENT_DIR}"
+
+  # Strip Kit Python standard libraries to preserve Conda Python 3.12 runtime purity
+  export PYTHONPATH=$(echo "$PYTHONPATH" | tr ':' '\n' | grep -v "${SCRIPT_DIR}/kit/python/lib/python3.12" | grep -v "${SCRIPT_DIR}/kit/python/lib/python3.11" | tr '\n' ':' | sed 's/:$//')
+  ```
 
 ---
 

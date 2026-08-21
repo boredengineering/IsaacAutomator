@@ -461,9 +461,7 @@ repair_workspace_drift() {
                 ln -sfn "${target}" "${repo_dir}/_isaac_sim.tmp.$$"
                 mv -Tf "${repo_dir}/_isaac_sim.tmp.$$" "${repo_dir}/_isaac_sim"
                 chown -h "${TARGET_USER}:${TARGET_USER}" "${repo_dir}/_isaac_sim"
-                if [[ -f "${target}/setup_python_env.sh" && ! -f "${target}/setup_conda_env.sh" ]]; then
-                    sudo -H -u "${TARGET_USER}" ln -sf "${target}/setup_python_env.sh" "${target}/setup_conda_env.sh" 2>/dev/null || true
-                fi
+                deploy_isaacsim_conda_bridge "${target}"
                 log_success "_isaac_sim symlink healed."
                 ;;
 
