@@ -129,9 +129,11 @@ install_python_env() {
     if [[ ! -d "${env_path}" || ! -x "${env_path}/bin/python" ]]; then
         log_info "Creating named Conda environment '${CONDA_ENV_NAME}' with Python ${py_ver} in ${conda_root}..."
         sudo -H -u "${TARGET_USER}" "${conda_bin}" create -y -n "${CONDA_ENV_NAME}" python="${py_ver}" pip
+        sudo -H -u "${TARGET_USER}" "${conda_bin}" config --append envs_dirs "${conda_root}/envs" 2>/dev/null || true
         env_path="$(resolve_conda_env_path "${CONDA_ENV_NAME}")"
     else
         log_info "Named Conda environment '${CONDA_ENV_NAME}' already exists at ${env_path}."
+        sudo -H -u "${TARGET_USER}" "${conda_bin}" config --append envs_dirs "${conda_root}/envs" 2>/dev/null || true
     fi
 
     # 4. Accelerate PyTorch + CUDA Installation using UV inside Conda Env

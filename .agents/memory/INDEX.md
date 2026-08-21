@@ -34,6 +34,8 @@ Master index of session memory checkpoints for Isaac Automator.
 | 2026-08-21 00:22 | `0a1b2c3d` | Milestone: Complete Workspace Self-Healing, Dual-Remote Fork, and Zero Drift Alignment | Verified 100% zero drift synchronization, dual-remote fork topology, and unified BoredEngineer hierarchy | [`20260821_002215_0a1b2c3d.md`](./sessions/20260821_002215_0a1b2c3d.md) |
 | 2026-08-21 00:26 | `1b2c3d4e` | Implementation of REPO_MISSING Drift Detection & Dynamic State Ledger Sync | Added REPO_MISSING drift detection, dynamic state.json resolution, and automated ledger synchronization | [`20260821_002655_1b2c3d4e.md`](./sessions/20260821_002655_1b2c3d4e.md) |
 | 2026-08-21 00:30 | `2c3d4e5f` | Explanation of Git Fork Tag Isolation & Two-Tier Fallback Clone Strategy | Documented why GitHub forks omit upstream tags and how installer two-tier fallback fetches and checks out tags | [`20260821_003015_2c3d4e5f.md`](./sessions/20260821_003015_2c3d4e5f.md) |
+| 2026-08-21 01:15 | `3d4e5f6a` | Direct Conda Provisioning Subcommand & envs_dirs Registration | Ensured conda config append envs_dirs in install_python_env and documented fast --only python command | [`20260821_011505_3d4e5f6a.md`](./sessions/20260821_011505_3d4e5f6a.md) |
+
 
 
 
