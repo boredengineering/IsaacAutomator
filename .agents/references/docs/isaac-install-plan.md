@@ -1129,6 +1129,98 @@ sudo ./bin/isaac-installer install --with-gr00t
 
 ---
 
+## 5.6 Dual-Directional Conflict & Failure Mode Analysis (Top-Down & Bottom-Up Traversal)
+
+Because the **IsaacLab-Arena** and **NVIDIA Isaac-GR00T** ecosystem spans 6 discrete software layers, 6 Git submodules, two Python runtimes, and low-level GPU acceleration, subtle misconfigurations at any layer cause silent degradation, deadlocks, or hard runtime crashes.
+
+The analysis below conducts an exhaustive **Top-Down** (Application $\rightarrow$ Hardware) and **Bottom-Up** (Hardware $\rightarrow$ Application) traversal to identify every potential point of failure, conflict mechanism, and automated remediation strategy.
+
+```mermaid
+flowchart TD
+    subgraph TOP_DOWN ["TOP-DOWN TRAVERSAL: Application & Intent Layer"]
+        T1["T1. User Research Intent & Composable Task Triplet (IsaacLab-Arena)"]
+        T2["T2. Foundation Models, Action Spaces & Benchmarks (Isaac-GR00T + Submodules)"]
+        T3["T3. Inter-Process Communication & ZeroMQ Transport Layer"]
+        T4["T4. Python Virtual Environments, ABIs & Package Boundaries"]
+        T5["T5. Core Simulation Engine, PhysX & Omniverse Kit"]
+        T6["T6. Host OS, Vulkan Subsystem, Display Server & Silicon"]
+        T1 --> T2 --> T3 --> T4 --> T5 --> T6
+    end
+
+    subgraph BOTTOM_UP ["BOTTOM-UP TRAVERSAL: Hardware & Infrastructure Layer"]
+        B1["B1. NVIDIA Silicon (Blackwell/Ada), PCIe Link & Kernel Drivers"]
+        B2["B2. X11 vs Wayland, Virtual EDID & Vulkan ICD Configuration"]
+        B3["B3. Standalone Isaac Sim Engine, USD Cache & EULA"]
+        B4["B4. Git Submodule Topology, Detached HEADs & Working Tree Drift"]
+        B5["B5. Python Dynamic Linkers, libstdc++, NumPy 1.x vs 2.x ABIs"]
+        B6["B6. Real-Time ZeroMQ Closed-Loop Execution & Evaluation"]
+        B1 --> B2 --> B3 --> B4 --> B5 --> B6
+    end
+```
+
+---
+
+### 5.6.1 Top-Down Failure Mode Analysis (By Submodule & Functional Layer)
+
+| Layer | Submodule / Component | Potential Conflict & Root Cause | Failure Symptom / Impact | Automated Mitigation in `isaac-installer` |
+| :--- | :--- | :--- | :--- | :--- |
+| **T1: Task Composition** | `IsaacLab-Arena` Task Grammar | **Embodiment Action Space Mismatch**: GR00T outputs 7-DoF relative end-effector ($\Delta\text{EEF}$) deltas, but selected Arena task expects full-body joint position targets (e.g. Unitree G1). | Robot collapses in PhysX or explodes with `NaN` velocities due to out-of-bounds joint torque scaling. | `isaaclab_arena.sh` enforces embodiment validation against `meta/modality.json` and configures the `UNITREE_G1_SONIC` whole-body controller adapter. |
+| **T1: Task Composition** | `IsaacLab-Arena` Sensors | **Camera Dimension & Aspect Ratio Incompatibility**: Omniverse camera renders $1280\times 720$, while `Cosmos-Reason2-2B` expects $224\times 224$ or $384\times 384$ patchified visual tokens. | Severe CUDA Out-Of-Memory (OOM) during VLM forward pass or distorted aspect ratio causing 0% manipulation success. | Sensor pipeline inserts automated bilinear resizing and normalization (`[0, 1] \rightarrow \text{ImageNet stats}`) before socket serialization. |
+| **T1: Task Composition** | `submodules/IsaacLab` | **Gymnasium Namespace Collision**: Task registration conflicts between Arena's `ArenaEnvBuilder` and core `omni.isaac.lab_tasks` environment IDs. | `gymnasium.error.RegistrationError: Cannot re-register id: Isaac-Lift-Cube-v0`. | Unique prefix namespacing (`Arena-G1-*`, `Arena-GR1-*`, `Arena-Franka-*`) across all composed environments. |
+| **T2: Foundation Models** | `submodules/Isaac-GR00T` | **Gated Hugging Face Token Invalidation**: `nvidia/GR00T-N1.7-3B` and `nvidia/Cosmos-Reason2-2B` require explicit NVIDIA license acceptance on HF Hub. | HTTP `401 Client Error: Unauthorized` halts training and evaluation runs. | `gr00t.sh download-weights` pre-verifies HF token and provides `--mock` dummy checkpoint fixtures for offline CI/CD pipelines. |
+| **T2: Benchmark Submodules** | `external_dependencies/LIBERO` | **MuJoCo / Gym 0.21 Legacy Conflict**: LIBERO relies on legacy `gym` and `robosuite` MuJoCo bindings that conflict with Isaac Sim PhysX. | Python runtime crash when importing both `omni.isaac.lab` and `libero` within the same interpreter. | Complete isolation inside GR00T's isolated `uv` Python 3.12 virtualenv; evaluation results piped via standard JSON metrics. |
+| **T2: Benchmark Submodules** | `external_dependencies/SimplerEnv` | **Vulkan Context Allocation Collision**: SimplerEnv's SAPIEN renderer attempts to claim the primary Vulkan device while Omniverse Kit is rendering. | `VK_ERROR_DEVICE_LOST` causing instant crash of the visual viewport. | Headless offscreen rasterization mode configured for evaluation rollouts. |
+| **T2: Benchmark Submodules** | `external_dependencies/robocasa` | **Asset Format Incompatibility (MJCF vs USD)**: Kitchen assets in RoboCasa are native MuJoCo MJCF XMLs. | Missing collision meshes or invisible textures when referenced in Isaac Sim stages. | Automated USD converter pipelines utilizing Omniverse Asset Converter for kitchen asset stages. |
+| **T3: IPC & Transport** | ZeroMQ Bridge (`port 5555`) | **Socket Deadlock on Server Exception**: GR00T policy server encounters an exception (e.g. CUDA OOM), leaving Arena client waiting forever in `zmq_recv()`. | Entire simulation freezes indefinitely; CPU/GPU utilization stays pinned at 100%. | Enforces `RCVTIMEO = 5000ms` on REQ client socket with graceful fallback to zero-action or emergency episode reset. |
+| **T3: IPC & Transport** | ZeroMQ Bridge (`port 5555`) | **Serialization Latency Bottleneck**: JSON or nested dictionary serialization of high-resolution video frames introduces $>25\text{ms}$ latency per frame. | Control frequency drops below real-time $50\text{Hz}$ ($20\text{Hz}$ stutter), invalidating physics stability. | Direct raw NumPy memory buffers with tensor byte serialization over ZeroMQ. |
+
+---
+
+### 5.6.2 Bottom-Up Failure Mode Analysis (By Infrastructure & Submodule Layer)
+
+| Layer | Subsystem / Component | Potential Conflict & Root Cause | Failure Symptom / Impact | Automated Mitigation in `isaac-installer` |
+| :--- | :--- | :--- | :--- | :--- |
+| **B1: Hardware & Silicon** | NVIDIA GPU (Blackwell vs Ada) | **Driver Version Support Mismatch**: Blackwell RTX 50-series requires Driver $\ge 570.86$, but host is running legacy 535 LTS. | `nvidia-smi` reports `CUDA driver version is insufficient for CUDA runtime version`; PhysX GPU dynamics disabled. | `detect_gpu_architecture()` detects Blackwell architecture and automatically selects the 570 driver stream. |
+| **B1: Hardware & Silicon** | PCIe Link Topology | **PCIe Power State Link Degradation**: GPU link speed drops to PCIe Gen1 x1 due to motherboard ASPM power saving. | Texture upload and physics state readback throttles, causing severe FPS drops in multi-agent rollouts. | Persistence mode enabled via `nvidia-smi -pm 1` and link status verified during `cmd_test`. |
+| **B2: Display & Vulkan** | Wayland Display Server | **Wayland Hardware Swapchain Incompatibility**: Ubuntu 22.04 default Wayland session does not support direct Omniverse Kit Vulkan presentation. | `VkResult: VK_ERROR_INITIALIZATION_FAILED` on simulator launch; black viewport in remote desktop. | `display.sh` enforces `WaylandEnable=false` in `/etc/gdm3/custom.conf` and configures X11 display target (`DISPLAY=:0`). |
+| **B2: Display & Vulkan** | Vulkan ICD Manifest | **ICD Path Misconfiguration**: `/etc/vulkan/icd.d/nvidia_icd.json` points to wrong driver library or Mesa fallback. | Simulator falls back to software CPU rasterizer (`llvmpipe`), rendering at 0.5 FPS before crashing. | Audits and enforces `/usr/share/vulkan/icd.d/nvidia_icd.json` pointing to `libGLX_nvidia.so.0`. |
+| **B3: Sim Engine** | Standalone Isaac Sim | **Unaccepted EULA & Shader Cache Stall**: Missing `.eula_accepted` file causes interactive modal prompt in headless environments; uncompiled shaders stall first run. | CI/CD automation hangs forever; first-run initialization takes $>15\text{ minutes}$. | Automatically creates `${ISAACSIM_DIR}/.eula_accepted` and pre-compiles Vulkan RTX shader caches to `/data/isaac_cache/shader_cache`. |
+| **B4: Git Submodules** | `submodules/IsaacLab` & `Isaac-GR00T` | **Git Submodule `typechange` Working Tree Dirt**: Symlinking submodules to standalone developer workspaces marks Git working tree as dirty (`typechange: submodules/IsaacLab`). | Accidental `git commit -a` stages local directory symlink into upstream pull requests, corrupting repo pins. | **Strategy A (`editable-bridge`)** registers standalone repos in Python site-packages (`pip -e`), keeping Git submodules 100% clean. |
+| **B4: Git Submodules** | `external_dependencies/*` | **Detached HEAD Upstream Divergence**: Editing code inside nested submodules (`external_dependencies/LIBERO`) leaves commits on detached HEADs without push remotes. | Developer work is permanently lost or overwritten during the next `git submodule update --init`. | All development directed to standalone Dual-Remote workspaces (`~/Documents/GitHub/<Owner>/<Repo>`) with personal fork push capabilities. |
+| **B5: Python Dynamic Linker** | Conda vs UV / System | **`libstdc++.so.6` & C++ ABI Symbol Collision**: Host system GCC 11 standard library differs from Conda's runtime GCC, causing C++ symbol lookup failures. | `ImportError: /lib/x86_64-linux-gnu/libstdc++.so.6: version 'GLIBCXX_3.4.30' not found`. | Scoped activation shims (`etc/conda/activate.d/isaac_sim.sh`) prioritize compatible library paths exclusively when entering the environment. |
+| **B5: Python Dynamic Linker** | PyPI / Conda Packages | **NumPy 1.x vs NumPy 2.x Ecosystem Schism**: Isaac Sim 5.1/6.0 C-bindings compiled against NumPy 1.23, while modern `transformers` and `torchcodec` require NumPy 2.x. | `ValueError: numpy.dtype size changed, may indicate binary incompatibility. Expected 96 from C header, got 88 from PyObject`. | Complete process isolation: Conda `isaaclab` runs NumPy 1.24/1.26; UV `.venv` runs NumPy 2.x; ZeroMQ bridges them. |
+
+---
+
+### 5.6.3 End-to-End Conflict Prevention Architecture (Summary Table)
+
+```
++---------------------------------------------------------------------------------------------------+
+| APPLICATION LAYER (IsaacLab-Arena + Composable Task Triplet)                                      |
+| -> Conflict Prevention: Embodiment Action Space Verification + Modality Schema Assertion          |
++---------------------------------------------------------------------------------------------------+
+                                            │
+                                            ▼
++---------------------------------------------------------------------------------------------------+
+| PROCESS BOUNDARY 1 (Conda 'isaaclab' Runtime - Python 3.12 / NumPy 1.26 / PhysX 5.4)              |
+| -> Conflict Prevention: Python Editable Bridge (0% Git Submodule Dirt) + Dynamic Env Shims        |
++---------------------------------------------------------------------------------------------------+
+                                            │
+                                            ▼  ZeroMQ REQ/REP (127.0.0.1:5555) [5000ms Timeout]
++---------------------------------------------------------------------------------------------------+
+| PROCESS BOUNDARY 2 (UV '.venv' Runtime - Python 3.12 / NumPy 2.x / TorchCodec / Transformers 4.48)|
+| -> Conflict Prevention: Isolated Process prevents C++ Carbonite / libstdc++ / NumPy ABI Clashes   |
++---------------------------------------------------------------------------------------------------+
+                                            │
+                                            ▼
++---------------------------------------------------------------------------------------------------+
+| HARDWARE & OS LAYER (NVIDIA Blackwell/Ada + Driver >= 570 + X11 + Virtual EDID + 1ms FTDI)        |
+| -> Conflict Prevention: Blackwell Architecture Probing + Wayland Disabling + Vulkan ICD Manifest |
++---------------------------------------------------------------------------------------------------+
+```
+
+---
+
 ## 6. State Tracking, Drift Detection & Self-Healing Engine
 
 When workstations evolve over time, repositories get misplaced (e.g. flat `GitHub/IsaacLab` vs `GitHub/BoredEngineer/IsaacLab`), remotes point to wrong URLs, branches drift, or symlinks break.
