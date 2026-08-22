@@ -16,10 +16,26 @@ detect_target_user() {
 run_as_user() {
     local cmd="$1"
     detect_target_user
+
+    local conda_env_dir="${TARGET_HOME}/miniconda3/envs/isaaclab"
+    if [[ ! -d "$conda_env_dir" ]]; then
+        conda_env_dir="${TARGET_HOME}/.conda/envs/isaaclab"
+    fi
+
+    local env_sanitize="
+        if [[ -n \"\${CONDA_DEFAULT_ENV:-}\" && \"\${CONDA_DEFAULT_ENV}\" == 'base' ]]; then
+            unset CONDA_PREFIX CONDA_DEFAULT_ENV CONDA_PROMPT_MODIFIER
+            if [[ -d '${conda_env_dir}' ]]; then
+                export CONDA_PREFIX='${conda_env_dir}'
+                export CONDA_DEFAULT_ENV='isaaclab'
+            fi
+        fi
+    "
+
     if command -v sudo &>/dev/null && [[ "$EUID" -eq 0 && "${TARGET_USER}" != "root" && "${TARGET_USER}" != "${USER}" ]]; then
-        sudo -H -u "${TARGET_USER}" bash -l -c "$cmd"
+        sudo -H -u "${TARGET_USER}" bash -l -c "${env_sanitize} ${cmd}"
     else
-        bash -l -c "$cmd"
+        bash -l -c "${env_sanitize} ${cmd}"
     fi
 }
 
