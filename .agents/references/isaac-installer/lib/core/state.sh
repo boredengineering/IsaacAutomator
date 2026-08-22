@@ -3,6 +3,8 @@
 # state.sh - Persistent State Ledger, Drift Detection & Self-Healing Engine
 # ==============================================================================
 
+RESUME_SERVICE="/etc/systemd/system/isaac-installer-resume.service"
+
 resolve_state_dir() {
     detect_target_user
     echo "${TARGET_HOME}/.isaac-installer"
@@ -698,7 +700,7 @@ register_resume_hook() {
     local script_path
     script_path="$(readlink -f "$0")"
 
-    cat << SERVICE | sudo tee "${RESUME_SERVICE}" >/dev/null
+    cat << SERVICE | run_as_root "tee '${RESUME_SERVICE}' >/dev/null"
 [Unit]
 Description=Isaac Installer Post-Reboot Resume
 After=network.target graphical.target
@@ -714,15 +716,20 @@ RemainAfterExit=no
 WantedBy=graphical.target
 SERVICE
 
-    sudo systemctl daemon-reload
-    sudo systemctl enable isaac-installer-resume.service
+    if command -v systemctl &>/dev/null && [[ -d /run/systemd/system ]]; then
+        run_as_root "systemctl daemon-reload && systemctl enable isaac-installer-resume.service 2>/dev/null || true"
+    fi
 }
 
 clear_resume_hook() {
-    if [[ -f "${RESUME_SERVICE}" ]]; then
-        sudo systemctl disable isaac-installer-resume.service 2>/dev/null || true
-        sudo rm -f "${RESUME_SERVICE}"
-        sudo systemctl daemon-reload
+    if [[ -n "${RESUME_SERVICE:-}" && -f "${RESUME_SERVICE}" ]]; then
+        if command -v systemctl &>/dev/null && [[ -d /run/systemd/system ]]; then
+            run_as_root "systemctl disable isaac-installer-resume.service 2>/dev/null || true"
+        fi
+        run_as_root "rm -f '${RESUME_SERVICE}'"
+        if command -v systemctl &>/dev/null && [[ -d /run/systemd/system ]]; then
+            run_as_root "systemctl daemon-reload 2>/dev/null || true"
+        fi
     fi
 }
 

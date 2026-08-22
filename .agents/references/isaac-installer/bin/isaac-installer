@@ -828,7 +828,8 @@ case "${COMMAND}" in
     sim)              cmd_sim "${PASSTHROUGH_ARGS[@]:-list}" ;;
     bench)            cmd_bench ;;
     config)           print_active_config ;;
-    install|resume)   cmd_install ;;
+    install)          cmd_install ;;
+    resume)           cmd_resume ;;
     test)             
         case "${PASSTHROUGH_ARGS[0]:-all}" in
             --arena|arena) test_isaaclab_arena ;;
