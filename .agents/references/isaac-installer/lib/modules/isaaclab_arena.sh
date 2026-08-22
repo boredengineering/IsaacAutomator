@@ -38,7 +38,7 @@ install_isaaclab_arena() {
     # 2. Editable pip install into Isaac Lab python runtime
     if [[ -d "${lab_dir}" && -x "${lab_dir}/isaaclab.sh" ]]; then
         log_info "Registering IsaacLab-Arena in editable mode with Isaac Lab Python environment..."
-        sudo -H -u "${TARGET_USER}" bash -c "
+        run_as_user "
             cd '${lab_dir}'
             ./isaaclab.sh -p -m pip install -e '${arena_dir}' 2>/dev/null || true
         "
@@ -70,22 +70,21 @@ test_isaaclab_arena() {
         return 1
     fi
 
-    # Test 1: Python Extension Registration & Gym Task Discovery
-    log_step "1. Validating Arena Python Extensions & Gymnasium Task Registry..."
+    # Test 1: Python Extension Registration & Module Import
+    log_step "1. Validating Arena Python Extensions & isaaclab_arena Module..."
     local check_cmd="
 import gymnasium as gym
 try:
-    import arena
-    tasks = [t for t in gym.envs.registry.keys() if 'Arena' in t or 'Isaac' in t]
-    print(f'SUCCESS: Found {len(tasks)} registered gym environments.')
+    import isaaclab_arena
+    print('SUCCESS: isaaclab_arena Python module loaded.')
 except Exception as e:
     print(f'ERROR: {e}')
     exit(1)
 "
-    if sudo -H -u "${TARGET_USER}" bash -c "cd '${lab_dir}' && ./isaaclab.sh -p -c \"${check_cmd}\""; then
-        log_success "Arena Python extensions and Gymnasium tasks registered successfully."
+    if run_as_user "cd '${lab_dir}' && ./isaaclab.sh -p -c \"${check_cmd}\""; then
+        log_success "Arena Python extensions and isaaclab_arena package registered successfully."
     else
-        log_warn "Arena extension import test failed or tasks pending installation."
+        log_warn "Arena extension import test encountered an issue."
     fi
 
     # Test 2: Headless Multi-Agent Tensor Physics Smoke Test
@@ -100,8 +99,8 @@ y = torch.matmul(x, x)
 assert y.is_cuda and not torch.isnan(y).any()
 print('SUCCESS: GPU PhysX tensor pipelines active.')
 "
-    if sudo -H -u "${TARGET_USER}" bash -c "cd '${lab_dir}' && ./isaaclab.sh -p -c \"${smoke_script}\""; then
-        log_success "CUDA physics tensor pipelines validated on $(nvidia-smi --query-gpu=name --format=csv,noheader | head -n 1)."
+    if run_as_user "cd '${lab_dir}' && ./isaaclab.sh -p -c \"${smoke_script}\""; then
+        log_success "CUDA physics tensor pipelines validated on $(nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null | head -n 1 || echo 'GPU')."
     else
         log_error "GPU PhysX tensor validation failed."
         return 1
@@ -193,7 +192,7 @@ if sync.get('has_upstream'):
             # Re-install in editable mode with Isaac Lab python runtime
             if [[ -d "${lab_dir}" && -x "${lab_dir}/isaaclab.sh" ]]; then
                 log_info "Registering IsaacLab-Arena in editable mode with Isaac Lab Python environment..."
-                sudo -H -u "${TARGET_USER}" bash -c "
+                run_as_user "
                     cd '${lab_dir}'
                     ./isaaclab.sh -p -m pip install -e '${arena_dir}' 2>/dev/null || true
                 "
@@ -211,7 +210,7 @@ if sync.get('has_upstream'):
 
             if [[ "$sync_mode" == "--abort" || "$sync_mode" == "abort" ]]; then
                 log_info "Aborting any in-progress rebase or merge..."
-                sudo -H -u "${TARGET_USER}" bash -c "
+                run_as_user "
                     cd '${arena_dir}'
                     git rebase --abort 2>/dev/null || git merge --abort 2>/dev/null || true
                 "
@@ -219,7 +218,7 @@ if sync.get('has_upstream'):
                 return 0
             fi
 
-            sudo -H -u "${TARGET_USER}" bash -c "
+            run_as_user "
                 cd '${arena_dir}'
                 curr_branch=\$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo 'main')
                 
@@ -275,7 +274,7 @@ if sync.get('has_upstream'):
             local resolved_fork
             resolved_fork="$(ensure_github_fork "$target_fork" "$official_upstream")"
 
-            sudo -H -u "${TARGET_USER}" bash -c "
+            run_as_user "
                 cd '${arena_dir}'
                 git remote set-url origin '${resolved_fork}' 2>/dev/null || git remote add origin '${resolved_fork}' 2>/dev/null
                 git fetch origin 2>/dev/null || true
@@ -290,7 +289,7 @@ if sync.get('has_upstream'):
                 return 1
             fi
 
-            sudo -H -u "${TARGET_USER}" bash -c "
+            run_as_user "
                 cd '${arena_dir}'
                 echo '=== Git Remotes ==='
                 git remote -v
@@ -377,7 +376,7 @@ SUBHELP
 
                 link-standalone|link)
                     log_info "Linking IsaacLab-Arena submodules to Standalone Developer Workspaces..."
-                    sudo -H -u "${TARGET_USER}" bash -c "
+                    run_as_user "
                         mkdir -p '${arena_dir}/submodules'
                         
                         if [[ -d '${lab_dir}' ]]; then
@@ -403,7 +402,7 @@ SUBHELP
 
                 unlink|restore-pinned|restore|reset)
                     log_info "Reversing symlinks & restoring exact upstream pinned git submodules..."
-                    sudo -H -u "${TARGET_USER}" bash -c "
+                    run_as_user "
                         cd '${arena_dir}'
                         # Remove any directory symlinks
                         for submod in submodules/IsaacLab submodules/Isaac-GR00T; do
@@ -419,16 +418,11 @@ SUBHELP
 
                 editable-bridge|link-packages)
                     log_info "Registering Standalone Repositories via Python Editable Installs (Non-Invasive, Zero-Symlink Mode)..."
-                    sudo -H -u "${TARGET_USER}" bash -c "
+                    run_as_user "
                         if [[ -d '${lab_dir}' && -x '${lab_dir}/isaaclab.sh' ]]; then
                             cd '${lab_dir}'
-                            echo 'Registering standalone IsaacLab in editable mode...'
-                            ./isaaclab.sh -p -m pip install -e '${lab_dir}' 2>/dev/null || true
-
-                            if [[ -d '${gr00t_dir}' ]]; then
-                                echo 'Registering standalone Isaac-GR00T in editable mode...'
-                                ./isaaclab.sh -p -m pip install -e '${gr00t_dir}' 2>/dev/null || true
-                            fi
+                            echo 'Registering standalone IsaacLab extensions in editable mode...'
+                            ./isaaclab.sh --install 2>/dev/null || true
 
                             echo 'Registering standalone IsaacLab-Arena in editable mode...'
                             ./isaaclab.sh -p -m pip install -e '${arena_dir}' 2>/dev/null || true
@@ -443,7 +437,7 @@ SUBHELP
                         log_error "Usage: ./bin/isaac-installer arena submodules update-pin <IsaacLab|Isaac-GR00T>"
                         return 1
                     fi
-                    sudo -H -u "${TARGET_USER}" bash -c "
+                    run_as_user "
                         cd '${arena_dir}'
                         git add 'submodules/${target_name}'
                     "
@@ -489,7 +483,7 @@ SUBHELP
 
             log_header "Running IsaacLab-Arena Policy in Live Kit Viewport (--viz kit)"
             log_info "Task: ${task_name} | Policy: ${policy_type}"
-            sudo -H -u "${TARGET_USER}" bash -c "
+            run_as_user "
                 cd '${arena_dir}'
                 if [[ '${policy_type}' == 'gr00t' ]]; then
                     echo 'Executing with Isaac-GR00T ZeroMQ Policy Bridge on port ${port}...'
@@ -526,7 +520,7 @@ SUBHELP
 
             log_header "Running IsaacLab-Arena Headless Rollout (${steps} steps, ${num_envs} envs)"
             log_info "Task: ${task_name} | Policy: ${policy_type}"
-            sudo -H -u "${TARGET_USER}" bash -c "
+            run_as_user "
                 cd '${arena_dir}'
                 if [[ '${policy_type}' == 'gr00t' ]]; then
                     extra_flags='--policy_type gr00t --policy_host 127.0.0.1 --policy_port ${port}'
@@ -547,7 +541,7 @@ SUBHELP
             local port="${2:-5555}"
             log_header "Running Closed-Loop IsaacLab-Arena + Isaac-GR00T VLA Benchmark"
             log_info "Task: ${task_name} | Policy Server: 127.0.0.1:${port}"
-            sudo -H -u "${TARGET_USER}" bash -c "
+            run_as_user "
                 cd '${arena_dir}'
                 if [[ -d '${lab_dir}' && -x '${lab_dir}/isaaclab.sh' ]]; then
                     ${lab_dir}/isaaclab.sh -p isaaclab_arena/evaluation/policy_runner.py \
