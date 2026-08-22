@@ -847,6 +847,57 @@ kill $SERVER_PID
 
 ---
 
+### 5.3.1 Closed-Loop Simulation Bridge (IsaacLab-Arena ⟷ Isaac-GR00T ZeroMQ Policy Bridge)
+
+In physical robotics research, evaluating foundation models requires closed-loop interaction between the simulation environment and the policy server:
+
+```mermaid
+flowchart LR
+    subgraph SIMULATION ["IsaacLab-Arena Runtime (Isaac Sim / PhysX)"]
+        RENDER["Camera Sensors (RGB Video) + Proprioception (Joints)"]
+        STEP["PhysX 5.4 GPU Dynamics Step"]
+        RENDER --> ZMQ_CLIENT["Arena Policy Client (ZeroMQ REQ)"]
+        ZMQ_CLIENT --> STEP
+    end
+
+    subgraph SERVER ["Isaac-GR00T Policy Server (Python 3.12 / uv)"]
+        ZMQ_SERVER["Policy Daemon (ZeroMQ REP: Port 5555)"]
+        VLM["Cosmos-Reason2-2B VLM Backbone"]
+        DIT["DiT Action Chunk Denoising (40-step horizon)"]
+        ZMQ_SERVER --> VLM --> DIT --> ZMQ_SERVER
+    end
+
+    ZMQ_CLIENT <== "Observations (Tensors)" ==> ZMQ_SERVER
+    ZMQ_SERVER <== "Action Trajectory (Relative EEF / Joints)" ==> ZMQ_CLIENT
+```
+
+#### Execution Workflows:
+1. **Interactive Live Viewport Closed-Loop Demo**:
+   ```bash
+   ./bin/isaac-installer arena play cube_goal_pose --policy gr00t --port 5555
+   ```
+2. **Headless Parallel Benchmark Rollout**:
+   ```bash
+   ./bin/isaac-installer arena eval-gr00t cube_goal_pose 5555
+   ```
+
+---
+
+### 5.3.2 Foundation Model Weight Pre-Caching & Gated Access Protocol
+
+NVIDIA foundation models (`nvidia/GR00T-N1.7-3B` and `nvidia/Cosmos-Reason2-2B`) require authenticated access via Hugging Face. The installer provides automated pre-caching and mock fallback mechanisms:
+
+1. **Pre-Caching Gated Weights**:
+   ```bash
+   ./bin/isaac-installer gr00t download-weights [--local-dir /data/models/pretrained_checkpoints/gr00t-n1.7-3b]
+   ```
+2. **Offline / CI Mock Fixture Mode**:
+   ```bash
+   ./bin/isaac-installer gr00t download-weights --mock
+   ```
+
+---
+
 ## 5.4 Decoupled Standalone Workspace with Atomic Submodule Bridging & Pinned Commit Management
 
 ### The Architecture Problem: Nested Submodules vs Standalone Development
@@ -1114,23 +1165,25 @@ isaac-installer/
 
 ---
 
-## 11. 13-Subsystem End-to-End Verification Suite (`test`)
+## 11. 15-Subsystem End-to-End Verification Suite (`test`)
 
-The verification suite runs granular, non-destructive health checks across 13 core subsystems:
+The verification suite runs granular, non-destructive health checks across 15 core subsystems:
 
 1. **NVIDIA Driver & GPU Topology**: Driver version ($\ge 535$ or $\ge 570$), PCIe Link speed (Gen4/Gen5 x16), persistence mode.
 2. **Display Server**: X11 server active or virtual EDID configured (`DISPLAY=:0`), Wayland disabled for Omniverse compatibility.
 3. **Build Prerequisites**: GCC 11, G++ 11, CMake $\ge 3.22$, Ninja, Git LFS.
-4. **Vulkan Runtime**: `vulkaninfo` device enumeration, ICD configuration (`/etc/vulkan/icd.d/nvidia_icd.json`).
+4. **Vulkan Runtime**: `vulkaninfo` device enumeration, ICD configuration (`/usr/share/vulkan/icd.d/nvidia_icd.json`).
 5. **Docker & GPU Passthrough**: Docker daemon status, `nvidia-ctk` runtime test (`nvidia-smi` inside container).
 6. **Developer Tools**: VS Code, GitHub Desktop, Google Chrome / Chromium, `gh`, `aws`, `gcloud`, `hf`.
 7. **Storage & I/O Stack**: NVMe SMART health telemetry, LVM2 volume groups, mount permissions on `/data`.
-8. **Python Runtime & UV**: Python 3.10 runtime, `uv` package manager binary and cache health.
+8. **Python Runtime & UV**: Python 3.10 / 3.12 runtime, `uv` package manager binary and cache health.
 9. **Physical AI & LeRobot**: Hugging Face token validity, `lerobot` import, Rerun.io visualizer binary.
 10. **Hardware Teleop**: 1ms FTDI latency timer verification, user membership in `dialout`, `plugdev`, `input`.
 11. **Isaac Sim Standalone Engine**: Executable verification, `.eula_accepted` presence, Kit Carbonite core load.
 12. **Isaac Lab PyTorch CUDA Linkage**: GPU tensor allocation, CUDA device name match, extension import sanity.
-13. **IsaacLab-Arena & Demos**: Gymnasium multi-agent environment registration, 50-step headless PhysX tensor rollout.
+13. **IsaacLab-Arena Benchmark Suite**: Gymnasium multi-agent environment registration, composable task runner, headless tensor rollouts.
+14. **NVIDIA Isaac-GR00T Foundation Model Stack**: Python 3.12 `uv` environment, core module imports, DROID modality mapping, ZeroMQ socket readiness.
+15. **Desktop Shortcuts & Demos**: Desktop `.desktop` launchers for Unitree G1, Go2, Franka, Arena Benchmark Kit GUI, GR00T Policy Server, and Arena + GR00T Closed-Loop Demo.
 
 ---
 
@@ -1176,12 +1229,12 @@ The following architectural points require specific team and stakeholder review 
 - [x] **Hugging Face LeRobot & `lerobot-dataset-viz`** (`lib/modules/physical_ai.sh`)
 - [x] **Hardware Teleop Peripherals & 1ms Low-Latency Serial** (`lib/modules/hardware_teleop.sh`)
 - [x] **Multi-Version Isaac Sim Detection & Atomic Symlink Switcher** (`lib/modules/isaacsim.sh`)
-- [x] **13-Subsystem End-to-End Verification Suite** (`cmd_test`)
+- [x] **15-Subsystem End-to-End Verification Suite** (`cmd_test`)
 - [x] **Workspace Hierarchy Engine (`~/Documents/GitHub/<Owner>/<Repo>`)** (`lib/core/git_workspace.sh`)
-- [ ] **Dual-Remote Fork & Tag/Branch Management (`lab switch`, `lab sync`)** (`lib/modules/isaaclab.sh`)
-- [x] **IsaacLab-Arena Composable Task & Benchmark Suite (`arena status`, `arena test`)** (`lib/modules/isaaclab_arena.sh`)
-- [ ] **NVIDIA Isaac-GR00T VLA Model Integration & ZeroMQ Serving** (`lib/modules/gr00t.sh`)
+- [x] **Dual-Remote Fork & Tag/Branch Management (`lab switch`, `lab sync`)** (`lib/modules/isaaclab.sh`)
+- [x] **IsaacLab-Arena Composable Task & Benchmark Suite (`arena status`, `arena test`, `arena play --policy gr00t`)** (`lib/modules/isaaclab_arena.sh`)
+- [x] **NVIDIA Isaac-GR00T Foundation Model Stack & ZeroMQ Serving (`gr00t server`, `gr00t download-weights`)** (`lib/modules/gr00t.sh`)
 - [x] **State Tracking, Drift Reconciliation & Self-Healing Engine (`repair` / `fix`)** (`lib/core/state.sh`)
-- [ ] **Hybrid Conda Named Environment + UV Pip Engine & Activation Hooks** (`lib/modules/conda.sh`)
+- [x] **Hybrid Conda Named Environment + UV Pip Engine & Scoped Hooks** (`lib/modules/conda.sh`)
 - [ ] **Two-Phase Privilege Boundary Refactor (`sys-provision` vs `dev-setup`)**
-- [ ] **Multi-Agent Skills Registration** (`.agents/skills/isaac-baremetal-installer/SKILL.md`)
+- [x] **Multi-Agent Skills Registration** (`.agents/skills/isaac-baremetal-installer/SKILL.md`)

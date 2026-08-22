@@ -301,7 +301,44 @@ audit_all_components() {
     fi
     AUDIT_RESULTS+=("Isaac Lab Framework|${lab_cur}|Linked & Installed|${lab_status}|${lab_risk}")
 
-    # 15. GitHub Hub Authentication
+    # 15. IsaacLab-Arena Benchmark Suite
+    local arena_dir
+    arena_dir="$(resolve_arena_dir 2>/dev/null || echo "${TARGET_HOME}/Documents/GitHub/BoredEngineer/IsaacLab-Arena")"
+    local arena_cur="Missing"
+    local arena_status="MISSING"
+    local arena_risk="None"
+    if [[ -d "${arena_dir}/.git" ]]; then
+        arena_cur="Installed (${arena_dir})"
+        arena_status="UP_TO_DATE"
+        SATISFIED_COUNT=$((SATISFIED_COUNT + 1))
+    else
+        INSTALLS_FOUND=$((INSTALLS_FOUND + 1))
+    fi
+    AUDIT_RESULTS+=("IsaacLab-Arena Suite|${arena_cur}|Linked & Installed|${arena_status}|${arena_risk}")
+
+    # 16. NVIDIA Isaac-GR00T Foundation Model Stack
+    local gr00t_dir
+    gr00t_dir="$(resolve_gr00t_dir 2>/dev/null || echo "${TARGET_HOME}/Documents/GitHub/boredengineering/Isaac-GR00T")"
+    local gr00t_cur="Missing"
+    local gr00t_status="MISSING"
+    local gr00t_risk="None"
+    if [[ -d "${gr00t_dir}/.git" ]]; then
+        if [[ -d "${gr00t_dir}/.venv" || -x "${gr00t_dir}/.venv/bin/python" ]]; then
+            gr00t_cur="Installed (Python 3.12 .venv)"
+            gr00t_status="UP_TO_DATE"
+            SATISFIED_COUNT=$((SATISFIED_COUNT + 1))
+        else
+            gr00t_cur="Cloned (uv sync pending)"
+            gr00t_status="UPGRADES_NEEDED"
+            gr00t_risk="uv virtual environment not yet synchronized"
+            UPGRADES_FOUND=$((UPGRADES_FOUND + 1))
+        fi
+    else
+        INSTALLS_FOUND=$((INSTALLS_FOUND + 1))
+    fi
+    AUDIT_RESULTS+=("NVIDIA Isaac-GR00T VLA|${gr00t_cur}|Python 3.12 + uv|${gr00t_status}|${gr00t_risk}")
+
+    # 17. GitHub Hub Authentication
     local gh_auth_cur="Not Logged In"
     local gh_auth_status="OPTIONAL"
     local gh_auth_risk="Private robot URDFs/submodules may require auth"
@@ -320,7 +357,7 @@ audit_all_components() {
     fi
     AUDIT_RESULTS+=("GitHub Hub Login (gh)|${gh_auth_cur}|Authenticated|${gh_auth_status}|${gh_auth_risk}")
 
-    # 16. Hugging Face Hub Authentication
+    # 18. Hugging Face Hub Authentication
     local hf_auth_cur="Not Logged In"
     local hf_auth_status="OPTIONAL"
     local hf_auth_risk="Uploading LeRobot teleop datasets requires auth"

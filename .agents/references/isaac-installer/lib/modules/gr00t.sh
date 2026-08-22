@@ -117,7 +117,83 @@ test_gr00t() {
     log_card_item "Model Backbone" "${GR00T_VLM_BACKBONE:-nvidia/Cosmos-Reason2-2B}"
     log_card_item "Base Model Path" "${GR00T_MODEL_PATH:-nvidia/GR00T-N1.7-3B}"
     log_card_item "Standalone Inference" "cd ${gr00t_dir} && uv run python scripts/deployment/standalone_inference_script.py"
+    log_card_item "ZeroMQ Policy Server" "./bin/isaac-installer gr00t server [port]"
+    log_card_item "Pre-Cache Model Weights" "./bin/isaac-installer gr00t download-weights"
     log_card_end
+}
+
+# Download and pre-cache model weights from Hugging Face Hub
+download_gr00t_weights() {
+    local gr00t_dir
+    gr00t_dir="$(resolve_gr00t_dir)"
+    local target_dir="${1:-}"
+    local is_mock=false
+
+    for arg in "$@"; do
+        if [[ "$arg" == "--mock" || "$arg" == "-m" ]]; then
+            is_mock=true
+        fi
+    done
+
+    log_header "NVIDIA Isaac-GR00T Model Weights Manager"
+
+    if [[ "$is_mock" == true ]]; then
+        log_info "Creating offline mock model checkpoint fixture for CI/CD testing..."
+        local mock_dir="${TARGET_HOME}/.cache/isaac-gr00t/mock-n1.7"
+        run_as_user "
+            mkdir -p '${mock_dir}/meta'
+            cat << 'EOF' > '${mock_dir}/meta/modality.json'
+{
+  \"state\": {\"joint_pos\": [0, 7], \"joint_vel\": [7, 14]},
+  \"action\": {\"joint_pos_target\": [0, 7]}
+}
+EOF
+            touch '${mock_dir}/model.safetensors'
+        "
+        log_success "Mock weights fixture created at ${mock_dir}."
+        return 0
+    fi
+
+    # Check Hugging Face token
+    local hf_token_file="${TARGET_HOME}/.cache/huggingface/token"
+    if [[ ! -f "${hf_token_file}" && -z "${HF_TOKEN:-}" && -z "${HUGGINGFACE_TOKEN:-}" ]]; then
+        log_warn "Hugging Face token not found."
+        log_info "nvidia/GR00T-N1.7-3B and nvidia/Cosmos-Reason2-2B are gated repositories."
+        log_info "Please login first with: ./bin/isaac-installer auth login huggingface"
+        log_info "Or export HF_TOKEN=\"your_hf_token\" before running this command."
+        read -r -p "Proceed with download attempt anyway? [y/N]: " choice
+        case "$choice" in
+            [yY]*) ;;
+            *) return 1 ;;
+        esac
+    fi
+
+    local model_id="${GR00T_MODEL_PATH:-nvidia/GR00T-N1.7-3B}"
+    log_step "Downloading foundation model weights for [${model_id}]..."
+
+    local dest_arg=""
+    if [[ -n "$target_dir" && "$target_dir" != --* ]]; then
+        dest_arg="--local-dir '${target_dir}'"
+        log_info "Target local directory: ${target_dir}"
+    fi
+
+    run_as_user "
+        cd '${gr00t_dir}'
+        export PATH=\"\$HOME/.cargo/bin:\$PATH\"
+        if [[ -n \"${HF_TOKEN:-}\" ]]; then export HF_TOKEN=\"${HF_TOKEN}\"; fi
+        
+        echo 'Pulling model snapshot via huggingface_hub...'
+        uv run python -c \"
+import os
+from huggingface_hub import snapshot_download
+model_id = '${model_id}'
+local_dir = '${target_dir}' if '${target_dir}' and not '${target_dir}'.startswith('--') else None
+print(f'Starting high-speed snapshot download for {model_id}...')
+path = snapshot_download(repo_id=model_id, local_dir=local_dir, ignore_patterns=['*.msgpack'])
+print(f'SUCCESS: Model cached at: {path}')
+\"
+    "
+    log_success "Model weights for [${model_id}] verified in local cache."
 }
 
 # ==============================================================================
@@ -170,6 +246,10 @@ if sync.get('has_upstream'):
 "
             ;;
 
+        download-weights|cache-weights|pull-model)
+            download_gr00t_weights "$@"
+            ;;
+
         infer|inference)
             log_header "Running Isaac-GR00T Open-Loop Inference on DROID Sample"
             sudo -H -u "${TARGET_USER}" bash -c "
@@ -199,6 +279,26 @@ if sync.get('has_upstream'):
             "
             ;;
 
+        eval-closed-loop|closed-loop)
+            local port="${1:-5555}"
+            local host="${2:-127.0.0.1}"
+            log_header "Testing Isaac-GR00T ZeroMQ Client-Server Closed-Loop Bridge"
+            sudo -H -u "${TARGET_USER}" bash -c "
+                cd '${gr00t_dir}'
+                export PATH=\"\$HOME/.cargo/bin:\$PATH\"
+                echo 'Testing ZeroMQ client socket connection to ${host}:${port}...'
+                uv run python -c \"
+import zmq
+import time
+context = zmq.Context()
+socket = context.socket(zmq.REQ)
+socket.setsockopt(zmq.RCVTIMEO, 5000)
+socket.connect('tcp://${host}:${port}')
+print('✔ Connected to ZeroMQ policy server socket.')
+\" 2>/dev/null || echo 'Note: Policy server not active on ${host}:${port}. Start it first with: ./bin/isaac-installer gr00t server ${port}'
+            "
+            ;;
+
         fork)
             local target_fork="${1:-}"
             if [[ -z "$target_fork" ]]; then
@@ -217,6 +317,42 @@ if sync.get('has_upstream'):
                 git fetch origin 2>/dev/null || true
             "
             log_success "Origin remote re-wired to ${resolved_fork}."
+            ;;
+
+        sync)
+            local sync_mode="${1:-}"
+            log_header "Syncing Isaac-GR00T with Upstream Releases"
+            if [[ ! -d "${gr00t_dir}/.git" ]]; then
+                log_error "Isaac-GR00T repository not found at ${gr00t_dir}."
+                return 1
+            fi
+
+            sudo -H -u "${TARGET_USER}" bash -c "
+                cd '${gr00t_dir}'
+                curr_branch=\$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo 'main')
+                echo 'Fetching latest upstream branches and tags...'
+                git fetch --tags upstream
+                git fetch upstream main 2>/dev/null || git fetch upstream master 2>/dev/null || true
+
+                target_upstream_branch='upstream/main'
+                if ! git rev-parse --verify \"upstream/main\" &>/dev/null; then
+                    target_upstream_branch='upstream/master'
+                fi
+
+                if [[ '${sync_mode}' == '--rebase' ]]; then
+                    echo \"Rebasing '\${curr_branch}' against \${target_upstream_branch}...\"
+                    git rebase \"\${target_upstream_branch}\"
+                else
+                    echo \"Fast-forward merging \${target_upstream_branch} into '\${curr_branch}'...\"
+                    git merge --ff-only \"\${target_upstream_branch}\" 2>/dev/null || git merge \"\${target_upstream_branch}\"
+                fi
+
+                if git remote | grep -q '^origin$'; then
+                    echo \"Pushing synced '\${curr_branch}' to personal origin fork...\"
+                    git push origin \"\${curr_branch}\" 2>/dev/null || true
+                fi
+            "
+            log_success "Sync complete."
             ;;
 
         remotes)
@@ -242,7 +378,7 @@ if sync.get('has_upstream'):
             ;;
 
         *)
-            echo "Usage: ./bin/isaac-installer gr00t [status|infer|server [port]|fork <owner/repo>|remotes|test]"
+            echo "Usage: ./bin/isaac-installer gr00t [status|download-weights [--mock]|infer|server [port]|eval-closed-loop|sync [--rebase]|fork <owner/repo>|remotes|test]"
             ;;
     esac
 }

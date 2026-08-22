@@ -377,6 +377,8 @@ if sync.get('has_upstream'):
                         fi
                     "
                     log_success "Submodules linked to Standalone Workspaces. Live development enabled!"
+                    ;;
+
                 unlink|restore-pinned|restore|reset)
                     log_info "Reversing symlinks & restoring exact upstream pinned git submodules..."
                     sudo -H -u "${TARGET_USER}" bash -c "
@@ -433,28 +435,97 @@ if sync.get('has_upstream'):
             ;;
 
         play)
-            local task_name="${1:-cube_goal_pose}"
+            local task_name="cube_goal_pose"
+            local policy_type="zero_action"
+            local port="5555"
+
+            while [[ $# -gt 0 ]]; do
+                case "$1" in
+                    --policy) policy_type="$2"; shift 2 ;;
+                    --port)   port="$2"; shift 2 ;;
+                    -*)       shift ;;
+                    *)        task_name="$1"; shift ;;
+                esac
+            done
+
             log_header "Running IsaacLab-Arena Policy in Live Kit Viewport (--viz kit)"
+            log_info "Task: ${task_name} | Policy: ${policy_type}"
             sudo -H -u "${TARGET_USER}" bash -c "
                 cd '${arena_dir}'
-                if [[ -d '${lab_dir}' && -x '${lab_dir}/isaaclab.sh' ]]; then
-                    ${lab_dir}/isaaclab.sh -p isaaclab_arena/evaluation/policy_runner.py --viz kit --policy_type zero_action --num_steps 200 '${task_name}'
+                if [[ '${policy_type}' == 'gr00t' ]]; then
+                    echo 'Executing with Isaac-GR00T ZeroMQ Policy Bridge on port ${port}...'
+                    extra_flags='--policy_type gr00t --policy_host 127.0.0.1 --policy_port ${port}'
                 else
-                    python isaaclab_arena/evaluation/policy_runner.py --viz kit --policy_type zero_action --num_steps 200 '${task_name}'
+                    extra_flags='--policy_type zero_action'
+                fi
+
+                if [[ -d '${lab_dir}' && -x '${lab_dir}/isaaclab.sh' ]]; then
+                    ${lab_dir}/isaaclab.sh -p isaaclab_arena/evaluation/policy_runner.py --viz kit \${extra_flags} --num_steps 200 '${task_name}'
+                else
+                    python isaaclab_arena/evaluation/policy_runner.py --viz kit \${extra_flags} --num_steps 200 '${task_name}'
                 fi
             "
             ;;
 
         run|infer)
+            local task_name="cube_goal_pose"
+            local steps="50"
+            local num_envs="16"
+            local policy_type="zero_action"
+            local port="5555"
+
+            while [[ $# -gt 0 ]]; do
+                case "$1" in
+                    --steps)    steps="$2"; shift 2 ;;
+                    --num_envs) num_envs="$2"; shift 2 ;;
+                    --policy)   policy_type="$2"; shift 2 ;;
+                    --port)     port="$2"; shift 2 ;;
+                    -*)         shift ;;
+                    *)          task_name="$1"; shift ;;
+                esac
+            done
+
+            log_header "Running IsaacLab-Arena Headless Rollout (${steps} steps, ${num_envs} envs)"
+            log_info "Task: ${task_name} | Policy: ${policy_type}"
+            sudo -H -u "${TARGET_USER}" bash -c "
+                cd '${arena_dir}'
+                if [[ '${policy_type}' == 'gr00t' ]]; then
+                    extra_flags='--policy_type gr00t --policy_host 127.0.0.1 --policy_port ${port}'
+                else
+                    extra_flags='--policy_type zero_action'
+                fi
+
+                if [[ -d '${lab_dir}' && -x '${lab_dir}/isaaclab.sh' ]]; then
+                    ${lab_dir}/isaaclab.sh -p isaaclab_arena/evaluation/policy_runner.py \${extra_flags} --num_steps '${steps}' --num_envs '${num_envs}' '${task_name}'
+                else
+                    python isaaclab_arena/evaluation/policy_runner.py \${extra_flags} --num_steps '${steps}' --num_envs '${num_envs}' '${task_name}'
+                fi
+            "
+            ;;
+
+        eval-gr00t|closed-loop)
             local task_name="${1:-cube_goal_pose}"
-            local steps="${2:-50}"
-            log_header "Running IsaacLab-Arena Headless Rollout (${steps} steps)"
+            local port="${2:-5555}"
+            log_header "Running Closed-Loop IsaacLab-Arena + Isaac-GR00T VLA Benchmark"
+            log_info "Task: ${task_name} | Policy Server: 127.0.0.1:${port}"
             sudo -H -u "${TARGET_USER}" bash -c "
                 cd '${arena_dir}'
                 if [[ -d '${lab_dir}' && -x '${lab_dir}/isaaclab.sh' ]]; then
-                    ${lab_dir}/isaaclab.sh -p isaaclab_arena/evaluation/policy_runner.py --policy_type zero_action --num_steps '${steps}' --num_envs 16 '${task_name}'
+                    ${lab_dir}/isaaclab.sh -p isaaclab_arena/evaluation/policy_runner.py \
+                        --policy_type gr00t \
+                        --policy_host 127.0.0.1 \
+                        --policy_port '${port}' \
+                        --num_steps 100 \
+                        --num_envs 4 \
+                        '${task_name}'
                 else
-                    python isaaclab_arena/evaluation/policy_runner.py --policy_type zero_action --num_steps '${steps}' --num_envs 16 '${task_name}'
+                    python isaaclab_arena/evaluation/policy_runner.py \
+                        --policy_type gr00t \
+                        --policy_host 127.0.0.1 \
+                        --policy_port '${port}' \
+                        --num_steps 100 \
+                        --num_envs 4 \
+                        '${task_name}'
                 fi
             "
             ;;
@@ -464,7 +535,7 @@ if sync.get('has_upstream'):
             ;;
 
         *)
-            echo "Usage: ./bin/isaac-installer arena [status|list-tags|switch <ref>|sync [--rebase]|fork <owner/repo>|remotes|submodules [status|link-standalone|restore-pinned]|play <task>|run <task>|test]"
+            echo "Usage: ./bin/isaac-installer arena [status|list-tags|switch <ref>|sync [--rebase]|fork <owner/repo>|remotes|submodules [status|link-standalone|restore-pinned|editable-bridge]|play <task> [--policy gr00t]|run <task> [--policy gr00t]|eval-gr00t <task> [port]|test]"
             ;;
     esac
 }

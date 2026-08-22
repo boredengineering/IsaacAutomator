@@ -184,7 +184,10 @@ git push -u origin feature/my-new-robot
 # Audit submodules vs standalone repository alignment:
 ./bin/isaac-installer arena submodules status
 
-# Link Arena submodules to standalone developer workspaces (Live Edits):
+# Register via non-invasive Python editable bridge (Recommended, 0% git dirt):
+./bin/isaac-installer arena submodules editable-bridge
+
+# Link Arena submodules to standalone developer workspaces (Live filesystem edits):
 ./bin/isaac-installer arena submodules link-standalone
 
 # Restore exact upstream pinned commit SHAs (CI/CD replication):
@@ -193,8 +196,14 @@ git push -u origin feature/my-new-robot
 # Run Arena policy in live 3D Kit viewport (--viz kit):
 ./bin/isaac-installer arena play cube_goal_pose
 
+# Run Arena rollout driven live by Isaac-GR00T VLA ZeroMQ Policy Server:
+./bin/isaac-installer arena play cube_goal_pose --policy gr00t
+
 # Run Arena headless rollout:
-./bin/isaac-installer arena run cube_goal_pose 50
+./bin/isaac-installer arena run cube_goal_pose --steps 50 --num_envs 16
+
+# Run full Closed-Loop Arena + GR00T benchmark:
+./bin/isaac-installer arena eval-gr00t cube_goal_pose 5555
 
 # Run Arena validation and benchmark smoke test:
 ./bin/isaac-installer arena test
@@ -205,11 +214,20 @@ git push -u origin feature/my-new-robot
 # View active Isaac-GR00T repository and model status:
 ./bin/isaac-installer gr00t status
 
+# Download and pre-cache gated model weights (nvidia/GR00T-N1.7-3B, Cosmos-Reason2-2B):
+./bin/isaac-installer gr00t download-weights
+
 # Run open-loop standalone inference on DROID demo dataset:
 ./bin/isaac-installer gr00t infer
 
 # Launch ZeroMQ policy server (Port 5555):
 ./bin/isaac-installer gr00t server 5555
+
+# Test ZeroMQ closed-loop socket connection:
+./bin/isaac-installer gr00t eval-closed-loop 5555
+
+# Synchronize personal fork with upstream:
+./bin/isaac-installer gr00t sync
 
 # Inspect GR00T remote URLs and push guards:
 ./bin/isaac-installer gr00t remotes
@@ -220,3 +238,16 @@ git push -u origin feature/my-new-robot
 # Run core validation and test suite:
 ./bin/isaac-installer gr00t test
 ```
+
+---
+
+## Desktop Launchers & Out-of-the-Box Demos
+
+The installer deploys 6 ready-to-run `.desktop` applications onto the user's Desktop with trusted permissions:
+
+1. **Humanoid Locomotion RL (G1)**: Trains Unitree G1 humanoid walking with RSL-RL in Isaac Lab.
+2. **Quadruped Locomotion RL (Go2)**: Trains Unitree Go2 quadruped rough terrain locomotion.
+3. **Franka Cube Lift RL**: Trains Franka robotic arm in object lifting.
+4. **IsaacLab-Arena Benchmark (Kit GUI)**: Launches interactive Omniverse Kit 3D viewport for composable task rollouts.
+5. **Isaac-GR00T Policy Server**: Starts the ZeroMQ VLA policy server daemon on port 5555.
+6. **Arena + GR00T Closed-Loop Demo**: Launches closed-loop multi-embodiment manipulation in Isaac Sim powered by GR00T actions.

@@ -64,6 +64,7 @@ Master index of session memory checkpoints for Isaac Automator.
 | 2026-08-21 09:03 | `c4d5e6f7` | NVIDIA Isaac-GR00T Installer Module & Master Plan Blueprint | Built gr00t.sh module, uv sync engine, ZeroMQ serving CLI, and master docs | [`20260821_090340_c4d5e6f7.md`](./sessions/20260821_090340_c4d5e6f7.md) |
 | 2026-08-21 09:11 | `d5e6f7a8` | Decoupled Standalone Workspace with Submodule Bridging Engine | Built arena submodules link-standalone / restore-pinned and Section 5.4 plan | [`20260821_091120_d5e6f7a8.md`](./sessions/20260821_091120_d5e6f7a8.md) |
 | 2026-08-21 09:13 | `e6f7a8b9` | Architectural Critique: Python Editable Bridge vs Directory Symlinks | Added non-invasive editable bridge, safe unlink reset, and tradeoff matrix | [`20260821_091340_e6f7a8b9.md`](./sessions/20260821_091340_e6f7a8b9.md) |
+| 2026-08-22 00:47 | `f7e8d9c0` | Complete End-to-End Implementation of IsaacLab-Arena & Isaac-GR00T in isaac-installer | Added closed-loop policy runner, model weights pre-caching & mock mode, 20-component audit, 15-subsystem verification, and 6 desktop shortcuts | [`20260822_004700_f7e8d9c0.md`](./sessions/20260822_004700_f7e8d9c0.md) |
 
 
 

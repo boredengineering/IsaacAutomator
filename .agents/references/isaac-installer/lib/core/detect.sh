@@ -13,6 +13,15 @@ detect_target_user() {
     fi
 }
 
+run_as_user() {
+    local cmd="$1"
+    if command -v sudo &>/dev/null && [[ "$EUID" -eq 0 && "${TARGET_USER}" != "root" ]]; then
+        sudo -H -u "${TARGET_USER}" bash -c "$cmd"
+    else
+        bash -c "$cmd"
+    fi
+}
+
 detect_system_specs() {
     detect_target_user
     KERNEL_VERSION="$(uname -r)"

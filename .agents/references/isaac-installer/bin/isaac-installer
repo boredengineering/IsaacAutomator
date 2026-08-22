@@ -633,15 +633,51 @@ cmd_test() {
         log_info "Isaac Lab framework is not yet installed at ${lab_dir}."
     fi
 
-    # 13. Desktop Shortcuts & Demos (Only if enabled in YAML)
+    # 13. IsaacLab-Arena Benchmark Suite (Only if enabled in YAML profile)
+    if [[ "${CFG_REPOSITORIES_ARENA_ENABLED:-${CFG_ECOSYSTEM_ARENA:-true}}" == "true" ]]; then
+        tests_total=$((tests_total + 1))
+        log_step "13. Testing IsaacLab-Arena Benchmark Suite & Extensions..."
+        local arena_dir
+        arena_dir="$(resolve_arena_dir)"
+        if [[ -d "${arena_dir}" && -d "${lab_dir}" ]]; then
+            if sudo -H -u "${TARGET_USER}" bash -c "cd '${lab_dir}' && ./isaaclab.sh -p -c 'import gymnasium as gym; import arena' 2>/dev/null"; then
+                log_success "IsaacLab-Arena extension and Gymnasium tasks verified."
+                tests_passed=$((tests_passed + 1))
+            else
+                log_warn "IsaacLab-Arena extension import probe encountered an issue."
+            fi
+        else
+            log_info "IsaacLab-Arena benchmark suite not installed at ${arena_dir}."
+        fi
+    fi
+
+    # 14. NVIDIA Isaac-GR00T Foundation Model Stack (Only if enabled in YAML profile)
+    if [[ "${CFG_REPOSITORIES_GR00T_ENABLED:-${CFG_ECOSYSTEM_GR00T:-true}}" == "true" ]]; then
+        tests_total=$((tests_total + 1))
+        log_step "14. Testing NVIDIA Isaac-GR00T VLA Stack & Python 3.12..."
+        local gr00t_dir
+        gr00t_dir="$(resolve_gr00t_dir)"
+        if [[ -d "${gr00t_dir}" ]]; then
+            if sudo -H -u "${TARGET_USER}" bash -c "cd '${gr00t_dir}' && export PATH=\"\$HOME/.cargo/bin:\$PATH\" && uv run python -c 'import gr00t' 2>/dev/null"; then
+                log_success "NVIDIA Isaac-GR00T core Python 3.12 modules loaded successfully."
+                tests_passed=$((tests_passed + 1))
+            else
+                log_warn "Isaac-GR00T core module import failed."
+            fi
+        else
+            log_info "Isaac-GR00T foundation model stack not installed at ${gr00t_dir}."
+        fi
+    fi
+
+    # 15. Desktop Shortcuts & Demos (Only if enabled in YAML)
     if [[ "${CFG_DEMOS_DESKTOP_SHORTCUTS:-${CFG_ECOSYSTEM_DEMOS:-true}}" == "true" ]]; then
         tests_total=$((tests_total + 1))
-        log_step "13. Testing Desktop Shortcuts & RL Demo Launchers..."
-        if [[ -f "${TARGET_HOME}/Desktop/Humanoid-Locomotion-G1.desktop" ]]; then
-            log_success "Desktop launchers for Unitree G1, Go2, and Franka are ready."
+        log_step "15. Testing Desktop Shortcuts & Physical AI Demo Launchers..."
+        if [[ -f "${TARGET_HOME}/Desktop/Humanoid-Locomotion-G1.desktop" && -f "${TARGET_HOME}/Desktop/Arena-Benchmark-Kit.desktop" ]]; then
+            log_success "Desktop launchers for Unitree G1, Go2, Franka, Arena, and GR00T are ready."
             tests_passed=$((tests_passed + 1))
         else
-            log_info "Desktop shortcuts not yet deployed."
+            log_info "Desktop shortcuts not yet deployed or partially deployed."
         fi
     fi
 
@@ -794,16 +830,18 @@ case "${COMMAND}" in
     config)           print_active_config ;;
     install)          cmd_install ;;
     test)             
-        if [[ "${PASSTHROUGH_ARGS[0]:-}" == "--arena" || "${PASSTHROUGH_ARGS[0]:-}" == "arena" ]]; then
-            test_isaaclab_arena
-        else
-            cmd_test
-        fi
+        case "${PASSTHROUGH_ARGS[0]:-all}" in
+            --arena|arena) test_isaaclab_arena ;;
+            --gr00t|gr00t) test_gr00t ;;
+            --lab|lab)     test_isaac_lab ;;
+            *)             cmd_test ;;
+        esac
         ;;
     validate)
         case "${PASSTHROUGH_ARGS[0]:-arena}" in
             arena) test_isaaclab_arena ;;
-            *) test_isaaclab_arena ;;
+            gr00t) test_gr00t ;;
+            *)     test_isaaclab_arena ;;
         esac
         ;;
     logs)             cmd_logs "${PASSTHROUGH_ARGS[@]:-latest}" ;;
