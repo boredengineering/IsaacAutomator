@@ -305,6 +305,28 @@ if sync.get('has_upstream'):
             local submod_action="${1:-status}"
             shift || true
 
+            if [[ "$submod_action" == "help" || "$submod_action" == "--help" || "$submod_action" == "-h" ]]; then
+                cat << 'SUBHELP'
+IsaacLab-Arena Submodule & Standalone Workspace Bridging
+
+Usage:
+  isaac-installer arena submodules <command>
+
+Commands:
+  status                               Audit alignment between submodules and standalone repos
+  editable-bridge                      Register standalone repos in Python site-packages (0% Git dirt)
+  link-standalone                      Replace submodules with directory symlinks to standalone repos
+  restore-pinned                       Restore exact NVIDIA upstream pinned detached-HEAD commits
+  update-pin <IsaacLab|Isaac-GR00T>    Update Arena's submodule commit pin to current standalone HEAD
+
+Examples:
+  ./bin/isaac-installer arena submodules status
+  ./bin/isaac-installer arena submodules editable-bridge
+  ./bin/isaac-installer arena submodules restore-pinned
+SUBHELP
+                return 0
+            fi
+
             log_header "IsaacLab-Arena Submodule & Standalone Workspace Bridging"
             if [[ ! -d "${arena_dir}/.git" ]]; then
                 log_error "IsaacLab-Arena repository not found at ${arena_dir}."
@@ -428,8 +450,25 @@ if sync.get('has_upstream'):
                     log_success "Submodule pin updated in git index."
                     ;;
 
-                *)
-                    echo "Usage: ./bin/isaac-installer arena submodules [status | link-standalone | unlink | editable-bridge | update-pin <name>]"
+                help|--help|-h|*)
+                    cat << 'SUBHELP'
+IsaacLab-Arena Submodule & Standalone Workspace Bridging
+
+Usage:
+  isaac-installer arena submodules <command>
+
+Commands:
+  status                               Audit alignment between submodules and standalone repos
+  editable-bridge                      Register standalone repos in Python site-packages (0% Git dirt)
+  link-standalone                      Replace submodules with directory symlinks to standalone repos
+  restore-pinned                       Restore exact NVIDIA upstream pinned detached-HEAD commits
+  update-pin <IsaacLab|Isaac-GR00T>    Update Arena's submodule commit pin to current standalone HEAD
+
+Examples:
+  ./bin/isaac-installer arena submodules status
+  ./bin/isaac-installer arena submodules editable-bridge
+  ./bin/isaac-installer arena submodules restore-pinned
+SUBHELP
                     ;;
             esac
             ;;
@@ -534,8 +573,48 @@ if sync.get('has_upstream'):
             test_isaaclab_arena
             ;;
 
-        *)
-            echo "Usage: ./bin/isaac-installer arena [status|list-tags|switch <ref>|sync [--rebase]|fork <owner/repo>|remotes|submodules [status|link-standalone|restore-pinned|editable-bridge]|play <task> [--policy gr00t]|run <task> [--policy gr00t]|eval-gr00t <task> [port]|test]"
+        help|--help|-h|*)
+            cat << 'HELP'
+IsaacLab-Arena - Composable Multi-Embodiment Benchmark Suite
+
+Usage:
+  isaac-installer arena <command> [options]
+
+Submodule & Workspace Bridging:
+  submodules status                    Audit alignment between submodules and standalone repos
+  submodules editable-bridge           Register standalone repos in Python site-packages (0% Git dirt)
+  submodules link-standalone           Replace submodules with directory symlinks to standalone repos
+  submodules restore-pinned            Restore exact NVIDIA upstream pinned detached-HEAD commits
+  submodules update-pin <name>         Update Arena's submodule commit pin to current standalone HEAD
+
+Git & Version Control:
+  status                               Inspect active branch, commit, dirty state, and remotes
+  list-tags                            List available official upstream release tags
+  switch <tag/branch>                  Switch Arena to a specific tag or branch
+  sync [--rebase]                      Fetch & merge/rebase upstream changes into local fork
+  fork <owner/repo>                    Re-home origin remote to a personal fork
+  remotes                              Show origin/upstream URLs and push-protection status
+
+Policy Execution & Evaluation:
+  play <task> [options]                Interactive live 3D visual rollout in Omniverse Kit
+  run <task> [options]                 Headless batch parallel tensor rollout (e.g. 16 envs)
+  eval-gr00t <task> [port]             Run closed-loop evaluation against Isaac-GR00T server (Port 5555)
+
+Rollout Options:
+  --policy <type>                      Policy type: zero_action | random | gr00t (Default: zero_action)
+  --port <number>                      GR00T ZeroMQ server port (Default: 5555)
+  --steps <number>                     Number of simulation steps to run (Default: 300)
+  --num_envs <number>                  Number of parallel simulation environments (Default: 16)
+  --viz <kit|headless>                 Rendering mode: kit (interactive GUI) or headless
+
+Verification:
+  test                                 Run Arena task registration and tensor rollout smoke test
+
+Examples:
+  ./bin/isaac-installer arena submodules editable-bridge
+  ./bin/isaac-installer arena play cube_goal_pose --policy gr00t --port 5555
+  ./bin/isaac-installer arena eval-gr00t cube_goal_pose 5555
+HELP
             ;;
     esac
 }

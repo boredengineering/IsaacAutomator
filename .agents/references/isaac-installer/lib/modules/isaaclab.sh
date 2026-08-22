@@ -301,8 +301,29 @@ if sync.get('has_upstream'):
             "
             ;;
 
-        *)
-            echo "Usage: ./bin/isaac-installer lab [status|list-tags|switch <ref>|sync [--rebase]|fork <owner/repo>|remotes]"
+        help|--help|-h|*)
+            cat << 'HELP'
+Isaac Lab - High-Throughput GPU Robot Learning Framework
+
+Usage:
+  isaac-installer lab <command> [options]
+
+Git & Version Control:
+  status                               Inspect active branch, commit, dirty state, and remotes
+  list-tags                            List available official upstream release tags
+  switch <tag/branch>                  Switch Isaac Lab to a specific release tag or branch
+  sync [--rebase]                      Fetch & merge/rebase upstream changes into local fork
+  fork <owner/repo>                    Re-home origin remote to a personal fork
+  remotes                              Show origin/upstream URLs and push-protection status
+
+Verification:
+  test                                 Verify PyTorch CUDA acceleration and Isaac Lab extensions
+
+Examples:
+  ./bin/isaac-installer lab list-tags
+  ./bin/isaac-installer lab switch v2.3.0
+  ./bin/isaac-installer lab sync
+HELP
             ;;
     esac
 }

@@ -377,8 +377,43 @@ print('✔ Connected to ZeroMQ policy server socket.')
             test_gr00t
             ;;
 
-        *)
-            echo "Usage: ./bin/isaac-installer gr00t [status|download-weights [--mock]|infer|server [port]|eval-closed-loop|sync [--rebase]|fork <owner/repo>|remotes|test]"
+        help|--help|-h|*)
+            cat << 'HELP'
+Isaac-GR00T - Physical AI Foundation Vision-Language-Action (VLA) Model Stack
+
+Usage:
+  isaac-installer gr00t <command> [options]
+
+Model Weights & Authentication:
+  download-weights [options]           Download & cache foundation weights (nvidia/GR00T-N1.7-3B)
+  download-weights --mock              Create structural mock weights fixture for offline/CI tests
+
+Serving & Policy Inference:
+  server [port] [options]              Launch ZeroMQ REP policy server daemon (Default: 5555)
+  infer [options]                      Run open-loop inference on DROID demonstration trajectories
+  eval-closed-loop [options]           Run closed-loop evaluation in IsaacLab-Arena
+
+Git & Dual-Remote Management:
+  status                               Inspect active branch, commit, dirty state, and remotes
+  sync [--rebase]                      Fetch & merge/rebase upstream changes into local fork
+  fork <owner/repo>                    Re-home origin remote to a personal fork
+  remotes                              Show origin/upstream URLs and push-protection status
+
+Server & Inference Options:
+  --port <number>                      ZeroMQ server port (Default: 5555)
+  --device <cuda:0|cpu>                Inference device (Default: cuda:0)
+  --embodiment-tag <tag>               Robot tag: OXE_DROID_RELATIVE_EEF_RELATIVE_JOINT | REAL_G1 | etc.
+  --model-path <id/path>               Hugging Face ID or local path (Default: nvidia/GR00T-N1.7-3B)
+  --execution-horizon <steps>          Receding execution window: 8 or 16 (Default: 8)
+
+Verification:
+  test                                 Run Python 3.12 imports, DROID mapping, and ZeroMQ smoke test
+
+Examples:
+  ./bin/isaac-installer gr00t download-weights --mock
+  ./bin/isaac-installer gr00t server 5555
+  ./bin/isaac-installer gr00t infer --dataset-path demo_data/droid_sample
+HELP
             ;;
     esac
 }
