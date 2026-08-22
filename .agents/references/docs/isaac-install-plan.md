@@ -1614,9 +1614,9 @@ isaac-installer/
 
 ---
 
-## 11. 15-Subsystem End-to-End Verification Suite (`test`)
+## 11. 14-Subsystem End-to-End Verification Suite (`test`)
 
-The verification suite runs granular, non-destructive health checks across 15 core subsystems:
+The verification suite runs granular, non-destructive health checks across 14 core technical subsystems:
 
 1. **NVIDIA Driver & GPU Topology**: Driver version ($\ge 535$ or $\ge 570$), PCIe Link speed (Gen4/Gen5 x16), persistence mode.
 2. **Display Server**: X11 server active or virtual EDID configured (`DISPLAY=:0`), Wayland disabled for Omniverse compatibility.
@@ -1631,8 +1631,7 @@ The verification suite runs granular, non-destructive health checks across 15 co
 11. **Isaac Sim Standalone Engine**: Executable verification, `.eula_accepted` presence, Kit Carbonite core load.
 12. **Isaac Lab PyTorch CUDA Linkage**: GPU tensor allocation, CUDA device name match, extension import sanity.
 13. **IsaacLab-Arena Benchmark Suite**: Gymnasium multi-agent environment registration, composable task runner, headless tensor rollouts.
-14. **NVIDIA Isaac-GR00T Foundation Model Stack**: Python 3.12 `uv` environment, core module imports, DROID modality mapping, ZeroMQ socket readiness.
-15. **Desktop Shortcuts & Demos**: Desktop `.desktop` launchers for Unitree G1, Go2, Franka, Arena Benchmark Kit GUI, GR00T Policy Server, and Arena + GR00T Closed-Loop Demo.
+14. **NVIDIA Isaac-GR00T & ZeroMQ Closed-Loop Stack**: Python 3.12 `uv` environment, core module imports, DROID modality mapping, ZeroMQ socket RPC readiness.
 
 ---
 
