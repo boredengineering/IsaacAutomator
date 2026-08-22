@@ -1300,11 +1300,11 @@ flowchart TD
         CONDA_STACK <== "Tensors (RGB/Joints) ⟷ Action Chunks" ==> IPC_BRIDGE <==> UV_STACK
     end
 
-    subgraph PILLAR3 ["Pillar 3: Action Horizon & Temporal Smoothing"]
+    subgraph PILLAR3 ["Pillar 3: Native Action Horizon & Receding Execution Control"]
         PRED_H["Predicted Action Horizon: Hp = 40 Steps (DiT Diffusion)"]
-        EXEC_H["Receding Execution Horizon: He = 8 Steps (50 Hz Control Window = 160ms)"]
-        BLEND["Temporal Action Blending (Exponential Moving Average / Spline Interpolation)\nSmooths transition across boundary steps to eliminate motor jerk."]
-        PRED_H --> EXEC_H --> BLEND
+        EXEC_H["Native Receding Execution Horizon: He = 8 or 16 Steps (--execution-horizon)"]
+        RTC["Real-Time Chunking (RTC >= 32)\nDirect execution of model action chunk up to He without synthetic blending."]
+        PRED_H --> EXEC_H --> RTC
     end
 ```
 
@@ -1378,35 +1378,28 @@ To maintain an unshakeable ground-truth, `isaac-installer` provides **explicit 3
 
 ---
 
-### 5.8.3 Action Horizon Dynamics: Receding Horizon, RTC & Temporal Action Blending
+### 5.8.3 Native Action Horizon & Receding Execution Control (NVIDIA Architecture Standard)
 
 NVIDIA Isaac-GR00T N1.7 employs a **Diffusion Transformer (DiT)** action head that denoises continuous trajectories over a predicted horizon $H_p = 40$ steps.
 
-#### The Boundary Discontinuity Problem:
-In a receding horizon setup, the robot executes $H_e = 8$ steps before querying the policy for a new 40-step action chunk:
-* At step $t=7$, the robot is executing the tail of Chunk $K$.
-* At step $t=8$, the robot abruptly switches to step 0 of Chunk $K+1$.
-* Due to diffusion sampling variance, the transition from $a_7^{(K)}$ to $a_0^{(K+1)}$ can exhibit non-smooth velocity spikes, causing high-frequency joint oscillations or motor thermal throttling.
+#### Receding Execution Horizon Mechanics:
+Instead of applying artificial action blending or custom interpolation across chunks (which risks corrupting physics trajectories and violating trained policy dynamics), the system strictly follows NVIDIA's native receding horizon design:
+* **Model Prediction ($H_p = 40$)**: The model generates a chunk of 40 future relative action steps ($\Delta\text{EEF}$ / joint deltas).
+* **Receding Execution Window ($H_e = 8$ or $16$)**: The robot executes the first $H_e$ raw actions directly from the predicted chunk, and then queries the model for a fresh plan based on the updated scene observation.
 
 ```
-Chunk K:   [ a_0, a_1, a_2, a_3, a_4, a_5, a_6, a_7 ] | a_8, ..., a_39 (Discarded)
-                                                ▼  Boundary Discontinuity Hazard!
-Chunk K+1:                                   [ a_0, a_1, a_2, a_3, a_4, a_5, a_6, a_7 ] ...
+Model Prediction (Hp = 40):  [ a_0, a_1, a_2, a_3, a_4, a_5, a_6, a_7 | a_8, ..., a_39 ] (Discarded Tail)
+                                                 │
+                                                 ▼
+Physical Execution (He = 8): [ a_0, a_1, a_2, a_3, a_4, a_5, a_6, a_7 ] -> Step PhysX GPU Dynamics
 ```
 
-#### Mathematical Action Blending Mitigation:
-`isaac-installer` implements **Exponential Moving Average (EMA) and Cubic Hermite Spline Blending** across boundary steps:
-
-$$\hat{a}_{t} = (1 - w_t) \cdot a_t^{(K)} + w_t \cdot a_{t - H_e}^{(K+1)} \quad \text{where} \quad w_t = \frac{t}{H_{\text{blend}}}$$
-
-This guarantees $C^1$ velocity continuity and prevents physics simulator instability.
-
-#### Real-Time Chunking (RTC $\ge 32$) Constraint:
-To prevent robot pausing during execution, the GPU inference latency $L_{\text{infer}}$ must be strictly smaller than the physical execution duration $T_{\text{exec}}$:
+#### Real-Time Chunking (RTC $\ge 32$) Timing Guarantee:
+The physical execution duration for an 8-step window at 50 Hz is:
 
 $$T_{\text{exec}} = H_e \times \Delta t_{\text{sim}} = 8 \times 20\text{ms} = 160\text{ms}$$
 
-With TensorRT full-pipeline acceleration ($L_{\text{infer}} \approx 27.9\text{ms}$ on H100 / RTX 5090), the policy calculation finishes in $<18\%$ of the execution window, leaving ample headroom for continuous, stutter-free robot manipulation.
+With TensorRT full-pipeline acceleration ($L_{\text{infer}} \approx 27.9\text{ms}$ on H100 / RTX 5090), policy computation completes in $<18\%$ of the physical execution window, ensuring fluid, continuous robot control without execution pauses or artificial blending overhead.
 
 ---
 
