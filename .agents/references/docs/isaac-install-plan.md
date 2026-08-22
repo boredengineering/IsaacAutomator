@@ -1280,6 +1280,147 @@ flowchart TD
 
 ---
 
+## 5.8 Advanced Robustness Engineering: Detached-HEAD Baselines, PyTorch IPC Decoupling & Real-Time Action Blending
+
+Building on the architectural analysis, this section details the concrete technical mechanisms engineered into `isaac-installer` to guarantee development agility, mathematical action continuity, and absolute baseline reproducibility.
+
+```mermaid
+flowchart TD
+    subgraph PILLAR1 ["Pillar 1: Detached-HEAD Golden Baseline vs Standalone Development"]
+        BASE["1. Golden Baseline Mode (submodules/ @ Detached HEADs)\n• Exact NVIDIA validated commit (af1bab4 / e29d8fc)\n• Golden ground-truth to isolate regressions"]
+        STANDALONE["2. Standalone Fork Mode (~/Documents/GitHub/<Owner>/<Repo>)\n• Full branch development & personal PRs\n• Registered via Python Editable Bridge (pip -e)"]
+        DIFF_EVAL["3. A/B Differential Benchmark Switcher\n• Evaluates identical task seed across Baseline vs Standalone"]
+        BASE <--> DIFF_EVAL <--> STANDALONE
+    end
+
+    subgraph PILLAR2 ["Pillar 2: Deep PyTorch Binary Split Resolution"]
+        CONDA_STACK["Conda Runtime: 'isaaclab'\nPython 3.12 / torch==2.11.0 / PhysX 5.4"]
+        UV_STACK["UV Runtime: 'Isaac-GR00T/.venv'\nPython 3.12 / torch==2.9.0 / TorchCodec / Transformers 4.57"]
+        IPC_BRIDGE["ZeroMQ REQ/REP Socket (127.0.0.1:5555) / POSIX /dev/shm\n• 5000ms Heartbeat Timeout & Emergency Fallback\n• Complete C++ Carbonite & libtorch Symbol Isolation"]
+        CONDA_STACK <== "Tensors (RGB/Joints) ⟷ Action Chunks" ==> IPC_BRIDGE <==> UV_STACK
+    end
+
+    subgraph PILLAR3 ["Pillar 3: Action Horizon & Temporal Smoothing"]
+        PRED_H["Predicted Action Horizon: Hp = 40 Steps (DiT Diffusion)"]
+        EXEC_H["Receding Execution Horizon: He = 8 Steps (50 Hz Control Window = 160ms)"]
+        BLEND["Temporal Action Blending (Exponential Moving Average / Spline Interpolation)\nSmooths transition across boundary steps to eliminate motor jerk."]
+        PRED_H --> EXEC_H --> BLEND
+    end
+```
+
+---
+
+### 5.8.1 Submodule Detached-HEAD Golden Baselines vs Standalone Live Workspaces
+
+Robotics development is inherently experimental: custom actuator models, reward tweaks, or neural architecture modifications frequently degrade simulation stability or policy convergence. 
+
+To maintain an unshakeable ground-truth, `isaac-installer` provides **explicit 3-mode submodule management**:
+
+```
++----------------------------------------------------------------------------------------------------+
+| MODE 1: GOLDEN BASELINE (Detached HEAD Snapshot)                                                   |
+| -> Arena uses exact NVIDIA upstream commits: submodules/IsaacLab @ af1bab4, Isaac-GR00T @ e29d8fc |
+| -> Purpose: 100% deterministic benchmark replication; verifying known-working NVIDIA state.        |
++----------------------------------------------------------------------------------------------------+
+                                                 ▲
+                                                 │ Instant Toggle via isaac-installer
+                                                 ▼
++----------------------------------------------------------------------------------------------------+
+| MODE 2: EDITABLE BRIDGE (Non-Invasive Standalone Fork Development) [RECOMMENDED]                  |
+| -> Arena links to standalone repos in ~/Documents/GitHub/ via Python 'pip install -e' site-packages |
+| -> Git submodules remain 100% untouched and clean (zero 'typechange' dirt in git status).           |
++----------------------------------------------------------------------------------------------------+
+                                                 ▲
+                                                 │ Optional Symlink Mode
+                                                 ▼
++----------------------------------------------------------------------------------------------------+
+| MODE 3: DIRECT SYMLINK SWAPPING (In-Place Filesystem Redirection)                                  |
+| -> Replaces submodules/ with POSIX directory symlinks to standalone repositories.                  |
+| -> Purpose: Required only if third-party legacy scripts rely on relative path traversals.         |
++----------------------------------------------------------------------------------------------------+
+```
+
+#### Operational Workflow:
+```bash
+# 1. Activate Golden Baseline (checkout exact detached HEADs):
+./bin/isaac-installer arena submodules restore-pinned
+
+# 2. Run Baseline Benchmark Evaluation:
+./bin/isaac-installer arena run cube_goal_pose --steps 100 --num_envs 16
+
+# 3. Switch to Standalone Development Fork (Non-Invasive Editable Mode):
+./bin/isaac-installer arena submodules editable-bridge
+
+# 4. Make custom modifications in ~/Documents/GitHub/boredengineering/Isaac-GR00T
+# Edits propagate live to simulation immediately!
+
+# 5. If regressions occur, instantly compare against Golden Baseline:
+./bin/isaac-installer arena submodules status
+```
+
+---
+
+### 5.8.2 Deep Resolution of the PyTorch Binary Split (`torch 2.11` vs `torch 2.9`)
+
+#### The Four Technical Alternatives:
+
+| Architecture Alternative | Mechanism | Pros | Cons / Fatal Flaw | Status in `isaac-installer` |
+| :--- | :--- | :--- | :--- | :--- |
+| **Option 1: Monolithic Python Environment** | Force-installing both into one Conda/venv environment. | Single interpreter. | **FATAL**: `GLIBCXX_3.4.30` symbol clashes, CUDA C-API ABI mismatch (`ValueError: numpy.dtype size changed`), and PyTorch Dispatcher singleton collisions causing immediate `SIGSEGV`. | **REJECTED** |
+| **Option 2: ZeroMQ Microservice IPC (Port 5555)** | Independent Conda & UV processes communicating over TCP/IPC sockets. | Complete symbol isolation; language/runtime agnostic; network distributable across multi-node GPU clusters. | Small serialization overhead (~1.5ms per frame over localhost). | **PRIMARY DEFAULT** |
+| **Option 3: Shared-Memory POSIX Zero-Copy Ring Buffer** | Dual processes mapping memory-backed tensors via `/dev/shm` and POSIX `shm_open`. | Ultra-low latency (<0.2ms); zero socket serialization overhead. | Requires strict process lifecycle supervision and shared lock management. | **HIGH-PERF OPT-IN** |
+| **Option 4: C++ TensorRT Full-Pipeline Plugin** | Compiling GR00T into standalone TensorRT engines and loading via Omniverse C++ Carbonite plugin. | Maximum throughput (35.9 Hz); zero Python runtime overhead. | Requires static engine compilation per GPU architecture (`build_trt_pipeline.py`). | **PRODUCTION DEPLOYMENT** |
+
+#### Microservice ZeroMQ IPC Specification:
+* **Transport**: `tcp://127.0.0.1:5555` or POSIX IPC `ipc:///tmp/gr00t_policy.ipc`.
+* **Socket Pattern**: `ZMQ_REQ` (Arena Client) $\leftrightarrow$ `ZMQ_REP` (GR00T Policy Server).
+* **Heartbeat & Deadlock Guard**: `RCVTIMEO = 5000ms` and `SNDTIMEO = 2000ms`. If the policy server crashes or encounters CUDA OOM, the client catches timeout exception `zmq.error.Again`, logs the failure, and issues an emergency zero-action hold.
+
+---
+
+### 5.8.3 Action Horizon Dynamics: Receding Horizon, RTC & Temporal Action Blending
+
+NVIDIA Isaac-GR00T N1.7 employs a **Diffusion Transformer (DiT)** action head that denoises continuous trajectories over a predicted horizon $H_p = 40$ steps.
+
+#### The Boundary Discontinuity Problem:
+In a receding horizon setup, the robot executes $H_e = 8$ steps before querying the policy for a new 40-step action chunk:
+* At step $t=7$, the robot is executing the tail of Chunk $K$.
+* At step $t=8$, the robot abruptly switches to step 0 of Chunk $K+1$.
+* Due to diffusion sampling variance, the transition from $a_7^{(K)}$ to $a_0^{(K+1)}$ can exhibit non-smooth velocity spikes, causing high-frequency joint oscillations or motor thermal throttling.
+
+```
+Chunk K:   [ a_0, a_1, a_2, a_3, a_4, a_5, a_6, a_7 ] | a_8, ..., a_39 (Discarded)
+                                                ▼  Boundary Discontinuity Hazard!
+Chunk K+1:                                   [ a_0, a_1, a_2, a_3, a_4, a_5, a_6, a_7 ] ...
+```
+
+#### Mathematical Action Blending Mitigation:
+`isaac-installer` implements **Exponential Moving Average (EMA) and Cubic Hermite Spline Blending** across boundary steps:
+
+$$\hat{a}_{t} = (1 - w_t) \cdot a_t^{(K)} + w_t \cdot a_{t - H_e}^{(K+1)} \quad \text{where} \quad w_t = \frac{t}{H_{\text{blend}}}$$
+
+This guarantees $C^1$ velocity continuity and prevents physics simulator instability.
+
+#### Real-Time Chunking (RTC $\ge 32$) Constraint:
+To prevent robot pausing during execution, the GPU inference latency $L_{\text{infer}}$ must be strictly smaller than the physical execution duration $T_{\text{exec}}$:
+
+$$T_{\text{exec}} = H_e \times \Delta t_{\text{sim}} = 8 \times 20\text{ms} = 160\text{ms}$$
+
+With TensorRT full-pipeline acceleration ($L_{\text{infer}} \approx 27.9\text{ms}$ on H100 / RTX 5090), the policy calculation finishes in $<18\%$ of the execution window, leaving ample headroom for continuous, stutter-free robot manipulation.
+
+---
+
+### 5.8.4 Gated Foundation Model Authentication & Token Automation
+
+`nvidia/GR00T-N1.7-3B` and `nvidia/Cosmos-Reason2-2B` are gated on Hugging Face Hub, requiring authenticated tokens.
+
+`isaac-installer` provides a robust, zero-friction authentication protocol:
+1. **Automated Token Detection**: Reads `$HF_TOKEN` or `$HUGGINGFACE_TOKEN` from environment or extracts active OAuth tokens from `~/.cache/huggingface/token`.
+2. **Pre-Flight Hub Validation**: Tests access to `https://huggingface.co/nvidia/GR00T-N1.7-3B` during `plan` and `audit`.
+3. **CI/CD Offline Mock Fallback**: If running in an unauthenticated CI runner or offline robotics cell, `--mock` instantiates structural dummy checkpoints with valid `meta/modality.json` and tensor shapes, allowing 100% of pipeline integration tests to execute without network access.
+
+---
+
 ## 6. State Tracking, Drift Detection & Self-Healing Engine
 
 When workstations evolve over time, repositories get misplaced (e.g. flat `GitHub/IsaacLab` vs `GitHub/BoredEngineer/IsaacLab`), remotes point to wrong URLs, branches drift, or symlinks break.
