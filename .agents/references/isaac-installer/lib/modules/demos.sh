@@ -37,13 +37,18 @@ install_demos_and_shortcuts() {
     cat << 'HUMANOID' | run_as_user_stdin "${demos_dir}/humanoid-locomotion.sh"
 #!/usr/bin/env bash
 set -euo pipefail
-LAB_DIR="$HOME/IsaacLab"
-cd "$LAB_DIR"
-echo "Starting Unitree G1 Humanoid Locomotion RL Training..."
-exec ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py \
-    --task Isaac-Velocity-Rough-G1-v0 \
-    --num_envs 64 \
-    --max_iterations 300
+LAB_DIR="$(find "$HOME/Documents/GitHub" "$HOME" -maxdepth 4 -name "IsaacLab" -type d 2>/dev/null | head -n 1 || echo "$HOME/IsaacLab")"
+if [[ -d "$LAB_DIR" ]]; then
+    cd "$LAB_DIR"
+    echo "Starting Unitree G1 Humanoid Locomotion RL Training..."
+    exec ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py \
+        --task Isaac-Velocity-Rough-G1-v0 \
+        --num_envs 64 \
+        --max_iterations 300
+else
+    echo "IsaacLab directory not found at $LAB_DIR"
+    sleep 3
+fi
 HUMANOID
     chmod 0755 "${demos_dir}/humanoid-locomotion.sh" 2>/dev/null || true
 
@@ -51,13 +56,18 @@ HUMANOID
     cat << 'QUADRUPED' | run_as_user_stdin "${demos_dir}/quadruped-locomotion.sh"
 #!/usr/bin/env bash
 set -euo pipefail
-LAB_DIR="$HOME/IsaacLab"
-cd "$LAB_DIR"
-echo "Starting Unitree Go2 Quadruped Locomotion RL Training..."
-exec ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py \
-    --task Isaac-Velocity-Rough-Unitree-Go2-v0 \
-    --num_envs 64 \
-    --max_iterations 300
+LAB_DIR="$(find "$HOME/Documents/GitHub" "$HOME" -maxdepth 4 -name "IsaacLab" -type d 2>/dev/null | head -n 1 || echo "$HOME/IsaacLab")"
+if [[ -d "$LAB_DIR" ]]; then
+    cd "$LAB_DIR"
+    echo "Starting Unitree Go2 Quadruped Locomotion RL Training..."
+    exec ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py \
+        --task Isaac-Velocity-Rough-Unitree-Go2-v0 \
+        --num_envs 64 \
+        --max_iterations 300
+else
+    echo "IsaacLab directory not found at $LAB_DIR"
+    sleep 3
+fi
 QUADRUPED
     chmod 0755 "${demos_dir}/quadruped-locomotion.sh" 2>/dev/null || true
 
@@ -65,13 +75,18 @@ QUADRUPED
     cat << 'FRANKA' | run_as_user_stdin "${demos_dir}/franka-manipulation.sh"
 #!/usr/bin/env bash
 set -euo pipefail
-LAB_DIR="$HOME/IsaacLab"
-cd "$LAB_DIR"
-echo "Starting Franka Arm Cube Lift RL Training..."
-exec ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py \
-    --task Isaac-Lift-Cube-Franka-v0 \
-    --num_envs 64 \
-    --max_iterations 300
+LAB_DIR="$(find "$HOME/Documents/GitHub" "$HOME" -maxdepth 4 -name "IsaacLab" -type d 2>/dev/null | head -n 1 || echo "$HOME/IsaacLab")"
+if [[ -d "$LAB_DIR" ]]; then
+    cd "$LAB_DIR"
+    echo "Starting Franka Arm Cube Lift RL Training..."
+    exec ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py \
+        --task Isaac-Lift-Cube-Franka-v0 \
+        --num_envs 64 \
+        --max_iterations 300
+else
+    echo "IsaacLab directory not found at $LAB_DIR"
+    sleep 3
+fi
 FRANKA
     chmod 0755 "${demos_dir}/franka-manipulation.sh" 2>/dev/null || true
 
@@ -79,9 +94,9 @@ FRANKA
     cat << 'ARENA_DEMO' | run_as_user_stdin "${demos_dir}/arena-benchmark.sh"
 #!/usr/bin/env bash
 set -euo pipefail
-LAB_DIR="$HOME/IsaacLab"
-ARENA_DIR="$(find "$HOME/Documents/GitHub" -name "IsaacLab-Arena" -type d 2>/dev/null | head -n 1 || echo "$HOME/Documents/GitHub/BoredEngineer/IsaacLab-Arena")"
-if [[ -d "$ARENA_DIR" ]]; then
+LAB_DIR="$(find "$HOME/Documents/GitHub" "$HOME" -maxdepth 4 -name "IsaacLab" -type d 2>/dev/null | head -n 1 || echo "$HOME/IsaacLab")"
+ARENA_DIR="$(find "$HOME/Documents/GitHub" "$HOME" -maxdepth 4 -name "IsaacLab-Arena" -type d 2>/dev/null | head -n 1 || echo "$HOME/Documents/GitHub/boredengineering/IsaacLab-Arena")"
+if [[ -d "$ARENA_DIR" && -d "$LAB_DIR" ]]; then
     cd "$ARENA_DIR"
     echo "Starting IsaacLab-Arena Visual Benchmark Rollout (cube_goal_pose)..."
     exec "$LAB_DIR/isaaclab.sh" -p isaaclab_arena/evaluation/policy_runner.py --viz kit --policy_type zero_action --num_steps 300 cube_goal_pose
@@ -96,10 +111,10 @@ ARENA_DEMO
     cat << 'GR00T_SERVER' | run_as_user_stdin "${demos_dir}/gr00t-policy-server.sh"
 #!/usr/bin/env bash
 set -euo pipefail
-GR00T_DIR="$(find "$HOME/Documents/GitHub" -name "Isaac-GR00T" -type d 2>/dev/null | head -n 1 || echo "$HOME/Documents/GitHub/boredengineering/Isaac-GR00T")"
+GR00T_DIR="$(find "$HOME/Documents/GitHub" "$HOME" -maxdepth 4 -name "Isaac-GR00T" -type d 2>/dev/null | head -n 1 || echo "$HOME/Documents/GitHub/boredengineering/Isaac-GR00T")"
 if [[ -d "$GR00T_DIR" ]]; then
     cd "$GR00T_DIR"
-    export PATH="$HOME/.cargo/bin:$PATH"
+    export PATH="/usr/local/bin:$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
     echo "Starting NVIDIA Isaac-GR00T ZeroMQ Policy Server on Port 5555..."
     exec uv run python gr00t/eval/run_gr00t_server.py \
         --model-path nvidia/GR00T-N1.7-3B \
@@ -117,9 +132,9 @@ GR00T_SERVER
     cat << 'CLOSED_LOOP' | run_as_user_stdin "${demos_dir}/arena-gr00t-closed-loop.sh"
 #!/usr/bin/env bash
 set -euo pipefail
-LAB_DIR="$HOME/IsaacLab"
-ARENA_DIR="$(find "$HOME/Documents/GitHub" -name "IsaacLab-Arena" -type d 2>/dev/null | head -n 1 || echo "$HOME/Documents/GitHub/BoredEngineer/IsaacLab-Arena")"
-if [[ -d "$ARENA_DIR" ]]; then
+LAB_DIR="$(find "$HOME/Documents/GitHub" "$HOME" -maxdepth 4 -name "IsaacLab" -type d 2>/dev/null | head -n 1 || echo "$HOME/IsaacLab")"
+ARENA_DIR="$(find "$HOME/Documents/GitHub" "$HOME" -maxdepth 4 -name "IsaacLab-Arena" -type d 2>/dev/null | head -n 1 || echo "$HOME/Documents/GitHub/boredengineering/IsaacLab-Arena")"
+if [[ -d "$ARENA_DIR" && -d "$LAB_DIR" ]]; then
     cd "$ARENA_DIR"
     echo "Starting Closed-Loop IsaacLab-Arena + Isaac-GR00T Policy Benchmark..."
     exec "$LAB_DIR/isaaclab.sh" -p isaaclab_arena/evaluation/policy_runner.py \

@@ -483,10 +483,19 @@ SUBHELP
                     extra_flags='--policy_type zero_action'
                 fi
 
+                runner_cmd='-m isaaclab_arena.evaluation.policy_runner'
+                if [[ -f '${arena_dir}/isaaclab_arena/evaluation/policy_runner.py' ]]; then
+                    runner_cmd='isaaclab_arena/evaluation/policy_runner.py'
+                elif [[ -f '${arena_dir}/scripts/play.py' ]]; then
+                    runner_cmd='scripts/play.py'
+                fi
+
                 if [[ -d '${lab_dir}' && -x '${lab_dir}/isaaclab.sh' ]]; then
-                    ${lab_dir}/isaaclab.sh -p isaaclab_arena/evaluation/policy_runner.py --viz kit \${extra_flags} --num_steps 200 '${task_name}'
+                    ${lab_dir}/isaaclab.sh -p \${runner_cmd} --viz kit \${extra_flags} --num_steps 200 '${task_name}'
+                elif command -v isaaclab-env &>/dev/null; then
+                    isaaclab-env python \${runner_cmd} --viz kit \${extra_flags} --num_steps 200 '${task_name}'
                 else
-                    python isaaclab_arena/evaluation/policy_runner.py --viz kit \${extra_flags} --num_steps 200 '${task_name}'
+                    python \${runner_cmd} --viz kit \${extra_flags} --num_steps 200 '${task_name}'
                 fi
             "
             ;;
@@ -519,10 +528,19 @@ SUBHELP
                     extra_flags='--policy_type zero_action'
                 fi
 
+                runner_cmd='-m isaaclab_arena.evaluation.policy_runner'
+                if [[ -f '${arena_dir}/isaaclab_arena/evaluation/policy_runner.py' ]]; then
+                    runner_cmd='isaaclab_arena/evaluation/policy_runner.py'
+                elif [[ -f '${arena_dir}/scripts/play.py' ]]; then
+                    runner_cmd='scripts/play.py'
+                fi
+
                 if [[ -d '${lab_dir}' && -x '${lab_dir}/isaaclab.sh' ]]; then
-                    ${lab_dir}/isaaclab.sh -p isaaclab_arena/evaluation/policy_runner.py \${extra_flags} --num_steps '${steps}' --num_envs '${num_envs}' '${task_name}'
+                    ${lab_dir}/isaaclab.sh -p \${runner_cmd} \${extra_flags} --num_steps '${steps}' --num_envs '${num_envs}' '${task_name}'
+                elif command -v isaaclab-env &>/dev/null; then
+                    isaaclab-env python \${runner_cmd} \${extra_flags} --num_steps '${steps}' --num_envs '${num_envs}' '${task_name}'
                 else
-                    python isaaclab_arena/evaluation/policy_runner.py \${extra_flags} --num_steps '${steps}' --num_envs '${num_envs}' '${task_name}'
+                    python \${runner_cmd} \${extra_flags} --num_steps '${steps}' --num_envs '${num_envs}' '${task_name}'
                 fi
             "
             ;;
@@ -534,8 +552,21 @@ SUBHELP
             log_info "Task: ${task_name} | Policy Server: 127.0.0.1:${port}"
             run_as_user "
                 cd '${arena_dir}'
+                runner_cmd='-m isaaclab_arena.evaluation.policy_runner'
+                if [[ -f '${arena_dir}/isaaclab_arena/evaluation/policy_runner.py' ]]; then
+                    runner_cmd='isaaclab_arena/evaluation/policy_runner.py'
+                fi
+
                 if [[ -d '${lab_dir}' && -x '${lab_dir}/isaaclab.sh' ]]; then
-                    ${lab_dir}/isaaclab.sh -p isaaclab_arena/evaluation/policy_runner.py \
+                    ${lab_dir}/isaaclab.sh -p \${runner_cmd} \
+                        --policy_type gr00t \
+                        --policy_host 127.0.0.1 \
+                        --policy_port '${port}' \
+                        --num_steps 100 \
+                        --num_envs 4 \
+                        '${task_name}'
+                elif command -v isaaclab-env &>/dev/null; then
+                    isaaclab-env python \${runner_cmd} \
                         --policy_type gr00t \
                         --policy_host 127.0.0.1 \
                         --policy_port '${port}' \
@@ -543,7 +574,7 @@ SUBHELP
                         --num_envs 4 \
                         '${task_name}'
                 else
-                    python isaaclab_arena/evaluation/policy_runner.py \
+                    python \${runner_cmd} \
                         --policy_type gr00t \
                         --policy_host 127.0.0.1 \
                         --policy_port '${port}' \
