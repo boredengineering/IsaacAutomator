@@ -623,7 +623,7 @@ cmd_test() {
     local lab_dir
     lab_dir="$(resolve_isaaclab_dir)"
     if [[ -d "${lab_dir}" && -L "${lab_dir}/_isaac_sim" ]]; then
-        if sudo -H -u "${TARGET_USER}" bash -c "cd '${lab_dir}' && ./isaaclab.sh -p -c 'import torch; assert torch.cuda.is_available()' 2>/dev/null"; then
+        if run_as_user "cd '${lab_dir}' && ./isaaclab.sh -p -c 'import torch; assert torch.cuda.is_available()' 2>/dev/null"; then
             log_success "Isaac Lab PyTorch CUDA verified successfully."
             tests_passed=$((tests_passed + 1))
         else
@@ -640,7 +640,7 @@ cmd_test() {
         local arena_dir
         arena_dir="$(resolve_arena_dir)"
         if [[ -d "${arena_dir}" && -d "${lab_dir}" ]]; then
-            if sudo -H -u "${TARGET_USER}" bash -c "cd '${lab_dir}' && ./isaaclab.sh -p -c 'import gymnasium as gym; import arena' 2>/dev/null"; then
+            if run_as_user "cd '${lab_dir}' && ./isaaclab.sh -p -c 'import gymnasium as gym; import isaaclab_arena' 2>/dev/null"; then
                 log_success "IsaacLab-Arena extension and Gymnasium tasks verified."
                 tests_passed=$((tests_passed + 1))
             else
@@ -654,12 +654,12 @@ cmd_test() {
     # 14. NVIDIA Isaac-GR00T Foundation Model Stack (Only if enabled in YAML profile)
     if [[ "${CFG_REPOSITORIES_GR00T_ENABLED:-${CFG_ECOSYSTEM_GR00T:-true}}" == "true" ]]; then
         tests_total=$((tests_total + 1))
-        log_step "14. Testing NVIDIA Isaac-GR00T VLA Stack & Python 3.12..."
+        log_step "14. Testing NVIDIA Isaac-GR00T VLA Stack & Python Runtime..."
         local gr00t_dir
         gr00t_dir="$(resolve_gr00t_dir)"
         if [[ -d "${gr00t_dir}" ]]; then
-            if sudo -H -u "${TARGET_USER}" bash -c "cd '${gr00t_dir}' && export PATH=\"\$HOME/.cargo/bin:\$PATH\" && uv run python -c 'import gr00t' 2>/dev/null"; then
-                log_success "NVIDIA Isaac-GR00T core Python 3.12 modules loaded successfully."
+            if run_as_user "cd '${gr00t_dir}' && export PATH=\"/usr/local/bin:\$HOME/.local/bin:\$HOME/.cargo/bin:\$PATH\" && uv run python -c 'import gr00t' 2>/dev/null"; then
+                log_success "NVIDIA Isaac-GR00T core Python modules loaded successfully."
                 tests_passed=$((tests_passed + 1))
             else
                 log_warn "Isaac-GR00T core module import failed."
