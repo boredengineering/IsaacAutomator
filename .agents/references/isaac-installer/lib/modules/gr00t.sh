@@ -19,6 +19,8 @@ check_gr00t() {
 
     if [[ ! -d "${gr00t_dir}/.git" ]]; then
         missing+=("Isaac-GR00T repository at ${gr00t_dir}")
+    elif [[ ! -d "${gr00t_dir}/.venv" || ! -x "${gr00t_dir}/.venv/bin/python" ]]; then
+        missing+=("virtual environment (.venv) - uv sync pending")
     fi
 
     if [[ ${#missing[@]} -eq 0 ]]; then
@@ -26,6 +28,49 @@ check_gr00t() {
         return 0
     else
         STAGE_CHECK_MSG="Missing components: ${missing[*]}"
+        return 1
+    fi
+}
+
+sync_gr00t_env() {
+    local gr00t_dir
+    gr00t_dir="$(resolve_gr00t_dir)"
+
+    log_step "Synchronizing Isaac-GR00T Python dependencies via UV..."
+    log_info "Configuring extended network timeout (300s) and multi-attempt retry for NVIDIA CDN wheels..."
+
+    local max_retries=3
+    local attempt=1
+    local success=false
+
+    while [[ $attempt -le $max_retries ]]; do
+        log_info "Attempt $attempt of $max_retries: Resolving and downloading wheels..."
+        if run_as_user "
+            cd '${gr00t_dir}'
+            export PATH=\"/usr/local/bin:\$HOME/.local/bin:\$HOME/.cargo/bin:\$PATH\"
+            export CUDA_HOME=\"/usr/local/cuda\"
+            export UV_HTTP_TIMEOUT=300
+            export UV_CONCURRENT_DOWNLOADS=2
+            export UV_INDEX_STRATEGY=unsafe-best-match
+            uv sync
+        "; then
+            success=true
+            break
+        else
+            log_warn "uv sync attempt $attempt encountered a network timeout or CDN disconnect."
+            attempt=$((attempt + 1))
+            if [[ $attempt -le $max_retries ]]; then
+                log_info "Retrying in 5 seconds (UV will resume cached download chunks)..."
+                sleep 5
+            fi
+        fi
+    done
+
+    if [[ "$success" == true ]]; then
+        log_success "Isaac-GR00T virtual environment successfully synchronized."
+        return 0
+    else
+        log_error "Failed to synchronize Isaac-GR00T virtual environment after $max_retries attempts."
         return 1
     fi
 }
@@ -77,14 +122,8 @@ install_gr00t() {
         git lfs pull 2>/dev/null || true
     "
 
-    # 5. Provision Isolated Python Environment with uv sync
-    log_info "Synchronizing locked Python dependencies with uv..."
-    run_as_user "
-        cd '${gr00t_dir}'
-        export PATH=\"/usr/local/bin:\$HOME/.local/bin:\$HOME/.cargo/bin:\$PATH\"
-        export CUDA_HOME=\"/usr/local/cuda\"
-        uv sync
-    "
+    # 5. Provision Isolated Python Environment with resilient uv sync
+    sync_gr00t_env
 
     # 6. Register in GitHub Desktop
     register_github_desktop_repo "${gr00t_dir}"
@@ -389,6 +428,10 @@ print('✔ Connected to ZeroMQ policy server socket.')
             "
             ;;
 
+        sync-env|install-env)
+            sync_gr00t_env
+            ;;
+
         test)
             test_gr00t
             ;;
@@ -399,6 +442,9 @@ Isaac-GR00T - Physical AI Foundation Vision-Language-Action (VLA) Model Stack
 
 Usage:
   isaac-installer gr00t <command> [options]
+
+Environment & Dependency Management:
+  sync-env                             Synchronize locked Python dependencies via UV (300s timeout & retry)
 
 Model Weights & Authentication:
   download-weights [options]           Download & cache foundation weights (nvidia/GR00T-N1.7-3B)
@@ -423,9 +469,10 @@ Server & Inference Options:
   --execution-horizon <steps>          Receding execution window: 8 or 16 (Default: 8)
 
 Verification:
-  test                                 Run Python 3.12 imports, DROID mapping, and ZeroMQ smoke test
+  test                                 Run Python 3.10 imports, DROID mapping, and ZeroMQ smoke test
 
 Examples:
+  ./bin/isaac-installer gr00t sync-env
   ./bin/isaac-installer gr00t download-weights --mock
   ./bin/isaac-installer gr00t server 5555
   ./bin/isaac-installer gr00t infer --dataset-path demo_data/droid_sample
