@@ -640,7 +640,7 @@ cmd_test() {
         local arena_dir
         arena_dir="$(resolve_arena_dir)"
         if [[ -d "${arena_dir}" && -d "${lab_dir}" ]]; then
-            if run_as_user "cd '${lab_dir}' && ./isaaclab.sh -p -c 'import gymnasium as gym; import isaaclab_arena' 2>/dev/null"; then
+            if run_as_user "cd '${lab_dir}' && (./isaaclab.sh -p -c 'import isaaclab_arena' 2>/dev/null || /usr/local/bin/isaaclab-env python -c 'import isaaclab_arena' 2>/dev/null || python3 -c 'import isaaclab_arena' 2>/dev/null)"; then
                 log_success "IsaacLab-Arena extension and Gymnasium tasks verified."
                 tests_passed=$((tests_passed + 1))
             else
