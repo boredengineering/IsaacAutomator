@@ -77,13 +77,13 @@ install_gr00t() {
         git lfs pull 2>/dev/null || true
     "
 
-    # 5. Provision Isolated Python 3.12 Environment with uv sync
-    log_info "Synchronizing locked Python 3.12 dependencies with uv..."
+    # 5. Provision Isolated Python Environment with uv sync
+    log_info "Synchronizing locked Python dependencies with uv..."
     run_as_user "
         cd '${gr00t_dir}'
         export PATH=\"/usr/local/bin:\$HOME/.local/bin:\$HOME/.cargo/bin:\$PATH\"
         export CUDA_HOME=\"/usr/local/cuda\"
-        uv sync --python 3.12
+        uv sync
     "
 
     # 6. Register in GitHub Desktop
