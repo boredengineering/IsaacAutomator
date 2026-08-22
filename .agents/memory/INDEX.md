@@ -66,6 +66,7 @@ Master index of session memory checkpoints for Isaac Automator.
 | 2026-08-21 09:13 | `e6f7a8b9` | Architectural Critique: Python Editable Bridge vs Directory Symlinks | Added non-invasive editable bridge, safe unlink reset, and tradeoff matrix | [`20260821_091340_e6f7a8b9.md`](./sessions/20260821_091340_e6f7a8b9.md) |
 | 2026-08-22 00:47 | `f7e8d9c0` | Complete End-to-End Implementation of IsaacLab-Arena & Isaac-GR00T in isaac-installer | Added closed-loop policy runner, model weights pre-caching & mock mode, 20-component audit, 15-subsystem verification, and 6 desktop shortcuts | [`20260822_004700_f7e8d9c0.md`](./sessions/20260822_004700_f7e8d9c0.md) |
 | 2026-08-22 06:43 | `a1b2c3d4` | Ecosystem Conflict Traversal, PyTorch Split Analysis & Retrospective | Added Top-Down & Bottom-Up conflict matrix and architectural retrospective to plan | [`20260822_064320_a1b2c3d4.md`](./sessions/20260822_064320_a1b2c3d4.md) |
+| 2026-08-22 19:05 | `b2c3d4e5` | Detached-HEAD Baselines, PyTorch IPC Decoupling & Action Blending | Added Section 5.8 to plan: golden baseline mode, ZeroMQ IPC guards, action blending | [`20260822_190555_b2c3d4e5.md`](./sessions/20260822_190555_b2c3d4e5.md) |
 
 
 
