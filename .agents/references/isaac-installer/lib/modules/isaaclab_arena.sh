@@ -35,12 +35,17 @@ install_isaaclab_arena() {
     # 1. Setup repository with Fork + Upstream support & Submodules
     setup_git_repo_with_fork "${arena_dir}" "${git_repo}" "${official_upstream}" "${git_branch}" "${git_tag}" true
 
-    # 2. Editable pip install into Isaac Lab python runtime
+    # 2. Editable pip install into Isaac Lab python runtimes (Conda and Isaac Sim)
     if [[ -d "${lab_dir}" && -x "${lab_dir}/isaaclab.sh" ]]; then
-        log_info "Registering IsaacLab-Arena in editable mode with Isaac Lab Python environment..."
+        log_info "Registering IsaacLab-Arena in editable mode with Isaac Lab Python environments..."
         run_as_user "
             cd '${lab_dir}'
             ./isaaclab.sh -p -m pip install -e '${arena_dir}' 2>/dev/null || true
+            if command -v isaaclab-env &>/dev/null; then
+                isaaclab-env pip install -e '${arena_dir}' 2>/dev/null || true
+            elif [[ -n \"\${CONDA_PREFIX:-}\" && -x \"\${CONDA_PREFIX}/bin/pip\" ]]; then
+                \"\${CONDA_PREFIX}/bin/pip\" install -e '${arena_dir}' 2>/dev/null || true
+            fi
         "
     fi
 
@@ -407,6 +412,11 @@ SUBHELP
 
                             echo 'Registering standalone IsaacLab-Arena in editable mode...'
                             ./isaaclab.sh -p -m pip install -e '${arena_dir}' 2>/dev/null || true
+                            if command -v isaaclab-env &>/dev/null; then
+                                isaaclab-env pip install -e '${arena_dir}' 2>/dev/null || true
+                            elif [[ -n \"\${CONDA_PREFIX:-}\" && -x \"\${CONDA_PREFIX}/bin/pip\" ]]; then
+                                \"\${CONDA_PREFIX}/bin/pip\" install -e '${arena_dir}' 2>/dev/null || true
+                            fi
                         fi
                     "
                     log_success "Non-invasive Python editable bridge active. Git submodules remain 100% untouched and clean!"
