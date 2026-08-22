@@ -19,7 +19,7 @@ resolve_conda_bin() {
 
     # 1. Check user PATH
     local user_conda
-    user_conda="$(sudo -H -u "${TARGET_USER}" bash -l -c "command -v conda 2>/dev/null" || true)"
+    user_conda="$(run_as_user "command -v conda 2>/dev/null" || true)"
     if [[ -n "$user_conda" && -x "$user_conda" ]]; then
         echo "$user_conda"
         return 0
@@ -101,9 +101,9 @@ install_python_env() {
         log_info "No Conda installation detected. Installing Miniforge into ${conda_root}..."
         local installer_url="https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh"
         wget -q -O /tmp/miniforge.sh "${installer_url}"
-        sudo -H -u "${TARGET_USER}" bash /tmp/miniforge.sh -b -p "${conda_root}"
+        run_as_user "bash /tmp/miniforge.sh -b -p '${conda_root}'"
         rm -f /tmp/miniforge.sh
-        sudo -H -u "${TARGET_USER}" "${conda_bin}" init bash 2>/dev/null || true
+        run_as_user "'${conda_bin}' init bash 2>/dev/null || true"
     else
         log_info "Using detected target user Conda runtime: ${conda_bin}"
     fi
@@ -115,15 +115,15 @@ install_python_env() {
     # Zombie Environment Health Guard
     if [[ -d "${env_path}" ]]; then
         log_info "Checking health of existing Conda environment '${CONDA_ENV_NAME}'..."
-        if ! sudo -H -u "${TARGET_USER}" "${conda_bin}" run -n "${CONDA_ENV_NAME}" python --version &>/dev/null; then
+        if ! run_as_user "'${conda_bin}' run -n '${CONDA_ENV_NAME}' python --version &>/dev/null"; then
             log_warn "Detected broken or corrupted Conda environment '${CONDA_ENV_NAME}'. Purging for clean recreation..."
-            sudo -H -u "${TARGET_USER}" "${conda_bin}" env remove -n "${CONDA_ENV_NAME}" -y 2>/dev/null || true
+            run_as_user "'${conda_bin}' env remove -n '${CONDA_ENV_NAME}' -y 2>/dev/null || true"
             rm -rf "${env_path}" 2>/dev/null || true
         fi
     fi
 
     # Pre-configure Conda ToS auto-acceptance, classic solver & conda-forge priority
-    sudo -H -u "${TARGET_USER}" bash -c "
+    run_as_user "
         unset LD_LIBRARY_PATH
         export CONDA_NO_PLUGINS=true
         export CONDA_PLUGINS_AUTO_ACCEPT_TOS=yes
@@ -134,7 +134,7 @@ install_python_env() {
         '${conda_bin}' tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main 2>/dev/null || true
         '${conda_bin}' tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r 2>/dev/null || true
         # Repair / reinstall pydantic and pydantic-core in base to restore compiled Rust C-extensions
-        if [[ -x "${conda_root}/bin/pip" ]]; then
+        if [[ -x '${conda_root}/bin/pip' ]]; then
             '${conda_root}/bin/pip' install --force-reinstall pydantic pydantic-core 2>/dev/null || true
         fi
     " || true
@@ -142,7 +142,7 @@ install_python_env() {
     if [[ ! -d "${env_path}" || ! -x "${env_path}/bin/python" ]]; then
         if [[ -n "$lab_dir" && -f "${lab_dir}/isaaclab.sh" ]]; then
             log_info "Delegating environment creation to official ./isaaclab.sh --conda '${CONDA_ENV_NAME}'..."
-            sudo -H -u "${TARGET_USER}" bash -l -c "
+            run_as_user "
                 export SHELL=/bin/bash
                 export USER='${TARGET_USER}'
                 export HOME='${TARGET_HOME}'
@@ -160,7 +160,7 @@ install_python_env() {
         env_path="$(resolve_conda_env_path "${CONDA_ENV_NAME}")"
         if [[ ! -d "${env_path}" || ! -x "${env_path}/bin/python" ]]; then
             log_info "Creating native named Conda environment '${CONDA_ENV_NAME}' (Python ${py_ver}) via conda binary..."
-            sudo -H -u "${TARGET_USER}" bash -c "
+            run_as_user "
                 export CONDA_NO_PLUGINS=true
                 export CONDA_PLUGINS_AUTO_ACCEPT_TOS=yes
                 export CONDA_SOLVER=classic
@@ -169,16 +169,16 @@ install_python_env() {
             "
         fi
         
-        sudo -H -u "${TARGET_USER}" "${conda_bin}" config --append envs_dirs "${conda_root}/envs" 2>/dev/null || true
+        run_as_user "'${conda_bin}' config --append envs_dirs '${conda_root}/envs' 2>/dev/null || true"
         env_path="$(resolve_conda_env_path "${CONDA_ENV_NAME}")"
     else
         log_info "Named Conda environment '${CONDA_ENV_NAME}' is healthy at ${env_path}."
-        sudo -H -u "${TARGET_USER}" "${conda_bin}" config --append envs_dirs "${conda_root}/envs" 2>/dev/null || true
+        run_as_user "'${conda_bin}' config --append envs_dirs '${conda_root}/envs' 2>/dev/null || true"
     fi
 
     # 5. Configure Scoped Activation Hooks (Guarantees Zero Global Shell Contamination)
     log_info "Configuring scoped Conda activation hooks in ${env_path}/etc/conda/..."
-    sudo -H -u "${TARGET_USER}" mkdir -p "${env_path}/etc/conda/activate.d" "${env_path}/etc/conda/deactivate.d"
+    run_as_user "mkdir -p '${env_path}/etc/conda/activate.d' '${env_path}/etc/conda/deactivate.d'"
 
     local vk_icd=""
     for icd_candidate in /usr/share/vulkan/icd.d/nvidia_icd.json \
@@ -198,7 +198,7 @@ install_python_env() {
         vk_line="# VK_ICD_FILENAMES unset (using Vulkan loader auto-discovery)"
     fi
 
-    cat << 'HOOK_ACT' | sudo -H -u "${TARGET_USER}" tee "${env_path}/etc/conda/activate.d/00_isaaclab_env.sh" >/dev/null
+    cat << 'HOOK_ACT' | run_as_user_stdin "${env_path}/etc/conda/activate.d/00_isaaclab_env.sh"
 #!/usr/bin/env bash
 # Scoped Omniverse Environment Variables (Active only while Conda environment is activated)
 export _OLD_ISAAC_EXP_PATH="${EXP_PATH:-}"
@@ -223,9 +223,9 @@ else
     unset VK_ICD_FILENAMES
 fi
 HOOK_ACT
-    chmod 755 "${env_path}/etc/conda/activate.d/00_isaaclab_env.sh"
+    chmod 755 "${env_path}/etc/conda/activate.d/00_isaaclab_env.sh" 2>/dev/null || true
 
-    cat << 'HOOK_DEACT' | sudo -H -u "${TARGET_USER}" tee "${env_path}/etc/conda/deactivate.d/00_isaaclab_env.sh" >/dev/null
+    cat << 'HOOK_DEACT' | run_as_user_stdin "${env_path}/etc/conda/deactivate.d/00_isaaclab_env.sh"
 #!/usr/bin/env bash
 # Cleanly restore previous shell environment upon 'conda deactivate'
 if [[ -n "${_OLD_ISAAC_EXP_PATH}" ]]; then export EXP_PATH="${_OLD_ISAAC_EXP_PATH}"; else unset EXP_PATH; fi
@@ -235,11 +235,11 @@ if [[ -n "${_OLD_VK_ICD_FILENAMES}" ]]; then export VK_ICD_FILENAMES="${_OLD_VK_
 unset _OLD_ISAAC_EXP_PATH _OLD_ISAAC_PATH _OLD_CARB_APP_PATH _OLD_VK_ICD_FILENAMES
 unset PYTHONPATH
 HOOK_DEACT
-    chmod 755 "${env_path}/etc/conda/deactivate.d/00_isaaclab_env.sh"
+    chmod 755 "${env_path}/etc/conda/deactivate.d/00_isaaclab_env.sh" 2>/dev/null || true
 
     # 6. Deploy Zero-Activation CLI Shim (/usr/local/bin/isaaclab-env)
     log_info "Deploying zero-activation CLI shim: /usr/local/bin/isaaclab-env..."
-    cat << 'SHIM' | sudo tee /usr/local/bin/isaaclab-env >/dev/null
+    cat << 'SHIM' | run_as_root "tee /usr/local/bin/isaaclab-env >/dev/null"
 #!/usr/bin/env bash
 # ==============================================================================
 # isaaclab-env - Scoped Runner for Headless Scripts, CI/CD, and Terminal Executions
@@ -286,7 +286,7 @@ else
     exec "\$@"
 fi
 SHIM
-    sudo chmod 0755 /usr/local/bin/isaaclab-env
+    run_as_root "chmod 0755 /usr/local/bin/isaaclab-env"
 
     # 7. Create template binary in bin/ for repository distribution
     mkdir -p "$(dirname "$0")/../bin"

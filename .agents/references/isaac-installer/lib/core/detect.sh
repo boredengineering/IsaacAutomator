@@ -15,8 +15,30 @@ detect_target_user() {
 
 run_as_user() {
     local cmd="$1"
-    if command -v sudo &>/dev/null && [[ "$EUID" -eq 0 && "${TARGET_USER}" != "root" ]]; then
-        sudo -H -u "${TARGET_USER}" bash -c "$cmd"
+    detect_target_user
+    if command -v sudo &>/dev/null && [[ "$EUID" -eq 0 && "${TARGET_USER}" != "root" && "${TARGET_USER}" != "${USER}" ]]; then
+        sudo -H -u "${TARGET_USER}" bash -l -c "$cmd"
+    else
+        bash -l -c "$cmd"
+    fi
+}
+
+run_as_user_stdin() {
+    local target_file="$1"
+    detect_target_user
+    if command -v sudo &>/dev/null && [[ "$EUID" -eq 0 && "${TARGET_USER}" != "root" && "${TARGET_USER}" != "${USER}" ]]; then
+        sudo -H -u "${TARGET_USER}" tee "$target_file" >/dev/null
+    else
+        tee "$target_file" >/dev/null
+    fi
+}
+
+run_as_root() {
+    local cmd="$1"
+    if [[ "$EUID" -eq 0 ]]; then
+        bash -c "$cmd"
+    elif command -v sudo &>/dev/null; then
+        sudo bash -c "$cmd"
     else
         bash -c "$cmd"
     fi

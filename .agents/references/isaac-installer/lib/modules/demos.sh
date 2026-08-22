@@ -4,7 +4,13 @@
 # ==============================================================================
 
 check_demos() {
+    detect_target_user
     local desktop_dir="${TARGET_HOME}/Desktop"
+    if [[ ! -d "${desktop_dir}" ]] || [[ "${CFG_STAGES_DEMOS:-true}" == "false" ]]; then
+        STAGE_CHECK_MSG="Desktop shortcuts disabled or running in headless environment (Skipped)"
+        return 0
+    fi
+
     if [[ -f "${desktop_dir}/Humanoid-Locomotion-G1.desktop" && -f "${desktop_dir}/Arena-Benchmark-Kit.desktop" && -f "${desktop_dir}/Isaac-GR00T-Server.desktop" ]]; then
         STAGE_CHECK_MSG="Desktop shortcuts for RL and Physical AI demos (G1, Go2, Franka, Arena, GR00T) already deployed"
         return 0
@@ -15,7 +21,8 @@ check_demos() {
 }
 
 install_demos_and_shortcuts() {
-    log_step "Installing Desktop Shortcuts and Physical AI Demo Launchers..."
+    detect_target_user
+    log_step "Installing Desktop Shortcuts and Physical AI Demo Launchers (Optional)..."
 
     local lab_dir="${ISAACLAB_DIR:-${TARGET_HOME}/IsaacLab}"
     local arena_dir="${ARENA_DIR:-${TARGET_HOME}/Documents/GitHub/BoredEngineer/IsaacLab-Arena}"
@@ -24,10 +31,10 @@ install_demos_and_shortcuts() {
     local desktop_dir="${TARGET_HOME}/Desktop"
 
     mkdir -p "${demos_dir}" "${desktop_dir}"
-    chown -R "${TARGET_USER}:${TARGET_USER}" "${demos_dir}" "${desktop_dir}"
+    chown -R "${TARGET_USER}:${TARGET_USER}" "${demos_dir}" "${desktop_dir}" 2>/dev/null || true
 
     # 1. Humanoid Locomotion Demo Launcher (Unitree G1 with RSL-RL)
-    cat << 'HUMANOID' | sudo -u "${TARGET_USER}" tee "${demos_dir}/humanoid-locomotion.sh" >/dev/null
+    cat << 'HUMANOID' | run_as_user_stdin "${demos_dir}/humanoid-locomotion.sh"
 #!/usr/bin/env bash
 set -euo pipefail
 LAB_DIR="$HOME/IsaacLab"
@@ -38,10 +45,10 @@ exec ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py \
     --num_envs 64 \
     --max_iterations 300
 HUMANOID
-    chmod 0755 "${demos_dir}/humanoid-locomotion.sh"
+    chmod 0755 "${demos_dir}/humanoid-locomotion.sh" 2>/dev/null || true
 
     # 2. Quadruped Locomotion Demo Launcher (Unitree Go2)
-    cat << 'QUADRUPED' | sudo -u "${TARGET_USER}" tee "${demos_dir}/quadruped-locomotion.sh" >/dev/null
+    cat << 'QUADRUPED' | run_as_user_stdin "${demos_dir}/quadruped-locomotion.sh"
 #!/usr/bin/env bash
 set -euo pipefail
 LAB_DIR="$HOME/IsaacLab"
@@ -52,10 +59,10 @@ exec ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py \
     --num_envs 64 \
     --max_iterations 300
 QUADRUPED
-    chmod 0755 "${demos_dir}/quadruped-locomotion.sh"
+    chmod 0755 "${demos_dir}/quadruped-locomotion.sh" 2>/dev/null || true
 
     # 3. Franka Manipulation Demo Launcher
-    cat << 'FRANKA' | sudo -u "${TARGET_USER}" tee "${demos_dir}/franka-manipulation.sh" >/dev/null
+    cat << 'FRANKA' | run_as_user_stdin "${demos_dir}/franka-manipulation.sh"
 #!/usr/bin/env bash
 set -euo pipefail
 LAB_DIR="$HOME/IsaacLab"
@@ -66,10 +73,10 @@ exec ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py \
     --num_envs 64 \
     --max_iterations 300
 FRANKA
-    chmod 0755 "${demos_dir}/franka-manipulation.sh"
+    chmod 0755 "${demos_dir}/franka-manipulation.sh" 2>/dev/null || true
 
     # 4. IsaacLab-Arena Benchmark Kit GUI Launcher
-    cat << 'ARENA_DEMO' | sudo -u "${TARGET_USER}" tee "${demos_dir}/arena-benchmark.sh" >/dev/null
+    cat << 'ARENA_DEMO' | run_as_user_stdin "${demos_dir}/arena-benchmark.sh"
 #!/usr/bin/env bash
 set -euo pipefail
 LAB_DIR="$HOME/IsaacLab"
@@ -83,10 +90,10 @@ else
     sleep 3
 fi
 ARENA_DEMO
-    chmod 0755 "${demos_dir}/arena-benchmark.sh"
+    chmod 0755 "${demos_dir}/arena-benchmark.sh" 2>/dev/null || true
 
     # 5. NVIDIA Isaac-GR00T Policy Server Launcher
-    cat << 'GR00T_SERVER' | sudo -u "${TARGET_USER}" tee "${demos_dir}/gr00t-policy-server.sh" >/dev/null
+    cat << 'GR00T_SERVER' | run_as_user_stdin "${demos_dir}/gr00t-policy-server.sh"
 #!/usr/bin/env bash
 set -euo pipefail
 GR00T_DIR="$(find "$HOME/Documents/GitHub" -name "Isaac-GR00T" -type d 2>/dev/null | head -n 1 || echo "$HOME/Documents/GitHub/boredengineering/Isaac-GR00T")"
@@ -104,10 +111,10 @@ else
     sleep 3
 fi
 GR00T_SERVER
-    chmod 0755 "${demos_dir}/gr00t-policy-server.sh"
+    chmod 0755 "${demos_dir}/gr00t-policy-server.sh" 2>/dev/null || true
 
     # 6. Arena + GR00T Closed-Loop Demo Launcher
-    cat << 'CLOSED_LOOP' | sudo -u "${TARGET_USER}" tee "${demos_dir}/arena-gr00t-closed-loop.sh" >/dev/null
+    cat << 'CLOSED_LOOP' | run_as_user_stdin "${demos_dir}/arena-gr00t-closed-loop.sh"
 #!/usr/bin/env bash
 set -euo pipefail
 LAB_DIR="$HOME/IsaacLab"
@@ -127,10 +134,11 @@ else
     sleep 3
 fi
 CLOSED_LOOP
-    chmod 0755 "${demos_dir}/arena-gr00t-closed-loop.sh"
+    chmod 0755 "${demos_dir}/arena-gr00t-closed-loop.sh" 2>/dev/null || true
 
-    # Create .desktop entries on user Desktop
-    cat << DESK1 | sudo -u "${TARGET_USER}" tee "${desktop_dir}/Humanoid-Locomotion-G1.desktop" >/dev/null
+    # Create .desktop entries on user Desktop if directory exists
+    if [[ -d "${desktop_dir}" ]]; then
+        cat << DESK1 | run_as_user_stdin "${desktop_dir}/Humanoid-Locomotion-G1.desktop"
 [Desktop Entry]
 Version=1.0
 Type=Application
@@ -142,7 +150,7 @@ Terminal=false
 Categories=Development;Science;Robotics;
 DESK1
 
-    cat << DESK2 | sudo -u "${TARGET_USER}" tee "${desktop_dir}/Quadruped-Locomotion-Go2.desktop" >/dev/null
+        cat << DESK2 | run_as_user_stdin "${desktop_dir}/Quadruped-Locomotion-Go2.desktop"
 [Desktop Entry]
 Version=1.0
 Type=Application
@@ -154,7 +162,7 @@ Terminal=false
 Categories=Development;Science;Robotics;
 DESK2
 
-    cat << DESK3 | sudo -u "${TARGET_USER}" tee "${desktop_dir}/Franka-Manipulation.desktop" >/dev/null
+        cat << DESK3 | run_as_user_stdin "${desktop_dir}/Franka-Manipulation.desktop"
 [Desktop Entry]
 Version=1.0
 Type=Application
@@ -166,7 +174,7 @@ Terminal=false
 Categories=Development;Science;Robotics;
 DESK3
 
-    cat << DESK4 | sudo -u "${TARGET_USER}" tee "${desktop_dir}/Arena-Benchmark-Kit.desktop" >/dev/null
+        cat << DESK4 | run_as_user_stdin "${desktop_dir}/Arena-Benchmark-Kit.desktop"
 [Desktop Entry]
 Version=1.0
 Type=Application
@@ -178,7 +186,7 @@ Terminal=false
 Categories=Development;Science;Robotics;
 DESK4
 
-    cat << DESK5 | sudo -u "${TARGET_USER}" tee "${desktop_dir}/Isaac-GR00T-Server.desktop" >/dev/null
+        cat << DESK5 | run_as_user_stdin "${desktop_dir}/Isaac-GR00T-Server.desktop"
 [Desktop Entry]
 Version=1.0
 Type=Application
@@ -190,7 +198,7 @@ Terminal=false
 Categories=Development;Science;Robotics;
 DESK5
 
-    cat << DESK6 | sudo -u "${TARGET_USER}" tee "${desktop_dir}/Arena-GR00T-Closed-Loop.desktop" >/dev/null
+        cat << DESK6 | run_as_user_stdin "${desktop_dir}/Arena-GR00T-Closed-Loop.desktop"
 [Desktop Entry]
 Version=1.0
 Type=Application
@@ -202,12 +210,13 @@ Terminal=false
 Categories=Development;Science;Robotics;
 DESK6
 
-    chmod 0755 "${desktop_dir}"/*.desktop
-    chown "${TARGET_USER}:${TARGET_USER}" "${desktop_dir}"/*.desktop
+        chmod 0755 "${desktop_dir}"/*.desktop 2>/dev/null || true
+        chown "${TARGET_USER}:${TARGET_USER}" "${desktop_dir}"/*.desktop 2>/dev/null || true
 
-    for icon in "${desktop_dir}"/*.desktop; do
-        sudo -H -u "${TARGET_USER}" gio set "${icon}" metadata::trusted true 2>/dev/null || true
-    done
+        for icon in "${desktop_dir}"/*.desktop; do
+            run_as_user "gio set '${icon}' metadata::trusted true 2>/dev/null || true"
+        done
+    fi
 
-    log_success "Desktop shortcuts (RL, Arena, GR00T) created and marked trusted."
+    log_success "Physical AI Demo Launchers configured at ${demos_dir}."
 }
