@@ -73,29 +73,29 @@ detect_nvme_storage() {
     NVME_COUNT=0
     LVM_VOLUME_GROUPS=()
 
-    # Detect NVMe drives using nvme-cli or lsblk/sysfs
-    if command -v nvme &>/dev/null; then
+    # Detect NVMe drives using lsblk (robust across nvme-cli versions)
+    local lsblk_nvme
+    lsblk_nvme=$(lsblk -d -n -o KNAME,MODEL,SIZE,TRAN 2>/dev/null | grep -E "nvme" || true)
+    if [[ -n "$lsblk_nvme" ]]; then
+        while read -r name model size tran; do
+            if [[ -n "$name" ]]; then
+                NVME_DRIVES+=("/dev/${name}: ${model:-Generic NVMe} (${size})")
+                NVME_COUNT=$((NVME_COUNT + 1))
+            fi
+        done <<< "$lsblk_nvme"
+    fi
+
+    # Fallback to nvme list if lsblk found nothing
+    if [[ ${#NVME_DRIVES[@]} -eq 0 ]] && command -v nvme &>/dev/null; then
         local nvme_out
-        nvme_out=$(nvme list 2>/dev/null | awk 'NR>2 {print $1 "|" $2 "|" $11 "|" $12}' || true)
+        nvme_out=$(nvme list 2>/dev/null | awk 'NR>2 {print $1 "|" $2}' || true)
         if [[ -n "$nvme_out" ]]; then
-            while IFS='|' read -r dev sn model size; do
+            while IFS='|' read -r dev sn; do
                 if [[ -n "$dev" ]]; then
-                    NVME_DRIVES+=("${dev}: ${model} (${size}) [SN: ${sn}]")
+                    NVME_DRIVES+=("${dev}: NVMe Drive [SN: ${sn}]")
                     NVME_COUNT=$((NVME_COUNT + 1))
                 fi
             done <<< "$nvme_out"
-        fi
-    fi
-
-    # Fallback to lsblk if nvme-cli is not installed or returned empty
-    if [[ ${#NVME_DRIVES[@]} -eq 0 ]]; then
-        local lsblk_nvme
-        lsblk_nvme=$(lsblk -d -o NAME,MODEL,SIZE,TRAN 2>/dev/null | grep -E "nvme" || true)
-        if [[ -n "$lsblk_nvme" ]]; then
-            while read -r name model size tran; do
-                NVME_DRIVES+=("/dev/${name}: ${model:-Generic NVMe} (${size})")
-                NVME_COUNT=$((NVME_COUNT + 1))
-            done <<< "$lsblk_nvme"
         fi
     fi
 
