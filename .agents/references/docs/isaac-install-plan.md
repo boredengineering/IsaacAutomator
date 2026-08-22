@@ -965,6 +965,170 @@ cd /workspaces/IsaacAutomator/.agents/references/isaac-installer
 
 ---
 
+## 5.5 Deep Submodule Dependency Graph & Multi-Tier Execution Architecture (IsaacLab-Arena ⟷ Isaac-GR00T)
+
+The **IsaacLab-Arena** ecosystem integrates multi-embodiment task composition, PhysX 5.4 GPU tensor simulation, and the **NVIDIA Isaac-GR00T N1.7 Vision-Language-Action (VLA)** foundation model stack. Because these frameworks span distinct research communities (manipulation benchmarks, imitation learning, and Omniverse simulation), they rely on a multi-tier nested Git submodule topology.
+
+### 5.5.1 Hierarchical Dependency & Submodule Architecture Flow Chart
+
+```mermaid
+flowchart TD
+    subgraph HARDWARE_LAYER ["Level 0: Host Hardware & System Drivers"]
+        GPU["NVIDIA GPU (Blackwell RTX 5090 / Ada RTX 4090 / L40S)"]
+        DRIVER["NVIDIA Driver (>= 535 / >= 570) + DKMS Modules"]
+        VULKAN["Vulkan ICD Manifest (/usr/share/vulkan/icd.d/nvidia_icd.json)"]
+        SYS_PKGS["System Dependencies: FFmpeg 4-7, Git LFS, GCC 11, CMake, uv, ZeroMQ"]
+        GPU & DRIVER --> VULKAN & SYS_PKGS
+    end
+
+    subgraph ENGINE_LAYER ["Level 1: Core Standalone Simulation Engine"]
+        SIM["Standalone Isaac Sim Engine (~/IsaacSim / 6.0.1)\n• Omniverse Kit Executable\n• PhysX 5.4 GPU Acceleration\n• USD Assets & Carbonite Plugins"]
+        SYMLINK["POSIX Atomic Symlink (_isaac_sim)"]
+        SIM --> SYMLINK
+    end
+
+    subgraph TOP_REPOS ["Level 2: Standalone Developer Workspace Repositories (~/Documents/GitHub/)"]
+        STANDALONE_LAB["IsaacLab (boredengineering/IsaacLab)\n• Core Actuators, Sensors, RL Tasks"]
+        STANDALONE_ARENA["IsaacLab-Arena (BoredEngineer/IsaacLab-Arena)\n• Composable Task Triplet & Benchmarks"]
+        STANDALONE_GR00T["Isaac-GR00T (boredengineering/Isaac-GR00T)\n• VLA Policy Server & Fine-tuning Engine"]
+    end
+
+    subgraph ARENA_SUBMODULES ["Level 3: IsaacLab-Arena Submodule Topology (submodules/)"]
+        SUB_LAB["submodules/IsaacLab\n(Pinned SHA: af1bab4)\nUpstream: isaac-sim/IsaacLab.git"]
+        SUB_GR00T["submodules/Isaac-GR00T\n(Pinned SHA: e29d8fc)\nUpstream: NVIDIA/Isaac-GR00T.git"]
+    end
+
+    subgraph GR00T_EXTERNAL ["Level 4: Isaac-GR00T External Benchmark Submodules (external_dependencies/)"]
+        DEP_LIBERO["external_dependencies/LIBERO\n(Pinned SHA: 8f1084e)\nLifelong Robot Manipulation Benchmark"]
+        DEP_SIMPLER["external_dependencies/SimplerEnv\n(Pinned SHA: 8a2d286)\nReal-to-Sim Manipulation Evaluation"]
+        DEP_ROBOCASA["external_dependencies/robocasa\n(Pinned SHA: d89d481)\nInteractive Kitchen Simulation & Tasks"]
+        DEP_GR1["external_dependencies/robocasa-gr1-tabletop-tasks\n(Pinned SHA: 4840e67)\nFourier GR-1 Humanoid Tabletop Skills"]
+    end
+
+    subgraph NEURAL_STACK ["Level 5: Neural Weights, Checkpoints & Datasets"]
+        MODEL_VLA["nvidia/GR00T-N1.7-3B\n(DiT Flow-Matching Action Head)"]
+        MODEL_VLM["nvidia/Cosmos-Reason2-2B\n(Qwen3-VL Multimodal Backbone)"]
+        DATA_DROID["DROID Demonstration Dataset\n(demo_data/droid_sample via Git LFS)"]
+        CACHE_USD["Cached Omniverse USD Assets\n(Unitree G1, Go2, Franka, Fourier GR1, Kitchens)"]
+    end
+
+    subgraph RUNTIME_BRIDGES ["Level 6: Multi-Tier Execution & ZeroMQ IPC Bridge"]
+        ENV_CONDA["Conda Runtime: 'isaaclab' (Python 3.12)\n• PyTorch 2.5.1 / CUDA 12.4\n• IsaacLab + IsaacLab-Arena (pip -e)\n• Omniverse Carbonite C++ Bindings"]
+        ENV_UV["UV Runtime: 'Isaac-GR00T/.venv' (Python 3.12)\n• torchcodec 0.8.0 + FFmpeg\n• Transformers 4.48+ & Flash-Attention\n• ZeroMQ Policy RPC Server"]
+        IPC_ZMQ["ZeroMQ Socket Bridge (tcp://127.0.0.1:5555)\nREQ/REP Protocol: Tensors ⟷ Action Chunks"]
+    end
+
+    HARDWARE_LAYER --> ENGINE_LAYER
+    ENGINE_LAYER --> TOP_REPOS
+    STANDALONE_ARENA -.->|Git Submodules| ARENA_SUBMODULES
+    SUB_GR00T -.->|Nested Submodules| GR00T_EXTERNAL
+    STANDALONE_GR00T -.->|Direct Submodules| GR00T_EXTERNAL
+    GR00T_EXTERNAL --> NEURAL_STACK
+    
+    TOP_REPOS --> RUNTIME_BRIDGES
+    ENV_CONDA <== "Observations (Camera RGB + Proprioception)" ==> IPC_ZMQ
+    IPC_ZMQ <== "Action Trajectories (Relative EEF / Joints)" ==> ENV_UV
+```
+
+---
+
+### 5.5.2 Complete Git Submodule & Pinned Commit Reference Matrix
+
+To ensure absolute determinism across simulation experiments, CI/CD pipelines, and multi-robot benchmarking, `isaac-installer` tracks exact upstream commit hashes across all tiers:
+
+| Repository / Submodule Path | Pinned Git Commit SHA | Short SHA | Official Upstream Repository | Architectural Role & Ecosystem Purpose |
+| :--- | :--- | :--- | :--- | :--- |
+| **`IsaacLab-Arena`** (Root) | `main` / `release/0.3.0` | `HEAD` | `https://github.com/isaac-sim/IsaacLab-Arena.git` | Composable task orchestration, multi-embodiment Gym registry, policy runner. |
+| ├── **`submodules/IsaacLab`** | `af1bab4dc173ba69b08fab779c14ead61d13fd33` | `af1bab4` | `https://github.com/isaac-sim/IsaacLab.git` | Core robot simulator bindings, PhysX 5.4 dynamics, actuator models. |
+| └── **`submodules/Isaac-GR00T`** | `e29d8fc50b0e4745120ae3fb72447986fe638aa6` | `e29d8fc` | `https://github.com/NVIDIA/Isaac-GR00T.git` | Foundation VLA model runtime, DiT policy server, cross-embodiment tokenizer. |
+| &nbsp;&nbsp;&nbsp;&nbsp;├── **`external_dependencies/LIBERO`** | `8f1084e3132a39270c3a13ebe37270a43ece2a01` | `8f1084e` | `https://github.com/Lifelong-Robot-Learning/LIBERO.git` | Lifelong robot learning benchmark with 130+ procedural manipulation tasks. |
+| &nbsp;&nbsp;&nbsp;&nbsp;├── **`external_dependencies/SimplerEnv`** | `8a2d286c926c1371927caa7651a412b4cc331756` | `8a2d286` | `https://github.com/squarefk/SimplerEnv.git` | Real-to-sim visual manipulation evaluation suite for generalist policies. |
+| &nbsp;&nbsp;&nbsp;&nbsp;├── **`external_dependencies/robocasa`** | `d89d481ce9c76da7f179466981676e268aa842e5` | `d89d481` | `https://github.com/squarefk/robocasa.git` | Photorealistic kitchen simulation for complex, multi-stage household tasks. |
+| &nbsp;&nbsp;&nbsp;&nbsp;└── **`external_dependencies/robocasa-gr1-tabletop-tasks`** | `4840e671596f93ca03651524b9f72ffb1aadfeff` | `4840e67` | `https://github.com/robocasa/robocasa-gr1-tabletop-tasks.git` | Bimanual Fourier GR-1 humanoid tabletop skills and task definitions. |
+
+---
+
+### 5.5.3 Multi-Tier Python Runtimes & ZeroMQ IPC Isolation
+
+#### The ABI Collision Hazard:
+Directly combining Isaac Sim's Omniverse Carbonite Python runtime (`omni.kit`, `libcarb.so`, fixed C++ standard library) with cutting-edge Hugging Face Transformers (`transformers>=4.48`, `flash-attn`, `torchcodec`, PyTorch 2.7) inside a single monolithic Python environment triggers catastrophic dynamic linker collisions (`GLIBCXX` symbol errors, `SIGSEGV` in Vulkan swapchains, and conflicting PyTorch CUDA symbols).
+
+#### The Two-Tier Process Boundary Solution:
+`isaac-installer` enforces complete process and ABI isolation via a high-speed **ZeroMQ Socket IPC Bridge**:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant ARENA as IsaacLab-Arena (Conda: isaaclab)
+    participant ZMQ as ZeroMQ Socket (127.0.0.1:5555)
+    participant GR00T as Isaac-GR00T Policy Server (UV: .venv)
+    participant GPU as NVIDIA GPU (VLM + DiT)
+
+    Note over ARENA,GR00T: Phase 1: Environment Initialization & Policy Handshake
+    GR00T->>ZMQ: Bind REP Socket on port 5555
+    ARENA->>ZMQ: Connect REQ Socket
+    ARENA->>ZMQ: Handshake Ping {embodiment: "UNITREE_G1_SONIC", action_space: "relative_eef"}
+    ZMQ->>GR00T: Forward Handshake
+    GR00T->>ZMQ: Return Ready {status: "OK", horizon: 40}
+    ZMQ->>ARENA: Handshake Acknowledged
+
+    Note over ARENA,GR00T: Phase 2: Closed-Loop Simulation Step (at 50 Hz)
+    loop Every Simulation Step
+        ARENA->>ARENA: Render Camera RGB & Sample Proprioception
+        ARENA->>ZMQ: Send Observation Payload {rgb_tensors, joint_positions, task_prompt}
+        ZMQ->>GR00T: Deliver Observation Tensors
+        GR00T->>GPU: Forward VLM Backbone (Cosmos-Reason2-2B)
+        GPU->>GR00T: Compute Visual Tokens & Reasoning Embeddings
+        GR00T->>GPU: DiT Denoising Diffusion (40-step action trajectory)
+        GPU->>GR00T: Return Action Trajectory Chunk (ΔEEF, Gripper, Joints)
+        GR00T->>ZMQ: Send Action Chunk Response
+        ZMQ->>ARENA: Receive Action Chunk
+        ARENA->>ARENA: Step PhysX 5.4 GPU Dynamics & Apply Joint Targets
+    end
+```
+
+---
+
+### 5.5.4 Step-by-Step Submodule Provisioning & Verification Recipe
+
+The complete automated provisioning pipeline is executed via `isaac-installer`:
+
+#### 1. System Codecs & Git LFS Initialization:
+```bash
+# Install FFmpeg for torchcodec accelerated video decoding and Git LFS for 3D meshes
+sudo apt-get update && sudo apt-get install -y ffmpeg git-lfs pkg-config
+git lfs install
+```
+
+#### 2. IsaacLab-Arena Provisioning with Submodules:
+```bash
+# Clone IsaacLab-Arena with depth-1 submodules and configure Dual-Remote Git topology:
+sudo ./bin/isaac-installer install --with-arena
+
+# Register standalone repositories in editable mode without polluting Git working tree:
+./bin/isaac-installer arena submodules editable-bridge
+```
+
+#### 3. NVIDIA Isaac-GR00T Foundation Model Stack Provisioning:
+```bash
+# Clone Isaac-GR00T, pull Git LFS objects, and synchronize Python 3.12 dependencies:
+sudo ./bin/isaac-installer install --with-gr00t
+
+# Pre-cache gated model weights (nvidia/GR00T-N1.7-3B, Cosmos-Reason2-2B):
+./bin/isaac-installer gr00t download-weights
+```
+
+#### 4. End-to-End Closed-Loop Rollout Verification:
+```bash
+# Terminal 1: Launch ZeroMQ Policy Server
+./bin/isaac-installer gr00t server 5555
+
+# Terminal 2: Run Live Visual Closed-Loop Simulation in Omniverse Kit
+./bin/isaac-installer arena play cube_goal_pose --policy gr00t --port 5555
+```
+
+---
+
 ## 6. State Tracking, Drift Detection & Self-Healing Engine
 
 When workstations evolve over time, repositories get misplaced (e.g. flat `GitHub/IsaacLab` vs `GitHub/BoredEngineer/IsaacLab`), remotes point to wrong URLs, branches drift, or symlinks break.
