@@ -8,27 +8,38 @@ SIM_PATH="${ISAACSIM_DIR:-$HOME/IsaacSim}"
 export EXP_PATH="${SIM_PATH}/apps"
 export ISAAC_PATH="${SIM_PATH}"
 export CARB_APP_PATH="${SIM_PATH}/kit"
-export VK_ICD_FILENAMES="/etc/vulkan/icd.d/nvidia_icd.json"
 
-CONDA_PY="/home/tarfy/miniconda3/envs/isaaclab/bin/python"
+if [ -f /usr/share/vulkan/icd.d/nvidia_icd.json ]; then
+    export VK_ICD_FILENAMES="/usr/share/vulkan/icd.d/nvidia_icd.json"
+elif [ -f /etc/vulkan/icd.d/nvidia_icd.json ]; then
+    export VK_ICD_FILENAMES="/etc/vulkan/icd.d/nvidia_icd.json"
+elif [ -f /usr/share/vulkan/icd.d/nvidia.json ]; then
+    export VK_ICD_FILENAMES="/usr/share/vulkan/icd.d/nvidia.json"
+elif [ -f /etc/vulkan/icd.d/nvidia.json ]; then
+    export VK_ICD_FILENAMES="/etc/vulkan/icd.d/nvidia.json"
+else
+    unset VK_ICD_FILENAMES
+fi
 
-if [[ $# -eq 0 ]]; then
+CONDA_PY="${env_path}/bin/python"
+
+if [[ \$# -eq 0 ]]; then
     echo "Usage: isaaclab-env <command> [args...]"
     echo "Example: isaaclab-env python scripts/reinforcement_learning/rsl_rl/train.py --task Isaac-Ant-v0"
     exit 1
 fi
 
-if [[ "$1" == "python" || "$1" == "python3" ]]; then
+if [[ "\$1" == "python" || "\$1" == "python3" ]]; then
     shift
-    if [[ -x "${CONDA_PY}" ]]; then
-        export PATH="/home/tarfy/miniconda3/envs/isaaclab/bin:$PATH"
-        exec "${CONDA_PY}" "$@"
+    if [[ -x "\${CONDA_PY}" ]]; then
+        export PATH="${env_path}/bin:\$PATH"
+        exec "\${CONDA_PY}" "\$@"
     else
-        exec python3 "$@"
+        exec python3 "\$@"
     fi
 else
-    if [[ -x "${CONDA_PY}" ]]; then
-        export PATH="/home/tarfy/miniconda3/envs/isaaclab/bin:$PATH"
+    if [[ -x "\${CONDA_PY}" ]]; then
+        export PATH="${env_path}/bin:\$PATH"
     fi
-    exec "$@"
+    exec "\$@"
 fi

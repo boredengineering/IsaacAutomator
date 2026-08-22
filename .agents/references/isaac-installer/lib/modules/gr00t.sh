@@ -43,19 +43,35 @@ install_gr00t() {
     # 1. Install System Dependencies & Video Codecs
     log_info "Installing git-lfs, ffmpeg, and build prerequisites..."
     pkg_install git-lfs ffmpeg pkg-config
-    sudo -H -u "${TARGET_USER}" bash -c "git lfs install --skip-repo 2>/dev/null || true"
+    run_as_user "git lfs install --skip-repo 2>/dev/null || true"
 
-    # 2. Ensure uv package manager is available
-    if ! command -v uv &>/dev/null && [[ ! -x "/home/${TARGET_USER}/.cargo/bin/uv" && ! -x "/root/.cargo/bin/uv" ]]; then
-        log_info "Installing Astral uv package manager..."
-        curl -LsSf https://astral.sh/uv/install.sh | sh
+    # 2. Ensure Astral uv package manager is globally available
+    if ! command -v uv &>/dev/null; then
+        log_info "Installing Astral uv package manager to /usr/local/bin..."
+        curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR="/usr/local/bin" sh 2>/dev/null || \
+        curl -LsSf https://astral.sh/uv/install.sh | sh 2>/dev/null || true
+
+        # Link/copy to system bin so all users and sudo subshells find uv immediately
+        for p in "${TARGET_HOME}/.local/bin/uv" "${TARGET_HOME}/.cargo/bin/uv" "/root/.local/bin/uv" "/root/.cargo/bin/uv"; do
+            if [[ -x "$p" && ! -x "/usr/local/bin/uv" ]]; then
+                cp -f "$p" /usr/local/bin/uv 2>/dev/null || ln -sf "$p" /usr/local/bin/uv 2>/dev/null || true
+                cp -f "${p}x" /usr/local/bin/uvx 2>/dev/null || ln -sf "${p}x" /usr/local/bin/uvx 2>/dev/null || true
+            fi
+        done
     fi
+
+    # Also install in user space if user home doesn't have it
+    run_as_user "
+        if ! command -v uv &>/dev/null; then
+            curl -LsSf https://astral.sh/uv/install.sh | sh 2>/dev/null || true
+        fi
+    "
 
     # 3. Setup repository with Dual-Remote topology & Submodules
     setup_git_repo_with_fork "${gr00t_dir}" "${git_repo}" "${official_upstream}" "${git_branch}" "${git_tag}" true
 
     # 4. Initialize Submodules & Pull Git LFS Objects
-    sudo -H -u "${TARGET_USER}" bash -c "
+    run_as_user "
         cd '${gr00t_dir}'
         git submodule update --init --recursive 2>/dev/null || true
         git lfs pull 2>/dev/null || true
@@ -63,9 +79,9 @@ install_gr00t() {
 
     # 5. Provision Isolated Python 3.12 Environment with uv sync
     log_info "Synchronizing locked Python 3.12 dependencies with uv..."
-    sudo -H -u "${TARGET_USER}" bash -c "
+    run_as_user "
         cd '${gr00t_dir}'
-        export PATH=\"\$HOME/.cargo/bin:\$PATH\"
+        export PATH=\"/usr/local/bin:\$HOME/.local/bin:\$HOME/.cargo/bin:\$PATH\"
         export CUDA_HOME=\"/usr/local/cuda\"
         uv sync --python 3.12
     "
@@ -91,9 +107,9 @@ test_gr00t() {
 
     # Test 1: Python Core Module Import Sanity
     log_step "1. Validating GR00T Core Module & Python 3.12 Imports..."
-    if sudo -H -u "${TARGET_USER}" bash -c "
+    if run_as_user "
         cd '${gr00t_dir}'
-        export PATH=\"\$HOME/.cargo/bin:\$PATH\"
+        export PATH=\"/usr/local/bin:\$HOME/.local/bin:\$HOME/.cargo/bin:\$PATH\"
         uv run python -c \"import gr00t; print('SUCCESS: GR00T imported.')\"
     "; then
         log_success "GR00T core module loaded successfully."
@@ -108,7 +124,7 @@ test_gr00t() {
         log_success "DROID sample dataset & modality.json verified."
     else
         log_warn "demo_data/droid_sample missing. Pulling with git lfs..."
-        sudo -H -u "${TARGET_USER}" bash -c "cd '${gr00t_dir}' && git lfs pull"
+        run_as_user "cd '${gr00t_dir}' && git lfs pull"
     fi
 
     echo ""
@@ -252,9 +268,9 @@ if sync.get('has_upstream'):
 
         infer|inference)
             log_header "Running Isaac-GR00T Open-Loop Inference on DROID Sample"
-            sudo -H -u "${TARGET_USER}" bash -c "
+            run_as_user "
                 cd '${gr00t_dir}'
-                export PATH=\"\$HOME/.cargo/bin:\$PATH\"
+                export PATH=\"/usr/local/bin:\$HOME/.local/bin:\$HOME/.cargo/bin:\$PATH\"
                 uv run python scripts/deployment/standalone_inference_script.py \
                   --model-path '${GR00T_MODEL_PATH:-nvidia/GR00T-N1.7-3B}' \
                   --dataset-path demo_data/droid_sample \
@@ -268,9 +284,9 @@ if sync.get('has_upstream'):
         server)
             local port="${1:-${GR00T_SERVER_PORT:-5555}}"
             log_header "Starting Isaac-GR00T ZeroMQ Policy Server on Port ${port}"
-            sudo -H -u "${TARGET_USER}" bash -c "
+            run_as_user "
                 cd '${gr00t_dir}'
-                export PATH=\"\$HOME/.cargo/bin:\$PATH\"
+                export PATH=\"/usr/local/bin:\$HOME/.local/bin:\$HOME/.cargo/bin:\$PATH\"
                 uv run python gr00t/eval/run_gr00t_server.py \
                   --model-path '${GR00T_MODEL_PATH:-nvidia/GR00T-N1.7-3B}' \
                   --embodiment-tag OXE_DROID_RELATIVE_EEF_RELATIVE_JOINT \
@@ -283,9 +299,9 @@ if sync.get('has_upstream'):
             local port="${1:-5555}"
             local host="${2:-127.0.0.1}"
             log_header "Testing Isaac-GR00T ZeroMQ Client-Server Closed-Loop Bridge"
-            sudo -H -u "${TARGET_USER}" bash -c "
+            run_as_user "
                 cd '${gr00t_dir}'
-                export PATH=\"\$HOME/.cargo/bin:\$PATH\"
+                export PATH=\"/usr/local/bin:\$HOME/.local/bin:\$HOME/.cargo/bin:\$PATH\"
                 echo 'Testing ZeroMQ client socket connection to ${host}:${port}...'
                 uv run python -c \"
 import zmq
@@ -311,7 +327,7 @@ print('✔ Connected to ZeroMQ policy server socket.')
             local resolved_fork
             resolved_fork="$(ensure_github_fork "$target_fork" "$official_upstream")"
 
-            sudo -H -u "${TARGET_USER}" bash -c "
+            run_as_user "
                 cd '${gr00t_dir}'
                 git remote set-url origin '${resolved_fork}' 2>/dev/null || git remote add origin '${resolved_fork}' 2>/dev/null
                 git fetch origin 2>/dev/null || true
@@ -327,7 +343,7 @@ print('✔ Connected to ZeroMQ policy server socket.')
                 return 1
             fi
 
-            sudo -H -u "${TARGET_USER}" bash -c "
+            run_as_user "
                 cd '${gr00t_dir}'
                 curr_branch=\$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo 'main')
                 echo 'Fetching latest upstream branches and tags...'
@@ -362,7 +378,7 @@ print('✔ Connected to ZeroMQ policy server socket.')
                 return 1
             fi
 
-            sudo -H -u "${TARGET_USER}" bash -c "
+            run_as_user "
                 cd '${gr00t_dir}'
                 echo '=== Git Remotes ==='
                 git remote -v
