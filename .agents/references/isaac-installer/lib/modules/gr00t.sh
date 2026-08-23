@@ -423,6 +423,10 @@ if sync.get('has_upstream'):
                             echo 'Installing libero package...'
                             uv pip install libero
                         fi
+                        if [[ -d 'gr00t/eval/sim/LIBERO/libero_uv/.venv' ]]; then
+                            echo 'Applying robosuite==1.4.1 and mujoco==2.3.7 compatibility pin for LIBERO...'
+                            gr00t/eval/sim/LIBERO/libero_uv/.venv/bin/pip install --no-warn-script-location robosuite==1.4.1 mujoco==2.3.7 2>/dev/null || true
+                        fi
                         ;;
                     robocasa|RoboCasa)
                         if [[ -f 'gr00t/eval/sim/robocasa/setup_RoboCasa.sh' ]]; then
@@ -478,6 +482,8 @@ if sync.get('has_upstream'):
                 # Auto-resolve dedicated benchmark virtualenv if available
                 py_runner='uv run python'
                 if [[ -x 'gr00t/eval/sim/LIBERO/libero_uv/.venv/bin/python' && ( -z '${env_name}' || '${env_name}' == libero* ) ]]; then
+                    # Ensure robosuite compatibility in libero_uv
+                    gr00t/eval/sim/LIBERO/libero_uv/.venv/bin/pip install --no-warn-script-location robosuite==1.4.1 mujoco==2.3.7 2>/dev/null || true
                     py_runner='gr00t/eval/sim/LIBERO/libero_uv/.venv/bin/python'
                 elif [[ -x 'gr00t/eval/sim/robocasa/robocasa_uv/.venv/bin/python' && '${env_name}' == robocasa* ]]; then
                     py_runner='gr00t/eval/sim/robocasa/robocasa_uv/.venv/bin/python'
@@ -485,6 +491,7 @@ if sync.get('has_upstream'):
                     echo 'LIBERO benchmark environment not initialized. Running setup script...'
                     bash gr00t/eval/sim/LIBERO/setup_libero.sh
                     if [[ -x 'gr00t/eval/sim/LIBERO/libero_uv/.venv/bin/python' ]]; then
+                        gr00t/eval/sim/LIBERO/libero_uv/.venv/bin/pip install --no-warn-script-location robosuite==1.4.1 mujoco==2.3.7 2>/dev/null || true
                         py_runner='gr00t/eval/sim/LIBERO/libero_uv/.venv/bin/python'
                     fi
                 fi
