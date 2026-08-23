@@ -73,6 +73,7 @@ Master index of session memory checkpoints for Isaac Automator.
 | 2026-08-23 03:50 | `f6a7b8c9` | Root Cause Analysis of Evaluation Tracks & Section 15 Troubleshooting Matrix | Diagnosed failure modes across simulation benchmarks, updated Section 14/15 in plan, and pinned robosuite/mujoco for LIBERO | [`20260823_035000_f6a7b8c9.md`](./sessions/20260823_035000_f6a7b8c9.md) |
 | 2026-08-23 05:36 | `a1c2e3f4` | Bottom-Up Canonical Architecture Plan, NVIDIA DROID Baseline & Docker Paradigm Analysis | Codified NVIDIA's minimal reference DROID baseline, Docker vs Bare-Metal locomanipulation analysis, and 4-level roadmap | [`20260823_053600_a1c2e3f4.md`](./sessions/20260823_053600_a1c2e3f4.md) |
 | 2026-08-23 05:58 | `b2d3f4e5` | 100% Native Bare-Metal Architecture Overhaul & 5 Root-Cause Deep Dives in debugging_arena_gr00t.md | Replaced roadmap with native bare-metal architecture (Pinocchio/Pink WBC, editable extension links, and IPC diagnostics) | [`20260823_055800_b2d3f4e5.md`](./sessions/20260823_055800_b2d3f4e5.md) |
+| 2026-08-23 06:35 | `c3e4f5a6` | Architectural Review of 0.2.1-dev, g1_brainco_extension & Inference Transport Analysis | Reviewed all 0.2.1-dev docs, compared in-process PyTorch model loading vs ZeroMQ IPC vs Docker, and updated Section 5 in debugging_arena_gr00t.md | [`20260823_063500_c3e4f5a6.md`](./sessions/20260823_063500_c3e4f5a6.md) |
 
 
 
