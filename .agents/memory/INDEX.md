@@ -70,6 +70,7 @@ Master index of session memory checkpoints for Isaac Automator.
 | 2026-08-22 20:31 | `c3d4e5f6` | 5-Phase Implementation Blueprint & Headless Streamlining | Finalized 5-phase plan, native receding horizon, removed optional desktop shortcuts | [`20260822_203140_c3d4e5f6.md`](./sessions/20260822_203140_c3d4e5f6.md) |
 | 2026-08-22 23:01 | `d4e5f6a7` | Milestone: 100% Workstation Verification Passed & Arena/GR00T Architecture Complete | Achieved 100% (12/12) subsystem verification: resolved UV CDN timeouts, sanitized Conda base, and linked Arena | [`20260822_230100_d4e5f6a7.md`](./sessions/20260822_230100_d4e5f6a7.md) |
 | 2026-08-23 02:25 | `e5f6a7b8` | Milestone: NVIDIA Isaac-GR00T VLA Open-Loop Inference Verified & Dual-Model Architecture | Verified 1.09B DiT + 2.01B Cosmos-Reason2-2B inference over DROID dataset (89.9ms latency, 0.00328 MSE) | [`20260823_022500_e5f6a7b8.md`](./sessions/20260823_022500_e5f6a7b8.md) |
+| 2026-08-23 03:50 | `f6a7b8c9` | Root Cause Analysis of Evaluation Tracks & Section 15 Troubleshooting Matrix | Diagnosed failure modes across simulation benchmarks, updated Section 14/15 in plan, and pinned robosuite/mujoco for LIBERO | [`20260823_035000_f6a7b8c9.md`](./sessions/20260823_035000_f6a7b8c9.md) |
 
 
 
