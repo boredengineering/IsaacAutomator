@@ -115,8 +115,8 @@ ensure_gr00t_zmq_bridge() {
         run_as_user "${lab_pip} install --no-warn-script-location pyzmq msgpack 2>/dev/null || true"
     fi
 
-    # 2. Write policy file if missing
-    if [[ -d "${target_dir}/isaaclab_arena/policy" && ! -f "${policy_file}" ]]; then
+    # 2. Write policy file and ensure PolicyRegistry binding
+    if [[ -d "${target_dir}/isaaclab_arena/policy" ]]; then
         log_step "Registering ZeroMQ GR00T Policy Bridge into IsaacLab-Arena..."
         cat << 'EOF' | run_as_user_stdin "${policy_file}"
 # Copyright (c) 2024-2026, IsaacLab-Arena Authors & NVIDIA.
@@ -141,6 +141,7 @@ except ImportError:
     zmq = None
 
 from isaaclab_arena.policy.policy_base import PolicyBase, PolicyCfg
+from isaaclab_arena.assets.registries import PolicyRegistry
 
 
 @dataclass
@@ -189,6 +190,18 @@ class Gr00tZmqPolicy(PolicyBase):
 
         # Fallback to zeros on timeout or mock response
         return torch.zeros((self.num_envs, getattr(self.cfg, "action_dim", 7)), device=self.device)
+
+
+# Register policy and config class with Arena PolicyRegistry
+try:
+    PolicyRegistry()._cfg_types[Gr00tZmqPolicy] = Gr00tZmqPolicyCfg
+except Exception:
+    pass
+
+try:
+    PolicyRegistry().register(Gr00tZmqPolicy, Gr00tZmqPolicyCfg)
+except Exception:
+    pass
 EOF
         chmod 0644 "${policy_file}" 2>/dev/null || true
         log_success "Gr00tZmqPolicy bridge registered at ${policy_file}"
