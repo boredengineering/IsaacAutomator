@@ -104,6 +104,18 @@ ensure_gr00t_zmq_bridge() {
     local target_dir="$1"
     local policy_file="${target_dir}/isaaclab_arena/policy/gr00t_zmq_policy.py"
 
+    # 1. Ensure pyzmq and msgpack are installed in the isaaclab environment
+    local conda_bin="$(resolve_conda_bin 2>/dev/null || echo "")"
+    local conda_root="$(dirname "$(dirname "$conda_bin")" 2>/dev/null || echo "${TARGET_HOME}/miniconda3")"
+    local lab_pip="${conda_root}/envs/isaaclab/bin/pip"
+    local lab_py="${conda_root}/envs/isaaclab/bin/python"
+
+    if [[ -x "${lab_py}" ]] && ! run_as_user "${lab_py} -c 'import zmq' 2>/dev/null"; then
+        log_step "Installing pyzmq IPC dependencies into 'isaaclab' Python environment..."
+        run_as_user "${lab_pip} install --no-warn-script-location pyzmq msgpack 2>/dev/null || true"
+    fi
+
+    # 2. Write policy file if missing
     if [[ -d "${target_dir}/isaaclab_arena/policy" && ! -f "${policy_file}" ]]; then
         log_step "Registering ZeroMQ GR00T Policy Bridge into IsaacLab-Arena..."
         cat << 'EOF' | run_as_user_stdin "${policy_file}"
@@ -122,7 +134,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 import numpy as np
 import torch
-import zmq
+
+try:
+    import zmq
+except ImportError:
+    zmq = None
 
 from isaaclab_arena.policy.policy_base import PolicyBase, PolicyCfg
 
@@ -145,12 +161,14 @@ class Gr00tZmqPolicy(PolicyBase):
         self.timeout_ms = getattr(cfg, "timeout_ms", 5000)
         self.num_envs = num_envs
         self.device = device
+        self.socket = None
 
-        self.context = zmq.Context()
-        self.socket = self.context.socket(zmq.REQ)
-        self.socket.setsockopt(zmq.RCVTIMEO, self.timeout_ms)
-        self.socket.connect(f"tcp://{self.host}:{self.port}")
-        print(f"[Gr00tZmqPolicy] Connected to GR00T Policy Server at tcp://{self.host}:{self.port}")
+        if zmq is not None:
+            self.context = zmq.Context()
+            self.socket = self.context.socket(zmq.REQ)
+            self.socket.setsockopt(zmq.RCVTIMEO, self.timeout_ms)
+            self.socket.connect(f"tcp://{self.host}:{self.port}")
+            print(f"[Gr00tZmqPolicy] Connected to GR00T Policy Server at tcp://{self.host}:{self.port}")
 
     def reset(self, env_ids: torch.Tensor | None = None):
         """Reset internal policy state buffers."""
@@ -158,15 +176,16 @@ class Gr00tZmqPolicy(PolicyBase):
 
     def get_action(self, obs: dict[str, torch.Tensor]) -> torch.Tensor:
         """Query GR00T ZeroMQ Policy Server for continuous action chunks."""
-        try:
-            payload = {"type": "step", "num_envs": self.num_envs}
-            self.socket.send_json(payload)
-            response = self.socket.recv_json()
-            if "action" in response:
-                action_np = np.array(response["action"], dtype=np.float32)
-                return torch.from_numpy(action_np).to(self.device)
-        except Exception:
-            pass
+        if self.socket is not None:
+            try:
+                payload = {"type": "step", "num_envs": self.num_envs}
+                self.socket.send_json(payload)
+                response = self.socket.recv_json()
+                if "action" in response:
+                    action_np = np.array(response["action"], dtype=np.float32)
+                    return torch.from_numpy(action_np).to(self.device)
+            except Exception:
+                pass
 
         # Fallback to zeros on timeout or mock response
         return torch.zeros((self.num_envs, getattr(self.cfg, "action_dim", 7)), device=self.device)
