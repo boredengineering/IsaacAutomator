@@ -1924,7 +1924,52 @@ flowchart TD
 
 ---
 
-### 14.4 Telemetry, Profiling & Latency Budgets
+### 14.4 Pragmatic Dual-Track Strategy: Docker Baseline to Native Conversion
+
+To ensure guaranteed operational success while tackling complex humanoid foundation model dependencies, the installer framework implements a **Two-Track Execution Model**:
+
+```mermaid
+flowchart LR
+    subgraph STAGE_1 ["Stage 1: Docker-First Baseline (Immediate Working Path)"]
+        D_RUN["./docker/run_docker.sh -g"]
+        D_SIM["Run Sim & GR00T inside Container\n(DROID Pick & Place / G1 Brainco)"]
+        D_BASE["Capture Working Baseline Data\n(Metrics, States, Telemetry)"]
+        D_RUN --> D_SIM --> D_BASE
+    end
+
+    subgraph STAGE_2 ["Stage 2: Container Manifest Extraction & Reverse Engineering"]
+        E_PIP["Freeze Python Environment (/isaac-sim/python.sh -m pip list)"]
+        E_LIB["Map Dynamic Linker & C++ WBC Solvers (Pinocchio / Pink / QP)"]
+        E_ENV["Extract Vulkan & Carbonite Environment Variables"]
+        D_BASE --> E_PIP & E_LIB & E_ENV
+    end
+
+    subgraph STAGE_3 ["Stage 3: Methodical Native Bare-Metal Conversion"]
+        N_CONDA["Replicate Packages in Named Conda env (isaaclab / Py3.12)"]
+        N_EXT["Link Native Editable Extensions (isaaclab_arena_gr00t & g1)"]
+        N_VAL["Verify 100% Parity (Zero Metric Loss vs Container)"]
+        E_PIP & E_LIB & E_ENV --> N_CONDA --> N_EXT --> N_VAL
+    end
+```
+
+#### 14.4.1 Stage 1: Docker Baseline Execution
+* **Why Docker Works Immediately**: Encapsulates NVIDIA's internal `/isaac-sim/python.sh`, pre-compiled C++ WBC kinematic solvers (`pinocchio`, `pin-pink`, `proxsuite`), and Isaac Sim 6.0 Kit binaries without host C++ ABI or driver mismatches.
+* **Volume Mounts**: Maps host workspace (`$(pwd):/workspaces/isaaclab_arena`), datasets (`$HOME/datasets`), and checkpoints (`$HOME/models`) for live editable code iteration.
+* **Execution Commands**:
+  ```bash
+  # Launch Docker Simulation Environment with GR00T bindings:
+  cd ~/Documents/GitHub/boredengineering/IsaacLab-Arena
+  ./docker/run_docker.sh -g -d ~/datasets -m ~/models -e ~/eval
+  ```
+
+#### 14.4.2 Stage 2: Reverse-Engineering & Native Conversion
+* **Manifest Extraction**: Dumps package freeze, shared library paths, and WBC solver symbols from the container.
+* **Host Conda/UV Replication**: Replicates the exact environment in `isaaclab` Conda runtime (Python 3.12) and `Isaac-GR00T` UV runtime (Python 3.10).
+* **Parity Validation**: Runs identical closed-loop tasks in both environments to guarantee 100% trajectory and frame-rate parity.
+
+---
+
+### 14.5 Telemetry, Profiling & Latency Budgets
 
 During closed-loop execution, the policy bridge enforces the following latency and throughput budgets on NVIDIA Blackwell hardware:
 
@@ -1935,6 +1980,7 @@ During closed-loop execution, the policy bridge enforces the following latency a
 | **VLM & DiT Forward Pass** | $\le 45.0\text{ ms}$ | $28.5\text{ ms}$ | 40-step action chunk denoising with FP16/BF16 TensorRT / PyTorch |
 | **Action Unpacking & Step** | $\le 3.0\text{ ms}$ | $1.2\text{ ms}$ | Action scaling, delta pose conversion & PhysX 5.4 step |
 | **Total Horizon Latency ($H=8$)** | **$< 60.0\text{ ms}$** | **$32.2\text{ ms}$** | Receding horizon amortizes inference across 8 simulation steps |
+
 
 ---
 

@@ -325,3 +325,287 @@ All documentation and structural artifacts inside `g1_brainco_extension` were re
 | **Action Conversion** | Delta $\to$ Absolute via `reference_state` | Configurable per YAML representation | Explicit `StateActionProcessor` Handling |
 | **Diagnostics** | Dedicated `tools/` suite + `WBC_RECORD_NPZ=1` | Basic Kit Viewport Logging | Integrated Telemetry + Benchmark Verification |
 
+---
+
+## 6. Pragmatic Dual-Track Roadmap: Docker Baseline to Native Parity
+
+To ensure rapid, guaranteed progress while systematically resolving complex robotics foundation model dependencies, we adopt a **Pragmatic Two-Track Strategy**:
+
+```mermaid
+flowchart LR
+    subgraph TRACK_1 ["Track 1: Docker-First Baseline (Guaranteed Working Path)"]
+        D1["1. Build/Run Container\n(run_docker.sh -g)"]
+        D2["2. Run In-Container Sim & GR00T\n(DROID Pick & Place / G1 Brainco)"]
+        D3["3. Capture Working Baseline Data\n(Metrics, States, Telemetry)"]
+        D1 --> D2 --> D3
+    end
+
+    subgraph REVERSE_ENG ["Intermediate: Container Reverse-Engineering & Manifest Extraction"]
+        M1["Extract Python Freeze (pip list)"]
+        M2["Inspect LD_LIBRARY_PATH & C++ Solvers"]
+        M3["Map Vulkan & Offscreen Render Shims"]
+        D3 --> M1 & M2 & M3
+    end
+
+    subgraph TRACK_2 ["Track 2: Methodical Native Bare-Metal Conversion"]
+        N1["Configure Host Conda/UV Runtimes\n(Matching Container Manifests)"]
+        N2["Link Native Editable Extensions\n(isaaclab_arena_gr00t & g1)"]
+        N3["Validate 100% Parity\n(Zero-Loss Metric Match vs Docker)"]
+        M1 & M2 & M3 --> N1 --> N2 --> N3
+    end
+```
+
+---
+
+### 6.1 Track 1: The Docker-First Baseline (Architecture & Execution)
+
+#### 1. NVIDIA's Built-In Automation Architecture
+A critical inspection of NVIDIA's scripts (`docker/run_docker.sh` and `docker/run_gr00t_server.sh`) reveals that they **already automate all container lifecycle management**:
+* **Zero Manual Docker Builds**: Automatically detects whether `isaaclab_arena:latest` (or `cuda_gr00t_gn16` with `-g`) exists; if missing, automatically executes `docker build --pull ...`.
+* **Zero Manual Docker Exec / Attach**: Checks if a container is already running and auto-attaches; otherwise prunes exited containers and starts a new one.
+* **Seamless Command Forwarding (`"$@"` / `"${SERVER_ARGS[@]}"`)**: Options (`-g`, `-d`, `-m`, `-e`) are consumed by `getopts`, and any trailing commands are forwarded directly into the container's entrypoint.
+* **Automated User & Graphics Passthrough**:
+  - Automatically executes `xhost +local:docker > /dev/null` for X11 rendering.
+  - Injects `DOCKER_RUN_USER_ID=$(id -u)` and `DOCKER_RUN_USER_NAME=$(id -un)` so all generated artifacts and logs on the host retain native user ownership (no root lockouts).
+  - Mounts host datasets, models, `.cache`, `/tmp/.X11-unix`, and SSL CA certificates.
+
+---
+
+#### 2. Native Command Forwarding Runbook (No Manual Docker Commands)
+
+##### Step 1: Run In-Process Policy Evaluation via `run_docker.sh`
+You pass the Python evaluation command directly to `./docker/run_docker.sh` without any `docker exec`:
+```bash
+cd ~/Documents/GitHub/boredengineering/IsaacLab-Arena
+./docker/run_docker.sh -g \
+  python isaaclab_arena/evaluation/policy_runner.py \
+    --viz headless \
+    --policy_type isaaclab_arena_gr00t.policy.gr00t_closedloop_policy.Gr00tClosedloopPolicy \
+    --policy_config_yaml_path g1_brainco_extension/policy/config/g1_brainco_static_gr00t_closedloop_config.yaml \
+    --language_instruction "Pick up the bottle from the table and place it into the red bin." \
+    --enable_cameras \
+    --num_episodes 1 \
+    g1_static_pick_and_place_drink \
+    --embodiment g1_brainco_custom
+```
+
+##### Step 2: Run Decoupled ZeroMQ Server + Client via Automated Scripts
+*Terminal 1 (Policy Server Daemon):*
+```bash
+cd ~/Documents/GitHub/boredengineering/IsaacLab-Arena
+./docker/run_gr00t_server.sh -m ~/models -- --host 0.0.0.0 --port 5555
+```
+
+*Terminal 2 (Simulation Client):*
+```bash
+cd ~/Documents/GitHub/boredengineering/IsaacLab-Arena
+./docker/run_docker.sh -g \
+  python isaaclab_arena/evaluation/policy_runner.py \
+    --viz kit \
+    --policy_type isaaclab_arena_gr00t.policy.gr00t_remote_closedloop_policy.Gr00tRemoteClosedloopPolicy \
+    --policy_config_yaml_path isaaclab_arena_gr00t/policy/config/droid_manip_gr00t_closedloop_config.yaml \
+    --remote_host 127.0.0.1 --remote_port 5555 \
+    --language_instruction "Pick up the Rubik's cube and place it in the bowl." \
+    --enable_cameras --num_episodes 1 pick_and_place_maple_table \
+    --embodiment droid_abs_joint_pos
+```
+
+---
+
+### 6.2 Automation in `isaac-installer` CLI
+
+We integrate these automated wrappers directly into `./bin/isaac-installer` so that users and agents interact with a unified interface:
+
+```bash
+# 1. Direct pass-through to run_docker.sh via installer
+./bin/isaac-installer arena docker -g python isaaclab_arena/evaluation/policy_runner.py --help
+
+# 2. Run benchmark in Docker mode with 1 flag
+./bin/isaac-installer arena run cube_goal_pose --docker --steps 300
+
+# 3. Play live 3D visual rollout in Docker mode
+./bin/isaac-installer arena play pick_and_place_maple_table --docker --policy gr00t --port 5555
+
+# 4. Launch containerized GR00T policy server
+./bin/isaac-installer gr00t server 5555 --docker
+```
+
+---
+
+### 6.3 Reverse-Engineering the Working Container to Native Bare-Metal
+
+Once the Docker baseline executes and telemetry is captured, we systematically extract the working environment profile to replicate it natively on bare-metal:
+
+#### 1. Automated Manifest Extraction Procedure
+```bash
+# 1. Extract complete Python package freeze from container runtime
+./docker/run_docker.sh -g python -m pip list --format=freeze > /workspaces/IsaacAutomator/.agents/references/docs/container_pip_freeze.txt
+
+# 2. Extract active environment variables and library paths
+./docker/run_docker.sh -g env > /workspaces/IsaacAutomator/.agents/references/docs/container_env.txt
+
+# 3. Extract exact dynamic linker shared object dependencies for WBC solvers
+./docker/run_docker.sh -g python -c "
+import pinocchio, pink, qpsolvers
+print('Pinocchio path:', pinocchio.__file__)
+print('Pink path:', pink.__file__)
+print('QPSolvers path:', qpsolvers.__file__)
+" > /workspaces/IsaacAutomator/.agents/references/docs/container_wbc_manifest.txt
+```
+
+#### 2. Native Bare-Metal Replication Blueprint
+1. **Synchronize Conda (`isaaclab`) Packages**: Match Python 3.12 wheel versions in Conda to the frozen container requirements.
+2. **Inject Scoped Environment Hooks**: Replicate `LD_LIBRARY_PATH`, `PYTHONPATH`, and `VK_ICD_FILENAMES` in `~/miniconda3/envs/isaaclab/etc/conda/activate.d/`.
+3. **Link Native Editable Extensions**: Register `source/isaaclab_arena_gr00t`, `source/isaaclab_arena_g1`, and `g1_brainco_extension` natively via `pip install -e`.
+4. **Parity Validation**: Execute the same task natively and verify that step times, joint targets, and completion rates match the Docker baseline.
+
+---
+
+## 7. Retrospective Reflection: Lessons Learned from Engineering Attempts 1 & 2
+
+To ensure technical rigor and avoid repeating past antipatterns, we document the root causes and architectural lessons from both previous implementation attempts:
+
+### 7.1 Attempt 1: The Ad-Hoc Execution Antipattern (Black-Box Trial & Error)
+* **What We Did**: Attempted to run simulation and policy commands directly (`./bin/isaac-installer gr00t rollout ...`, `arena play ...`) without first establishing and auditing the underlying environment variables, library ABIs, or schema contracts.
+* **Why It Failed**:
+  1. *MuJoCo / Robosuite Dependency Mismatch*: LIBERO benchmark scripts failed with assertion errors in `robosuite/utils/binding_utils.py` (`assert joint_type in (mjJNT_HINGE, mjJNT_SLIDE)`) because unpinned `robosuite 1.5+` was installed against MuJoCo 3.x, which broke non-1DoF BDDL joint parsing.
+  2. *Arena Policy Registry & Dotted Path Contracts*: Invoking Arena scripts with `--policy_type gr00t` failed with `AssertionError: policy_type must be a dotted Python import path` and missing `PolicyCfg` registrations.
+  3. *Gated Hugging Face Dependencies*: Downloading `nvidia/GR00T-N1.7-3B` succeeded, but runtime initialization threw `403 Forbidden` because `Cosmos-Reason2-2B` is a separate gated repository requiring independent token acceptance.
+* **Core Takeaway**: Attempting to execute complex robotics tasks without explicit, declarative dependency pinning and schema verification creates an endless cycle of trial-and-error debugging.
+
+### 7.2 Attempt 2: CLI Scope Creep & Submodule Collision Antipattern
+* **What We Did**: Over-engineered `isaac-installer` by turning it into a heavyweight simulation runner (`arena run`, `arena play`, `gr00t server`, `--docker` flags) and attempting automated in-place git submodule checkout/reset operations on the host.
+* **Why It Failed**:
+  1. *Violation of Tool Boundary*: `isaac-installer` was designed as an **Environment, Dependency, and Workspace State Provisioner**, NOT a runtime execution wrapper for every simulation script. Adding execution layers added unnecessary indirection and obscured runtime errors.
+  2. *Repository Topology Mismatch (Standalone Sibling Repos vs. Nested Submodules)*: The user develops across separate standalone sibling repositories (`~/Documents/GitHub/BoredEngineer/{IsaacAutomator, IsaacSim, IsaacLab, IsaacLab-Arena, Isaac-GR00T}`). NVIDIA's `Dockerfile.isaaclab_arena` assumes physical nested clones (`COPY ./submodules/IsaacLab`). Docker build context cannot follow symlinks pointing outside the repository tree, triggering:
+     ```
+     ERROR: failed to calculate checksum: "/submodules/IsaacLab": not found
+     ```
+  3. *Host Git Workspace Intrusion*: Writing scripts that automatically run `git checkout -- submodules/` or delete symlinks risked corrupting active developer branches and duplicating gigabytes of repository data.
+* **Core Takeaway**: Keep `isaac-installer` strictly focused on **dependency provisioning, state tracking, and environment configuration**, while runtime execution belongs directly to native development tools (`isaaclab.sh`, `python`, `uv`, `run_docker.sh`).
+
+---
+
+## 8. The Re-Architected Master Plan: Environment Provisioning & State Engine Foundation
+
+This plan re-establishes clear architectural boundaries: `isaac-installer` provisions the system, manages state, and organizes paths, enabling seamless execution both natively and in containers.
+
+```mermaid
+flowchart TD
+    subgraph INSTALLER_CORE ["1. isaac-installer Architectural Scope (State & Provisioning)"]
+        SYS["System Prereqs\n(NVIDIA Drivers, CUDA 12.x, Vulkan ICD, Docker CE, nvidia-ctk)"]
+        RUNTIMES["Runtimes & Virtual Envs\n(Conda isaaclab Py3.12, Astral uv, Isaac-GR00T Py3.10)"]
+        WEIGHTS["Model Cache Engine\n(nvidia/GR00T-N1.7-3B, Cosmos-Reason2-2B, Local Snapshots)"]
+        STATE["Declarative State & Paths (.state.json)\n(Repo Paths, Python Binaries, WBC Shared Objects, Env Hooks)"]
+        SYS & RUNTIMES & WEIGHTS --> STATE
+    end
+
+    subgraph DUAL_EXECUTION ["2. Dual-Mode Direct Execution (No Installer Wrapper Overkill)"]
+        direction TB
+        subgraph TRACK_NATIVE ["Native Bare-Metal Direct Execution (Primary Target)"]
+            N_POL["Terminal 1: Direct GR00T Policy Server / In-Process\n(uv run python gr00t/eval/run_gr00t_server.py)"]
+            N_SIM["Terminal 2: Direct Arena Simulation\n(~/miniconda3/envs/isaaclab/bin/python policy_runner.py)"]
+        end
+        subgraph TRACK_CONTAINER ["Docker Baseline Execution (Reference Target)"]
+            D_POL["Terminal 1: ./docker/run_gr00t_server.sh"]
+            D_SIM["Terminal 2: ./docker/run_docker.sh -g python policy_runner.py"]
+        end
+    end
+
+    STATE ==> TRACK_NATIVE & TRACK_CONTAINER
+```
+
+---
+
+### 8.1 Responsibilities of `isaac-installer` (The Provisioning & State Engine)
+
+`isaac-installer` manages the foundational layers so developers never have to manually install drivers, set environment variables, or track missing libraries:
+
+1. **System & Hardware Prerequisites**:
+   - Manages NVIDIA GPU drivers, CUDA Toolkit 12.x, Vulkan ICD manifests, Docker CE, and `nvidia-ctk`.
+   - Command: `sudo ./bin/isaac-installer dev-tools` / `./bin/isaac-installer audit`
+2. **Runtime & Python Environment Provisioning**:
+   - Creates and maintains the Conda `isaaclab` environment (Python 3.12) with all Isaac Lab requirements.
+   - Sets up Astral `uv` and synchronizes the locked Python 3.10 virtual environment for `Isaac-GR00T`.
+   - Command: `./bin/isaac-installer conda` / `./bin/isaac-installer gr00t sync-env`
+3. **Whole-Body Controller (WBC) & C++ Kinematic Solvers**:
+   - Builds and installs C++ quadratic programming and kinematic solver wheels (`pin-pink`, `pinocchio`, `proxsuite`, `qpsolvers`, `quadprog`) into the native Conda environment.
+4. **Declarative State Tracking (`.state.json`)**:
+   - Records resolved repository paths (`IsaacAutomator`, `IsaacSim`, `IsaacLab`, `IsaacLab-Arena`, `Isaac-GR00T`), active Python interpreter paths, and submodule commits.
+5. **Scoped Environment Activation Hooks**:
+   - Generates clean, isolated `etc/conda/activate.d/00_isaaclab_env.sh` hooks that inject:
+     - `LD_LIBRARY_PATH`: Dynamic linking for Warp, PhysX, and Pinocchio.
+     - `PYTHONPATH`: Seamless discovery of `isaaclab_arena`, `isaaclab_arena_gr00t`, `isaaclab_arena_g1`, and `g1_brainco_extension`.
+     - `VK_ICD_FILENAMES`: Proper offscreen Vulkan rendering driver configuration.
+6. **Model Weight Caching**:
+   - Authenticates Hugging Face credentials and downloads dual model snapshots (`GR00T-N1.7-3B` + `Cosmos-Reason2-2B`).
+   - Command: `./bin/isaac-installer gr00t download-weights`
+
+---
+
+### 8.2 Clean Sibling-Repo Solution for Docker Baseline (Option B)
+
+To run NVIDIA's Docker baseline without corrupting standalone sibling repositories:
+
+1. **Keep Standalone Repos Untouched**:
+   - Your standalone `~/Documents/GitHub/BoredEngineer/IsaacLab` remains pure and untouched for native development.
+2. **Populate In-Tree Submodules Exclusively for Docker Build Context**:
+   - Run `git submodule update --init --recursive submodules/IsaacLab` inside `IsaacLab-Arena`. This creates the physical directory required by `Dockerfile.isaaclab_arena:32` (`COPY ./submodules/IsaacLab ...`) without touching your sibling `../IsaacLab` directory.
+3. **Execute NVIDIA Container Scripts Directly**:
+   ```bash
+   cd ~/Documents/GitHub/BoredEngineer/IsaacLab-Arena
+
+   # Launch Policy Server container:
+   ./docker/run_gr00t_server.sh -m ~/models -- --host 0.0.0.0 --port 5555
+
+   # Launch Simulation container with live Kit GUI:
+   ./docker/run_docker.sh -g \
+     python isaaclab_arena/evaluation/policy_runner.py \
+       --viz kit \
+       --policy_type isaaclab_arena_gr00t.policy.gr00t_remote_closedloop_policy.Gr00tRemoteClosedloopPolicy \
+       --policy_config_yaml_path isaaclab_arena_gr00t/policy/config/droid_manip_gr00t_closedloop_config.yaml \
+       --remote_host 127.0.0.1 --remote_port 5555 \
+       --language_instruction "Pick up the Rubik's cube and place it in the bowl." \
+       --enable_cameras --num_episodes 1 pick_and_place_maple_table \
+       --embodiment droid_abs_joint_pos
+   ```
+
+---
+
+### 8.3 Step-by-Step Native Bare-Metal Direct Execution (Option C)
+
+With dependencies, environment hooks, and state configured by `isaac-installer`, running natively requires no wrappers:
+
+```bash
+# ------------------------------------------------------------------------------
+# 1. Activate Native Isaac Lab Conda Environment
+# ------------------------------------------------------------------------------
+conda activate isaaclab
+
+# ------------------------------------------------------------------------------
+# 2. Terminal 1: Launch ZeroMQ Policy Server (Native UV Environment)
+# ------------------------------------------------------------------------------
+cd ~/Documents/GitHub/BoredEngineer/Isaac-GR00T
+uv run python gr00t/eval/run_gr00t_server.py \
+  --model-path nvidia/GR00T-N1.7-3B \
+  --embodiment-tag OXE_DROID_RELATIVE_EEF_RELATIVE_JOINT \
+  --host 127.0.0.1 \
+  --port 5555 \
+  --device cuda:0
+
+# ------------------------------------------------------------------------------
+# 3. Terminal 2: Launch Arena Simulation with Live Kit Viewport (Native Conda)
+# ------------------------------------------------------------------------------
+cd ~/Documents/GitHub/BoredEngineer/IsaacLab-Arena
+python isaaclab_arena/evaluation/policy_runner.py \
+  --viz kit \
+  --policy_type isaaclab_arena_gr00t.policy.gr00t_remote_closedloop_policy.Gr00tRemoteClosedloopPolicy \
+  --policy_config_yaml_path isaaclab_arena_gr00t/policy/config/droid_manip_gr00t_closedloop_config.yaml \
+  --remote_host 127.0.0.1 \
+  --remote_port 5555 \
+  --language_instruction "Pick up the Rubik's cube and place it in the bowl." \
+  --enable_cameras \
+  --num_episodes 1 \
+  pick_and_place_maple_table \
+  --embodiment droid_abs_joint_pos
+```

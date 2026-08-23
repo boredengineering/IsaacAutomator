@@ -20,6 +20,23 @@ check_isaaclab_arena() {
     fi
 }
 
+ensure_docker_submodules() {
+    local target_arena_dir="$1"
+    run_as_user "
+        cd '${target_arena_dir}'
+        if [[ -L 'submodules/IsaacLab' ]]; then
+            echo 'Notice: submodules/IsaacLab is a symlink pointing outside Docker context.'
+            echo 'Restoring real git submodule for Docker build compatibility...'
+            rm -f 'submodules/IsaacLab'
+            git checkout -- submodules/IsaacLab 2>/dev/null || true
+            git submodule update --init --recursive submodules/IsaacLab
+        elif [[ ! -d 'submodules/IsaacLab' || ! -f 'submodules/IsaacLab/isaaclab.sh' ]]; then
+            echo 'Initializing required git submodule for Docker: submodules/IsaacLab...'
+            git submodule update --init --recursive submodules/IsaacLab
+        fi
+    "
+}
+
 install_isaaclab_arena() {
     log_step "Installing IsaacLab-Arena Benchmark Suite..."
 
@@ -462,9 +479,11 @@ SUBHELP
             local task_name="cube_goal_pose"
             local policy_type="zero_action"
             local port="5555"
+            local use_docker=false
 
             while [[ $# -gt 0 ]]; do
                 case "$1" in
+                    --docker|-d) use_docker=true; shift ;;
                     --policy) policy_type="$2"; shift 2 ;;
                     --port)   port="$2"; shift 2 ;;
                     -*)       shift ;;
@@ -473,7 +492,7 @@ SUBHELP
             done
 
             log_header "Running IsaacLab-Arena Policy in Live Kit Viewport (--viz kit)"
-            log_info "Task: ${task_name} | Policy: ${policy_type}"
+            log_info "Task: ${task_name} | Policy: ${policy_type} | Docker: ${use_docker}"
             run_as_user "
                 cd '${arena_dir}'
                 if [[ '${policy_type}' == 'gr00t' ]]; then
@@ -490,7 +509,10 @@ SUBHELP
                     runner_cmd='scripts/play.py'
                 fi
 
-                if [[ -d '${lab_dir}' && -x '${lab_dir}/isaaclab.sh' ]]; then
+                if [[ '${use_docker}' == 'true' && -f '${arena_dir}/docker/run_docker.sh' ]]; then
+                    echo 'Delegating to NVIDIA docker/run_docker.sh...'
+                    ./docker/run_docker.sh -g python \${runner_cmd} --viz kit \${extra_flags} --num_steps 200 '${task_name}'
+                elif [[ -d '${lab_dir}' && -x '${lab_dir}/isaaclab.sh' ]]; then
                     ${lab_dir}/isaaclab.sh -p \${runner_cmd} --viz kit \${extra_flags} --num_steps 200 '${task_name}'
                 elif command -v isaaclab-env &>/dev/null; then
                     isaaclab-env python \${runner_cmd} --viz kit \${extra_flags} --num_steps 200 '${task_name}'
@@ -506,9 +528,11 @@ SUBHELP
             local num_envs="16"
             local policy_type="zero_action"
             local port="5555"
+            local use_docker=false
 
             while [[ $# -gt 0 ]]; do
                 case "$1" in
+                    --docker|-d) use_docker=true; shift ;;
                     --steps)    steps="$2"; shift 2 ;;
                     --num_envs) num_envs="$2"; shift 2 ;;
                     --policy)   policy_type="$2"; shift 2 ;;
@@ -518,8 +542,12 @@ SUBHELP
                 esac
             done
 
+            if [[ "$use_docker" == "true" ]]; then
+                ensure_docker_submodules "${arena_dir}"
+            fi
+
             log_header "Running IsaacLab-Arena Headless Rollout (${steps} steps, ${num_envs} envs)"
-            log_info "Task: ${task_name} | Policy: ${policy_type}"
+            log_info "Task: ${task_name} | Policy: ${policy_type} | Docker: ${use_docker}"
             run_as_user "
                 cd '${arena_dir}'
                 if [[ '${policy_type}' == 'gr00t' ]]; then
@@ -535,7 +563,10 @@ SUBHELP
                     runner_cmd='scripts/play.py'
                 fi
 
-                if [[ -d '${lab_dir}' && -x '${lab_dir}/isaaclab.sh' ]]; then
+                if [[ '${use_docker}' == 'true' && -f '${arena_dir}/docker/run_docker.sh' ]]; then
+                    echo 'Delegating to NVIDIA docker/run_docker.sh...'
+                    ./docker/run_docker.sh -g python \${runner_cmd} \${extra_flags} --num_steps '${steps}' --num_envs '${num_envs}' '${task_name}'
+                elif [[ -d '${lab_dir}' && -x '${lab_dir}/isaaclab.sh' ]]; then
                     ${lab_dir}/isaaclab.sh -p \${runner_cmd} \${extra_flags} --num_steps '${steps}' --num_envs '${num_envs}' '${task_name}'
                 elif command -v isaaclab-env &>/dev/null; then
                     isaaclab-env python \${runner_cmd} \${extra_flags} --num_steps '${steps}' --num_envs '${num_envs}' '${task_name}'
@@ -553,10 +584,15 @@ SUBHELP
             local num_envs="5"
             local is_viz=""
             local task_specified=false
+            local use_docker=false
             local extra_cli_args=()
 
             while [[ $# -gt 0 ]]; do
                 case "$1" in
+                    --docker|-d)
+                        use_docker=true
+                        shift
+                        ;;
                     --viz)
                         is_viz="--viz $2"
                         shift 2
@@ -605,9 +641,14 @@ SUBHELP
                 esac
             done
 
+            if [[ "$use_docker" == "true" ]]; then
+                ensure_docker_submodules "${arena_dir}"
+            fi
+
             log_header "Running Official IsaacLab-Arena + GR00T Closed-Loop Benchmark"
             log_info "Task: ${task_name}"
             log_info "Policy: ${policy_type}"
+            log_info "Docker: ${use_docker}"
             if [[ -n "$config_yaml" ]]; then
                 log_info "Config: ${config_yaml}"
             fi
@@ -628,7 +669,20 @@ SUBHELP
                     config_flag='--policy_config_yaml_path ${config_yaml}'
                 fi
 
-                if [[ -d '${lab_dir}' && -x '${lab_dir}/isaaclab.sh' ]]; then
+                if [[ '${use_docker}' == 'true' && -f '${arena_dir}/docker/run_docker.sh' ]]; then
+                    echo 'Delegating to NVIDIA docker/run_docker.sh...'
+                    ./docker/run_docker.sh -g python \${runner_cmd} \
+                        ${is_viz} \
+                        --policy_type '${policy_type}' \
+                        \${config_flag} \
+                        --num_steps '${steps}' \
+                        --num_envs '${num_envs}' \
+                        --enable_cameras \
+                        --device cuda \
+                        --policy_device cuda \
+                        '${task_name}' \
+                        \${extra_cli_args[*]:-}
+                elif [[ -d '${lab_dir}' && -x '${lab_dir}/isaaclab.sh' ]]; then
                     ${lab_dir}/isaaclab.sh -p \${runner_cmd} \
                         ${is_viz} \
                         --policy_type '${policy_type}' \
@@ -666,6 +720,60 @@ SUBHELP
                         \${extra_cli_args[*]:-}
                 fi
             "
+            ;;
+
+        docker)
+            if [[ ! -f "${arena_dir}/docker/run_docker.sh" ]]; then
+                log_error "NVIDIA run_docker.sh not found at ${arena_dir}/docker/run_docker.sh"
+                return 1
+            fi
+            ensure_docker_submodules "${arena_dir}"
+            log_header "Executing IsaacLab-Arena Docker Automation Wrapper"
+            local docker_args=""
+            if [[ $# -gt 0 ]]; then
+                docker_args="$(printf '%q ' "$@")"
+            fi
+            run_as_user "
+                cd '${arena_dir}'
+                ./docker/run_docker.sh ${docker_args}
+            "
+            ;;
+
+        extract-container-manifest|dump-container)
+            if [[ ! -f "${arena_dir}/docker/run_docker.sh" ]]; then
+                log_error "NVIDIA run_docker.sh not found at ${arena_dir}/docker/run_docker.sh"
+                return 1
+            fi
+            ensure_docker_submodules "${arena_dir}"
+            local out_dir="${SCRIPT_DIR}/../../references/docs"
+            mkdir -p "${out_dir}"
+            log_header "Extracting Working Container Environment Manifests for Native Conversion"
+            log_info "Destination: ${out_dir}"
+            run_as_user "
+                cd '${arena_dir}'
+                echo '1/3 Dumping frozen Python environment from container...'
+                ./docker/run_docker.sh -g python -m pip list --format=freeze > '${out_dir}/container_pip_freeze.txt' 2>/dev/null || true
+
+                echo '2/3 Dumping active runtime environment variables...'
+                ./docker/run_docker.sh -g env > '${out_dir}/container_env.txt' 2>/dev/null || true
+
+                echo '3/3 Extracting C++ WBC solver dynamic module paths...'
+                ./docker/run_docker.sh -g python -c \"
+try:
+    import pinocchio, pink, qpsolvers
+    print('Pinocchio path:', pinocchio.__file__)
+    print('Pink path:     ', pink.__file__)
+    print('QPSolvers path:', qpsolvers.__file__)
+except Exception as e:
+    print('WBC import notice:', e)
+\" > '${out_dir}/container_wbc_manifest.txt' 2>/dev/null || true
+            "
+            log_success "Container manifests extracted to ${out_dir}."
+            log_card_start "Extracted Manifest Files"
+            log_card_item "Python Freeze" "${out_dir}/container_pip_freeze.txt"
+            log_card_item "Environment Vars" "${out_dir}/container_env.txt"
+            log_card_item "WBC Solver Paths" "${out_dir}/container_wbc_manifest.txt"
+            log_card_end
             ;;
 
         list-policies|policies)
@@ -797,8 +905,11 @@ Policy Execution & Evaluation:
   play <task> [options]                Interactive live 3D visual rollout in Omniverse Kit
   run <task> [options]                 Headless batch parallel tensor rollout (e.g. 16 envs)
   eval-gr00t <task> [port]             Run closed-loop evaluation against Isaac-GR00T server (Port 5555)
+  docker [options] [cmd...]            Direct pass-through to NVIDIA run_docker.sh automation wrapper
+  extract-container-manifest           Extract pip freeze, env vars, and WBC paths from container for native parity
 
 Rollout Options:
+  --docker                             Run simulation inside NVIDIA container via run_docker.sh
   --policy <type>                      Policy type: zero_action | random | gr00t (Default: zero_action)
   --port <number>                      GR00T ZeroMQ server port (Default: 5555)
   --steps <number>                     Number of simulation steps to run (Default: 300)
@@ -810,8 +921,10 @@ Verification:
 
 Examples:
   ./bin/isaac-installer arena submodules editable-bridge
-  ./bin/isaac-installer arena play cube_goal_pose --policy gr00t --port 5555
-  ./bin/isaac-installer arena eval-gr00t cube_goal_pose 5555
+  ./bin/isaac-installer arena play pick_and_place_maple_table --docker --policy gr00t --port 5555
+  ./bin/isaac-installer arena run cube_goal_pose --docker --steps 300
+  ./bin/isaac-installer arena eval-gr00t cube_goal_pose 5555 --docker
+  ./bin/isaac-installer arena extract-container-manifest
 HELP
             ;;
     esac

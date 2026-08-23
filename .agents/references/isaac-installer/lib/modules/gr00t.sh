@@ -354,9 +354,14 @@ if sync.get('has_upstream'):
             local port="5555"
             local model_path="${GR00T_MODEL_PATH:-nvidia/GR00T-N1.7-3B}"
             local is_mock=false
+            local use_docker=false
 
             while [[ $# -gt 0 ]]; do
                 case "$1" in
+                    --docker|-d)
+                        use_docker=true
+                        shift
+                        ;;
                     --mock|-m)
                         is_mock=true
                         model_path="${TARGET_HOME}/.cache/isaac-gr00t/mock-n1.7"
@@ -385,7 +390,7 @@ if sync.get('has_upstream'):
             done
 
             log_header "Starting Isaac-GR00T ZeroMQ Policy Server on Port ${port}"
-            log_info "Model: ${model_path}"
+            log_info "Model: ${model_path} | Docker: ${use_docker}"
 
             # Pre-flight Port Check & Conflict Auto-Resolution
             if is_port_in_use "${port}"; then
@@ -395,6 +400,19 @@ if sync.get('has_upstream'):
                 log_warn "Port ${port} is currently bound by PID ${opid} (${opname} / ${opuser})."
                 log_info "Auto-releasing port ${port} before starting server daemon..."
                 free_port "${port}"
+            fi
+
+            if [[ "${use_docker}" == "true" ]]; then
+                local arena_dir
+                arena_dir="$(resolve_active_repo_dir "IsaacLab-Arena" "${ARENA_REPO:-}" "${ARENA_DIR:-}")"
+                if [[ -f "${arena_dir}/docker/run_gr00t_server.sh" ]]; then
+                    log_info "Launching containerized GR00T Policy Server via NVIDIA docker/run_gr00t_server.sh..."
+                    run_as_user "
+                        cd '${arena_dir}'
+                        ./docker/run_gr00t_server.sh -m '${TARGET_HOME}/models' -- --host 0.0.0.0 --port '${port}'
+                    "
+                    return 0
+                fi
             fi
 
             run_as_user "
@@ -642,6 +660,7 @@ Git & Dual-Remote Management:
   remotes                              Show origin/upstream URLs and push-protection status
 
 Server & Inference Options:
+  --docker                             Run server in NVIDIA container via run_gr00t_server.sh
   --port <number>                      ZeroMQ server port (Default: 5555)
   --device <cuda:0|cpu>                Inference device (Default: cuda:0)
   --embodiment-tag <tag>               Robot tag: OXE_DROID_RELATIVE_EEF_RELATIVE_JOINT | REAL_G1 | etc.
@@ -655,6 +674,7 @@ Examples:
   ./bin/isaac-installer gr00t sync-env
   ./bin/isaac-installer gr00t download-weights --mock
   ./bin/isaac-installer gr00t server 5555
+  ./bin/isaac-installer gr00t server 5555 --docker
   ./bin/isaac-installer gr00t infer --dataset-path demo_data/droid_sample
 HELP
             ;;
