@@ -24,14 +24,17 @@ ensure_docker_submodules() {
     local target_arena_dir="$1"
     run_as_user "
         cd '${target_arena_dir}'
+        git config --global protocol.file.allow always 2>/dev/null || true
         if [[ -L 'submodules/IsaacLab' ]]; then
             echo 'Notice: submodules/IsaacLab is a symlink pointing outside Docker context.'
             echo 'Restoring real git submodule for Docker build compatibility...'
             rm -f 'submodules/IsaacLab'
             git checkout -- submodules/IsaacLab 2>/dev/null || true
+            git submodule sync submodules/IsaacLab 2>/dev/null || true
             git submodule update --init --recursive submodules/IsaacLab
         elif [[ ! -d 'submodules/IsaacLab' || ! -f 'submodules/IsaacLab/isaaclab.sh' ]]; then
             echo 'Initializing required git submodule for Docker: submodules/IsaacLab...'
+            git submodule sync 2>/dev/null || true
             git submodule update --init --recursive submodules/IsaacLab
         fi
     "

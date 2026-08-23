@@ -79,6 +79,7 @@ Master index of session memory checkpoints for Isaac Automator.
 | 2026-08-23 16:05 | `f6b7c8d9` | Implementation of Docker Automation & Manifest Extraction in isaac-installer | Added extract-container-manifest command, robust argument escaping, and updated SKILL.md for dual-track execution | [`20260823_160500_f6b7c8d9.md`](./sessions/20260823_160500_f6b7c8d9.md) |
 | 2026-08-23 17:02 | `a7b8c9d0` | Architectural Re-Alignment: Provisioning & State Engine vs Direct Dual-Mode Execution | Preserved all historical attempts, added Sections 7 & 8 in debugging_arena_gr00t.md with retrospective analysis and re-architected master plan | [`20260823_170200_a7b8c9d0.md`](./sessions/20260823_170200_a7b8c9d0.md) |
 | 2026-08-23 18:11 | `b8c9d0e1` | Submodule Clean Sync Resolved for IsaacLab-Arena | Wiped corrupted submodule cache, configured official NVIDIA HTTPS endpoints, and verified 100% clean detached HEAD sync | [`20260823_181100_b8c9d0e1.md`](./sessions/20260823_181100_b8c9d0e1.md) |
+| 2026-08-23 18:37 | `c9d0e1f2` | Docker Installation Baseline Path & Code Inventory | Added Section 9 to debugging_arena_gr00t.md with complete submodule resolution runbook and isaac-installer code inventory | [`20260823_183700_c9d0e1f2.md`](./sessions/20260823_183700_c9d0e1f2.md) |
 
 
 

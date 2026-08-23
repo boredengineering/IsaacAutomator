@@ -609,3 +609,81 @@ python isaaclab_arena/evaluation/policy_runner.py \
   pick_and_place_maple_table \
   --embodiment droid_abs_joint_pos
 ```
+
+---
+
+## 9. Docker Installation Baseline Path & Submodule Resolution Guide
+
+We are currently pursuing the **Docker-First Baseline Installation Path** to establish confirmed working inference inside NVIDIA's hermetic container environment before converting to native bare-metal.
+
+### 9.1 The Submodule Obstacle & Complete Resolution Procedure
+
+When building the Docker image with `run_docker.sh -g`, `Dockerfile.isaaclab_arena` executes:
+```dockerfile
+COPY ./submodules/IsaacLab ${WORKDIR}/submodules/IsaacLab
+```
+
+#### Symptoms Encountered:
+1. `ERROR: failed to calculate checksum ... "/submodules/IsaacLab": not found`
+2. `fatal: transport 'file' not allowed`
+3. `fatal: 'upstream' does not appear to be a git repository`
+4. `fatal: Fetched in submodule path 'submodules/Isaac-GR00T', but it did not contain e29d8fc5... Direct fetching of that commit failed.`
+
+#### Root Causes Diagnosed:
+* **Stale/Corrupted Submodule Cache**: Internal configuration files in `.git/modules/submodules/` were referencing invalid remote names (`upstream` as a literal string).
+* **Git Protocol Security (CVE-2022-39253)**: Git 2.38+ blocks local relative and file transports by default during submodule commands.
+* **Remote Endpoint Alignment**: Submodules must point strictly to official NVIDIA HTTPS endpoints (`https://github.com/isaac-sim/IsaacLab.git` and `https://github.com/NVIDIA/Isaac-GR00T.git`) which contain the exact detached commit SHAs (`ffff603...` and `e29d8fc...`).
+
+#### Step-by-Step Clean Resolution Procedure:
+To restore and cleanly synchronize submodules at any time:
+
+```bash
+cd ~/Documents/GitHub/boredengineering/IsaacLab-Arena
+
+# Step 1: Remove corrupted internal submodule cache and directories
+rm -rf .git/modules/submodules
+rm -rf submodules/IsaacLab submodules/Isaac-GR00T
+git submodule deinit -f --all 2>/dev/null || true
+
+# Step 2: Ensure .gitmodules specifies the official NVIDIA HTTPS endpoints
+cat << 'EOF' > .gitmodules
+[submodule "submodules/IsaacLab"]
+	path = submodules/IsaacLab
+	url = https://github.com/isaac-sim/IsaacLab.git
+[submodule "submodules/Isaac-GR00T"]
+	path = submodules/Isaac-GR00T
+	url = https://github.com/NVIDIA/Isaac-GR00T.git
+EOF
+
+# Step 3: Enable submodule protocol transport
+git config --global protocol.file.allow always
+
+# Step 4: Synchronize remote URLs and checkout exact detached HEADs
+git submodule sync
+git submodule update --init --recursive
+
+# Step 5: Verify clean detached HEAD status (leading space, no '+' or error)
+git submodule status
+# Expected output:
+#  e29d8fc50b0e4745120ae3fb72447986fe638aa6 submodules/Isaac-GR00T (n1.5-release-11-ge29d8fc)
+#  ffff603eafc6b74264a5261cc0183d6a65390d78 submodules/IsaacLab (perf-2026-06-24-10-gffff603ea)
+```
+
+---
+
+### 9.2 Code Inventory: All Lines in `isaac-installer` Handling `arena docker`
+
+The following files and line numbers in `isaac-installer` implement the Docker automation and submodule health checks:
+
+| File Path | Line Range | Purpose & Functionality |
+| :--- | :--- | :--- |
+| [`.agents/references/isaac-installer/lib/modules/isaaclab_arena.sh`](file:///workspaces/IsaacAutomator/.agents/references/isaac-installer/lib/modules/isaaclab_arena.sh#L23-L38) | Lines 23–38 | `ensure_docker_submodules()` helper function ensuring `submodules/IsaacLab` is populated with real repository files before Docker builds. |
+| [`.agents/references/isaac-installer/lib/modules/isaaclab_arena.sh`](file:///workspaces/IsaacAutomator/.agents/references/isaac-installer/lib/modules/isaaclab_arena.sh#L482-L525) | Lines 482–525 | `play)` command `--docker` flag handling: auto-runs `run_docker.sh -g python scripts/play.py --viz kit`. |
+| [`.agents/references/isaac-installer/lib/modules/isaaclab_arena.sh`](file:///workspaces/IsaacAutomator/.agents/references/isaac-installer/lib/modules/isaaclab_arena.sh#L526-L570) | Lines 526–570 | `run)` command `--docker` flag handling: auto-runs `run_docker.sh -g python scripts/play.py --headless`. |
+| [`.agents/references/isaac-installer/lib/modules/isaaclab_arena.sh`](file:///workspaces/IsaacAutomator/.agents/references/isaac-installer/lib/modules/isaaclab_arena.sh#L571-L715) | Lines 571–715 | `eval-gr00t)` command `--docker` flag handling: auto-runs `run_docker.sh -g python policy_runner.py`. |
+| [`.agents/references/isaac-installer/lib/modules/isaaclab_arena.sh`](file:///workspaces/IsaacAutomator/.agents/references/isaac-installer/lib/modules/isaaclab_arena.sh#L725-L740) | Lines 725–740 | `docker)` subcommand: Direct CLI passthrough executing `./docker/run_docker.sh` with `printf '%q '` escaping. |
+| [`.agents/references/isaac-installer/lib/modules/isaaclab_arena.sh`](file:///workspaces/IsaacAutomator/.agents/references/isaac-installer/lib/modules/isaaclab_arena.sh#L742-L770) | Lines 742–770 | `extract-container-manifest)` command: Automated dump of `container_pip_freeze.txt`, `container_env.txt`, and `container_wbc_manifest.txt`. |
+| [`.agents/references/isaac-installer/lib/modules/gr00t.sh`](file:///workspaces/IsaacAutomator/.agents/references/isaac-installer/lib/modules/gr00t.sh#L354-L415) | Lines 354–415 | `server)` command `--docker` flag handling: Launches containerized policy server via `./docker/run_gr00t_server.sh`. |
+| [`.agents/references/isaac-installer/lib/modules/dev_tools.sh`](file:///workspaces/IsaacAutomator/.agents/references/isaac-installer/lib/modules/dev_tools.sh#L104-L135) | Lines 104–135 | Host Docker CE installation, user group addition (`usermod -aG docker`), and NVIDIA Container Toolkit configuration (`nvidia-ctk runtime configure`). |
+| [`.agents/references/isaac-installer/lib/core/audit.sh`](file:///workspaces/IsaacAutomator/.agents/references/isaac-installer/lib/core/audit.sh#L153-L170) | Lines 153–170 | Hardware audit inspecting Docker daemon status and GPU passthrough capability (`nvidia-ctk`). |
+
