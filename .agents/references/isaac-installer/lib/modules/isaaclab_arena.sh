@@ -100,114 +100,6 @@ test_isaaclab_arena() {
     log_card_end
 }
 
-ensure_gr00t_zmq_bridge() {
-    local target_dir="$1"
-    local policy_file="${target_dir}/isaaclab_arena/policy/gr00t_zmq_policy.py"
-
-    # 1. Ensure pyzmq and msgpack are installed in the isaaclab environment
-    local conda_bin="$(resolve_conda_bin 2>/dev/null || echo "")"
-    local conda_root="$(dirname "$(dirname "$conda_bin")" 2>/dev/null || echo "${TARGET_HOME}/miniconda3")"
-    local lab_pip="${conda_root}/envs/isaaclab/bin/pip"
-    local lab_py="${conda_root}/envs/isaaclab/bin/python"
-
-    if [[ -x "${lab_py}" ]] && ! run_as_user "${lab_py} -c 'import zmq' 2>/dev/null"; then
-        log_step "Installing pyzmq IPC dependencies into 'isaaclab' Python environment..."
-        run_as_user "${lab_pip} install --no-warn-script-location pyzmq msgpack 2>/dev/null || true"
-    fi
-
-    # 2. Write policy file and ensure PolicyRegistry binding
-    if [[ -d "${target_dir}/isaaclab_arena/policy" ]]; then
-        log_step "Registering ZeroMQ GR00T Policy Bridge into IsaacLab-Arena..."
-        cat << 'EOF' | run_as_user_stdin "${policy_file}"
-# Copyright (c) 2024-2026, IsaacLab-Arena Authors & NVIDIA.
-# All rights reserved.
-#
-# SPDX-License-Identifier: BSD-3-Clause
-
-"""ZeroMQ Client Policy Bridge for NVIDIA Isaac-GR00T VLA Foundation Models.
-
-Connects the IsaacLab-Arena simulation loop (Python 3.12 / Isaac Sim) to the
-external decoupled Isaac-GR00T Policy Server (Python 3.10) over ZeroMQ IPC.
-"""
-
-from __future__ import annotations
-from dataclasses import dataclass
-import numpy as np
-import torch
-
-try:
-    import zmq
-except ImportError:
-    zmq = None
-
-from isaaclab_arena.policy.policy_base import PolicyBase, PolicyCfg
-from isaaclab_arena.assets.registries import PolicyRegistry
-
-
-@dataclass
-class Gr00tZmqPolicyCfg(PolicyCfg):
-    host: str = "127.0.0.1"
-    port: int = 5555
-    timeout_ms: int = 5000
-    action_dim: int = 7
-
-
-class Gr00tZmqPolicy(PolicyBase):
-    """ZeroMQ IPC Client Policy communicating with Isaac-GR00T server daemon."""
-
-    def __init__(self, cfg: Gr00tZmqPolicyCfg, num_envs: int = 1, device: str = "cuda:0"):
-        super().__init__(cfg)
-        self.host = getattr(cfg, "host", "127.0.0.1")
-        self.port = getattr(cfg, "port", 5555)
-        self.timeout_ms = getattr(cfg, "timeout_ms", 5000)
-        self.num_envs = num_envs
-        self.device = device
-        self.socket = None
-
-        if zmq is not None:
-            self.context = zmq.Context()
-            self.socket = self.context.socket(zmq.REQ)
-            self.socket.setsockopt(zmq.RCVTIMEO, self.timeout_ms)
-            self.socket.connect(f"tcp://{self.host}:{self.port}")
-            print(f"[Gr00tZmqPolicy] Connected to GR00T Policy Server at tcp://{self.host}:{self.port}")
-
-    def reset(self, env_ids: torch.Tensor | None = None):
-        """Reset internal policy state buffers."""
-        pass
-
-    def get_action(self, obs: dict[str, torch.Tensor]) -> torch.Tensor:
-        """Query GR00T ZeroMQ Policy Server for continuous action chunks."""
-        if self.socket is not None:
-            try:
-                payload = {"type": "step", "num_envs": self.num_envs}
-                self.socket.send_json(payload)
-                response = self.socket.recv_json()
-                if "action" in response:
-                    action_np = np.array(response["action"], dtype=np.float32)
-                    return torch.from_numpy(action_np).to(self.device)
-            except Exception:
-                pass
-
-        # Fallback to zeros on timeout or mock response
-        return torch.zeros((self.num_envs, getattr(self.cfg, "action_dim", 7)), device=self.device)
-
-
-# Register policy and config class with Arena PolicyRegistry
-try:
-    PolicyRegistry()._cfg_types[Gr00tZmqPolicy] = Gr00tZmqPolicyCfg
-except Exception:
-    pass
-
-try:
-    PolicyRegistry().register(Gr00tZmqPolicy, Gr00tZmqPolicyCfg)
-except Exception:
-    pass
-EOF
-        chmod 0644 "${policy_file}" 2>/dev/null || true
-        log_success "Gr00tZmqPolicy bridge registered at ${policy_file}"
-    fi
-}
-
 # ==============================================================================
 # CLI Subcommands for IsaacLab-Arena Version & Fork Management (`isaac-installer arena ...`)
 # ==============================================================================
@@ -654,34 +546,58 @@ SUBHELP
             ;;
 
         eval-gr00t|closed-loop)
-            local task_name="cube_goal_pose"
-            local port="5555"
-            local policy_cls=""
-            local steps="100"
-            local num_envs="4"
+            local task_name="galileo_g1_locomanip_pick_and_place"
+            local policy_type="isaaclab_arena_gr00t.policy.gr00t_closedloop_policy.Gr00tClosedloopPolicy"
+            local config_yaml="isaaclab_arena_gr00t/policy/config/g1_locomanip_gr00t_closedloop_config.yaml"
+            local steps="1200"
+            local num_envs="5"
+            local is_viz=""
+            local extra_cli_args=()
 
             while [[ $# -gt 0 ]]; do
                 case "$1" in
-                    --port|-p)        port="$2"; shift 2 ;;
-                    --policy|-P)      policy_cls="$2"; shift 2 ;;
-                    --steps)          steps="$2"; shift 2 ;;
-                    --num_envs)       num_envs="$2"; shift 2 ;;
-                    -*)               shift ;;
+                    --viz)
+                        is_viz="--viz $2"
+                        shift 2
+                        ;;
+                    --gui|--interactive)
+                        is_viz="--viz kit"
+                        shift
+                        ;;
+                    --policy_type|--policy)
+                        policy_type="$2"
+                        shift 2
+                        ;;
+                    --policy_config_yaml_path|--config)
+                        config_yaml="$2"
+                        shift 2
+                        ;;
+                    --num_steps|--steps)
+                        steps="$2"
+                        shift 2
+                        ;;
+                    --num_envs|--envs)
+                        num_envs="$2"
+                        shift 2
+                        ;;
+                    -*)
+                        extra_cli_args+=("$1")
+                        shift
+                        ;;
                     *)
-                        if [[ "$1" =~ ^[0-9]+$ ]]; then
-                            port="$1"
-                        else
-                            task_name="$1"
-                        fi
+                        task_name="$1"
                         shift
                         ;;
                 esac
             done
 
-            ensure_gr00t_zmq_bridge "${arena_dir}"
+            log_header "Running Official IsaacLab-Arena + GR00T Closed-Loop Benchmark"
+            log_info "Task: ${task_name}"
+            log_info "Policy: ${policy_type}"
+            if [[ -n "$config_yaml" ]]; then
+                log_info "Config: ${config_yaml}"
+            fi
 
-            log_header "Running Closed-Loop IsaacLab-Arena + Isaac-GR00T VLA Benchmark"
-            log_info "Task: ${task_name} | Policy Server: 127.0.0.1:${port}"
             run_as_user "
                 cd '${arena_dir}'
                 runner_cmd='-m isaaclab_arena.evaluation.policy_runner'
@@ -689,27 +605,49 @@ SUBHELP
                     runner_cmd='isaaclab_arena/evaluation/policy_runner.py'
                 fi
 
-                target_policy='${policy_cls:-isaaclab_arena.policy.gr00t_zmq_policy.Gr00tZmqPolicy}'
-                echo \"Using Arena Policy Engine: \${target_policy}\"
+                config_flag=''
+                if [[ -n '${config_yaml}' && -f '${arena_dir}/${config_yaml}' ]]; then
+                    config_flag='--policy_config_yaml_path ${config_yaml}'
+                elif [[ -n '${config_yaml}' && -f '${config_yaml}' ]]; then
+                    config_flag='--policy_config_yaml_path ${config_yaml}'
+                fi
 
                 if [[ -d '${lab_dir}' && -x '${lab_dir}/isaaclab.sh' ]]; then
                     ${lab_dir}/isaaclab.sh -p \${runner_cmd} \
-                        --policy_type \"\${target_policy}\" \
+                        ${is_viz} \
+                        --policy_type '${policy_type}' \
+                        \${config_flag} \
                         --num_steps '${steps}' \
                         --num_envs '${num_envs}' \
-                        '${task_name}'
+                        --enable_cameras \
+                        --device cuda \
+                        --policy_device cuda \
+                        '${task_name}' \
+                        \${extra_cli_args[*]:-}
                 elif command -v isaaclab-env &>/dev/null; then
                     isaaclab-env python \${runner_cmd} \
-                        --policy_type \"\${target_policy}\" \
+                        ${is_viz} \
+                        --policy_type '${policy_type}' \
+                        \${config_flag} \
                         --num_steps '${steps}' \
                         --num_envs '${num_envs}' \
-                        '${task_name}'
+                        --enable_cameras \
+                        --device cuda \
+                        --policy_device cuda \
+                        '${task_name}' \
+                        \${extra_cli_args[*]:-}
                 else
                     python \${runner_cmd} \
-                        --policy_type \"\${target_policy}\" \
+                        ${is_viz} \
+                        --policy_type '${policy_type}' \
+                        \${config_flag} \
                         --num_steps '${steps}' \
                         --num_envs '${num_envs}' \
-                        '${task_name}'
+                        --enable_cameras \
+                        --device cuda \
+                        --policy_device cuda \
+                        '${task_name}' \
+                        \${extra_cli_args[*]:-}
                 fi
             "
             ;;
