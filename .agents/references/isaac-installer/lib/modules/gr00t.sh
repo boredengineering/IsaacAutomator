@@ -236,17 +236,23 @@ EOF
         cd '${gr00t_dir}'
         export PATH=\"/usr/local/bin:\$HOME/.local/bin:\$HOME/.cargo/bin:\$PATH\"
         if [[ -n \"${HF_TOKEN:-}\" ]]; then export HF_TOKEN=\"${HF_TOKEN:-}\"; fi
+        export HF_HUB_ENABLE_HF_TRANSFER=1
         
-        echo 'Pulling model snapshot via huggingface_hub...'
-        uv run python -c \"
-import os
+        if command -v hf &>/dev/null; then
+            echo 'Pulling model snapshot via high-speed hf download...'
+            hf download '${model_id}' ${dest_arg}
+        else
+            echo 'Pulling model snapshot via huggingface_hub Python engine...'
+            uv run python -u -c \"
+import os, sys
 from huggingface_hub import snapshot_download
 model_id = '${model_id}'
 local_dir = '${target_dir}' if '${target_dir}' and not '${target_dir}'.startswith('--') else None
-print(f'Starting high-speed snapshot download for {model_id}...')
-path = snapshot_download(repo_id=model_id, local_dir=local_dir, ignore_patterns=['*.msgpack'])
-print(f'SUCCESS: Model cached at: {path}')
+print(f'Starting high-speed snapshot download for {model_id} (max_workers=8)...', flush=True)
+path = snapshot_download(repo_id=model_id, local_dir=local_dir, max_workers=8, ignore_patterns=['*.msgpack'])
+print(f'SUCCESS: Model cached at: {path}', flush=True)
 \"
+        fi
     "
     log_success "Model weights for [${model_id}] verified in local cache."
 }
