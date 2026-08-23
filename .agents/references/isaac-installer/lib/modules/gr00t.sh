@@ -234,8 +234,8 @@ EOF
 
     run_as_user "
         cd '${gr00t_dir}'
-        export PATH=\"\$HOME/.cargo/bin:\$PATH\"
-        if [[ -n \"${HF_TOKEN:-}\" ]]; then export HF_TOKEN=\"${HF_TOKEN}\"; fi
+        export PATH=\"/usr/local/bin:\$HOME/.local/bin:\$HOME/.cargo/bin:\$PATH\"
+        if [[ -n \"${HF_TOKEN:-}\" ]]; then export HF_TOKEN=\"${HF_TOKEN:-}\"; fi
         
         echo 'Pulling model snapshot via huggingface_hub...'
         uv run python -c \"
