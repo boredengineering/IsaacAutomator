@@ -720,12 +720,50 @@ for imp, modname, ispkg in pkgutil.walk_packages(isaaclab_arena.__path__, isaacl
                 fi
 
                 \$py_bin -c '
-import gymnasium as gym
+import os, sys, pkgutil, importlib
 import isaaclab_arena
-print(\"=== Registered Gymnasium Tasks in IsaacLab-Arena ===\")
-registered = [spec.id for spec in gym.envs.registry.values() if any(k in spec.id.lower() for k in [\"isaac\", \"arena\", \"cube\", \"franka\", \"g1\"])]
-for r in sorted(set(registered)):
-    print(f\"  - {r}\")
+
+# 1. Walk packages and import tasks
+for imp, modname, ispkg in pkgutil.walk_packages(isaaclab_arena.__path__, isaaclab_arena.__name__ + \".\"):
+    if \"task\" in modname.lower() or \"env\" in modname.lower():
+        try:
+            importlib.import_module(modname)
+        except Exception:
+            pass
+
+# 2. Check gym registry
+import gymnasium as gym
+registered_gym = [spec.id for spec in gym.envs.registry.values() if any(k in spec.id.lower() for k in [\"isaac\", \"arena\", \"cube\", \"franka\", \"g1\", \"pick\", \"reach\"])]
+
+if registered_gym:
+    print(\"=== Registered Gymnasium Environments ===\")
+    for r in sorted(set(registered_gym)):
+        print(f\"  - {r}\")
+
+# 3. Check Arena registries if available
+try:
+    from isaaclab_arena.assets.registries import TaskRegistry
+    tr = TaskRegistry()
+    items = getattr(tr, \"_registries\", getattr(tr, \"_registry\", {}))
+    if items:
+        print(\"\n=== Arena TaskRegistry Entries ===\")
+        for t in sorted(items.keys()):
+            print(f\"  - {t}\")
+except Exception:
+    pass
+
+# 4. Search for task config files
+task_configs = []
+for root, dirs, files in os.walk(isaaclab_arena.__path__[0]):
+    for f in files:
+        if f.endswith((\".yaml\", \".py\")) and any(k in f.lower() for k in [\"task\", \"env\", \"cube\", \"pick\", \"place\", \"reach\", \"g1\"]) and not f.startswith(\"__\"):
+            rel = os.path.relpath(os.path.join(root, f), isaaclab_arena.__path__[0])
+            task_configs.append(rel)
+
+if task_configs:
+    print(\"\n=== Task Definition Files in isaaclab_arena/ ===\")
+    for tc in sorted(set(task_configs))[:30]:
+        print(f\"  - {tc}\")
 '
             "
             ;;
