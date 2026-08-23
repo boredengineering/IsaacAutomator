@@ -312,17 +312,34 @@ if sync.get('has_upstream'):
             ;;
 
         infer|inference)
+            local dataset_path="demo_data/droid_sample"
+            local model_path="${GR00T_MODEL_PATH:-nvidia/GR00T-N1.7-3B}"
+            local horizon="8"
+            local traj_ids="1"
+            local extra_args=()
+
+            while [[ $# -gt 0 ]]; do
+                case "$1" in
+                    --dataset-path) dataset_path="$2"; shift 2 ;;
+                    --model-path)   model_path="$2"; shift 2 ;;
+                    --action-horizon|--execution-horizon) horizon="$2"; shift 2 ;;
+                    --traj-ids)     traj_ids="$2"; shift 2 ;;
+                    *)              extra_args+=("$1"); shift ;;
+                esac
+            done
+
             log_header "Running Isaac-GR00T Open-Loop Inference on DROID Sample"
             run_as_user "
                 cd '${gr00t_dir}'
                 export PATH=\"/usr/local/bin:\$HOME/.local/bin:\$HOME/.cargo/bin:\$PATH\"
                 uv run python scripts/deployment/standalone_inference_script.py \
-                  --model-path '${GR00T_MODEL_PATH:-nvidia/GR00T-N1.7-3B}' \
-                  --dataset-path demo_data/droid_sample \
+                  --model-path '${model_path}' \
+                  --dataset-path '${dataset_path}' \
                   --embodiment-tag OXE_DROID_RELATIVE_EEF_RELATIVE_JOINT \
-                  --traj-ids 1 \
+                  --traj-ids '${traj_ids}' \
                   --inference-mode pytorch \
-                  --execution-horizon 8
+                  --action-horizon '${horizon}' \
+                  ${extra_args[*]:-}
             "
             ;;
 
