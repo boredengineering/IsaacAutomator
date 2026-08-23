@@ -1861,87 +1861,65 @@ Run standalone open-loop inference against demonstration trajectories to verify 
 
 ---
 
-### 14.3 Pillar 3: Testing the Decoupled ZeroMQ Policy Serving Bridge
+### 14.3 Dual Simulation & Evaluation Tracks
 
-#### 14.3.1 Technical IPC Architecture & Protocol Decoupling
-
-Because `IsaacLab` runs under **Python 3.12 (PyTorch 2.10.0+cu128)** and `Isaac-GR00T` runs under **Python 3.10 (PyTorch 2.9.0)**, direct in-process `ctypes`/C-extension sharing is impossible.
-
-They communicate strictly via a high-performance **ZeroMQ IPC Socket Bridge**:
+The installation framework supports two distinct, decoupled evaluation pathways:
 
 ```mermaid
-sequenceDiagram
-    autonumber
-    participant Sim as IsaacLab-Arena (Python 3.12 / Isaac Sim)
-    participant Socket as ZeroMQ REP/REQ (tcp://127.0.0.1:5555)
-    participant Srv as Isaac-GR00T Server (Python 3.10 / uv)
+flowchart TD
+    subgraph TRACK_A ["Track A: Native IsaacLab-Arena (Isaac Sim / PhysX 5.4)"]
+        ARENA_RUNNER["policy_runner.py"]
+        ARENA_TASKS["17 Native Benchmark Environments\n(cube_goal_pose, lift_object, galileo_g1_locomanip_pick_and_place)"]
+        ARENA_POLICIES["Supported Policy Drivers:\n• zero_action (baseline hold)\n• replay_action (demonstration playback)\n• rsl_rl (reinforcement learning checkpoint)"]
+        ARENA_TASKS --> ARENA_RUNNER --> ARENA_POLICIES
+    end
 
-    Note over Sim,Srv: Phase 1: Handshake & Configuration
-    Sim->>Socket: REQ: Get Modality Schema & Embodiment Tags
-    Socket->>Srv: Forward Schema Request
-    Srv-->>Socket: REP: Modality Config (OXE_DROID_RELATIVE_EEF_RELATIVE_JOINT)
-    Socket-->>Sim: Return Modality Specification
-
-    Note over Sim,Srv: Phase 2: Closed-Loop Control Loop (50 Hz)
-    loop Every Simulation Step (or Horizon Window H=8)
-        Sim->>Sim: Capture Tabletop RGB (224x224) + Joint State
-        Sim->>Socket: REQ: Observation Dict {rgb: Tensor, state: Tensor}
-        Socket->>Srv: Deliver Observation Packet
-        Srv->>Srv: VLM Embedding + DiT Action Chunk Denoising (40 steps)
-        Srv-->>Socket: REP: Action Chunk [H x Action_Dim]
-        Socket-->>Sim: Deliver Action Chunk
-        Sim->>Sim: Receding Horizon Execution: Step 1..H in PhysX 5.4
+    subgraph TRACK_B ["Track B: Isaac-GR00T Sim Benchmarks (MuJoCo / Robosuite)"]
+        GR00T_SRV["Policy Server (run_gr00t_server.py :5555)\n• 3.1B Parameters (GR00T DiT + Cosmos VLM)"]
+        GR00T_CLIENT["Rollout Client (rollout_policy.py)\n• Dedicated venvs: libero_uv, robocasa_uv, simpler_env"]
+        GR00T_SRV <== "ZeroMQ IPC (50 Hz)" ==> GR00T_CLIENT
     end
 ```
 
 ---
 
-#### 14.3.2 Step-by-Step Operator Runbook
+#### 14.3.1 Track A: Native IsaacLab-Arena Benchmarks (PhysX GPU)
 
-##### Step 1: Launch the GR00T ZeroMQ Policy Server Daemon
-Open a dedicated terminal or launch the server in the background:
+##### 1. The 17 Native Arena Benchmark Environments:
+`isaaclab_arena/evaluation/policy_runner.py` enforces a strict enum of 17 valid task choices:
+* **Franka Tabletop Manipulation**: `cube_goal_pose`, `lift_object`, `tabletop_sort_cubes`, `tabletop_place_upright`, `pick_and_place_maple_table`, `kitchen_pick_and_place`, `franka_put_and_close_door`
+* **Humanoid Loco-Manipulation (Unitree G1 & Fourier GR1)**: `galileo_g1_locomanip_pick_and_place`, `galileo_g1_static_pick_and_place`, `galileo_pick_and_place`, `gr1_open_microwave`, `put_item_in_fridge_and_close_door`, `gr1_table_multi_object_no_collision`, `gr1_turn_stand_mixer_knob`
+* **Dexterous & Contact-Rich Assembly**: `dexsuite_lift`, `press_button`, `gear_mesh`, `peg_insert`
 
+##### 2. Execution Runbook:
 ```bash
-# Launch ZeroMQ policy server daemon on port 5555:
-./bin/isaac-installer gr00t server 5555
+# 1. Discover registered Arena tasks
+./bin/isaac-installer arena list-tasks
+
+# 2. Run headless multi-env tensor rollout (e.g. 100 steps, 8 envs)
+./bin/isaac-installer arena run cube_goal_pose --steps 100 --num_envs 8
+
+# 3. Run with live 3D visual viewport (Kit GUI)
+./bin/isaac-installer arena play cube_goal_pose
+
+# 4. Replay recorded human demonstration trajectory
+./bin/isaac-installer arena play cube_goal_pose --policy replay_action
 ```
 
-* **Expected Server Output**:
-  ```text
-  ╭──────────────────────────────────────────────────────────────╮
-  │  Starting Isaac-GR00T ZeroMQ Policy Server on Port 5555      │
-  ╰──────────────────────────────────────────────────────────────╯
-  Loading model backbone: nvidia/GR00T-N1.7-3B on cuda:0...
-  Binding ZeroMQ REP socket on tcp://0.0.0.0:5555...
-  ✔ Policy Server Ready: Listening for Arena simulation observations.
-  ```
+---
 
-##### Step 2: Test the Socket Client Connection (Health Probe)
-From a separate shell, probe the socket bridge:
+#### 14.3.2 Track B: Isaac-GR00T Closed-Loop Benchmarks (LIBERO, RoboCasa, SimplerEnv)
 
+##### 1. Execution Runbook:
 ```bash
-# Verify ZeroMQ client socket connection and roundtrip ping:
-./bin/isaac-installer gr00t eval-closed-loop 5555 127.0.0.1
-```
+# 1. Start Policy Server in background on port 5555
+./bin/isaac-installer gr00t server 5555 &
 
-* **Expected Output**:
-  ```text
-  Testing ZeroMQ client socket connection to 127.0.0.1:5555...
-  ✔ Connected to ZeroMQ policy server socket.
-  ```
+# 2. Provision benchmark suite virtual environment (one-time setup)
+./bin/isaac-installer gr00t setup-benchmark libero
 
-##### Step 3: Run Closed-Loop Benchmark Evaluation in Arena
-
-###### Option 3A: Interactive Graphical Closed-Loop Execution
-```bash
-# Run closed-loop policy evaluation in live Omniverse Kit viewport:
-./bin/isaac-installer arena play cube_goal_pose --policy gr00t --port 5555
-```
-
-###### Option 3B: Headless Parallel Closed-Loop Evaluation
-```bash
-# Run headless parallel rollout with GR00T policy server:
-./bin/isaac-installer arena eval-gr00t cube_goal_pose 5555
+# 3. Launch closed-loop rollout client connecting to server daemon
+./bin/isaac-installer gr00t rollout --port 5555 --n-episodes 1
 ```
 
 ---
@@ -1960,15 +1938,31 @@ During closed-loop execution, the policy bridge enforces the following latency a
 
 ---
 
-### 14.5 Post-Execution Verification Checklist
+## 15. Lessons Learned, Root Cause Analysis & Troubleshooting Matrix
+
+| Symptom / Error | Root Cause | Exact Resolution |
+| :--- | :--- | :--- |
+| `huggingface_hub.errors.GatedRepoError: 403 Forbidden on Cosmos-Reason2-2B` | `GR00T-N1.7-3B` requires both GR00T and `Cosmos-Reason2-2B` gated licenses. Authorizing GR00T alone fails when `Gr00tPolicy` dynamically instantiates the Cosmos vision backbone. | Accept terms on **both** [GR00T-N1.7-3B](https://huggingface.co/nvidia/GR00T-N1.7-3B) and [Cosmos-Reason2-2B](https://huggingface.co/nvidia/Cosmos-Reason2-2B), then authenticate with `hf auth login` or `export HF_TOKEN=...`. |
+| `AssertionError: policy_type must be a dotted Python import path ... got: gr00t` | In Arena's `policy_runner.py`, `--policy_type` expects a key registered in `POLICY_REGISTRY` (`zero_action`, `replay_action`, `rsl_rl`) or a dotted module path (`module.submodule.ClassName`). | Pass valid registered alias or fully-qualified dotted path. |
+| `AssertionError: Policy Gr00tPolicy must register a PolicyCfg` | In Arena, every custom policy class must register its companion dataclass with `PolicyRegistry()._cfg_types[PolicyClass] = PolicyCfgClass`. | Register both the policy and config class with `PolicyRegistry()`. |
+| `TypeError: get_action() takes 2 positional arguments but 3 were given` | Arena's `policy_runner.py` calls `policy.get_action(env, obs)` (2 arguments), unlike standard Gym policies which take `(self, obs)`. | Implement `def get_action(self, env, obs) -> torch.Tensor` in the Arena policy class. |
+| `policy_runner.py: error: argument example_environment: invalid choice` | `policy_runner.py` does not accept raw Gym spec strings (e.g. `Isaac-Lift-Cube-Franka-IK-Rel-v0`), only its 17 native task keys (e.g. `cube_goal_pose`, `lift_object`). | Pass native Arena keys or use `./bin/isaac-installer arena list-tasks` to inspect valid choices. |
+| `AssertionError in robosuite/utils/binding_utils.py:521 (get_joint_qpos_addr)` | `setup_libero.sh` in LIBERO installed unpinned `robosuite 1.5+` / `mujoco 3.x`. LIBERO's BDDL domain models contain non-1DoF joints that fail `robosuite` 1.5's strict `assert joint_type in (mjJNT_HINGE, mjJNT_SLIDE)`. | Pin `robosuite==1.4.1` and `mujoco==2.3.7` in `gr00t/eval/sim/LIBERO/libero_uv/.venv`. |
+| `zmq.error.ZMQError: Address already in use (:5555)` | Orphaned policy server processes hold open port 5555 sockets after unclean terminal exits. | Run `./bin/isaac-installer net ports` or `./bin/isaac-installer net free 5555`. Automatic port freeing is built into `gr00t server`. |
+| `arena play holds robot motionless` | `arena play <task>` executes with `--policy_type zero_action` by default. | Use `--policy_type replay_action` to replay recorded datasets or use `./bin/isaac-installer lab teleop` for interactive manual control. |
+
+---
+
+### 15.1 Post-Execution Verification Checklist
 
 Before signing off on full operational readiness, ensure all items below are verified:
 
-- [ ] **Arena Zero-Action Baseline**: `arena run cube_goal_pose` completes 50 steps without errors.
-- [ ] **Arena Interactive Viewport**: `arena play cube_goal_pose` renders smoothly at 60 FPS in X11.
-- [ ] **GR00T Weight Cache**: `nvidia/GR00T-N1.7-3B` cached locally (or `--mock` fixture generated).
-- [ ] **GR00T Server Readiness**: `gr00t server 5555` binds cleanly without port collisions.
-- [ ] **ZeroMQ Socket Ping**: `gr00t eval-closed-loop 5555` returns active connection.
-- [ ] **Closed-Loop Policy Stream**: `arena eval-gr00t cube_goal_pose 5555` streams actions and completes episode rollouts.
+- [x] **Arena Zero-Action Baseline**: `arena run cube_goal_pose` completes 50 steps without errors.
+- [x] **Arena Interactive Viewport**: `arena play cube_goal_pose` renders smoothly at 60 FPS in X11.
+- [x] **GR00T Weight Cache**: `nvidia/GR00T-N1.7-3B` + `nvidia/Cosmos-Reason2-2B` cached locally.
+- [x] **GR00T Standalone Inference**: `gr00t infer --dataset-path demo_data/droid_sample` completes with 89.9ms step latency.
+- [x] **GR00T Server Readiness**: `gr00t server 5555` binds cleanly with automated port conflict resolution.
+- [ ] **LIBERO Dependency Pin**: `gr00t rollout` completes episode without MuJoCo joint address assertion failure.
 - [ ] **Clean Server Teardown**: Server process exits cleanly on `Ctrl+C` or `SIGINT` without lingering socket locks.
+
 
