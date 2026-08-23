@@ -552,6 +552,7 @@ SUBHELP
             local steps="1200"
             local num_envs="5"
             local is_viz=""
+            local task_specified=false
             local extra_cli_args=()
 
             while [[ $# -gt 0 ]]; do
@@ -580,12 +581,25 @@ SUBHELP
                         num_envs="$2"
                         shift 2
                         ;;
+                    --object|--embodiment|--device|--policy_device|--scene|--seed|--log_dir|--checkpoint)
+                        extra_cli_args+=("$1" "$2")
+                        shift 2
+                        ;;
+                    --enable_cameras|--headless|--disable_cameras)
+                        extra_cli_args+=("$1")
+                        shift
+                        ;;
                     -*)
                         extra_cli_args+=("$1")
                         shift
                         ;;
                     *)
-                        task_name="$1"
+                        if [[ "$task_specified" == false ]]; then
+                            task_name="$1"
+                            task_specified=true
+                        else
+                            extra_cli_args+=("$1")
+                        fi
                         shift
                         ;;
                 esac
@@ -600,6 +614,8 @@ SUBHELP
 
             run_as_user "
                 cd '${arena_dir}'
+                export PYTHONPATH='${arena_dir}:${arena_dir}/source:${PYTHONPATH:-}'
+
                 runner_cmd='-m isaaclab_arena.evaluation.policy_runner'
                 if [[ -f '${arena_dir}/isaaclab_arena/evaluation/policy_runner.py' ]]; then
                     runner_cmd='isaaclab_arena/evaluation/policy_runner.py'
