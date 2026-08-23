@@ -286,16 +286,35 @@ auth_login_provider() {
             log_step "Authenticating Hugging Face Hub..."
             local conda_bin="$(resolve_conda_bin 2>/dev/null || echo "")"
             local conda_root="$(dirname "$(dirname "$conda_bin")" 2>/dev/null || echo "${TARGET_HOME}/miniconda3")"
-            sudo -H -u "${TARGET_USER}" bash -c "
+            
+            # Ensure huggingface-cli is linked to /usr/local/bin if present in user local bin
+            if [[ -x "${TARGET_HOME}/.local/bin/huggingface-cli" && ! -x "/usr/local/bin/huggingface-cli" ]]; then
+                run_as_root "ln -sf '${TARGET_HOME}/.local/bin/huggingface-cli' /usr/local/bin/huggingface-cli 2>/dev/null || true"
+            fi
+            if [[ -x "${TARGET_HOME}/.local/bin/hf" && ! -x "/usr/local/bin/hf" ]]; then
+                run_as_root "ln -sf '${TARGET_HOME}/.local/bin/hf' /usr/local/bin/hf 2>/dev/null || true"
+            fi
+
+            run_as_user "
+                export PATH=\"/usr/local/bin:\$HOME/.local/bin:\$HOME/.cargo/bin:\$PATH\"
                 source '${conda_root}/etc/profile.d/conda.sh' 2>/dev/null || true
-                if conda info --envs 2>/dev/null | grep -q 'lerobot'; then
+                
+                if command -v huggingface-cli &>/dev/null; then
+                    huggingface-cli login
+                elif command -v hf &>/dev/null; then
+                    hf auth login
+                elif conda info --envs 2>/dev/null | grep -q 'lerobot'; then
                     conda run -n lerobot huggingface-cli login
-                elif command -v huggingface-cli &>/dev/null; then
+                elif command -v uv &>/dev/null; then
+                    uv tool install --force 'huggingface_hub[cli]' 2>/dev/null || uv pip install --system 'huggingface_hub[cli]' 2>/dev/null || true
+                    export PATH=\"\$HOME/.local/bin:\$HOME/.cargo/bin:\$PATH\"
                     huggingface-cli login
                 elif command -v pip3 &>/dev/null; then
-                    pip3 install --upgrade huggingface_hub[cli] && huggingface-cli login
+                    pip3 install --user --upgrade huggingface_hub
+                    export PATH=\"\$HOME/.local/bin:\$PATH\"
+                    huggingface-cli login
                 else
-                    echo 'Please install python3-pip or conda to use huggingface-cli'
+                    echo 'Please install python3-pip or uv to use huggingface-cli'
                 fi
             "
             ;;
