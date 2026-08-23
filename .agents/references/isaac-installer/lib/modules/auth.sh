@@ -299,22 +299,22 @@ auth_login_provider() {
                 export PATH=\"/usr/local/bin:\$HOME/.local/bin:\$HOME/.cargo/bin:\$PATH\"
                 source '${conda_root}/etc/profile.d/conda.sh' 2>/dev/null || true
                 
-                if command -v huggingface-cli &>/dev/null; then
-                    huggingface-cli login
-                elif command -v hf &>/dev/null; then
+                if command -v hf &>/dev/null; then
                     hf auth login
+                elif command -v huggingface-cli &>/dev/null; then
+                    huggingface-cli login 2>/dev/null || hf auth login
                 elif conda info --envs 2>/dev/null | grep -q 'lerobot'; then
-                    conda run -n lerobot huggingface-cli login
+                    conda run -n lerobot hf auth login 2>/dev/null || conda run -n lerobot huggingface-cli login
                 elif command -v uv &>/dev/null; then
                     uv tool install --force 'huggingface_hub[cli]' 2>/dev/null || uv pip install --system 'huggingface_hub[cli]' 2>/dev/null || true
                     export PATH=\"\$HOME/.local/bin:\$HOME/.cargo/bin:\$PATH\"
-                    huggingface-cli login
+                    hf auth login 2>/dev/null || huggingface-cli login
                 elif command -v pip3 &>/dev/null; then
                     pip3 install --user --upgrade huggingface_hub
                     export PATH=\"\$HOME/.local/bin:\$PATH\"
-                    huggingface-cli login
+                    hf auth login 2>/dev/null || huggingface-cli login
                 else
-                    echo 'Please install python3-pip or uv to use huggingface-cli'
+                    echo 'Please install python3-pip or uv to use Hugging Face CLI'
                 fi
             "
             ;;
