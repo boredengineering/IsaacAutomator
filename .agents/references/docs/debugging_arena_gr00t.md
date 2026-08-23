@@ -1,273 +1,259 @@
 # Comprehensive Debugging Plan & Architectural Deep Dive: IsaacLab-Arena & Isaac-GR00T
 
-**Document Version:** 1.0.0  
+**Document Version:** 2.0.0  
 **Target Platform:** NVIDIA RTX PRO 6000 Blackwell Workstation (96GB VRAM, CUDA 12.8, Driver 595.84)  
-**Target Runtimes:** Isaac Sim 6.0.1 / 4.5.0, Isaac Lab 2.3.0 / 3.0, IsaacLab-Arena, Isaac-GR00T (GR00T-N1.7-3B + Cosmos-Reason2-2B)
+**Target Runtimes:** Isaac Sim 6.0.1 / 4.5.0, Isaac Lab 2.3.0 / 3.0, IsaacLab-Arena (0.3.0-prerelease), Isaac-GR00T (N1.6-DROID / N1.7-3B)
 
 ---
 
 ## 1. Executive Summary & Ecosystem Topology
 
-The physical AI robotics stack in this workstation integrates three distinct software ecosystems:
+The physical AI robotics stack integrates three distinct software layers:
 
 ```mermaid
 flowchart TD
     subgraph PILLAR_1 ["Pillar 1: Simulation & Tensor Physics"]
         SIM["NVIDIA Isaac Sim (PhysX 5.4 GPU Fabric)"]
         LAB["Isaac Lab (RL & Robot Core)"]
-        ARENA["IsaacLab-Arena (Task & Benchmark Harness)"]
+        ARENA["IsaacLab-Arena 0.3.0 (Task & Benchmark Harness)"]
         SIM --> LAB --> ARENA
     end
 
-    subgraph PILLAR_2 ["Pillar 2: Foundation Model Action Service"]
-        GR00T_WEIGHTS["nvidia/GR00T-N1.7-3B (1.09B DiT Action Diffusion Head)"]
-        COSMOS_WEIGHTS["nvidia/Cosmos-Reason2-2B (2.01B Vision-Language Backbone)"]
-        GR00T_SRV["Policy Server Daemon (run_gr00t_server.py on port 5555)"]
+    subgraph PILLAR_2 ["Pillar 2: Foundation Model Action Service (ZeroMQ Server)"]
+        GR00T_WEIGHTS["nvidia/GR00T-N1.6-DROID / nvidia/GR00T-N1.7-3B"]
+        COSMOS_WEIGHTS["nvidia/Cosmos-Reason2-2B (Vision-Language Backbone)"]
+        GR00T_SRV["Policy Server (run_gr00t_server.py :5555)\n• uv run under Python 3.10"]
         GR00T_WEIGHTS & COSMOS_WEIGHTS --> GR00T_SRV
     end
 
-    subgraph PILLAR_3 ["Pillar 3: Evaluation & Rollout Tracks"]
-        TRACK_A["Track A: Arena Closed-Loop\n(Isaac Sim GPU PhysX / 50 Hz ZeroMQ IPC)"]
-        TRACK_B["Track B: Standalone Sim Benchmarks\n(LIBERO / RoboCasa / SimplerEnv via MuJoCo)"]
+    subgraph PILLAR_3 ["Pillar 3: Evaluation Pathways"]
+        PATH_CANONICAL["Level 1 (Golden Baseline): DROID Pick & Place\npick_and_place_maple_table\nGr00tRemoteClosedloopPolicy"]
+        PATH_LOCOMANIP["Level 2 (Advanced): G1 Humanoid Locomanipulation\ngalileo_g1_locomanip_pick_and_place\nDocker vs Bare-Metal"]
+        PATH_MUJOCO["Level 3 (MuJoCo Baselines): LIBERO / RoboCasa\nrollout_policy.py Client"]
     end
 
     ARENA <== "ZeroMQ IPC (Camera RGB + Joint States <-> Action Chunks)" ==> GR00T_SRV
-    GR00T_SRV <== "MuJoCo Gym Vector Wrapper" ==> TRACK_B
-    ARENA --> TRACK_A
+    GR00T_SRV --> PATH_CANONICAL & PATH_LOCOMANIP & PATH_MUJOCO
 ```
 
-### Verified Baseline (Working Groundwork):
-1. **Host & GPU Compute**: NVIDIA RTX PRO 6000 Blackwell workstation verified with CUDA 12.8, Vulkan 1.3, and PyTorch 2.5.1/2.10.
-2. **Open-Loop GR00T Inference**: Forward-pass inference over DROID trajectories verified in **7.14s** load time, **89.9ms/step** latency, producing real continuous action MSE predictions ($0.00328$).
-3. **Isaac Sim PhysX Pipeline**: Multi-environment tensor physics execution verified with 16 parallel robots.
+### Verified Working Groundwork:
+1. **Compute Runtime**: RTX PRO 6000 Blackwell workstation verified with CUDA 12.8 and driver 595.84.
+2. **Open-Loop Model Weights & Inference**: Forward pass over DROID trajectories verified in **7.14s** load time, **89.9ms/step** latency ($0.00328$ MSE).
+3. **Isaac Sim PhysX Execution**: Multi-environment tensor physics running cleanly at 50 FPS.
 
 ---
 
-## 2. Deep Dive: Test 1 Failure (Isaac-GR00T LIBERO Rollout)
+## 2. The Bottom-Up Canonical Architecture: NVIDIA's Minimal Reference
 
-### 2.1 Full Error Traceback
-```text
-  File ".../Isaac-GR00T/gr00t/eval/sim/LIBERO/libero_uv/.venv/lib/python3.10/site-packages/robosuite/robots/robot.py", line 161, in <listcomp>
-    self._ref_joint_pos_indexes = [self.sim.model.get_joint_qpos_addr(x) for x in self.robot_joints]
-  File ".../Isaac-GR00T/gr00t/eval/sim/LIBERO/libero_uv/.venv/lib/python3.10/site-packages/robosuite/utils/binding_utils.py", line 521, in get_joint_qpos_addr
-    assert joint_type in (mujoco.mjtJoint.mjJNT_HINGE, mujoco.mjtJoint.mjJNT_SLIDE)
-AssertionError
-```
+According to the official [IsaacLab-Arena 0.3.0-prerelease Documentation](https://isaac-sim.github.io/IsaacLab-Arena/release/0.3.0-prerelease/pages/quickstart/first_experiments/running_a_real_policy/gr00t.html), the simplest, canonical path to run a real closed-loop policy is the **DROID Pick & Place Task on Maple Table**.
 
-### 2.2 Root Cause Analysis
+### 2.1 The Minimal Canonical Invocation Pattern
 
 ```mermaid
-flowchart TD
-    INIT["rollout_policy.py calls gym.make('libero_sim/KITCHEN_SCENE3_...')"]
-    BDDL["LIBERO parses BDDL domain & instantiates RoboSuite ManipulationEnv"]
-    RESET["_reset_internal() -> _setup_references()"]
-    ROBOT["single_arm.py -> robot.py iterates self.robot_joints"]
-    QUERY["binding_utils.py: get_joint_qpos_addr(joint_name)"]
-    CHECK["assert joint_type in (mjJNT_HINGE, mjJNT_SLIDE)"]
-    CRASH["FAIL: Encountered non-1DoF joint (e.g. mjJNT_FREE or ball joint) in LIBERO XML"]
+sequenceDiagram
+    autonumber
+    participant Server as GR00T Policy Server (submodules/Isaac-GR00T)
+    participant Socket as ZeroMQ REP/REQ (tcp://127.0.0.1:5555)
+    participant Client as IsaacLab-Arena policy_runner.py
 
-    INIT --> BDDL --> RESET --> ROBOT --> QUERY --> CHECK --> CRASH
+    Note over Server: Step 1: Launch Model Server
+    Server->>Socket: Bind tcp://127.0.0.1:5555 (DROID Embodiment)
+    
+    Note over Client: Step 2: Launch Arena Evaluation
+    Client->>Socket: Handshake & Send Camera RGB + Joint State
+    Socket->>Server: Observation Dict
+    Server->>Server: DROID DiT Forward Pass (40-step Denoising)
+    Server-->>Socket: 7-DoF Delta Joint Action Chunks
+    Socket-->>Client: Receive Action Chunks
+    Client->>Client: Step Simulation (Pick rubiks_cube -> Place in bowl)
 ```
 
-1. **Version Drift in Virtual Environment**:
-   - The LIBERO benchmark repository was developed and tested against **`robosuite==1.4.1`** and **`mujoco==2.3.7`** (or `mujoco-py`).
-   - When `gr00t/eval/sim/LIBERO/setup_libero.sh` ran without strict version bounds, `uv` / `pip` pulled the latest `robosuite` (v1.5.0+) and `mujoco` (v3.x).
-2. **Strict 1-DoF Assertion in `robosuite >= 1.5.0`**:
-   - In `robosuite/utils/binding_utils.py:521`, `get_joint_qpos_addr` strictly enforces that every queried joint must be either a 1-DoF hinge (`mjJNT_HINGE == 3`) or slide (`mjJNT_SLIDE == 2`).
-   - LIBERO's custom kitchen tabletop Franka robot XML definitions contain floating-base or gripper reference joints that evaluate to `mjJNT_FREE == 0` or ball joints, causing an unhandled `AssertionError`.
-3. **Missing Macro Configuration**:
-   - `[robosuite WARNING] No private macro file found!` indicates `robosuite/scripts/setup_macros.py` was never executed during environment bootstrap.
-
-### 2.3 Diagnostic & Resolution Plan for Test 1
-
-| Step | Action | Command / Code | Success Criteria |
-| :--- | :--- | :--- | :--- |
-| **1.1** | Inspect installed packages in `libero_uv` | `gr00t/eval/sim/LIBERO/libero_uv/.venv/bin/pip list \| grep -E "(robosuite\|mujoco\|gym)"` | Identify exact versions of `robosuite` and `mujoco`. |
-| **1.2** | Inspect failing joint in LIBERO model | Run python snippet in `libero_uv` to print all `robot_joints` and their `jnt_type`. | Identify which joint triggers the assertion. |
-| **1.3** | Execute macro setup | `gr00t/eval/sim/LIBERO/libero_uv/.venv/bin/python -m robosuite.scripts.setup_macros` | `config.json` macro file created. |
-| **1.4** | Clean & Pin Virtual Environment | Reinstall `robosuite==1.4.1` and `mujoco==2.3.7` in `libero_uv/.venv`. | `get_joint_qpos_addr` executes cleanly. |
-| **1.5** | Smoke Test LIBERO Env Loading | `gr00t/eval/sim/LIBERO/libero_uv/.venv/bin/python -c "import gymnasium as gym; from gr00t.eval.sim.LIBERO.libero_env import register_libero_envs; register_libero_envs(); env = gym.make('libero_sim/KITCHEN_SCENE3_turn_on_the_stove_and_put_the_moka_pot_on_it'); env.reset(); print('SUCCESS')"` | Environment initializes and steps without assertion error. |
-
----
-
-## 3. Deep Dive: Test 2 Failure (IsaacLab-Arena Rollout Metrics & Zero Episodes)
-
-### 3.1 Full Error / Warning Traceback
-```text
-[INFO]: Completed setting up the environment...
-[Rank 0/1] Simulation length: 100 steps
-[Rank 0/1] Starting rollout (100 steps)
-Steps: 100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 100/100 [00:02<00:00, 49.17step/s]
-/home/tarfy/miniconda3/envs/isaaclab/lib/python3.12/site-packages/numpy/_core/fromnumeric.py:3860: RuntimeWarning: Mean of empty slice.
-  return _methods._mean(a, axis=axis, dtype=dtype,
-/home/tarfy/miniconda3/envs/isaaclab/lib/python3.12/site-packages/numpy/_core/_methods.py:144: RuntimeWarning: invalid value encountered in scalar divide
-  ret = ret.dtype.type(ret / rcount)
-[Rank 0/1] Metrics: {'num_episodes': 0, 'success_rate': 0.0, 'object_moved_rate': nan}
-[INFO]: SimulationContext cleared
-Wrote evaluation report with 1 job(s) and 0 episode(s) to: .../outputs/2026-08-22_23-53-01/index.html
-[WARNING] No episode results or rollout videos were found; the report is empty.
+#### Step 1: Policy Server Daemon (GR00T)
+```bash
+cd submodules/Isaac-GR00T
+uv run python gr00t/eval/run_gr00t_server.py \
+  --model-path nvidia/GR00T-N1.6-DROID \
+  --embodiment-tag OXE_DROID \
+  --device cuda --host 127.0.0.1 --port 5555
 ```
 
-### 3.2 Root Cause Analysis
-
-```mermaid
-flowchart TD
-    START["policy_runner.py starts with --num_steps 100"]
-    CFG["Task Config (cube_goal_pose): episode_length_s = 20.0s (1,000 steps @ 50 Hz)"]
-    EXEC["Rollout steps simulation for 100 steps (2.0 seconds)"]
-    TERM{"Did any episode terminate or truncate?"}
-    NO["NO: 100 steps < 1,000 step horizon & zero_action never reaches goal"]
-    RECORDER["EpisodeRecorderManager computes stats only on completed episodes"]
-    EMPTY["Completed episodes = 0 -> empty slice passed to np.mean() -> RuntimeWarning (NaN)"]
-    REPORT["Empty report HTML written with 0 episodes"]
-
-    START --> CFG --> EXEC --> TERM
-    TERM -- "No terminations" --> NO --> RECORDER --> EMPTY --> REPORT
+#### Step 2: Policy Client (Arena Evaluation Harness)
+```bash
+python isaaclab_arena/evaluation/policy_runner.py \
+  --viz kit \
+  --policy_type isaaclab_arena_gr00t.policy.gr00t_remote_closedloop_policy.Gr00tRemoteClosedloopPolicy \
+  --policy_config_yaml_path isaaclab_arena_gr00t/policy/config/droid_manip_gr00t_closedloop_config.yaml \
+  --remote_host 127.0.0.1 \
+  --remote_port 5555 \
+  --language_instruction "Pick up the Rubik's cube and place it in the bowl." \
+  --enable_cameras \
+  --num_episodes 3 \
+  pick_and_place_maple_table \
+  --embodiment droid_abs_joint_pos \
+  --pick_up_object rubiks_cube_hot3d_robolab \
+  --destination_location bowl_ycb_robolab \
+  --hdr home_office_robolab
 ```
 
-1. **Horizon Mathematics vs Step Limit**:
-   - In Arena task definitions (e.g. `cube_goal_pose`), `episode_length_s = 20.0s`. At `dt = 0.02s` (50 Hz control loop), one complete episode requires **1,000 steps**.
-   - Running with `--num_steps 100` only simulates **2.0 seconds** of physical time (10% of one episode).
-2. **Zero-Action Policy Dynamics**:
-   - The policy evaluated was `zero_action`, which sends zero delta joint commands (holding the robot in its default rest pose).
-   - Because the robot never moved, the cube never reached the goal pose (early success termination), and the 1,000-step timeout was never reached.
-3. **Metric Aggregation Logic**:
-   - Arena's `EpisodeRecorderManager` records metrics only when `dones == True` (episode completion).
-   - Because 0 episodes finished, the metric array was empty (`[]`), causing NumPy to raise `RuntimeWarning: Mean of empty slice` and output `object_moved_rate: nan`.
+### 2.2 Critical Anatomy of the NVIDIA Reference Command
 
-### 3.3 Diagnostic & Resolution Plan for Test 2
-
-| Step | Action | Command / Code | Success Criteria |
-| :--- | :--- | :--- | :--- |
-| **2.1** | Run Rollout with Episode-Based Termination | Run `policy_runner.py` with `--num_steps 1200` (exceeding the 1,000-step episode length). | Episode timeout triggers, `num_episodes >= 1`, metrics compute cleanly without `nan`. |
-| **2.2** | Run Replay Action Policy | `python isaaclab_arena/evaluation/policy_runner.py --policy_type replay_action cube_goal_pose --num_steps 1200` | Recorded expert trajectory moves robot, manipulates object, and completes task. |
-| **2.3** | Enable Video Recording & Output Reporting | Add `--record_viewport_video` and `--enable_cameras` to capture MP4 episode rollout. | Video MP4 and non-empty HTML report generated in `outputs/`. |
-| **2.4** | Verify Interactive Teleoperation | `./bin/isaac-installer lab teleop Isaac-Lift-Cube-Franka-IK-Rel-v0 --device keyboard` | Live interactive manual control in Isaac Sim viewport. |
-
----
-
-## 4. Deep Dive: The Arena ↔ GR00T Closed-Loop VLA Bridge
-
-### 4.1 The Interface Contract Discrepancy
-
-Why did previous attempts to bridge Arena and GR00T fail?
-
-| Aspect | What Was Attempted | What the Software Actually Requires |
+| Flag / Parameter | Exact Value / Purpose | Why It Matters |
 | :--- | :--- | :--- |
-| **Policy Type Argument** | Bare string `"gr00t"` | `policy_runner.py` requires either a registered key in `POLICY_REGISTRY` or a dotted Python import path `module.submodule.ClassName`. |
-| **Config Registration** | Plain class without config | Arena strictly requires `@PolicyRegistry().register` and `PolicyRegistry()._cfg_types[PolicyClass] = PolicyCfgClass`. |
-| **Method Signature** | `def get_action(self, obs)` | Arena's `rollout_policy` calls **`policy.get_action(env, obs)`** (accepting both `env` and `obs`). |
-| **Module Availability** | `isaaclab_arena_gr00t.policy...` | `isaaclab_arena_gr00t` is referenced in internal docs/PRs but is not in the public Arena repository tree. |
-
-### 4.2 The Formally Specified Policy Bridge Specification
-
-To establish genuine closed-loop inference between IsaacLab-Arena and Isaac-GR00T, the bridge must implement this exact specification:
-
-```python
-# Specification: isaaclab_arena/policy/gr00t_policy.py
-from __future__ import annotations
-from dataclasses import dataclass
-import torch
-import numpy as np
-import zmq
-
-from isaaclab_arena.policy.policy_base import PolicyBase, PolicyCfg
-from isaaclab_arena.assets.registries import PolicyRegistry
-
-@dataclass
-class Gr00tPolicyCfg(PolicyCfg):
-    host: str = "127.0.0.1"
-    port: int = 5555
-    timeout_ms: int = 5000
-    action_dim: int = 7
-
-class Gr00tPolicy(PolicyBase):
-    """NVIDIA Isaac-GR00T VLA Policy Bridge for IsaacLab-Arena."""
-
-    def __init__(self, cfg: Gr00tPolicyCfg, num_envs: int = 1, device: str = "cuda:0"):
-        super().__init__(cfg)
-        self.host = getattr(cfg, "host", "127.0.0.1")
-        self.port = getattr(cfg, "port", 5555)
-        self.timeout_ms = getattr(cfg, "timeout_ms", 5000)
-        self.num_envs = num_envs
-        self.device = device
-
-        self.context = zmq.Context()
-        self.socket = self.context.socket(zmq.REQ)
-        self.socket.setsockopt(zmq.RCVTIMEO, self.timeout_ms)
-        self.socket.connect(f"tcp://{self.host}:{self.port}")
-
-    def reset(self, env_ids: torch.Tensor | None = None):
-        """Reset internal policy history buffer on environment reset."""
-        pass
-
-    def get_action(self, env, obs: dict[str, torch.Tensor]) -> torch.Tensor:
-        """Query GR00T Policy Server daemon for action chunk predictions.
-        
-        Args:
-            env: The active IsaacLab-Arena environment instance.
-            obs: Dictionary of observation tensors (camera RGB, joint states).
-        Returns:
-            torch.Tensor: Continuous action tensor [num_envs, action_dim].
-        """
-        try:
-            # Package state and camera observations
-            payload = {
-                "type": "step",
-                "num_envs": self.num_envs,
-            }
-            self.socket.send_json(payload)
-            response = self.socket.recv_json()
-            if "action" in response:
-                action_np = np.array(response["action"], dtype=np.float32)
-                return torch.from_numpy(action_np).to(self.device)
-        except Exception:
-            pass
-
-        # Safe fallback baseline
-        return torch.zeros((self.num_envs, getattr(self.cfg, "action_dim", 7)), device=self.device)
-
-# Formal Registration in Arena PolicyRegistry
-PolicyRegistry()._cfg_types[Gr00tPolicy] = Gr00tPolicyCfg
-try:
-    PolicyRegistry().register(Gr00tPolicy, Gr00tPolicyCfg)
-except Exception:
-    pass
-```
+| **`--policy_type`** | `isaaclab_arena_gr00t.policy.gr00t_remote_closedloop_policy.Gr00tRemoteClosedloopPolicy` | The official remote client wrapper that communicates over ZeroMQ with `run_gr00t_server.py`. |
+| **`--policy_config_yaml_path`** | `isaaclab_arena_gr00t/policy/config/droid_manip_gr00t_closedloop_config.yaml` | Specifies the action chunk size, observation key mapping, and policy scaling factors. |
+| **`--remote_host` & `--remote_port`** | `127.0.0.1:5555` | ZeroMQ client socket destination. |
+| **`--language_instruction`** | `"Pick up the Rubik's cube and place it in the bowl."` | Condition prompt for the Cosmos VLM language embedder. |
+| **`--enable_cameras`** | Flag | Activates offscreen rendering for visual perception observations. |
+| **Positional Task** | `pick_and_place_maple_table` | Native Arena task registered in `policy_runner.py`. |
+| **`--embodiment`** | `droid_abs_joint_pos` | Robot configuration matching the DROID model weights. |
+| **`--pick_up_object`** | `rubiks_cube_hot3d_robolab` | USD asset spawned on the tabletop. |
+| **`--destination_location`** | `bowl_ycb_robolab` | Goal receptacle asset. |
+| **`--hdr`** | `home_office_robolab` | Photorealistic environment map lighting. |
 
 ---
 
-## 5. Phase-by-Phase Debugging & Verification Roadmap
+## 3. Paradigm Analysis: Docker Container vs Bare-Metal UV / Conda
+
+As documented in [IsaacLab-Arena Locomanipulation Setup](https://isaac-sim.github.io/IsaacLab-Arena/release/0.3.0-prerelease/pages/example_workflows/locomanipulation/step_1_environment_setup.html), NVIDIA recommends containerized execution (`./docker/run_docker.sh`) for complex humanoid workflows (`GalileoG1LocomanipPickAndPlaceEnvironment`).
+
+```mermaid
+flowchart TD
+    subgraph DOCKER_PATH ["Path A: Official Containerized Workflow (NVIDIA Recommended)"]
+        DOCKER_IMG["Docker Image: nvcr.io/nvidian/gr00t1_6_arena_ci"]
+        DOCKER_RUN["./docker/run_docker.sh"]
+        DOCKER_ADV["Pros: 100% Guaranteed C++ ABI, pre-installed USD assets, zero Conda drift\nCons: Requires Docker daemon, container GPU passthrough"]
+        DOCKER_IMG --> DOCKER_RUN --> DOCKER_ADV
+    end
+
+    subgraph BAREMETAL_PATH ["Path B: Bare-Metal Submodule / Conda Workflow (Developer Workstation)"]
+        CONDA_ENV["Conda Env: isaaclab (Python 3.12, Isaac Sim 6.0.1 / 4.5.0)"]
+        UV_ENV["UV Env: submodules/Isaac-GR00T (Python 3.10, PyTorch 2.9.0)"]
+        IPC["ZeroMQ IPC Bridge (tcp://127.0.0.1:5555)"]
+        CONDA_ENV <== "Port 5555" ==> IPC <== "Port 5555" ==> UV_ENV
+        BARE_ADV["Pros: Direct IDE debugging, zero container overhead, native file access\nCons: Requires exact Python package editable linking (isaaclab_arena_gr00t)"]
+    end
+```
+
+### Trade-Off Comparison Matrix
+
+| Dimension | Containerized Path (`run_docker.sh`) | Bare-Metal Submodule Path (Conda + UV) |
+| :--- | :--- | :--- |
+| **Setup Complexity** | Single script invocation (`./docker/run_docker.sh`). | Requires linking `isaaclab_arena_gr00t` into Conda environment. |
+| **C++ ABI / Dependency Isolation** | Complete (isolated in container root). | High (isolated via named Conda + UV virtualenv). |
+| **Asset Availability** | Pre-baked in image layers. | Fetched on demand from Nucleus / Hugging Face. |
+| **Developer Iteration Speed** | Rebuilding container or volume mounting. | Instant live edits on editable repos (`-e`). |
+| **Complex Locomanipulation Support** | Native out-of-the-box (Unitree G1 WBC + ROS2). | Requires compiling custom WBC extensions. |
+
+---
+
+## 4. Deep Dive: The 5 Failure Modes & Diagnostics
+
+### 4.1 Failure Mode 1: Incompatible Robosuite / MuJoCo in LIBERO (`get_joint_qpos_addr`)
+* **Symptom**: `assert joint_type in (mujoco.mjtJoint.mjJNT_HINGE, mujoco.mjtJoint.mjJNT_SLIDE)` throws `AssertionError` during LIBERO initialization.
+* **Mechanism**: `setup_libero.sh` pulled latest unpinned `robosuite >= 1.5.0` and `mujoco 3.x`. LIBERO's BDDL domain models contain non-1DoF joints (e.g. `mjJNT_FREE` or ball joints) that violate `robosuite 1.5`'s strict 1-DoF assertion.
+* **Diagnostic Plan**:
+  ```bash
+  # Check versions in isolated virtualenv:
+  gr00t/eval/sim/LIBERO/libero_uv/.venv/bin/pip list | grep -E "(robosuite|mujoco)"
+  # Pin to verified baseline:
+  gr00t/eval/sim/LIBERO/libero_uv/.venv/bin/pip install robosuite==1.4.1 mujoco==2.3.7
+  ```
+
+### 4.2 Failure Mode 2: Arena 100-Step Rollout Timeout & Empty Evaluation Report
+* **Symptom**: `num_episodes: 0`, `success_rate: 0.0`, `RuntimeWarning: Mean of empty slice`, `[WARNING] No episode results found`.
+* **Mechanism**: `cube_goal_pose` defines `episode_length_s = 20.0s` (1,000 steps @ 50 Hz). Running `--num_steps 100` only simulates 2.0 physical seconds (10% of an episode). Because `zero_action` never moves the robot, no episode terminates, producing 0 completed episodes.
+* **Diagnostic Plan**:
+  ```bash
+  # Run rollout exceeding episode horizon (1,200 steps):
+  python isaaclab_arena/evaluation/policy_runner.py --policy_type zero_action --num_steps 1200 cube_goal_pose
+  ```
+
+### 4.3 Failure Mode 3: Missing `isaaclab_arena_gr00t` in Python Path
+* **Symptom**: `ModuleNotFoundError: No module named 'isaaclab_arena_gr00t'`.
+* **Mechanism**: The package `isaaclab_arena_gr00t` resides under `source/isaaclab_arena_gr00t` (or in branch `release/0.3.0-prerelease`), but was not installed in editable mode (`pip install -e`) into the active `isaaclab` Conda environment.
+* **Diagnostic Plan**:
+  ```bash
+  # Verify if package exists and install in editable mode:
+  conda activate isaaclab
+  cd /home/tarfy/Documents/GitHub/boredengineering/IsaacLab-Arena
+  pip install -e source/isaaclab_arena_gr00t
+  ```
+
+### 4.4 Failure Mode 4: Positional Argument Parsing in `policy_runner.py`
+* **Symptom**: `policy_runner.py: error: argument example_environment: invalid choice: 'Isaac-Lift-Cube-Franka-IK-Rel-v0'`.
+* **Mechanism**: `policy_runner.py` enforces a strict whitelist of 17 native task choices (`cube_goal_pose`, `pick_and_place_maple_table`, `galileo_g1_locomanip_pick_and_place`, etc.) rather than arbitrary Gymnasium registration IDs.
+* **Diagnostic Plan**:
+  Pass native Arena keys (`pick_and_place_maple_table`) as shown in the canonical NVIDIA documentation.
+
+### 4.5 Failure Mode 5: ZeroMQ Socket / Port Collisions
+* **Symptom**: `zmq.error.ZMQError: Address already in use (:5555)`.
+* **Mechanism**: Unclean termination of previous server daemons leaves listening sockets open.
+* **Diagnostic Plan**:
+  ```bash
+  ./bin/isaac-installer net free 5555
+  ```
+
+---
+
+## 5. The 4-Level Bottom-Up Implementation & Verification Roadmap
 
 ```mermaid
 gantt
-    title Robotics Ecosystem Debugging & Verification Roadmap
+    title Bottom-Up Robotics Ecosystem Verification Roadmap
     dateFormat  YYYY-MM-DD
-    section Phase 1: LIBERO Sim
-    Diagnose virtualenv versions & joints    :p1_1, 2026-08-23, 1d
-    Pin robosuite 1.4.1 & mujoco 2.3.7       :p1_2, after p1_1, 1d
-    Verify standalone LIBERO gym rollout     :p1_3, after p1_2, 1d
-    section Phase 2: Native Arena
-    Verify 1,200-step episode termination    :p2_1, 2026-08-23, 1d
-    Test replay_action trajectory playback   :p2_2, after p2_1, 1d
-    Test interactive keyboard teleoperation  :p2_3, after p2_2, 1d
-    section Phase 3: GR00T Closed-Loop
-    Verify Policy Server daemon on :5555     :p3_1, 2026-08-24, 1d
-    Validate Arena get_action(env, obs) IPC  :p3_2, after p3_1, 1d
-    Full closed-loop benchmark rollout       :p3_3, after p3_2, 1d
+    section Level 1: DROID Tabletop (Golden Baseline)
+    Verify isaaclab_arena_gr00t package install :l1_1, 2026-08-23, 1d
+    Start GR00T Server (N1.6-DROID / OXE_DROID) :l1_2, after l1_1, 1d
+    Execute pick_and_place_maple_table closed-loop :l1_3, after l1_2, 1d
+    section Level 2: Multimodal Conditioning
+    Enable Language Prompt conditioning        :l2_1, 2026-08-24, 1d
+    Verify Camera observation streams & MP4    :l2_2, after l2_1, 1d
+    section Level 3: Unitree G1 Locomanipulation
+    Evaluate Bare-Metal vs Docker run_docker.sh:l3_1, 2026-08-24, 1d
+    Run GalileoG1LocomanipPickAndPlaceEnv      :l3_2, after l3_1, 1d
+    section Level 4: MuJoCo Benchmark Track
+    Pin robosuite 1.4.1 & mujoco 2.3.7 in LIBERO:l4_1, 2026-08-25, 1d
+    Verify rollout_policy.py client             :l4_2, after l4_1, 1d
 ```
 
-### Phase 1: Resolve Standalone GR00T LIBERO Benchmark
-1. Pin `robosuite==1.4.1` and `mujoco==2.3.7` in `gr00t/eval/sim/LIBERO/libero_uv/.venv`.
-2. Run `robosuite.scripts.setup_macros`.
-3. Verify `gr00t rollout --port 5555 --n-episodes 1` completes full episode.
+### Level 1: Minimal Golden Baseline (DROID Pick & Place)
+1. **Audit Package Installation**:
+   Ensure `isaaclab_arena_gr00t` is installed in editable mode in the `isaaclab` Conda environment.
+2. **Start GR00T Policy Server**:
+   ```bash
+   cd ~/Documents/GitHub/boredengineering/Isaac-GR00T
+   uv run python gr00t/eval/run_gr00t_server.py \
+     --model-path nvidia/GR00T-N1.6-DROID \
+     --embodiment-tag OXE_DROID \
+     --device cuda --host 127.0.0.1 --port 5555
+   ```
+3. **Launch Arena Policy Runner**:
+   ```bash
+   cd ~/Documents/GitHub/boredengineering/IsaacLab-Arena
+   python isaaclab_arena/evaluation/policy_runner.py \
+     --viz kit \
+     --policy_type isaaclab_arena_gr00t.policy.gr00t_remote_closedloop_policy.Gr00tRemoteClosedloopPolicy \
+     --policy_config_yaml_path isaaclab_arena_gr00t/policy/config/droid_manip_gr00t_closedloop_config.yaml \
+     --remote_host 127.0.0.1 \
+     --remote_port 5555 \
+     --language_instruction "Pick up the Rubik's cube and place it in the bowl." \
+     --enable_cameras \
+     --num_episodes 3 \
+     pick_and_place_maple_table \
+     --embodiment droid_abs_joint_pos \
+     --pick_up_object rubiks_cube_hot3d_robolab \
+     --destination_location bowl_ycb_robolab \
+     --hdr home_office_robolab
+   ```
 
-### Phase 2: Verify Native IsaacLab-Arena Benchmarks
-1. Run `arena run cube_goal_pose --steps 1200 --num_envs 4` to verify full episode lifecycle.
-2. Verify `arena play cube_goal_pose --policy replay_action` executes recorded trajectories.
-3. Verify `lab teleop Isaac-Lift-Cube-Franka-IK-Rel-v0 --device keyboard` enables live control.
+### Level 2: Multimodal Perception & Video Recording
+* Enable camera recording: `--record_viewport_video` and `--record_camera_video`.
+* Inspect generated HTML evaluation reports and MP4 rollouts in `outputs/`.
 
-### Phase 3: Validate Closed-Loop Server-Client IPC Bridge
-1. Start `gr00t server 5555` with `nvidia/GR00T-N1.7-3B` weights on GPU.
-2. Test socket connection with `gr00t eval-closed-loop 5555`.
-3. Execute closed-loop rollout streaming actions into IsaacLab-Arena.
+### Level 3: Complex Humanoid Locomanipulation (Unitree G1 / Fourier GR1)
+* Assess Bare-Metal WBC requirements vs `./docker/run_docker.sh`.
+* Run `galileo_g1_locomanip_pick_and_place` with `g1_wbc_joint` embodiment.
+
+### Level 4: MuJoCo Classical Simulation Benchmarks
+* Apply `robosuite==1.4.1` and `mujoco==2.3.7` pinning to `libero_uv/.venv`.
+* Run `gr00t rollout --port 5555 --n-episodes 1`.
