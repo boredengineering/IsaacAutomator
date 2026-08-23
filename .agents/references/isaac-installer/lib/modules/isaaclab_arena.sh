@@ -639,7 +639,16 @@ except Exception:
             log_header "Discovering IsaacLab-Arena Policy Implementations"
             run_as_user "
                 cd '${arena_dir}'
-                python -c '
+                py_bin='python'
+                if [[ -x '${TARGET_HOME}/miniconda3/envs/isaaclab/bin/python' ]]; then
+                    py_bin='${TARGET_HOME}/miniconda3/envs/isaaclab/bin/python'
+                elif [[ -x '${TARGET_HOME}/miniforge3/envs/isaaclab/bin/python' ]]; then
+                    py_bin='${TARGET_HOME}/miniforge3/envs/isaaclab/bin/python'
+                elif [[ -d '${lab_dir}' && -x '${lab_dir}/isaaclab.sh' ]]; then
+                    py_bin='${lab_dir}/isaaclab.sh -p'
+                fi
+
+                \$py_bin -c '
 import isaaclab_arena
 print(\"=== Built-in Registered Policies ===\")
 try:
@@ -652,11 +661,11 @@ except Exception as e:
 print(\"\n=== Discovered Policy Classes in isaaclab_arena.* ===\")
 import pkgutil, importlib, inspect
 for imp, modname, ispkg in pkgutil.walk_packages(isaaclab_arena.__path__, isaaclab_arena.__name__ + \".\"):
-    if \"policy\" in modname.lower() or \"eval\" in modname.lower() or \"zmq\" in modname.lower() or \"gr00t\" in modname.lower():
+    if any(k in modname.lower() for k in [\"policy\", \"eval\", \"zmq\", \"gr00t\", \"agent\"]):
         try:
             mod = importlib.import_module(modname)
             for n, c in inspect.getmembers(mod, inspect.isclass):
-                if c.__module__ == modname and (\"policy\" in n.lower() or \"client\" in n.lower()):
+                if c.__module__ == modname and any(k in n.lower() for k in [\"policy\", \"client\", \"runner\", \"agent\"]):
                     print(f\"  - {modname}.{n}\")
         except Exception:
             pass
