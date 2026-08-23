@@ -720,50 +720,49 @@ for imp, modname, ispkg in pkgutil.walk_packages(isaaclab_arena.__path__, isaacl
                 fi
 
                 \$py_bin -c '
-import os, sys, pkgutil, importlib
-import isaaclab_arena
+import re, os
 
-# 1. Walk packages and import tasks
-for imp, modname, ispkg in pkgutil.walk_packages(isaaclab_arena.__path__, isaaclab_arena.__name__ + \".\"):
-    if \"task\" in modname.lower() or \"env\" in modname.lower():
+choices = []
+for runner_path in [\"isaaclab_arena/evaluation/policy_runner.py\", \"isaaclab_arena/evaluation/policy_runner_cli.py\"]:
+    if os.path.exists(runner_path):
         try:
-            importlib.import_module(modname)
+            with open(runner_path, \"r\") as f:
+                src = f.read()
+                match = re.search(r\"choices\s*=\s*\[([^\]]+)\]\", src)
+                if match:
+                    raw = match.group(1)
+                    choices = [x.strip().strip(\"'\x22\") for x in raw.split(\",\") if x.strip()]
+                    break
         except Exception:
             pass
 
-# 2. Check gym registry
-import gymnasium as gym
-registered_gym = [spec.id for spec in gym.envs.registry.values() if any(k in spec.id.lower() for k in [\"isaac\", \"arena\", \"cube\", \"franka\", \"g1\", \"pick\", \"reach\"])]
+if not choices:
+    choices = [
+        \"cube_goal_pose\", \"dexsuite_lift\", \"franka_put_and_close_door\",
+        \"galileo_g1_locomanip_pick_and_place\", \"galileo_g1_static_pick_and_place\",
+        \"galileo_pick_and_place\", \"gr1_open_microwave\", \"put_item_in_fridge_and_close_door\",
+        \"gr1_table_multi_object_no_collision\", \"gr1_turn_stand_mixer_knob\",
+        \"kitchen_pick_and_place\", \"lift_object\", \"pick_and_place_maple_table\",
+        \"press_button\", \"tabletop_sort_cubes\", \"gear_mesh\", \"peg_insert\",
+        \"tabletop_place_upright\"
+    ]
 
-if registered_gym:
-    print(\"=== Registered Gymnasium Environments ===\")
-    for r in sorted(set(registered_gym)):
-        print(f\"  - {r}\")
+print(\"=== Native IsaacLab-Arena Benchmark Environments ===\")
+print(\"Run headless:     ./bin/isaac-installer arena run <task>\")
+print(\"Run interactive:  ./bin/isaac-installer arena play <task>\n\")
 
-# 3. Check Arena registries if available
-try:
-    from isaaclab_arena.assets.registries import TaskRegistry
-    tr = TaskRegistry()
-    items = getattr(tr, \"_registries\", getattr(tr, \"_registry\", {}))
-    if items:
-        print(\"\n=== Arena TaskRegistry Entries ===\")
-        for t in sorted(items.keys()):
-            print(f\"  - {t}\")
-except Exception:
-    pass
+categories = {
+    \"Franka Tabletop Manipulation\": [\"cube_goal_pose\", \"lift_object\", \"tabletop_sort_cubes\", \"tabletop_place_upright\", \"pick_and_place_maple_table\", \"kitchen_pick_and_place\", \"franka_put_and_close_door\"],
+    \"Humanoid Loco-Manipulation (Unitree G1 & Fourier GR1)\": [\"galileo_g1_locomanip_pick_and_place\", \"galileo_g1_static_pick_and_place\", \"galileo_pick_and_place\", \"gr1_open_microwave\", \"put_item_in_fridge_and_close_door\", \"gr1_table_multi_object_no_collision\", \"gr1_turn_stand_mixer_knob\"],
+    \"Dexterous & Contact-Rich Assembly\": [\"dexsuite_lift\", \"press_button\", \"gear_mesh\", \"peg_insert\"]
+}
 
-# 4. Search for task config files
-task_configs = []
-for root, dirs, files in os.walk(isaaclab_arena.__path__[0]):
-    for f in files:
-        if f.endswith((\".yaml\", \".py\")) and any(k in f.lower() for k in [\"task\", \"env\", \"cube\", \"pick\", \"place\", \"reach\", \"g1\"]) and not f.startswith(\"__\"):
-            rel = os.path.relpath(os.path.join(root, f), isaaclab_arena.__path__[0])
-            task_configs.append(rel)
-
-if task_configs:
-    print(\"\n=== Task Definition Files in isaaclab_arena/ ===\")
-    for tc in sorted(set(task_configs))[:30]:
-        print(f\"  - {tc}\")
+for cat, envs in categories.items():
+    print(f\"[{cat}]\")
+    for e in envs:
+        if e in choices:
+            print(f\"  - {e}\")
+    print()
 '
             "
             ;;
