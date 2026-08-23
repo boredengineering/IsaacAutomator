@@ -408,6 +408,44 @@ if sync.get('has_upstream'):
             "
             ;;
 
+        setup-benchmark|setup-sim)
+            local bench="${1:-libero}"
+            log_header "Setting Up Isaac-GR00T Simulation Benchmark (${bench})"
+            run_as_user "
+                cd '${gr00t_dir}'
+                export PATH=\"/usr/local/bin:\$HOME/.local/bin:\$HOME/.cargo/bin:\$PATH\"
+                case '${bench}' in
+                    libero|LIBERO)
+                        if [[ -f 'gr00t/eval/sim/LIBERO/setup_libero.sh' ]]; then
+                            echo 'Running official LIBERO setup script...'
+                            bash gr00t/eval/sim/LIBERO/setup_libero.sh
+                        else
+                            echo 'Installing libero package...'
+                            uv pip install libero
+                        fi
+                        ;;
+                    robocasa|RoboCasa)
+                        if [[ -f 'gr00t/eval/sim/robocasa/setup_RoboCasa.sh' ]]; then
+                            echo 'Running official RoboCasa setup script...'
+                            bash gr00t/eval/sim/robocasa/setup_RoboCasa.sh
+                        fi
+                        ;;
+                    simpler|SimplerEnv)
+                        if [[ -f 'gr00t/eval/sim/SimplerEnv/setup_simpler_env.sh' ]]; then
+                            echo 'Running official SimplerEnv setup script...'
+                            bash gr00t/eval/sim/SimplerEnv/setup_simpler_env.sh
+                        fi
+                        ;;
+                    *)
+                        echo \"Unknown benchmark suite: ${bench}\"
+                        echo \"Available suites: libero, robocasa, simpler\"
+                        exit 1
+                        ;;
+                esac
+            "
+            log_success "Benchmark suite '${bench}' setup complete."
+            ;;
+
         rollout|eval|eval-client)
             local port="5555"
             local host="127.0.0.1"
@@ -436,11 +474,28 @@ if sync.get('has_upstream'):
             run_as_user "
                 cd '${gr00t_dir}'
                 export PATH=\"/usr/local/bin:\$HOME/.local/bin:\$HOME/.cargo/bin:\$PATH\"
+
+                # Auto-resolve dedicated benchmark virtualenv if available
+                py_runner='uv run python'
+                if [[ -x 'gr00t/eval/sim/LIBERO/libero_uv/.venv/bin/python' && ( -z '${env_name}' || '${env_name}' == libero* ) ]]; then
+                    py_runner='gr00t/eval/sim/LIBERO/libero_uv/.venv/bin/python'
+                elif [[ -x 'gr00t/eval/sim/robocasa/robocasa_uv/.venv/bin/python' && '${env_name}' == robocasa* ]]; then
+                    py_runner='gr00t/eval/sim/robocasa/robocasa_uv/.venv/bin/python'
+                elif [[ -f 'gr00t/eval/sim/LIBERO/setup_libero.sh' && ( -z '${env_name}' || '${env_name}' == libero* ) ]]; then
+                    echo 'LIBERO benchmark environment not initialized. Running setup script...'
+                    bash gr00t/eval/sim/LIBERO/setup_libero.sh
+                    if [[ -x 'gr00t/eval/sim/LIBERO/libero_uv/.venv/bin/python' ]]; then
+                        py_runner='gr00t/eval/sim/LIBERO/libero_uv/.venv/bin/python'
+                    fi
+                fi
+
                 env_arg=''
                 if [[ -n '${env_name}' ]]; then
                     env_arg=\"--env-name '${env_name}'\"
                 fi
-                uv run python gr00t/eval/rollout_policy.py \
+
+                echo \"Executing rollout with runner: \${py_runner}\"
+                \${py_runner} gr00t/eval/rollout_policy.py \
                   --policy-client-host '${host}' \
                   --policy-client-port '${port}' \
                   --n-episodes '${episodes}' \
