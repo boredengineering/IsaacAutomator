@@ -711,6 +711,7 @@ Commands:
   arena [status|list-tags|switch|sync|fork]    Manage IsaacLab-Arena versioning, tags, and fork synchronization
   gr00t [status|infer|server|test|fork]        Manage NVIDIA Isaac-GR00T VLA model, serving & inference
   sim [list|switch]                            Discover & switch active Isaac Sim engines
+  net [status|free|kill-servers|find-free]     Manage ZeroMQ, IPC ports & robotics network services
   bench                                        Benchmark CDN latency to NVIDIA, Hugging Face, and GitHub
   config                                       Display active YAML configuration profile
   install                                      Run bare-metal installation according to YAML profile
@@ -826,6 +827,7 @@ case "${COMMAND}" in
     arena)            cmd_arena "${PASSTHROUGH_ARGS[@]:-status}" ;;
     gr00t)            cmd_gr00t "${PASSTHROUGH_ARGS[@]:-status}" ;;
     sim)              cmd_sim "${PASSTHROUGH_ARGS[@]:-list}" ;;
+    net|ports|zmq)    cmd_net "${PASSTHROUGH_ARGS[@]:-status}" ;;
     bench)            cmd_bench ;;
     config)           print_active_config ;;
     install)          cmd_install ;;

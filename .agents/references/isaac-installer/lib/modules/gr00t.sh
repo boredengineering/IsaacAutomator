@@ -386,6 +386,17 @@ if sync.get('has_upstream'):
 
             log_header "Starting Isaac-GR00T ZeroMQ Policy Server on Port ${port}"
             log_info "Model: ${model_path}"
+
+            # Pre-flight Port Check & Conflict Auto-Resolution
+            if is_port_in_use "${port}"; then
+                local owner_info
+                owner_info=$(get_port_owner "${port}")
+                IFS='|' read -r opid opname opuser opcmd <<< "$owner_info"
+                log_warn "Port ${port} is currently bound by PID ${opid} (${opname} / ${opuser})."
+                log_info "Auto-releasing port ${port} before starting server daemon..."
+                free_port "${port}"
+            fi
+
             run_as_user "
                 cd '${gr00t_dir}'
                 export PATH=\"/usr/local/bin:\$HOME/.local/bin:\$HOME/.cargo/bin:\$PATH\"
