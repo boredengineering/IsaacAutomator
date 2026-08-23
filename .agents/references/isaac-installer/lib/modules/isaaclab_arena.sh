@@ -100,6 +100,82 @@ test_isaaclab_arena() {
     log_card_end
 }
 
+ensure_gr00t_zmq_bridge() {
+    local target_dir="$1"
+    local policy_file="${target_dir}/isaaclab_arena/policy/gr00t_zmq_policy.py"
+
+    if [[ -d "${target_dir}/isaaclab_arena/policy" && ! -f "${policy_file}" ]]; then
+        log_step "Registering ZeroMQ GR00T Policy Bridge into IsaacLab-Arena..."
+        cat << 'EOF' | run_as_user_stdin "${policy_file}"
+# Copyright (c) 2024-2026, IsaacLab-Arena Authors & NVIDIA.
+# All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+"""ZeroMQ Client Policy Bridge for NVIDIA Isaac-GR00T VLA Foundation Models.
+
+Connects the IsaacLab-Arena simulation loop (Python 3.12 / Isaac Sim) to the
+external decoupled Isaac-GR00T Policy Server (Python 3.10) over ZeroMQ IPC.
+"""
+
+from __future__ import annotations
+from dataclasses import dataclass
+import numpy as np
+import torch
+import zmq
+
+from isaaclab_arena.policy.policy_base import PolicyBase, PolicyCfg
+
+
+@dataclass
+class Gr00tZmqPolicyCfg(PolicyCfg):
+    host: str = "127.0.0.1"
+    port: int = 5555
+    timeout_ms: int = 5000
+    action_dim: int = 7
+
+
+class Gr00tZmqPolicy(PolicyBase):
+    """ZeroMQ IPC Client Policy communicating with Isaac-GR00T server daemon."""
+
+    def __init__(self, cfg: Gr00tZmqPolicyCfg, num_envs: int = 1, device: str = "cuda:0"):
+        super().__init__(cfg)
+        self.host = getattr(cfg, "host", "127.0.0.1")
+        self.port = getattr(cfg, "port", 5555)
+        self.timeout_ms = getattr(cfg, "timeout_ms", 5000)
+        self.num_envs = num_envs
+        self.device = device
+
+        self.context = zmq.Context()
+        self.socket = self.context.socket(zmq.REQ)
+        self.socket.setsockopt(zmq.RCVTIMEO, self.timeout_ms)
+        self.socket.connect(f"tcp://{self.host}:{self.port}")
+        print(f"[Gr00tZmqPolicy] Connected to GR00T Policy Server at tcp://{self.host}:{self.port}")
+
+    def reset(self, env_ids: torch.Tensor | None = None):
+        """Reset internal policy state buffers."""
+        pass
+
+    def get_action(self, obs: dict[str, torch.Tensor]) -> torch.Tensor:
+        """Query GR00T ZeroMQ Policy Server for continuous action chunks."""
+        try:
+            payload = {"type": "step", "num_envs": self.num_envs}
+            self.socket.send_json(payload)
+            response = self.socket.recv_json()
+            if "action" in response:
+                action_np = np.array(response["action"], dtype=np.float32)
+                return torch.from_numpy(action_np).to(self.device)
+        except Exception:
+            pass
+
+        # Fallback to zeros on timeout or mock response
+        return torch.zeros((self.num_envs, getattr(self.cfg, "action_dim", 7)), device=self.device)
+EOF
+        chmod 0644 "${policy_file}" 2>/dev/null || true
+        log_success "Gr00tZmqPolicy bridge registered at ${policy_file}"
+    fi
+}
+
 # ==============================================================================
 # CLI Subcommands for IsaacLab-Arena Version & Fork Management (`isaac-installer arena ...`)
 # ==============================================================================
@@ -544,82 +620,6 @@ SUBHELP
                 fi
             "
             ;;
-
-ensure_gr00t_zmq_bridge() {
-    local target_dir="$1"
-    local policy_file="${target_dir}/isaaclab_arena/policy/gr00t_zmq_policy.py"
-
-    if [[ -d "${target_dir}/isaaclab_arena/policy" && ! -f "${policy_file}" ]]; then
-        log_step "Registering ZeroMQ GR00T Policy Bridge into IsaacLab-Arena..."
-        cat << 'EOF' | run_as_user_stdin "${policy_file}"
-# Copyright (c) 2024-2026, IsaacLab-Arena Authors & NVIDIA.
-# All rights reserved.
-#
-# SPDX-License-Identifier: BSD-3-Clause
-
-"""ZeroMQ Client Policy Bridge for NVIDIA Isaac-GR00T VLA Foundation Models.
-
-Connects the IsaacLab-Arena simulation loop (Python 3.12 / Isaac Sim) to the
-external decoupled Isaac-GR00T Policy Server (Python 3.10) over ZeroMQ IPC.
-"""
-
-from __future__ import annotations
-from dataclasses import dataclass
-import numpy as np
-import torch
-import zmq
-
-from isaaclab_arena.policy.policy_base import PolicyBase, PolicyCfg
-
-
-@dataclass
-class Gr00tZmqPolicyCfg(PolicyCfg):
-    host: str = "127.0.0.1"
-    port: int = 5555
-    timeout_ms: int = 5000
-    action_dim: int = 7
-
-
-class Gr00tZmqPolicy(PolicyBase):
-    """ZeroMQ IPC Client Policy communicating with Isaac-GR00T server daemon."""
-
-    def __init__(self, cfg: Gr00tZmqPolicyCfg, num_envs: int = 1, device: str = "cuda:0"):
-        super().__init__(cfg)
-        self.host = getattr(cfg, "host", "127.0.0.1")
-        self.port = getattr(cfg, "port", 5555)
-        self.timeout_ms = getattr(cfg, "timeout_ms", 5000)
-        self.num_envs = num_envs
-        self.device = device
-
-        self.context = zmq.Context()
-        self.socket = self.context.socket(zmq.REQ)
-        self.socket.setsockopt(zmq.RCVTIMEO, self.timeout_ms)
-        self.socket.connect(f"tcp://{self.host}:{self.port}")
-        print(f"[Gr00tZmqPolicy] Connected to GR00T Policy Server at tcp://{self.host}:{self.port}")
-
-    def reset(self, env_ids: torch.Tensor | None = None):
-        """Reset internal policy state buffers."""
-        pass
-
-    def get_action(self, obs: dict[str, torch.Tensor]) -> torch.Tensor:
-        """Query GR00T ZeroMQ Policy Server for continuous action chunks."""
-        try:
-            payload = {"type": "step", "num_envs": self.num_envs}
-            self.socket.send_json(payload)
-            response = self.socket.recv_json()
-            if "action" in response:
-                action_np = np.array(response["action"], dtype=np.float32)
-                return torch.from_numpy(action_np).to(self.device)
-        except Exception:
-            pass
-
-        # Fallback to zeros on timeout or mock response
-        return torch.zeros((self.num_envs, getattr(self.cfg, "action_dim", 7)), device=self.device)
-EOF
-        chmod 0644 "${policy_file}" 2>/dev/null || true
-        log_success "Gr00tZmqPolicy bridge registered at ${policy_file}"
-    fi
-}
 
         eval-gr00t|closed-loop)
             local task_name="cube_goal_pose"
