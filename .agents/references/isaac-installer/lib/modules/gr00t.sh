@@ -408,6 +408,50 @@ if sync.get('has_upstream'):
             "
             ;;
 
+        rollout|eval|eval-client)
+            local port="5555"
+            local host="127.0.0.1"
+            local episodes="1"
+            local max_steps="720"
+            local env_name=""
+            local action_steps="8"
+            local num_envs="1"
+            local extra_args=()
+
+            while [[ $# -gt 0 ]]; do
+                case "$1" in
+                    --port|-p)               port="$2"; shift 2 ;;
+                    --host|-h)               host="$2"; shift 2 ;;
+                    --n-episodes|--episodes) episodes="$2"; shift 2 ;;
+                    --max-episode-steps)     max_steps="$2"; shift 2 ;;
+                    --env-name|--env)        env_name="$2"; shift 2 ;;
+                    --n-action-steps)        action_steps="$2"; shift 2 ;;
+                    --n-envs|--envs)         num_envs="$2"; shift 2 ;;
+                    *)                       extra_args+=("$1"); shift ;;
+                esac
+            done
+
+            log_header "Running NVIDIA Isaac-GR00T Closed-Loop Rollout Client"
+            log_info "Target Policy Server: ${host}:${port}"
+            run_as_user "
+                cd '${gr00t_dir}'
+                export PATH=\"/usr/local/bin:\$HOME/.local/bin:\$HOME/.cargo/bin:\$PATH\"
+                env_arg=''
+                if [[ -n '${env_name}' ]]; then
+                    env_arg=\"--env-name '${env_name}'\"
+                fi
+                uv run python gr00t/eval/rollout_policy.py \
+                  --policy-client-host '${host}' \
+                  --policy-client-port '${port}' \
+                  --n-episodes '${episodes}' \
+                  --max-episode-steps '${max_steps}' \
+                  --n-action-steps '${action_steps}' \
+                  --n-envs '${num_envs}' \
+                  \${env_arg} \
+                  ${extra_args[*]:-}
+            "
+            ;;
+
         eval-closed-loop|closed-loop)
             local port="${1:-5555}"
             local host="${2:-127.0.0.1}"

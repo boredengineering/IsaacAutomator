@@ -706,6 +706,30 @@ for imp, modname, ispkg in pkgutil.walk_packages(isaaclab_arena.__path__, isaacl
             "
             ;;
 
+        list-tasks|tasks)
+            log_header "Discovering Registered IsaacLab-Arena Benchmark Tasks"
+            run_as_user "
+                cd '${arena_dir}'
+                py_bin='python'
+                if [[ -x '${TARGET_HOME}/miniconda3/envs/isaaclab/bin/python' ]]; then
+                    py_bin='${TARGET_HOME}/miniconda3/envs/isaaclab/bin/python'
+                elif [[ -x '${TARGET_HOME}/miniforge3/envs/isaaclab/bin/python' ]]; then
+                    py_bin='${TARGET_HOME}/miniforge3/envs/isaaclab/bin/python'
+                elif [[ -d '${lab_dir}' && -x '${lab_dir}/isaaclab.sh' ]]; then
+                    py_bin='${lab_dir}/isaaclab.sh -p'
+                fi
+
+                \$py_bin -c '
+import gymnasium as gym
+import isaaclab_arena
+print(\"=== Registered Gymnasium Tasks in IsaacLab-Arena ===\")
+registered = [spec.id for spec in gym.envs.registry.values() if any(k in spec.id.lower() for k in [\"isaac\", \"arena\", \"cube\", \"franka\", \"g1\"])]
+for r in sorted(set(registered)):
+    print(f\"  - {r}\")
+'
+            "
+            ;;
+
         test)
             test_isaaclab_arena
             ;;
