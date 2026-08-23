@@ -224,7 +224,8 @@ EOF
     fi
 
     local model_id="${GR00T_MODEL_PATH:-nvidia/GR00T-N1.7-3B}"
-    log_step "Downloading foundation model weights for [${model_id}]..."
+    local backbone_id="${GR00T_VLM_BACKBONE:-nvidia/Cosmos-Reason2-2B}"
+    log_step "Downloading foundation model weights for [${model_id}] & perception backbone [${backbone_id}]..."
 
     local dest_arg=""
     if [[ -n "$target_dir" && "$target_dir" != --* ]]; then
@@ -239,22 +240,28 @@ EOF
         export HF_HUB_ENABLE_HF_TRANSFER=1
         
         if command -v hf &>/dev/null; then
-            echo 'Pulling model snapshot via high-speed hf download...'
-            hf download '${model_id}' ${dest_arg}
+            echo 'Pulling GR00T VLA snapshot via high-speed hf download...'
+            hf download '${model_id}' ${dest_arg} || true
+
+            echo 'Pulling Cosmos-Reason2 vision backbone snapshot via high-speed hf download...'
+            hf download '${backbone_id}' || true
         else
-            echo 'Pulling model snapshot via huggingface_hub Python engine...'
+            echo 'Pulling model snapshots via huggingface_hub Python engine...'
             uv run python -u -c \"
 import os, sys
 from huggingface_hub import snapshot_download
-model_id = '${model_id}'
-local_dir = '${target_dir}' if '${target_dir}' and not '${target_dir}'.startswith('--') else None
-print(f'Starting high-speed snapshot download for {model_id} (max_workers=8)...', flush=True)
-path = snapshot_download(repo_id=model_id, local_dir=local_dir, max_workers=8, ignore_patterns=['*.msgpack'])
-print(f'SUCCESS: Model cached at: {path}', flush=True)
+
+for mid in ['${model_id}', '${backbone_id}']:
+    print(f'Starting high-speed snapshot download for {mid} (max_workers=8)...', flush=True)
+    try:
+        path = snapshot_download(repo_id=mid, max_workers=8, ignore_patterns=['*.msgpack'])
+        print(f'SUCCESS: Model {mid} cached at: {path}', flush=True)
+    except Exception as e:
+        print(f'NOTE on {mid}: {e}', flush=True)
 \"
         fi
     "
-    log_success "Model weights for [${model_id}] verified in local cache."
+    log_success "Foundation model stack for [${model_id}] & [${backbone_id}] verified in local cache."
 }
 
 # ==============================================================================

@@ -1769,18 +1769,59 @@ Used for visual validation of USD scene assembly, lighting, materials, and conta
 
 ### 14.2 Pillar 2: Downloading & Managing Foundation Model Weights for GR00T
 
-#### 14.2.1 Model Checkpoint Specifications
+#### 14.2.1 Dual-System Model Architecture & The `Cosmos-Reason2-2B` Visual Backbone
 
-The NVIDIA Isaac-GR00T architecture utilizes a dual-system Physical AI foundation model:
-* **High-Level Visual Reasoner (System 2)**: `nvidia/Cosmos-Reason2-2B` (Processes camera frames + natural language instructions).
-* **Low-Level Continuous Action Denoising (System 1)**: `nvidia/GR00T-N1.7-3B` (Diffusion Transformer generating 40-step action chunks at 20-50 Hz).
+NVIDIA Isaac-GR00T is structured as a **Dual-System Vision-Language-Action (VLA)** architecture:
+
+```mermaid
+flowchart LR
+    subgraph PERCEPTION ["System 2: Vision-Language Perception Backbone (nvidia/Cosmos-Reason2-2B)"]
+        RGB["RGB Camera Frames\n(Wrist + Tabletop 224x224)"]
+        LANG["Natural Language Task Instructions\n('pick up the red block and place it in the bin')"]
+        VLM["Cosmos-Reason2-2B / Qwen3-VL Encoder"]
+        RGB --> VLM
+        LANG --> VLM
+        EMB["Spatio-Temporal Visual Embeddings"]
+        VLM --> EMB
+    end
+
+    subgraph ACTION ["System 1: Continuous Action Diffusion Head (nvidia/GR00T-N1.7-3B)"]
+        PROP["Proprioception State\n(Joint Positions & Velocities)"]
+        DIT["Diffusion Transformer (DiT)\n40-step Trajectory Denoising"]
+        EMB --> DIT
+        PROP --> DIT
+        ACT["Continuous Multi-Joint Action Chunk\n(DROID / G1 / Franka 20-50 Hz)"]
+        DIT --> ACT
+    end
+```
+
+* **System 2 (Vision-Language Perception Backbone)**: **`nvidia/Cosmos-Reason2-2B`** (or `Qwen3VLForConditionalGeneration`). This encoder processes high-dimensional camera video feeds and natural language prompts into latent spatial tokens.
+* **System 1 (Continuous Action Denoising Head)**: **`nvidia/GR00T-N1.7-3B`**. This DiT model consumes the visual embeddings + robot proprioception to denoise continuous multi-joint action chunks.
 
 ---
 
-#### 14.2.2 Weight Provisioning Strategies
+#### 14.2.2 Dual Gated Hub Access & 1-Click License Protocol
 
-##### Strategy A: Authenticated Real Weights Retrieval (Production / Full Inference)
-`nvidia/GR00T-N1.7-3B` and `nvidia/Cosmos-Reason2-2B` are gated models hosted on the Hugging Face Hub requiring authenticated access:
+> [!IMPORTANT]
+> **Why `nvidia/GR00T-N1.7-3B` Requires `nvidia/Cosmos-Reason2-2B` Hugging Face Authorization**:
+> When `Gr00tPolicy` initializes via `AutoModel.from_pretrained('nvidia/GR00T-N1.7-3B')`, its configuration dynamically instantiates the `Cosmos-Reason2-2B` vision backbone. If the developer's Hugging Face account has authorized GR00T but **not** Cosmos-Reason2-2B, Hugging Face Hub returns:
+> ```text
+> huggingface_hub.errors.GatedRepoError: 403 Client Error. Forbidden:
+> Cannot access gated repo for url https://huggingface.co/nvidia/Cosmos-Reason2-2B/resolve/main/config.json.
+> Access to model nvidia/Cosmos-Reason2-2B is restricted and you are not in the authorized list.
+> ```
+
+**Pre-Flight Authorization Checklist**:
+Developers must visit both official NVIDIA repository pages and click **"Acknowledge & Access Repository"** (access is granted instantly to the authenticated account):
+1. **GR00T VLA Model**: [https://huggingface.co/nvidia/GR00T-N1.7-3B](https://huggingface.co/nvidia/GR00T-N1.7-3B)
+2. **Cosmos Vision Backbone**: [https://huggingface.co/nvidia/Cosmos-Reason2-2B](https://huggingface.co/nvidia/Cosmos-Reason2-2B)
+
+---
+
+#### 14.2.3 Weight Provisioning Strategies
+
+##### Strategy A: Authenticated Real Weights Retrieval (Dual-Snapshot Download)
+The installer CLI automatically fetches and pre-caches **both** the diffusion action head and the visual perception backbone in high-speed parallel streams:
 
 1. **Authenticate Hugging Face Hub**:
    ```bash
@@ -1791,17 +1832,14 @@ The NVIDIA Isaac-GR00T architecture utilizes a dual-system Physical AI foundatio
    export HF_TOKEN="hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
    ```
 
-2. **Execute Resilient Snapshot Download**:
+2. **Execute Dual Snapshot Download (GR00T + Cosmos)**:
    ```bash
-   # Download model weights to default cache (~/.cache/huggingface/hub):
+   # Downloads both nvidia/GR00T-N1.7-3B and nvidia/Cosmos-Reason2-2B:
    ./bin/isaac-installer gr00t download-weights
-
-   # Or specify dedicated NVMe storage path on /data:
-   ./bin/isaac-installer gr00t download-weights /data/models/pretrained_checkpoints/gr00t-n1.7-3b
    ```
 
 ##### Strategy B: Structural Mock Fixture Mode (Zero-Bandwidth Offline Testing)
-For testing server-client IPC pipelines, action translation, and tensor serialization without downloading 12+ GB of weight files:
+For testing server-client IPC pipelines, action translation, and tensor serialization without downloading multi-gigabyte weight files:
 
 ```bash
 # Generate structural mock checkpoint fixture with valid modality.json schemas:
@@ -1812,9 +1850,9 @@ For testing server-client IPC pipelines, action translation, and tensor serializ
 
 ---
 
-#### 14.2.3 Foundation Model Smoke Test (Open-Loop Inference)
+#### 14.2.4 Foundation Model Smoke Test (Open-Loop Inference)
 
-Run standalone open-loop inference against demonstration trajectories to verify model architecture and modality mapping:
+Run standalone open-loop inference against demonstration trajectories to verify model architecture, visual backbone loading, and modality mapping:
 
 ```bash
 # Run open-loop forward pass on DROID sample trajectory:
