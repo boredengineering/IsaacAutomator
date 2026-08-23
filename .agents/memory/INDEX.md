@@ -72,6 +72,7 @@ Master index of session memory checkpoints for Isaac Automator.
 | 2026-08-23 02:25 | `e5f6a7b8` | Milestone: NVIDIA Isaac-GR00T VLA Open-Loop Inference Verified & Dual-Model Architecture | Verified 1.09B DiT + 2.01B Cosmos-Reason2-2B inference over DROID dataset (89.9ms latency, 0.00328 MSE) | [`20260823_022500_e5f6a7b8.md`](./sessions/20260823_022500_e5f6a7b8.md) |
 | 2026-08-23 03:50 | `f6a7b8c9` | Root Cause Analysis of Evaluation Tracks & Section 15 Troubleshooting Matrix | Diagnosed failure modes across simulation benchmarks, updated Section 14/15 in plan, and pinned robosuite/mujoco for LIBERO | [`20260823_035000_f6a7b8c9.md`](./sessions/20260823_035000_f6a7b8c9.md) |
 | 2026-08-23 05:36 | `a1c2e3f4` | Bottom-Up Canonical Architecture Plan, NVIDIA DROID Baseline & Docker Paradigm Analysis | Codified NVIDIA's minimal reference DROID baseline, Docker vs Bare-Metal locomanipulation analysis, and 4-level roadmap | [`20260823_053600_a1c2e3f4.md`](./sessions/20260823_053600_a1c2e3f4.md) |
+| 2026-08-23 05:58 | `b2d3f4e5` | 100% Native Bare-Metal Architecture Overhaul & 5 Root-Cause Deep Dives in debugging_arena_gr00t.md | Replaced roadmap with native bare-metal architecture (Pinocchio/Pink WBC, editable extension links, and IPC diagnostics) | [`20260823_055800_b2d3f4e5.md`](./sessions/20260823_055800_b2d3f4e5.md) |
 
 
 
