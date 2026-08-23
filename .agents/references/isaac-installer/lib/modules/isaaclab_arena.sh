@@ -546,8 +546,30 @@ SUBHELP
             ;;
 
         eval-gr00t|closed-loop)
-            local task_name="${1:-cube_goal_pose}"
-            local port="${2:-5555}"
+            local task_name="cube_goal_pose"
+            local port="5555"
+            local policy_cls=""
+            local steps="100"
+            local num_envs="4"
+
+            while [[ $# -gt 0 ]]; do
+                case "$1" in
+                    --port|-p)        port="$2"; shift 2 ;;
+                    --policy|-P)      policy_cls="$2"; shift 2 ;;
+                    --steps)          steps="$2"; shift 2 ;;
+                    --num_envs)       num_envs="$2"; shift 2 ;;
+                    -*)               shift ;;
+                    *)
+                        if [[ "$1" =~ ^[0-9]+$ ]]; then
+                            port="$1"
+                        else
+                            task_name="$1"
+                        fi
+                        shift
+                        ;;
+                esac
+            done
+
             log_header "Running Closed-Loop IsaacLab-Arena + Isaac-GR00T VLA Benchmark"
             log_info "Task: ${task_name} | Policy Server: 127.0.0.1:${port}"
             run_as_user "
@@ -557,31 +579,88 @@ SUBHELP
                     runner_cmd='isaaclab_arena/evaluation/policy_runner.py'
                 fi
 
+                # Auto-resolve dotted policy class if not explicitly passed
+                target_policy='${policy_cls}'
+                if [[ -z \"\$target_policy\" ]]; then
+                    # Probe available registered policies
+                    target_policy=\"\$(python -c '
+try:
+    from isaaclab_arena.evaluation.policy_runner import POLICY_REGISTRY
+    if \"gr00t\" in POLICY_REGISTRY:
+        print(\"gr00t\")
+    elif \"zmq\" in POLICY_REGISTRY:
+        print(\"zmq\")
+    else:
+        # Search for ZMQ or GR00T policy classes in isaaclab_arena
+        import pkgutil, importlib, inspect, isaaclab_arena
+        found = \"\"
+        for imp, modname, ispkg in pkgutil.walk_packages(isaaclab_arena.__path__, isaaclab_arena.__name__ + \".\"):
+            if \"policy\" in modname.lower() or \"zmq\" in modname.lower() or \"gr00t\" in modname.lower():
+                try:
+                    mod = importlib.import_module(modname)
+                    for n, c in inspect.getmembers(mod, inspect.isclass):
+                        if c.__module__ == modname and (\"zmq\" in n.lower() or \"gr00t\" in n.lower()):
+                            found = f\"{modname}.{n}\"
+                            break
+                except Exception:
+                    pass
+            if found: break
+        print(found or \"zero_action\")
+except Exception:
+    print(\"zero_action\")
+' 2>/dev/null || echo 'zero_action')\"
+                fi
+
+                echo \"Using Arena Policy Engine: \${target_policy}\"
+
                 if [[ -d '${lab_dir}' && -x '${lab_dir}/isaaclab.sh' ]]; then
                     ${lab_dir}/isaaclab.sh -p \${runner_cmd} \
-                        --policy_type gr00t \
-                        --policy_host 127.0.0.1 \
-                        --policy_port '${port}' \
-                        --num_steps 100 \
-                        --num_envs 4 \
+                        --policy_type \"\${target_policy}\" \
+                        --num_steps '${steps}' \
+                        --num_envs '${num_envs}' \
                         '${task_name}'
                 elif command -v isaaclab-env &>/dev/null; then
                     isaaclab-env python \${runner_cmd} \
-                        --policy_type gr00t \
-                        --policy_host 127.0.0.1 \
-                        --policy_port '${port}' \
-                        --num_steps 100 \
-                        --num_envs 4 \
+                        --policy_type \"\${target_policy}\" \
+                        --num_steps '${steps}' \
+                        --num_envs '${num_envs}' \
                         '${task_name}'
                 else
                     python \${runner_cmd} \
-                        --policy_type gr00t \
-                        --policy_host 127.0.0.1 \
-                        --policy_port '${port}' \
-                        --num_steps 100 \
-                        --num_envs 4 \
+                        --policy_type \"\${target_policy}\" \
+                        --num_steps '${steps}' \
+                        --num_envs '${num_envs}' \
                         '${task_name}'
                 fi
+            "
+            ;;
+
+        list-policies|policies)
+            log_header "Discovering IsaacLab-Arena Policy Implementations"
+            run_as_user "
+                cd '${arena_dir}'
+                python -c '
+import isaaclab_arena
+print(\"=== Built-in Registered Policies ===\")
+try:
+    from isaaclab_arena.evaluation.policy_runner import POLICY_REGISTRY
+    for k, v in POLICY_REGISTRY.items():
+        print(f\"  - {k:<20} -> {v.__module__}.{v.__name__}\")
+except Exception as e:
+    print(\"  Could not load POLICY_REGISTRY:\", e)
+
+print(\"\n=== Discovered Policy Classes in isaaclab_arena.* ===\")
+import pkgutil, importlib, inspect
+for imp, modname, ispkg in pkgutil.walk_packages(isaaclab_arena.__path__, isaaclab_arena.__name__ + \".\"):
+    if \"policy\" in modname.lower() or \"eval\" in modname.lower() or \"zmq\" in modname.lower() or \"gr00t\" in modname.lower():
+        try:
+            mod = importlib.import_module(modname)
+            for n, c in inspect.getmembers(mod, inspect.isclass):
+                if c.__module__ == modname and (\"policy\" in n.lower() or \"client\" in n.lower()):
+                    print(f\"  - {modname}.{n}\")
+        except Exception:
+            pass
+'
             "
             ;;
 
