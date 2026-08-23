@@ -327,13 +327,46 @@ if sync.get('has_upstream'):
             ;;
 
         server)
-            local port="${1:-${GR00T_SERVER_PORT:-5555}}"
+            local port="5555"
+            local model_path="${GR00T_MODEL_PATH:-nvidia/GR00T-N1.7-3B}"
+            local is_mock=false
+
+            while [[ $# -gt 0 ]]; do
+                case "$1" in
+                    --mock|-m)
+                        is_mock=true
+                        model_path="${TARGET_HOME}/.cache/isaac-gr00t/mock-n1.7"
+                        shift
+                        ;;
+                    --port|-p)
+                        port="$2"
+                        shift 2
+                        ;;
+                    --model-path)
+                        model_path="$2"
+                        shift 2
+                        ;;
+                    -*)
+                        shift
+                        ;;
+                    *)
+                        if [[ "$1" =~ ^[0-9]+$ ]]; then
+                            port="$1"
+                        else
+                            model_path="$1"
+                        fi
+                        shift
+                        ;;
+                esac
+            done
+
             log_header "Starting Isaac-GR00T ZeroMQ Policy Server on Port ${port}"
+            log_info "Model: ${model_path}"
             run_as_user "
                 cd '${gr00t_dir}'
                 export PATH=\"/usr/local/bin:\$HOME/.local/bin:\$HOME/.cargo/bin:\$PATH\"
                 uv run python gr00t/eval/run_gr00t_server.py \
-                  --model-path '${GR00T_MODEL_PATH:-nvidia/GR00T-N1.7-3B}' \
+                  --model-path '${model_path}' \
                   --embodiment-tag OXE_DROID_RELATIVE_EEF_RELATIVE_JOINT \
                   --port '${port}' \
                   --device cuda:0
