@@ -82,6 +82,7 @@ Master index of session memory checkpoints for Isaac Automator.
 | 2026-08-23 18:37 | `c9d0e1f2` | Docker Installation Baseline Path & Code Inventory | Added Section 9 to debugging_arena_gr00t.md with complete submodule resolution runbook and isaac-installer code inventory | [`20260823_183700_c9d0e1f2.md`](./sessions/20260823_183700_c9d0e1f2.md) |
 | 2026-08-23 21:05 | `e8f9a0b1` | Docker Baseline Verified 100% & Manifest Extraction Protocol | Verified 18/18 physics/logic pytests passed, documented 3 test tiers, and added manifest extraction protocol & anchor in debugging_arena_gr00t.md | [`20260823_210540_e8f9a0b1.md`](./sessions/20260823_210540_e8f9a0b1.md) |
 | 2026-08-23 22:07 | `a2b4c6d8` | Container Manifest Ground Truth & Container Operations Runbook | Analyzed WBC/CMEEL manifest and 363-package freeze, added native pip recipe and Section 10 Container Operations Runbook to debugging_arena_gr00t.md | [`20260823_220730_a2b4c6d8.md`](./sessions/20260823_220730_a2b4c6d8.md) |
+| 2026-08-24 02:27 | `b3c5e7f9` | NVIDIA Blackwell (sm_120) Kernel Incompatibility Analysis in Isaac-GR00T | Codified Section 11 in debugging_arena_gr00t.md with diagnostic audit, 4-layer bottleneck breakdown, and NVIDIA forum consultation agenda | [`20260824_022730_b3c5e7f9.md`](./sessions/20260824_022730_b3c5e7f9.md) |
 
 
 

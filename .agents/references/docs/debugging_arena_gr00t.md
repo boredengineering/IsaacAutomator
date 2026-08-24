@@ -951,11 +951,126 @@ export EVAL_DIR=/eval/isaaclab_arena/locomanipulation_tutorial
 
 ---
 
+## 11. Deep Architectural Analysis: NVIDIA Blackwell (`sm_120`) Kernel Incompatibility in `Isaac-GR00T`
+
+During Step 5 of the G1 Loco-Manipulation Box Pick & Place evaluation (`policy_runner.py` connecting to `run_gr00t_server.py`), a critical low-level hardware/CUDA runtime incompatibility was diagnosed on the **NVIDIA RTX PRO 6000 Blackwell Workstation Edition**.
+
+### 11.1 Incident Telemetry & Diagnostic Probe Output
+
+During closed-loop policy rollout (`galileo_g1_locomanip_pick_and_place`), the simulation client connected over ZeroMQ to port `5556`, but the policy server failed on its first inference step:
+
+```text
+Traceback (most recent call last):
+  File "/workspaces/isaaclab_arena/submodules/Isaac-GR00T/gr00t/policy/server_client.py", line 210, in call_endpoint
+    raise RuntimeError(f"Server error: {response['error']}")
+RuntimeError: Server error: CUDA error: no kernel image is available for execution on the device
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+```
+
+#### Diagnostic Audit Results (from `submodules/Isaac-GR00T` via `uv run python`):
+```text
+================================================================
+            ISAAC-GR00T PYTORCH & HARDWARE AUDIT                
+================================================================
+1. PyTorch Version:         2.7.1+cu126
+2. Bundled CUDA Version:    12.6
+3. Active GPU Device:       NVIDIA RTX PRO 6000 Blackwell Workstation Edition
+4. Hardware Capability:     SM (12, 0)
+5. Compiled Architectures:  ['sm_50', 'sm_60', 'sm_70', 'sm_75', 'sm_80', 'sm_86', 'sm_90']
+
+--- Sensitive C-Extension Inventory ---
+  ✓ flash_attn     : 2.7.4.post1
+  - xformers       : Not installed / Not imported
+  ✓ triton         : 3.3.1
+  ✓ deepspeed      : 0.17.6
+  ✓ transformers   : 4.51.3
+  ✓ accelerate     : 1.14.0
+================================================================
+UserWarning: 
+NVIDIA RTX PRO 6000 Blackwell Workstation Edition with CUDA capability sm_120 is not compatible with the current PyTorch installation.
+The current PyTorch install supports CUDA capabilities sm_50 sm_60 sm_70 sm_75 sm_80 sm_86 sm_90.
+```
+
+---
+
+### 11.2 Empirical Runtime Tests & Findings
+
+1. **Test A: Runtime Flag Bypass (`TORCH_SDPA_USE_FLASH=0 CUDA_FORCE_PTX_JIT=1`)**:
+   - **Hypothesis**: Bypassing fused `flash_attn` kernels might allow standard PyTorch Scaled Dot-Product Attention (math/mem-efficient) to JIT-compile via driver PTX.
+   - **Result**: **FAILED**. Threw `CUDA error: no kernel image is available for execution on the device`.
+   - **Finding**: PyTorch's core CUDA kernels in `cu126` (e.g. `torch.embedding`, linear layers, GEMM) lack intermediate PTX targeting `sm_120`.
+
+2. **Test B: Basic Tensor Compute Probe (`torch.randn(1, 1024, device='cuda')`)**:
+   - **Test Code**:
+     ```python
+     import torch
+     x = torch.randn(1, 1024, device='cuda')
+     w = torch.randn(1024, 1024, device='cuda')
+     y = torch.matmul(x, w)
+     ```
+   - **Result**: **FAILED** immediately on line `x = torch.randn(...)`:
+     ```text
+     RuntimeError: CUDA error: no kernel image is available for execution on the device
+     ```
+   - **Finding**: The incompatibility is not restricted to transformer/attention layers. **Zero CUDA operations** (even basic random tensor memory allocations) can execute under `torch==2.7.1+cu126` on an NVIDIA RTX PRO 6000 Blackwell (`sm_120`).
+
+3. **Test C: Astral `uv run` Declarative Lockfile Enforcement**:
+   - When attempting manual pip installations inside `.venv`, running `uv run python ...` triggers:
+     ```text
+     Uninstalled 20 packages in 74ms
+     Installed 20 packages in 55ms
+     PyTorch Version: 2.7.1+cu126
+     ```
+   - **Finding**: `uv run` strictly enforces `uv.lock`. Any manual environment modifications outside `uv lock / uv sync` are automatically rolled back to preserve the repository's locked dependency tree.
+
+4. **Test D: Environment Decoupling Verification**:
+   - **Finding**: `IsaacLab-Arena` (in Docker) runs on `torch==2.10.0+cu128` (CUDA 12.8) and has **zero issues on Blackwell** (100% test pass across 869 tests).
+   - The failure is isolated strictly to the **`Isaac-GR00T` policy server Python 3.10 virtual environment**.
+
+---
+
+### 11.3 4-Layer Bottleneck Breakdown
+
+```mermaid
+flowchart TD
+    L1["1. Hardware Layer: NVIDIA RTX PRO 6000 Blackwell\n• Requires SM 12.0 (sm_120) SASS instruction set"]
+    L2["2. Driver Layer: NVIDIA Driver 595.84 (CUDA 13.2 capable)\n• NOT the bottleneck — recognizes card & supports CUDA 13.x"]
+    L3["3. PyTorch Binary fatbin Layer: PyTorch 2.7.1+cu126\n• BOTTLENECK 1: Only contains machine code for sm_50..sm_90\n• Lacks sm_120 native SASS (introduced in CUDA 12.8+)"]
+    L4["4. C-Extension Ecosystem Layer: flash_attn, triton, deepspeed\n• BOTTLENECK 2: Compiled against specific PyTorch C++ ABI\n• Unpinned / nightly updates risk breaking downstream symbols"]
+
+    L1 <==> L2 <==> L3 <==> L4
+```
+
+| Layer | Component | Status & Technical Detail |
+| :--- | :--- | :--- |
+| **Hardware** | NVIDIA RTX PRO 6000 Blackwell | Requires Compute Capability `sm_120` (SM 12.0). |
+| **Host Driver** | Driver 595.84 | Fully supports CUDA 13.2 and Blackwell architecture (Passes `nvidia-smi`). |
+| **PyTorch Wheel** | `torch==2.7.1+cu126` | Compiled with CUDA 12.6. `fatbin` stops at `sm_90` (Hopper). Missing `sm_120`. |
+| **C-Extensions** | `flash_attn 2.7.4`, `triton 3.3.1` | Pinned to Python 3.10 and PyTorch 2.7 C++ ABI; sensitive to arbitrary wheel replacements. |
+
+---
+
+### 11.4 NVIDIA Forum & Community Consultation Agenda
+
+To ensure a production-grade, non-breaking resolution aligned with official NVIDIA engineering standards, the following technical items are slated for consultation with NVIDIA forums and community engineers:
+
+1. **Official Blackwell Wheel Matrix for Python 3.10**:
+   - What is NVIDIA's recommended PyTorch build targeting `cu128` that maintains 100% C++ ABI compatibility with `transformers 4.51.x`, `flash_attn 2.7.x`, and `triton 3.3.x` on Python 3.10?
+2. **FlashAttention Source Compilation on `sm_120`**:
+   - If rebuilding `flash_attn` from source on Blackwell workstations, what exact `TORCH_CUDA_ARCH_LIST` flags (e.g. `TORCH_CUDA_ARCH_LIST="12.0;12.0+PTX"`) and NVCC compiler flags are supported by the `Dao-AILab/flash-attention` release?
+3. **Dedicated NGC GR00T Container Availability**:
+   - Does NVIDIA ship an official container image (e.g., `nvcr.io/nvidian/gr00t1_6_arena_ci` or `cuda_gr00t_gn16`) that pre-packages the CUDA 12.8 / Blackwell-compatible policy server stack with all foundation model dependencies pre-compiled?
+
+---
+
 ### ⚓ Master Baseline & Active Goal Anchor
 
 * **Active Working Mode**: **Track 1: Docker Container Baseline Execution**
 * **Primary Target**: Getting Isaac Lab / IsaacLab-Arena container running smoothly on host.
 * **Secondary Target (Deferred)**: Replicating container manifests to native Conda `isaaclab` environment.
 * **Active Benchmark**: Unitree G1 Loco-Manipulation Box Pick & Place Workflow.
+* **Active Research Track**: NVIDIA Blackwell (`sm_120`) CUDA 12.8 toolchain alignment for `Isaac-GR00T`.
 
 
