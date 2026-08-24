@@ -687,3 +687,275 @@ The following files and line numbers in `isaac-installer` implement the Docker a
 | [`.agents/references/isaac-installer/lib/modules/dev_tools.sh`](file:///workspaces/IsaacAutomator/.agents/references/isaac-installer/lib/modules/dev_tools.sh#L104-L135) | Lines 104–135 | Host Docker CE installation, user group addition (`usermod -aG docker`), and NVIDIA Container Toolkit configuration (`nvidia-ctk runtime configure`). |
 | [`.agents/references/isaac-installer/lib/core/audit.sh`](file:///workspaces/IsaacAutomator/.agents/references/isaac-installer/lib/core/audit.sh#L153-L170) | Lines 153–170 | Hardware audit inspecting Docker daemon status and GPU passthrough capability (`nvidia-ctk`). |
 
+---
+
+### 9.3 Docker Baseline Verification & Test Suite Execution
+
+The Docker container environment built from `docker/Dockerfile.isaaclab_arena` was verified with 100% test pass on the host environment:
+
+#### 1. Three-Tier Test Suite Commands:
+```bash
+cd ~/Documents/GitHub/boredengineering/IsaacLab-Arena
+
+# Tier 1: Fast Physics & Logic (No Cameras, No Subprocesses) - VERIFIED PASSED (18/18)
+./docker/run_docker.sh pytest -sv -m "not with_cameras and not with_subprocess" isaaclab_arena/tests/
+
+# Tier 2: Camera & Vision Rendering (Requires Vulkan/RTX GPU Offscreen Pipeline) - VERIFIED PASSED (808/808)
+./docker/run_docker.sh pytest -sv -m "with_cameras and not with_subprocess" isaaclab_arena/tests/
+
+# Tier 3: Multi-Process Subsystems & Policy IPC - VERIFIED PASSED (43/43)
+./docker/run_docker.sh pytest -sv -m with_subprocess isaaclab_arena/tests/
+```
+
+#### 2. Verified Test Results (100% Pass Across All 869 Tests):
+* **Tier 1 (Physics & Logic)**:
+  ```text
+  ================ 18 passed, 854 deselected, 7594 warnings in 403.61s (0:06:43) ================
+  Closing persistent simulation app. Tests failed: False
+  ```
+* **Tier 2 (Vision & Camera Rendering)**:
+  ```text
+  ================ 808 passed, 3 skipped, 61 deselected, 2245 warnings in 890.97s (0:14:50) ================
+  Closing persistent simulation app. Tests failed: False
+  ```
+* **Tier 3 (Multi-Process Subsystems & Policy IPC)**:
+  ```text
+  ================ 43 passed, 829 deselected, 95 warnings in 954.69s (0:15:54) ================
+  [IsaacLab Arena] ~tarfy /workspaces/isaaclab_arena $
+  ```
+* **Overall Test Suite Total**: **869 Passed, 3 Skipped, 0 Failed (100% Success Rate)**.
+
+#### 3. Host Volume Mount Contract:
+* **Live Code Sync**: `.:/workspaces/isaaclab_arena` (Live host code changes reflected immediately in container).
+* **Cache Persistence**: `$HOME/.cache` -> `/home/<user>/.cache` (Hugging Face weights and pip wheels preserved).
+* **Optional Data Mounts**: `$HOME/datasets` -> `/datasets`, `$HOME/models` -> `/models`, `$HOME/eval` -> `/eval` (safely skipped if directories do not exist).
+
+---
+
+### 9.4 Container Manifest Extraction & Ground Truth Analysis (Verified)
+
+The container manifest extraction protocol was executed on the working reference container (`isaaclab_arena:latest`), capturing ground-truth configuration in [`.agents/references/docs/`](file:///workspaces/IsaacAutomator/.agents/references/docs/):
+
+#### 1. Extracted Manifest Files Summary:
+* [`container_wbc_manifest.txt`](file:///workspaces/IsaacAutomator/.agents/references/docs/container_wbc_manifest.txt): C++ Kinematic and QP solver module paths.
+* [`container_env.txt`](file:///workspaces/IsaacAutomator/.agents/references/docs/container_env.txt): Active environment variables, Vulkan driver paths, and Omniverse hub parameters.
+* [`container_pip_freeze.txt`](file:///workspaces/IsaacAutomator/.agents/references/docs/container_pip_freeze.txt): Full freeze of all 363 Python 3.12 wheel packages.
+
+#### 2. Ground-Truth Findings & Analysis:
+* **C++ Whole-Body Controller (WBC) Solver Stack**:
+  - **Pinocchio**: Packaged via `cmeel` binary wheels (`libpinocchio==4.1.0`, `eigenpy==3.13.0`, `coal==3.0.3`, `cmeel-boost==1.90.0`, `cmeel-urdfdom==6.0.0`, `cmeel-assimp==6.0.5`, `cmeel-tinyxml2==11.0.0`, `cmeel-zlib==1.3.2`).
+  - **Pink IK Solver**: Installed as `pin-pink==3.1.0`.
+  - **QP Solvers**: `qpsolvers==4.13.0` backed by `daqp==0.8.5`.
+* **Robotics & Kinematics**:
+  - `cumotion==1.1.0a2`, `dex_retargeting==0.5.0`, `mujoco==3.8.1`, `mujoco-warp==3.8.1`, `warp-lang==1.13.0`.
+* **Simulation & Policy Runtimes**:
+  - `isaaclab==6.1.14` (Assets `0.3.4`, Mimic `1.3.3`, Newton `0.13.6`, OVPhysX `3.0.2`, PhysX `1.1.3`, RL `0.5.5`, Tasks `1.10.9`, Teleop `0.5.2`, Visualizers `0.1.0`).
+  - `isaaclab_arena==0.3.0`.
+  - `gr00t==0.1.0`, `torch==2.10.0+cu128`, `torchvision==0.25.0+cu128`, `huggingface_hub==0.36.2`, `einops==0.8.2`.
+* **Runtime & Graphics Environment**:
+  - `VK_DRIVER_FILES=/etc/vulkan/icd.d/nvidia_icd.json`
+  - `NVIDIA_CTK_LIBCUDA_DIR=/usr/lib/x86_64-linux-gnu`
+  - `ISAACLAB_PATH=/workspaces/isaaclab_arena/submodules/IsaacLab`
+
+#### 3. Preserved Native Bare-Metal Replication Recipe (For Later Execution):
+When transitioning to native bare-metal, apply this exact dependency command in Conda `isaaclab`:
+```bash
+conda activate isaaclab
+
+# Install CMEEL Pinocchio, Pink, and QP Solvers (exact container parity)
+pip install \
+  cmeel==0.60.1 \
+  cmeel-boost==1.90.0 \
+  cmeel-urdfdom==6.0.0 \
+  cmeel-assimp==6.0.5 \
+  cmeel-console-bridge==1.0.2.3 \
+  cmeel-octomap==1.10.0 \
+  cmeel-qhull==8.0.2.1 \
+  cmeel-tinyxml2==11.0.0 \
+  cmeel-zlib==1.3.2 \
+  eigenpy==3.13.0 \
+  coal==3.0.3 \
+  libpinocchio==4.1.0 \
+  pin-pink==3.1.0 \
+  qpsolvers==4.13.0 \
+  daqp==0.8.5 \
+  dex_retargeting==0.5.0 \
+  cumotion==1.1.0a2
+```
+
+---
+
+## 10. Container Operations Runbook for Isaac Lab & IsaacLab-Arena (Active Priority)
+
+This runbook details all operational procedures to run, test, and troubleshoot the containerized Isaac Lab / Arena environment.
+
+### 10.1 Host Environment Prerequisites
+Before launching container workloads, ensure:
+1. **Host Repository Path**: `cd ~/Documents/GitHub/boredengineering/IsaacLab-Arena`
+2. **Submodules Clean**: `git submodule status` shows clean commits for `submodules/IsaacLab` (`ffff603ea`) and `submodules/Isaac-GR00T` (`e29d8fc`).
+3. **X11 Display Authorizations**:
+   ```bash
+   xhost +local:root > /dev/null 2>&1 || true
+   xhost +local:docker > /dev/null 2>&1 || true
+   ```
+4. **GPU Passthrough Validation**:
+   ```bash
+   ./docker/run_docker.sh nvidia-smi
+   ```
+
+---
+
+### 10.2 Interactive Container Shells
+
+#### Option A: Headless Interactive Bash Shell
+Use for package inspection, CLI tests, or headless script debugging:
+```bash
+cd ~/Documents/GitHub/boredengineering/IsaacLab-Arena
+./docker/run_docker.sh bash
+```
+
+#### Option B: GUI / Vulkan-Enabled Interactive Bash Shell
+Use for running scripts with live Omniverse Kit 3D viewports or GUI debugging:
+```bash
+cd ~/Documents/GitHub/boredengineering/IsaacLab-Arena
+./docker/run_docker.sh -g bash
+```
+
+Inside the interactive container:
+```bash
+# Isaac Lab directory inside container:
+cd /workspaces/isaaclab_arena/submodules/IsaacLab
+
+# IsaacLab-Arena root:
+cd /workspaces/isaaclab_arena
+```
+
+---
+
+### 10.3 Running Isaac Lab Standalone Scripts & Demos inside Container
+
+You can forward commands directly to Isaac Lab's standalone scripts through `./docker/run_docker.sh -g`:
+
+```bash
+cd ~/Documents/GitHub/boredengineering/IsaacLab-Arena
+
+# 1. Bipedal Locomotion Demo:
+./docker/run_docker.sh -g python submodules/IsaacLab/source/standalone/demos/bipedal_locomotion.py
+
+# 2. Robotic Arms Demo:
+./docker/run_docker.sh -g python submodules/IsaacLab/source/standalone/demos/arms.py
+
+# 3. Markers & Visualization Demo:
+./docker/run_docker.sh -g python submodules/IsaacLab/source/standalone/demos/markers.py
+
+# 4. Quadruped / Anymal RL Environment Demo:
+./docker/run_docker.sh -g python submodules/IsaacLab/source/standalone/environments/teleoperation/teleop_se3_agent.py --task Isaac-Velocity-Rough-Anymal-C-v0
+```
+
+---
+
+### 10.4 Running IsaacLab-Arena & GR00T Policy Inference inside Container
+
+#### Track A: In-Process Closed-Loop Evaluation
+```bash
+cd ~/Documents/GitHub/boredengineering/IsaacLab-Arena
+
+./docker/run_docker.sh -g \
+  python isaaclab_arena/evaluation/policy_runner.py \
+    --viz kit \
+    --policy_type isaaclab_arena_gr00t.policy.gr00t_closedloop_policy.Gr00tClosedloopPolicy \
+    --policy_config_yaml_path g1_brainco_extension/policy/config/g1_brainco_static_gr00t_closedloop_config.yaml \
+    --language_instruction "Pick up the bottle from the table and place it into the red bin." \
+    --enable_cameras \
+    --num_episodes 1 \
+    g1_static_pick_and_place_drink \
+    --embodiment g1_brainco_custom
+```
+
+#### Track B: Decoupled ZeroMQ Policy Server + Arena Client
+
+**Terminal 1: Containerized Policy Server Daemon**
+```bash
+cd ~/Documents/GitHub/boredengineering/IsaacLab-Arena
+./docker/run_gr00t_server.sh -m ~/models -- --host 0.0.0.0 --port 5555
+```
+
+**Terminal 2: Containerized Arena Simulation Client**
+```bash
+cd ~/Documents/GitHub/boredengineering/IsaacLab-Arena
+./docker/run_docker.sh -g \
+  python isaaclab_arena/evaluation/policy_runner.py \
+    --viz kit \
+    --policy_type isaaclab_arena_gr00t.policy.gr00t_remote_closedloop_policy.Gr00tRemoteClosedloopPolicy \
+    --policy_config_yaml_path isaaclab_arena_gr00t/policy/config/droid_manip_gr00t_closedloop_config.yaml \
+    --remote_host 127.0.0.1 --remote_port 5555 \
+    --language_instruction "Pick up the Rubik's cube and place it in the bowl." \
+    --enable_cameras --num_episodes 1 pick_and_place_maple_table \
+    --embodiment droid_abs_joint_pos
+```
+
+---
+
+### 10.5 Container Troubleshooting Guide
+
+| Symptom | Probable Cause | Immediate Resolution |
+| :--- | :--- | :--- |
+| **`cannot connect to X server :0` or `:1`** | X11 permissions not granted on host | Run on host: `xhost +local:root && xhost +local:docker` |
+| **`Vulkan physical device not found`** | Missing NVIDIA Container Toolkit GPU hook | Run with `-g` flag or verify `./docker/run_docker.sh nvidia-smi` |
+| **`Permission denied` creating files in workspace** | UID mismatch | `run_docker.sh` auto-injects host UID/GID; ensure files on host are owned by user |
+| **`403 Forbidden` on Cosmos/GR00T weights** | Gated model repository on Hugging Face | Accept terms on HF web page and pass token via `HF_TOKEN` |
+| **Submodule checksum failure during build** | Stale `.git/modules` cache | Run clean sync: `git submodule sync && git submodule update --init --recursive` |
+
+---
+
+### 10.6 Host Volume Mount Persistence & G1 Loco-Manipulation Setup
+
+NVIDIA's `docker/run_docker.sh` checks for the presence of host directories before mounting:
+* `$HOME/datasets` $\rightarrow$ `/datasets`
+* `$HOME/models` $\rightarrow$ `/models`
+* `$HOME/eval` $\rightarrow$ `/eval`
+
+> [!IMPORTANT]
+> If these directories do not exist on the host **prior** to running `run_docker.sh`, Docker skips mounting them. Creating them on the host first guarantees persistent storage across container rebuilds and ensures correct user ownership.
+
+#### Step 1: Create Persistent Host Directories (Run on Host)
+```bash
+# Create base volume mount roots with tutorial subdirectories on host:
+mkdir -p ~/datasets/isaaclab_arena/locomanipulation_tutorial
+mkdir -p ~/models/isaaclab_arena/locomanipulation_tutorial
+mkdir -p ~/eval/isaaclab_arena/locomanipulation_tutorial
+```
+
+#### Step 2: Verify Volume Mount Binding Inside Container
+Execute this verification command to confirm bidirectional persistence and write permissions:
+```bash
+cd ~/Documents/GitHub/boredengineering/IsaacLab-Arena
+
+./docker/run_docker.sh bash -c "
+  echo '>>> Verifying volume mount bindings...'
+  touch /datasets/isaaclab_arena/locomanipulation_tutorial/.mount_verified
+  touch /models/isaaclab_arena/locomanipulation_tutorial/.mount_verified
+  touch /eval/isaaclab_arena/locomanipulation_tutorial/.mount_verified
+  ls -ld /datasets /models /eval
+  echo '>>> Volume mounts successfully verified!'
+"
+```
+
+#### Step 3: Configure Tutorial Environment Variables (Inside Container)
+When running the G1 loco-manipulation tutorial workflows inside the container:
+```bash
+export DATASET_DIR=/datasets/isaaclab_arena/locomanipulation_tutorial
+export MODELS_DIR=/models/isaaclab_arena/locomanipulation_tutorial
+export EVAL_DIR=/eval/isaaclab_arena/locomanipulation_tutorial
+```
+
+---
+
+### ⚓ Master Baseline & Active Goal Anchor
+
+* **Active Working Mode**: **Track 1: Docker Container Baseline Execution**
+* **Primary Target**: Getting Isaac Lab / IsaacLab-Arena container running smoothly on host.
+* **Secondary Target (Deferred)**: Replicating container manifests to native Conda `isaaclab` environment.
+* **Active Benchmark**: Unitree G1 Loco-Manipulation Box Pick & Place Workflow.
+
+
