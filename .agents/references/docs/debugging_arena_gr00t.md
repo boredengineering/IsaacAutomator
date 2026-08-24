@@ -1063,6 +1063,32 @@ To ensure a production-grade, non-breaking resolution aligned with official NVID
 3. **Dedicated NGC GR00T Container Availability**:
    - Does NVIDIA ship an official container image (e.g., `nvcr.io/nvidian/gr00t1_6_arena_ci` or `cuda_gr00t_gn16`) that pre-packages the CUDA 12.8 / Blackwell-compatible policy server stack with all foundation model dependencies pre-compiled?
 
+### 11.5 Verified Solution: Explicit `pytorch-cu128` Index Routing in `pyproject.toml`
+
+The incompatibility was **100% resolved** without breaking any pinned dependencies by adding an explicit `pytorch-cu128` source index to `submodules/Isaac-GR00T/pyproject.toml`:
+
+```toml
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cu128" }]
+torchvision = [{ index = "pytorch-cu128" }]
+```
+
+#### Verification Probe Output (100% Success):
+```text
+1. PyTorch Version:         2.7.1+cu128
+2. Bundled CUDA Version:    12.8
+3. Compiled Architectures:  ['sm_75', 'sm_80', 'sm_86', 'sm_90', 'sm_100', 'sm_120', 'compute_120']
+4. Testing Blackwell compute...
+✓ Blackwell GPU Compute Test: SUCCESS! Shape: torch.Size([1, 1024])
+```
+
+* **Outcome**: PyTorch retains exact pinned version `2.7.1` on Python 3.10, but the underlying CUDA binary now natively includes **`sm_120` and `sm_100`**, enabling GPU tensor computation and policy inference on the NVIDIA RTX PRO 6000 Blackwell workstation with zero runtime warnings.
+
 ---
 
 ### ⚓ Master Baseline & Active Goal Anchor
@@ -1071,6 +1097,6 @@ To ensure a production-grade, non-breaking resolution aligned with official NVID
 * **Primary Target**: Getting Isaac Lab / IsaacLab-Arena container running smoothly on host.
 * **Secondary Target (Deferred)**: Replicating container manifests to native Conda `isaaclab` environment.
 * **Active Benchmark**: Unitree G1 Loco-Manipulation Box Pick & Place Workflow.
-* **Active Research Track**: NVIDIA Blackwell (`sm_120`) CUDA 12.8 toolchain alignment for `Isaac-GR00T`.
+* **Active Status**: GR00T Policy Server running natively on Blackwell GPU (`sm_120` via `cu128`).
 
 
