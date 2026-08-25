@@ -32,78 +32,54 @@ Every repository in the Physical AI stack must maintain a standardized `.agents/
 
 ```text
 <repository_root>/
-├── AGENTS.md                                # Master agent instructions & operational rules
+├── AGENTS.md                                # Master agent instructions & operational invariants
 ├── .agents/
-│   ├── skills/                              # Specialized actionable agent skills (SKILL.md)
-│   │   ├── session-memory/                  # 25-char UUID session logging & indexation
-│   │   ├── submodule-integrity/             # Clean detached HEAD sync & HTTPS endpoint verification
-│   │   ├── gpu-hardware-audit/              # Blackwell sm_120, PyTorch cu128, and C-extension ABI audits
-│   │   ├── zeromq-policy-bridge/            # Port 5556 lifecycle, modality schema handshake
-│   │   ├── agentic-scene-composition/       # Grounded Markdown task_spec.md to env_graph_spec.yaml
-│   │   ├── wbc-kinematics-solver/           # Pinocchio/Pink QP solver vs GPU direct joint control
-│   │   └── imitation-learning-pipeline/     # Demo replay, MimicGen, LeRobot conversion, distributed fine-tuning
+│   ├── skills/                              # Specialized Skills Catalog (Open SKILL.md Standard)
+│   │   ├── isaac-automator/                 # Cloud Workstation & Lifecycle Operations
+│   │   │   ├── deploy-workstation/          # Non-interactive cloud provisioning (AWS, GCP, Azure, Alibaba)
+│   │   │   ├── connect-workstation/         # noVNC (2D) vs NoMachine/DCV (3D Vulkan) vs SSH
+│   │   │   ├── manage-lifecycle/            # ./stop, ./start, ./destroy --yes, ./cycle-vm
+│   │   │   ├── run-demos/                   # Pre-configured demo shortcuts (quadruped-locomotion)
+│   │   │   ├── transfer-data/               # Bidirectional sync (./upload, ./download) & autorun.sh
+│   │   │   ├── troubleshoot/                # Vulkan blank viewports, TTY errors, CIDR security fixes
+│   │   │   └── session-memory/              # 25-char UUID checkpointing & INDEX.md sync
+│   │   ├── isaac-baremetal-installer/       # Bare-metal GPU hardware probing & Conda linking
+│   │   └── accelerated-computing-cudf/      # Official NVIDIA cuDF data acceleration (from nvidia/skills)
 │   ├── memory/                              # Permanent architectural checkpoint history
 │   │   ├── INDEX.md                         # Master chronological index of session logs
 │   │   └── sessions/                        # YYYYMMDD_HHMMSS_<short_uuid>.md log files
-│   └── references/                          # Ground-truth manifests, USD hierarchies, task templates
+│   └── references/                          # Ground-truth documentation & task templates
 │       ├── docs/                            # Deep architectural runbooks & debugging notes
-│       ├── manifests/                       # Frozen pip freeze, environment variables, WBC solver paths
+│       │   ├── env_generation_notes.md      # Mathematical Scene Graphs & Grounded Markdown
+│       │   ├── physical-ai_agents.md        # Master agent & devcontainer specification
+│       │   └── debugging_arena_gr00t.md     # Blackwell sm_120, PyTorch cu128, and ZMQ contracts
 │       └── templates/                       # Reusable task_spec.md and env_graph_spec.yaml templates
 └── .devcontainer/                           # High-performance Docker container configuration
-    ├── devcontainer.json
-    └── Dockerfile
+    ├── devcontainer.json                    # VS Code DevContainer config (features, mounts, extensions)
+    ├── Dockerfile                           # Multi-layer image (Playwright, Vulkan, Cloud CLIs, uv, R-base)
+    ├── docker-compose.yml                   # Multi-service runtime (Simulation + Policy Daemon + Desktop)
+    └── docker-compose.test.yml              # Offline CI mock cloud testing (LocalStack AWS mock)
 ```
 
 ---
 
-## 3. Core Universal Skills Specification
+## 3. The Lean Agent Philosophy: Single Essential Skill (`session-memory`)
 
-### Skill 1: `session-memory`
-* **Purpose**: Preserves architectural continuity, telemetry logs, and hardware configurations across sessions.
+### Why Over-Engineering Custom Skills is an Anti-Pattern
+Attempting to create rigid, automated custom skills for every robotics task (e.g. C++ QP solvers, kernel workarounds, submodule syncs, or distributed training loops) is brittle and counterproductive:
+1. **Upstream Drift**: Fixed agent skills quickly drift out of sync with upstream NVIDIA code updates.
+2. **Context Window Waste & False Constraints**: Overly opinionated skills restrict the agent's reasoning and can induce hallucinations or rigid failure loops.
+3. **The Proper Separation of Concerns**:
+   - **`AGENTS.md`**: Enforces strict, non-negotiable **Operational Invariants** (e.g., Port `5556`, `--num_envs 1` for PINK WBC, dual-runtime boundary).
+   - **`.agents/references/docs/`**: Stores comprehensive **Domain Knowledge & Runbooks** (e.g., Blackwell SASS fixes, Scene Graph mathematical formalism, grounded Markdown templates).
+   - **`.agents/memory/`**: Maintains persistent **Architectural Continuity** across chat sessions.
+
+### The Single Foundational Skill: `session-memory`
+* **Purpose**: Preserves hard-earned engineering solutions, hardware telemetry, and architectural decisions across transient chat resets without polluting context.
 * **Protocol**:
   - File naming: `YYYYMMDD_HHMMSS_<short_uuid>.md` (e.g., `20260825_201419_a1b2c3d4.md`) in `.agents/memory/sessions/`.
   - Master Index: Append every checkpoint row to `.agents/memory/INDEX.md`.
-
-### Skill 2: `submodule-integrity`
-* **Purpose**: Resolves submodule cache pollution and detached HEAD desynchronization.
-* **Procedures**:
-  - Clear corrupted cache: `rm -rf .git/modules/submodules`.
-  - Force HTTPS endpoints in `.gitmodules` (avoids SSH credential prompt hangs in automated agents).
-  - Verify clean detached HEAD status with `git submodule status`.
-
-### Skill 3: `gpu-hardware-audit`
-* **Purpose**: Detects GPU microarchitecture capabilities and ensures exact PyTorch CUDA toolchain alignment.
-* **Procedures**:
-  - Detects hardware compute capability (e.g., NVIDIA Blackwell `sm_120` on RTX PRO 6000 / RTX 50-series).
-  - Verifies PyTorch fatbin binaries contain native `sm_120` or `sm_100` SASS machine code via `torch.cuda.get_arch_list()`.
-  - Audits C++ ABI compatibility across sensitive extensions (`flash_attn`, `triton`, `deepspeed`, `transformers`).
-
-### Skill 4: `zeromq-policy-bridge`
-* **Purpose**: Manages low-latency inter-process communication between Simulation Clients and Foundation Model Servers.
-* **Procedures**:
-  - Strictly binds to port **`5556`** (preventing collisions with VS Code internal language servers on port 5555).
-  - Performs JSON schema handshake (`modality.json`) to align camera observation keys (`ego_view` for G1 vs. `exterior_image_1_left` / `wrist_image_left` for DROID).
-
-### Skill 5: `agentic-scene-composition`
-* **Purpose**: Compiles natural language prompts and Grounded Markdown specifications (`task_spec.md`) into declarative scene graphs (`env_graph_spec.yaml`).
-* **Procedures**:
-  - Enforces `default_ground_plane` at $z=0.0$ ($\mu=1.0$) as a mandatory invariant.
-  - Verifies bounding box placements against robot kinematic reachability envelopes ($\mathcal{W}_{\text{reach}}$).
-  - Executes 5-tier validation protocol (Tier 1 Schema $\to$ Tier 4 Zero-Action Gravity Settle $\to$ Tier 5 Closed-Loop GR00T Rollout).
-
-### Skill 6: `wbc-kinematics-solver`
-* **Purpose**: Diagnoses whole-body control stability, inverse kinematics, and concurrency bounds.
-* **Procedures**:
-  - Enforces `--num_envs 1` for single-threaded CPU Pinocchio/Pink QP solvers (`g1_wbc_pink`).
-  - Routes parallelized multi-environment evaluation ($N > 1$) to GPU-vectorized joint controllers (`g1_wbc_joint`).
-
-### Skill 7: `imitation-learning-pipeline`
-* **Purpose**: Automates data collection, augmentation, format conversion, and multi-GPU training.
-* **Procedures**:
-  - Replays seed HDF5 trajectories.
-  - Orchestrates parallelized MimicGen data augmentation.
-  - Converts datasets to LeRobot format (`convert_hdf5_to_lerobot.py`).
-  - Launches multi-GPU distributed fine-tuning via `torch.distributed.run`.
+* **Optional Upstream Skills**: Official vendor skills from [`github.com/nvidia/skills`](https://github.com/nvidia/skills) (such as `accelerated-computing-cudf`) can be pulled on-demand for specific acceleration tasks.
 
 ---
 
@@ -166,7 +142,7 @@ To eliminate graphic display failures, permission mismatches, and data loss acro
 
 ```json
 {
-  "name": "Physical AI Robotics Development Container",
+  "name": "Physical AI Full-Stack Robotics & Cloud Development Container",
   "build": {
     "dockerfile": "Dockerfile",
     "context": ".."
@@ -182,11 +158,16 @@ To eliminate graphic display failures, permission mismatches, and data loss acro
     "-e", "NVIDIA_VISIBLE_DEVICES=all",
     "-e", "NVIDIA_DRIVER_CAPABILITIES=all",
     "-e", "MPLCONFIGDIR=/tmp/matplotlib",
+    "-e", "TF_DATA_DIR=/opt/tf-data",
+    "-e", "ANSIBLE_FORCE_COLOR=true",
     "-e", "VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/nvidia_icd.json",
     "-v", "/tmp/.X11-unix:/tmp/.X11-unix:rw",
     "-v", "${localEnv:HOME}/datasets:/datasets:rw",
     "-v", "${localEnv:HOME}/models:/models:rw",
-    "-v", "${localEnv:HOME}/eval:/eval:rw"
+    "-v", "${localEnv:HOME}/eval:/eval:rw",
+    "-v", "${localEnv:HOME}/.aws:/root/.aws:rw",
+    "-v", "${localEnv:HOME}/.config/gcloud:/root/.config/gcloud:rw",
+    "-v", "${localEnv:HOME}/.azure:/root/.azure:rw"
   ],
   "containerEnv": {
     "DATASET_DIR": "/datasets/isaaclab_arena/locomanipulation_tutorial",
@@ -194,6 +175,12 @@ To eliminate graphic display failures, permission mismatches, and data loss acro
     "EVAL_DIR": "/eval/isaaclab_arena/locomanipulation_tutorial",
     "MPLCONFIGDIR": "/tmp/matplotlib",
     "PYTHONPATH": "/workspaces/isaaclab_arena:/workspaces/isaaclab_arena/source:/workspaces/isaaclab_arena/submodules/IsaacLab/source/isaaclab:${containerEnv:PYTHONPATH}"
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "lts"
+    },
+    "ghcr.io/devcontainers/features/github-cli:1": {}
   },
   "customizations": {
     "vscode": {
@@ -205,7 +192,12 @@ To eliminate graphic display failures, permission mismatches, and data loss acro
         "tamasfe.even-better-toml",
         "redhat.vscode-yaml",
         "eamodio.gitlens",
-        "yzhang.markdown-all-in-one"
+        "yzhang.markdown-all-in-one",
+        "GitHub.copilot",
+        "GitHub.copilot-chat",
+        "hashicorp.terraform",
+        "redhat.ansible",
+        "REditorSupport.r"
       ],
       "settings": {
         "python.defaultInterpreterPath": "/isaac-sim/python.sh",
@@ -220,23 +212,26 @@ To eliminate graphic display failures, permission mismatches, and data loss acro
       }
     }
   },
-  "initializeCommand": "mkdir -p ${localEnv:HOME}/datasets ${localEnv:HOME}/models ${localEnv:HOME}/eval",
-  "postCreateCommand": "mkdir -p /tmp/matplotlib && chmod -R 777 /tmp/matplotlib",
-  "postStartCommand": "echo 'Physical AI Container Ready. GPU Check:' && nvidia-smi --query-gpu=name,driver_version,memory.total --format=csv,noheader"
+  "initializeCommand": "mkdir -p ${localEnv:HOME}/datasets ${localEnv:HOME}/models ${localEnv:HOME}/eval ${localEnv:HOME}/.aws ${localEnv:HOME}/.config/gcloud ${localEnv:HOME}/.azure",
+  "postCreateCommand": "mkdir -p /tmp/matplotlib /opt/tf-data && chmod -R 777 /tmp/matplotlib /opt/tf-data",
+  "postStartCommand": "echo 'Physical AI & Cloud Stack Ready. GPU Check:' && nvidia-smi --query-gpu=name,driver_version,memory.total --format=csv,noheader"
 }
 ```
 
 ---
 
-### 5.2 Production `.devcontainer/Dockerfile`
+### 5.2 Production `.devcontainer/Dockerfile` (All-in-One Full Stack)
 
 ```dockerfile
 # syntax=docker/dockerfile:1.4
-ARG BASE_IMAGE=nvcr.io/nvidia/isaac-sim:4.5.0
+ARG BASE_IMAGE=mcr.microsoft.com/playwright:v1.58.2-jammy
 FROM ${BASE_IMAGE}
 
 LABEL maintainer="boredengineering"
-LABEL description="Optimized Physical AI & IsaacLab-Arena Development Container with WBC, Pinocchio, and ZeroMQ"
+LABEL description="Full-Stack Physical AI, Cloud IaC, Playwright, uv, R-base & Robotics Development Container"
+
+# Copy fast Rust-based Python package manager (uv)
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 # Environment Variables
 ENV DEBIAN_FRONTEND=noninteractive \
@@ -245,22 +240,34 @@ ENV DEBIAN_FRONTEND=noninteractive \
     NVIDIA_VISIBLE_DEVICES=all \
     NVIDIA_DRIVER_CAPABILITIES=all \
     MPLCONFIGDIR=/tmp/matplotlib \
+    TF_DATA_DIR=/opt/tf-data \
+    ANSIBLE_FORCE_COLOR=true \
     PYTHONUNBUFFERED=1
 
-# Layer 1: Install Core System Dependencies & Vulkan / X11 / OpenGL Runtime
+# Layer 1: Core System Dependencies, Vulkan, X11, OpenGL, and R CRAN (r-base)
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    software-properties-common \
+    apt-transport-https \
+    ca-certificates \
+    gnupg \
+    gpg \
+    lsb-release \
     build-essential \
     cmake \
     git \
     git-lfs \
     curl \
     wget \
+    unzip \
     rsync \
+    jq \
     tmux \
     htop \
     nano \
     sudo \
     ffmpeg \
+    python3-pip \
+    python3-dev \
     libsm6 \
     libxext6 \
     libxrender-dev \
@@ -276,12 +283,44 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxcursor1 \
     libxinerama1 \
     libxi6 \
+    r-base \
+    r-base-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Layer 2: Install Whole-Body Control (WBC) Kinematics & Robotics Python Stack
-# Using Isaac Sim internal Python binary (/isaac-sim/python.sh or standard pip)
-RUN /isaac-sim/python.sh -m pip install --no-cache-dir --upgrade pip setuptools wheel && \
-    /isaac-sim/python.sh -m pip install --no-cache-dir \
+# Layer 2: Cloud Providers & Infrastructure as Code (IaC) Stack
+# 2.1 HashiCorp Terraform & Packer
+RUN wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor | tee /usr/share/keyrings/hashicorp-archive-keyring.gpg > /dev/null && \
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/hashicorp.list && \
+    apt-get update && apt-get install -y --no-install-recommends terraform packer && \
+    rm -rf /var/lib/apt/lists/*
+
+# 2.2 Google Cloud SDK (gcloud CLI)
+RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list && \
+    curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg && \
+    apt-get update && apt-get install -y --no-install-recommends google-cloud-cli && \
+    rm -rf /var/lib/apt/lists/*
+
+# 2.3 Azure CLI
+RUN curl -sL https://aka.ms/InstallAzureCLIDeb | bash && \
+    rm -rf /var/lib/apt/lists/*
+
+# 2.4 AWS CLI v2
+RUN cd /tmp && \
+    case "$(dpkg --print-architecture)" in \
+      amd64) curl -sS "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" ;; \
+      arm64) curl -sS "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip" ;; \
+    esac && \
+    unzip awscliv2.zip && \
+    ./aws/install && \
+    rm -rf /tmp/aws*
+
+# 2.5 Alibaba Cloud CLI (aliyun)
+RUN curl -fsSL https://raw.githubusercontent.com/aliyun/aliyun-cli/HEAD/install.sh | bash || true
+
+# Layer 3: Ansible & Whole-Body Control (WBC) / Robotics Python Stack
+RUN pip3 install --no-cache-dir --upgrade pip setuptools wheel && \
+    pip3 install --no-cache-dir \
+        ansible \
         cmeel \
         pin-pink==3.1.0 \
         qpsolvers[daqp,proxsuite] \
@@ -296,14 +335,17 @@ RUN /isaac-sim/python.sh -m pip install --no-cache-dir --upgrade pip setuptools 
         tensorboard \
         tabulate \
         gymnasium \
-        lerobot
+        lerobot \
+        click \
+        randomname \
+        pwgen \
+        debugpy && \
+    ansible-galaxy collection install community.docker
 
-# Layer 3: Create Common Mount Points & Matplotlib Cache
-RUN mkdir -p /datasets /models /eval /tmp/matplotlib /workspaces && \
-    chmod -R 777 /datasets /models /eval /tmp/matplotlib /workspaces
-
-# Layer 4: Configure Vulkan ICD Environment
-RUN mkdir -p /etc/vulkan/icd.d && \
+# Layer 4: Common Mount Points, Cache & Vulkan ICD Environment
+RUN mkdir -p /datasets /models /eval /tmp/matplotlib /opt/tf-data /workspaces && \
+    chmod -R 777 /datasets /models /eval /tmp/matplotlib /opt/tf-data /workspaces && \
+    mkdir -p /etc/vulkan/icd.d && \
     echo '{"file_format_version": "1.0.0", "ICD": {"library_path": "libGLX_nvidia.so.0", "api_version": "1.3"}}' > /etc/vulkan/icd.d/nvidia_icd.json
 
 WORKDIR /workspaces
@@ -446,49 +488,56 @@ The following MCP servers are actively registered in the `IsaacAutomator` physic
 
 ---
 
-## 8. Active Skills Inventory in `IsaacAutomator`
+## 8. Active Skills Inventory & `isaac-automator` Suite
 
 The following specialized skills are maintained within `.agents/skills/` and provide end-to-end capabilities across the physical AI lifecycle:
 
 ```mermaid
 flowchart LR
-    subgraph Provisioning ["1. Infrastructure & Setup"]
-        S_BM["isaac-baremetal-installer\n(Probing, Drivers, Conda, Linking)"]
-        S_DEP["deploy-workstation\n(Cloud GPU VM Provisioning)"]
+    subgraph Suite ["The isaac-automator Skill Suite (.agents/skills/isaac-automator/)"]
+        S_DEP["deploy-workstation\n• Multi-cloud GPU VM deploy\n• AWS, GCP, Azure, Alibaba"]
+        S_CONN["connect-workstation\n• noVNC (2D) vs NoMachine (3D Vulkan)\n• NICE DCV, xrdp, Moonlight, SSH"]
+        S_LIFE["manage-lifecycle\n• ./stop, ./start, ./destroy --yes\n• ./cycle-vm (GCP 7-day reset)"]
+        S_DEMO["run-demos\n• Desktop shortcuts & headless runs\n• quadruped-locomotion (RSL-RL)"]
+        S_DATA["transfer-data\n• ./upload, ./download\n• uploads/autorun.sh on boot"]
+        S_TRBL["troubleshoot\n• Vulkan viewport & TTY fixes\n• Security group CIDR drift"]
+        S_MEM["session-memory\n• 25-char UUID checkpointing\n• INDEX.md synchronization"]
     end
 
-    subgraph Operations ["2. Workstation Operations"]
-        S_CONN["connect-workstation\n(noVNC, KasmVNC, NoMachine, DCV, SSH)"]
-        S_DEMO["run-demos\n(Pre-configured desktop shortcuts)"]
-        S_LIFE["manage-lifecycle\n(start, stop, repair, destroy)"]
-        S_DATA["transfer-data\n(HDF5/LeRobot & model sync)"]
-        S_TRBL["troubleshoot\n(Vulkan, display, CUDA diagnostics)"]
+    subgraph External ["Auxiliary Skills"]
+        S_BM["isaac-baremetal-installer\n(Bare-Metal Hardware & Conda Linking)"]
+        S_CUDF["accelerated-computing-cudf\n(GPU DataFrame ETL from nvidia/skills)"]
     end
 
-    subgraph Intelligence ["3. Agent Intelligence & Acceleration"]
-        S_MEM["session-memory\n(25-char UUID checkpointing)"]
-        S_CUDF["accelerated-computing-cudf\n(GPU DataFrame acceleration)"]
-        S_AGY["antigravity-guide & customizations\n(Agent architecture & MCP orchestration)"]
-    end
-
-    Provisioning --> Operations --> Intelligence
+    Suite --- External
 ```
 
-### Complete Skills Reference Matrix:
+---
 
-| Skill Identifier | Location | Operational Domain & Capabilities |
+### 8.1 Complete Skills Reference Matrix
+
+| Skill Identifier | Location | Operational Domain & Key Procedures |
 | :--- | :--- | :--- |
-| **`isaac-baremetal-installer`** | [`.agents/skills/isaac-baremetal-installer/SKILL.md`](file:///workspaces/IsaacAutomator/.agents/skills/isaac-baremetal-installer/SKILL.md) | **Bare-Metal Workstation Orchestrator**: Discovers GPU hardware (Blackwell, Ada, Hopper), installs NVIDIA drivers, provisions Conda environments, audits dynamic C++ solvers, and links Isaac Sim, Isaac Lab, Arena, and GR00T. |
-| **`deploy-workstation`** | [`.agents/skills/isaac-automator/deploy-workstation/SKILL.md`](file:///workspaces/IsaacAutomator/.agents/skills/isaac-automator/deploy-workstation/SKILL.md) | **Cloud Workstation Deployer**: Deploys fresh cloud GPU instances non-interactively across AWS, GCP, Azure, and Alibaba Cloud with pre-baked Isaac Sim. |
-| **`connect-workstation`** | [`.agents/skills/isaac-automator/connect-workstation/SKILL.md`](file:///workspaces/IsaacAutomator/.agents/skills/isaac-automator/connect-workstation/SKILL.md) | **Display & Streaming Connector**: Establishes remote GUI desktop streaming over noVNC, KasmVNC, NoMachine (live 3D Vulkan viewport), NICE DCV, xrdp, or SSH. |
-| **`manage-lifecycle`** | [`.agents/skills/isaac-automator/manage-lifecycle/SKILL.md`](file:///workspaces/IsaacAutomator/.agents/skills/isaac-automator/manage-lifecycle/SKILL.md) | **Cost & Instance Lifecycle Manager**: Controls status, stop, start, repair, and destroy lifecycle commands to eliminate compute costs. |
-| **`run-demos`** | [`.agents/skills/isaac-automator/run-demos/SKILL.md`](file:///workspaces/IsaacAutomator/.agents/skills/isaac-automator/run-demos/SKILL.md) | **Demo Launcher**: Launches out-of-the-box Isaac Sim, Isaac Lab, and Arena benchmarks directly from terminal or desktop shortcuts. |
-| **`transfer-data`** | [`.agents/skills/isaac-automator/transfer-data/SKILL.md`](file:///workspaces/IsaacAutomator/.agents/skills/isaac-automator/transfer-data/SKILL.md) | **Bidirectional Asset Sync**: Synchronizes datasets, fine-tuned model checkpoints (`checkpoint-20000`), and evaluation logs between local machines and cloud nodes. |
-| **`troubleshoot`** | [`.agents/skills/isaac-automator/troubleshoot/SKILL.md`](file:///workspaces/IsaacAutomator/.agents/skills/isaac-automator/troubleshoot/SKILL.md) | **System Diagnostic Engine**: Diagnoses common physical AI failure modes: X11/display server crashes, Vulkan physical device missing, ZeroMQ port blocks, and missing kernel image errors. |
-| **`accelerated-computing-cudf`**| [`.agents/skills/accelerated-computing-cudf/SKILL.md`](file:///workspaces/IsaacAutomator/.agents/skills/accelerated-computing-cudf/SKILL.md) | **Data Acceleration**: Official NVIDIA-authored guidance for GPU DataFrame ETL, dataset pre-processing, and multi-GPU trajectory parsing via cuDF. |
-| **`session-memory`** | [`.agents/skills/isaac-automator/session-memory/SKILL.md`](file:///workspaces/IsaacAutomator/.agents/skills/isaac-automator/session-memory/SKILL.md) | **Checkpoint Logger**: Manages, searches, and logs immutable 25-character timestamped UUID session checkpoints in `.agents/memory/`. |
+| **`deploy-workstation`** | [`.agents/skills/isaac-automator/deploy-workstation/SKILL.md`](file:///workspaces/IsaacAutomator/.agents/skills/isaac-automator/deploy-workstation/SKILL.md) | **Cloud Workstation Deployer**: Non-interactive multi-cloud GPU provisioning. Key options: `--deployment-name`, `--ingress-cidrs myip`, `--from-image` (10–15m) vs `--not-from-image` (45–60m), `--existing replace`. |
+| **`connect-workstation`** | [`.agents/skills/isaac-automator/connect-workstation/SKILL.md`](file:///workspaces/IsaacAutomator/.agents/skills/isaac-automator/connect-workstation/SKILL.md) | **Display & Streaming Connector**: Establishes remote connections. **3D Viewport Rule**: noVNC (`./novnc`) renders 2D desktop; NoMachine / NICE DCV / Moonlight renders live 3D Vulkan viewport; SSH (`./ssh`) for headless control. |
+| **`manage-lifecycle`** | [`.agents/skills/isaac-automator/manage-lifecycle/SKILL.md`](file:///workspaces/IsaacAutomator/.agents/skills/isaac-automator/manage-lifecycle/SKILL.md) | **Cost & Instance Lifecycle Manager**: `./stop` (pauses compute billing, keeps disk/IP), `./start` (resumes same IP), `./destroy --yes` (stops 100% of billing), and `./cycle-vm` (resets GCP 7-day Flex-start limit). |
+| **`run-demos`** | [`.agents/skills/isaac-automator/run-demos/SKILL.md`](file:///workspaces/IsaacAutomator/.agents/skills/isaac-automator/run-demos/SKILL.md) | **Demo Launcher**: Launches ready-to-run Isaac Sim / Isaac Lab examples (e.g. `quadruped-locomotion` with ANYmal-D and RSL-RL) interactively or headlessly via `DISPLAY=:0 demo.sh`. |
+| **`transfer-data`** | [`.agents/skills/isaac-automator/transfer-data/SKILL.md`](file:///workspaces/IsaacAutomator/.agents/skills/isaac-automator/transfer-data/SKILL.md) | **Bidirectional Asset Sync**: `./upload <name>` (local `uploads/` $\to$ remote `~/uploads`), `./download <name>` (remote `~/results` $\to$ local `results/`), and `uploads/autorun.sh` execution upon boot. |
+| **`troubleshoot`** | [`.agents/skills/isaac-automator/troubleshoot/SKILL.md`](file:///workspaces/IsaacAutomator/.agents/skills/isaac-automator/troubleshoot/SKILL.md) | **System Diagnostic Engine**: Diagnoses blank Vulkan viewports over noVNC, non-interactive TTY hangs, stale driver mismatches (`./repair`), and security group IP drift. |
+| **`session-memory`** | [`.agents/skills/isaac-automator/session-memory/SKILL.md`](file:///workspaces/IsaacAutomator/.agents/skills/isaac-automator/session-memory/SKILL.md) | **Checkpoint Logger**: Manages, searches, and logs immutable 25-character timestamped UUID session checkpoints (`YYYYMMDD_HHMMSS_<short_uuid>.md`) in `.agents/memory/sessions/` and updates `INDEX.md`. |
+| **`isaac-baremetal-installer`** | [`.agents/skills/isaac-baremetal-installer/SKILL.md`](file:///workspaces/IsaacAutomator/.agents/skills/isaac-baremetal-installer/SKILL.md) | **Bare-Metal Workstation Orchestrator**: Probes hardware (Blackwell, Ada, Hopper), installs NVIDIA drivers, provisions Conda environments, audits C++ dynamic solvers, and links Isaac Sim, Lab, Arena, and GR00T. |
+| **`accelerated-computing-cudf`**| [`.agents/skills/accelerated-computing-cudf/SKILL.md`](file:///workspaces/IsaacAutomator/.agents/skills/accelerated-computing-cudf/SKILL.md) | **Data Acceleration**: Official NVIDIA-authored guidance from `nvidia/skills` for GPU DataFrame ETL, trajectory parsing, and dataset pre-processing via cuDF. |
 | **`antigravity-guide`** | `builtin/skills/antigravity_guide/SKILL.md` | **Agent Orchestrator Guide**: Full reference for Antigravity subagents, slash commands, background tasks, and MCP sidecars. |
 | **`agy-customizations`** | `builtin/skills/agy-customizations/SKILL.md` | **Customization Engine**: Guide for defining new skills, rules, hooks, subagents, and MCP servers. |
+
+---
+
+### 8.2 Operational Invariants for `isaac-automator` Operators
+
+1. **Non-Interactive Execution**: Always pass `--existing replace` (or `repair`/`modify`) and all required flags on the command line; never use `ask` in automated agent workflows.
+2. **3D Viewport Over Remote Desktop**: Never diagnose a blank viewport in noVNC as a simulation failure—Omniverse Kit renders to a Vulkan surface. Use NoMachine or headless video capture (`--video --enable_cameras`).
+3. **Strict Cleanup**: Always run `./destroy <name> --yes` when work is finished to prevent ongoing storage charges.
+
 
 ---
 
