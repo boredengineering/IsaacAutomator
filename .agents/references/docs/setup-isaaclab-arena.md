@@ -1,4 +1,4 @@
-# Setup IsaacLan-Arena
+# Setup IsaacLab-Arena
 
 Instructions to setup IsaacLab-Arena, validate and test the workflow works aiming to run the Agentic Environment Generation and Policy Evaluation.
 
