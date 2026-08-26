@@ -99,6 +99,7 @@ Master index of session memory checkpoints for Isaac Automator.
 | 2026-08-26 00:05 | `d8f2a4c6` | Created isaac-installer Skill Package | Created full isaac-installer skill package in .agents/skills/isaac-installer/ with SKILL.md, scripts, profile specs, and examples | [`20260826_000535_d8f2a4c6.md`](./sessions/20260826_000535_d8f2a4c6.md) |
 | 2026-08-26 00:07 | `e2a4c6f8` | Added isaac-installer Skill to physical-ai_agents.md | Linked and documented isaac-installer in Section 2 Topology and Section 8.1 Skills Reference Matrix | [`20260826_000742_e2a4c6f8.md`](./sessions/20260826_000742_e2a4c6f8.md) |
 | 2026-08-26 00:09 | `a3c5e7f9` | Updated .gitignore & Staged Custom Skills in Git | Unignored isaac-installer and accelerated-computing-cudf in .gitignore, staged all custom skills, memory, and reference files | [`20260826_000912_a3c5e7f9.md`](./sessions/20260826_000912_a3c5e7f9.md) |
+| 2026-08-26 00:51 | `b1d3f5a7` | Added Terraform MCP Server & Agent CLIs to Dockerfile | Added terraform-mcp-server binary and autonomous agent CLIs (Claude Code, Antigravity CLI, Hermes) into physical-ai_agents.md | [`20260826_005133_b1d3f5a7.md`](./sessions/20260826_005133_b1d3f5a7.md) |
 
 
 

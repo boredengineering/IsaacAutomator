@@ -321,7 +321,20 @@ RUN cd /tmp && \
 # 2.5 Alibaba Cloud CLI (aliyun)
 RUN curl -fsSL https://raw.githubusercontent.com/aliyun/aliyun-cli/HEAD/install.sh | bash || true
 
-# Layer 3: Ansible & Whole-Body Control (WBC) / Robotics Python Stack
+# 2.6 HashiCorp Terraform MCP Server (terraform-mcp-server)
+RUN curl -fsSL -o /tmp/tf-mcp.zip https://releases.hashicorp.com/terraform-mcp-server/1.2.0/terraform-mcp-server_1.2.0_linux_amd64.zip && \
+    unzip -q /tmp/tf-mcp.zip -d /tmp/ && \
+    mv /tmp/terraform-mcp-server /usr/local/bin/ && \
+    chmod +x /usr/local/bin/terraform-mcp-server && \
+    rm -rf /tmp/tf-mcp*
+
+# Layer 3: Autonomous Terminal AI Agent CLIs (Claude Code, Antigravity CLI, Hermes Agent)
+RUN npm install -g @anthropic-ai/claude-code && \
+    (curl -fsSL https://antigravity.google/cli/install.sh | bash || true) && \
+    (ln -sf /root/.local/bin/agy /usr/local/bin/agy 2>/dev/null || true) && \
+    (curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash -s -- --skip-setup --skip-browser || true)
+
+# Layer 4: Ansible & Whole-Body Control (WBC) / Robotics Python Stack
 RUN pip3 install --no-cache-dir --upgrade pip setuptools wheel && \
     pip3 install --no-cache-dir \
         ansible \
@@ -346,7 +359,7 @@ RUN pip3 install --no-cache-dir --upgrade pip setuptools wheel && \
         debugpy && \
     ansible-galaxy collection install community.docker
 
-# Layer 4: Common Mount Points, Cache & Vulkan ICD Environment
+# Layer 5: Common Mount Points, Cache & Vulkan ICD Environment
 RUN mkdir -p /datasets /models /eval /tmp/matplotlib /opt/tf-data /workspaces && \
     chmod -R 777 /datasets /models /eval /tmp/matplotlib /opt/tf-data /workspaces && \
     mkdir -p /etc/vulkan/icd.d && \
