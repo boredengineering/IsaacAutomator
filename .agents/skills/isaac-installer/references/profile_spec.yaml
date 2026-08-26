@@ -1,0 +1,41 @@
+# Declarative Installation Profiles for Isaac Bare-Metal Installer
+profiles:
+  minimal:
+    description: Headless reinforcement learning node and CI cluster worker
+    components:
+      - nvidia-driver
+      - cuda-toolkit
+      - isaac-sim-headless
+      - isaac-lab
+      - python-uv
+    hardware_devices: []
+  
+  standard:
+    description: Standard interactive robotics developer workstation
+    components:
+      - nvidia-driver
+      - vulkan-icd
+      - isaac-sim-gui
+      - isaac-lab
+      - isaaclab-arena
+      - python-uv
+      - ftdi-serial-lowlatency
+    hardware_devices:
+      - ftdi-serial
+  
+  full:
+    description: Complete physical AI foundation model and teleoperation stack
+    components:
+      - nvidia-driver
+      - vulkan-icd
+      - isaac-sim-gui
+      - isaac-lab
+      - isaaclab-arena
+      - isaac-gr00t
+      - lerobot
+      - python-uv
+      - ftdi-serial-lowlatency
+    hardware_devices:
+      - spacemouse
+      - manus-vr-gloves
+      - ftdi-serial

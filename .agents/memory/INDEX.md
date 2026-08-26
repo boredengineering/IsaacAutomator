@@ -96,6 +96,9 @@ Master index of session memory checkpoints for Isaac Automator.
 | 2026-08-25 23:34 | `c1e3f5a7` | Complete Cloud CLIs, Terraform, Ansible, uv & R-base Integration | Added AWS, GCP, Azure, Alibaba CLIs, Terraform, Packer, Ansible, uv, and R-base to physical-ai_agents.md Devcontainer and Dockerfile | [`20260825_233410_c1e3f5a7.md`](./sessions/20260825_233410_c1e3f5a7.md) |
 | 2026-08-25 23:54 | `a1c3e5f7` | Integrated isaac-automator Skill Suite into physical-ai_agents.md | Detailed the 7 skills in .agents/skills/isaac-automator/ with commands and operator invariants in Section 8 | [`20260825_235415_a1c3e5f7.md`](./sessions/20260825_235415_a1c3e5f7.md) |
 | 2026-08-25 23:56 | `f5d7b9a1` | Updated Directory Topology in Section 2 | Synchronized directory tree in physical-ai_agents.md with isaac-automator skills, docs, and devcontainer files | [`20260825_235630_f5d7b9a1.md`](./sessions/20260825_235630_f5d7b9a1.md) |
+| 2026-08-26 00:05 | `d8f2a4c6` | Created isaac-installer Skill Package | Created full isaac-installer skill package in .agents/skills/isaac-installer/ with SKILL.md, scripts, profile specs, and examples | [`20260826_000535_d8f2a4c6.md`](./sessions/20260826_000535_d8f2a4c6.md) |
+| 2026-08-26 00:07 | `e2a4c6f8` | Added isaac-installer Skill to physical-ai_agents.md | Linked and documented isaac-installer in Section 2 Topology and Section 8.1 Skills Reference Matrix | [`20260826_000742_e2a4c6f8.md`](./sessions/20260826_000742_e2a4c6f8.md) |
+| 2026-08-26 00:09 | `a3c5e7f9` | Updated .gitignore & Staged Custom Skills in Git | Unignored isaac-installer and accelerated-computing-cudf in .gitignore, staged all custom skills, memory, and reference files | [`20260826_000912_a3c5e7f9.md`](./sessions/20260826_000912_a3c5e7f9.md) |
 
 
 

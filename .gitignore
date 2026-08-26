@@ -23,8 +23,10 @@ uploads/*
 src/ansible/roles/isaac/files/autorun.sh
 src/ansible/roles/isaac/files/isaaclab.pem
 
-# Third-party installed skills
+# Third-party installed skills (ignore third-party catalog, keep custom & essential skills)
 .agents/skills/*
 !.agents/skills/isaac-automator/
+!.agents/skills/isaac-installer/
+!.agents/skills/accelerated-computing-cudf/
 .claude/*
 agent/*

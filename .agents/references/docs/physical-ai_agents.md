@@ -43,7 +43,11 @@ Every repository in the Physical AI stack must maintain a standardized `.agents/
 │   │   │   ├── transfer-data/               # Bidirectional sync (./upload, ./download) & autorun.sh
 │   │   │   ├── troubleshoot/                # Vulkan blank viewports, TTY errors, CIDR security fixes
 │   │   │   └── session-memory/              # 25-char UUID checkpointing & INDEX.md sync
-│   │   ├── isaac-baremetal-installer/       # Bare-metal GPU hardware probing & Conda linking
+│   │   ├── isaac-installer/                 # Full Physical Bare-Metal Workstation Provisioner
+│   │   │   ├── SKILL.md                     # Master doctor, profile, and submodule playbook
+│   │   │   ├── scripts/check_hardware.py    # Hardware & Blackwell sm_120 probe
+│   │   │   ├── references/profile_spec.yaml # Declarative minimal/standard/full profile schema
+│   │   │   └── examples/                    # 01_baremetal_bootstrap.md
 │   │   └── accelerated-computing-cudf/      # Official NVIDIA cuDF data acceleration (from nvidia/skills)
 │   ├── memory/                              # Permanent architectural checkpoint history
 │   │   ├── INDEX.md                         # Master chronological index of session logs
@@ -524,8 +528,7 @@ flowchart LR
 | **`run-demos`** | [`.agents/skills/isaac-automator/run-demos/SKILL.md`](file:///workspaces/IsaacAutomator/.agents/skills/isaac-automator/run-demos/SKILL.md) | **Demo Launcher**: Launches ready-to-run Isaac Sim / Isaac Lab examples (e.g. `quadruped-locomotion` with ANYmal-D and RSL-RL) interactively or headlessly via `DISPLAY=:0 demo.sh`. |
 | **`transfer-data`** | [`.agents/skills/isaac-automator/transfer-data/SKILL.md`](file:///workspaces/IsaacAutomator/.agents/skills/isaac-automator/transfer-data/SKILL.md) | **Bidirectional Asset Sync**: `./upload <name>` (local `uploads/` $\to$ remote `~/uploads`), `./download <name>` (remote `~/results` $\to$ local `results/`), and `uploads/autorun.sh` execution upon boot. |
 | **`troubleshoot`** | [`.agents/skills/isaac-automator/troubleshoot/SKILL.md`](file:///workspaces/IsaacAutomator/.agents/skills/isaac-automator/troubleshoot/SKILL.md) | **System Diagnostic Engine**: Diagnoses blank Vulkan viewports over noVNC, non-interactive TTY hangs, stale driver mismatches (`./repair`), and security group IP drift. |
-| **`session-memory`** | [`.agents/skills/isaac-automator/session-memory/SKILL.md`](file:///workspaces/IsaacAutomator/.agents/skills/isaac-automator/session-memory/SKILL.md) | **Checkpoint Logger**: Manages, searches, and logs immutable 25-character timestamped UUID session checkpoints (`YYYYMMDD_HHMMSS_<short_uuid>.md`) in `.agents/memory/sessions/` and updates `INDEX.md`. |
-| **`isaac-baremetal-installer`** | [`.agents/skills/isaac-baremetal-installer/SKILL.md`](file:///workspaces/IsaacAutomator/.agents/skills/isaac-baremetal-installer/SKILL.md) | **Bare-Metal Workstation Orchestrator**: Probes hardware (Blackwell, Ada, Hopper), installs NVIDIA drivers, provisions Conda environments, audits C++ dynamic solvers, and links Isaac Sim, Lab, Arena, and GR00T. |
+| **`isaac-installer`** | [`.agents/skills/isaac-installer/SKILL.md`](file:///workspaces/IsaacAutomator/.agents/skills/isaac-installer/SKILL.md) | **Bare-Metal Workstation Orchestrator**: Probes hardware (`doctor --json`), provisions declarative YAML profiles (`minimal`/`standard`/`full`), manages dual-remote Git topologies, bridges submodules (0% Git dirt), manages ZeroMQ port 5556 policy daemon, and runs 15-subsystem tests. |
 | **`accelerated-computing-cudf`**| [`.agents/skills/accelerated-computing-cudf/SKILL.md`](file:///workspaces/IsaacAutomator/.agents/skills/accelerated-computing-cudf/SKILL.md) | **Data Acceleration**: Official NVIDIA-authored guidance from `nvidia/skills` for GPU DataFrame ETL, trajectory parsing, and dataset pre-processing via cuDF. |
 | **`antigravity-guide`** | `builtin/skills/antigravity_guide/SKILL.md` | **Agent Orchestrator Guide**: Full reference for Antigravity subagents, slash commands, background tasks, and MCP sidecars. |
 | **`agy-customizations`** | `builtin/skills/agy-customizations/SKILL.md` | **Customization Engine**: Guide for defining new skills, rules, hooks, subagents, and MCP servers. |
