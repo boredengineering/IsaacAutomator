@@ -22,4 +22,5 @@ Catalog of high-level project specifications, architecture documents, and goal d
 | [`devcontainer/devcontainer-mcp-skills-plan.md`](./devcontainer/devcontainer-mcp-skills-plan.md) | Step-by-step integration plan for robotics MCP servers (docker, hw-probe) and skills | Active Plan |
 | [`isaac-installer/README.md`](./isaac-installer/README.md) | Universal bare-metal Ubuntu 22.04 installer CLI & modular library | Active Tool |
 | [`devcontainer/auth-strategy.md`](./devcontainer/auth-strategy.md) | DevContainer Git & GitHub authentication strategy (Pattern B: persistent named volume + setup hook) | Active Reference |
+| [`agentic_env_generation/agentic_env_generation.md`](./agentic_env_generation/agentic_env_generation.md) | Master guide for Agentic Environment Generation & Policy Evaluation in IsaacLab-Arena | Active Guide |
 
