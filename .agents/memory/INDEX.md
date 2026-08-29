@@ -101,6 +101,7 @@ Master index of session memory checkpoints for Isaac Automator.
 | 2026-08-26 00:09 | `a3c5e7f9` | Updated .gitignore & Staged Custom Skills in Git | Unignored isaac-installer and accelerated-computing-cudf in .gitignore, staged all custom skills, memory, and reference files | [`20260826_000912_a3c5e7f9.md`](./sessions/20260826_000912_a3c5e7f9.md) |
 | 2026-08-26 00:51 | `b1d3f5a7` | Added Terraform MCP Server & Agent CLIs to Dockerfile | Added terraform-mcp-server binary and autonomous agent CLIs (Claude Code, Antigravity CLI, Hermes) into physical-ai_agents.md | [`20260826_005133_b1d3f5a7.md`](./sessions/20260826_005133_b1d3f5a7.md) |
 | 2026-08-27 19:54 | `a7b9c1d3` | Master Guide: Agentic Environment Generation & Policy Evaluation | Synthesized env_generation_notes.md and setup-isaaclab-arena.md into self-contained agentic_env_generation.md guide | [`20260827_195430_a7b9c1d3.md`](./sessions/20260827_195430_a7b9c1d3.md) |
+| 2026-08-27 20:45 | `b8c4d2f0` | Master Plan: RDF-star, LPG & PROV-O Architecture | Created agentic_env_gen_plan.md specifying semantic web, SHACL validation, SPARQL lowering, and PROV-O telemetry pipeline | [`20260827_204555_b8c4d2f0.md`](./sessions/20260827_204555_b8c4d2f0.md) |
 
 
 

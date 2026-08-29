@@ -23,4 +23,5 @@ Catalog of high-level project specifications, architecture documents, and goal d
 | [`isaac-installer/README.md`](./isaac-installer/README.md) | Universal bare-metal Ubuntu 22.04 installer CLI & modular library | Active Tool |
 | [`devcontainer/auth-strategy.md`](./devcontainer/auth-strategy.md) | DevContainer Git & GitHub authentication strategy (Pattern B: persistent named volume + setup hook) | Active Reference |
 | [`agentic_env_generation/agentic_env_generation.md`](./agentic_env_generation/agentic_env_generation.md) | Master guide for Agentic Environment Generation & Policy Evaluation in IsaacLab-Arena | Active Guide |
+| [`agentic_env_generation/agentic_env_gen_plan.md`](./agentic_env_generation/agentic_env_gen_plan.md) | Master implementation plan for RDF-star, LPG & PROV-O semantic pipeline in IsaacLab-Arena | Active Plan |
 
