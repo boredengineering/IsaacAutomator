@@ -1,7 +1,6 @@
 """
 isaac9s - The k9s-style Terminal User Interface for Isaac Automator & Installer
 """
-import asyncio
 import os
 import shutil
 import subprocess
@@ -14,6 +13,7 @@ from textual.binding import Binding
 from textual.containers import Container, Horizontal, Vertical, VerticalScroll
 from textual.widgets import (
     Button,
+    DataTable,
     Footer,
     Header,
     Label,
@@ -71,6 +71,7 @@ class Isaac9sApp(App):
         Binding("4", "tab_doctor", "Doctor", show=True),
         Binding("5", "tab_profiles", "Profiles", show=True),
         Binding("6", "tab_hardware", "Hardware", show=True),
+        Binding("question_mark", "tab_help", "Help", show=True, key_display="?"),
         Binding("c", "open_connect_modal", "Connect", show=True),
         Binding("p", "run_probe", "Probe", show=True),
         Binding("h", "run_heal", "Heal", show=True),
@@ -109,6 +110,7 @@ class Isaac9sApp(App):
                     yield Static(
                         "[bold cyan]isaac9s - Keyboard Shortcuts & Cockpit Reference[/]\n\n"
                         "  [bold white]1 - 6[/]: Switch dashboard screens\n"
+                        "  [bold white]?[/]: Open this Help reference\n"
                         "  [bold white]c[/]: Open Remote Desktop protocol selector modal (noVNC, NoMachine, Sunshine, SSH)\n"
                         "  [bold white]p[/]: Run hardware probe & diagnostic tests\n"
                         "  [bold white]h[/]: Run automated state drift reconciliation & healing\n"
@@ -166,14 +168,24 @@ class Isaac9sApp(App):
     def action_tab_hardware(self) -> None:
         self.query_one("#main-tabs", TabbedContent).active = "tab-hardware"
 
+    def action_tab_help(self) -> None:
+        self.query_one("#main-tabs", TabbedContent).active = "tab-help"
+
     # Operational Actions
     def action_open_connect_modal(self) -> None:
         selected_vm = self.workstations_pane.get_selected_workstation()
         self.push_screen(RemoteDesktopModal(workstation=selected_vm), self.on_modal_closed)
 
     def on_modal_closed(self, result: str) -> None:
-        if result:
-            self.log_message(f"[bold cyan]Connected via protocol:[/] [green]{result}[/]")
+        selected_vm = self.workstations_pane.get_selected_workstation()
+        name = selected_vm.get("name", "workstation")
+        if result == "ssh":
+            if name and name != "local-workstation":
+                self.log_message(f"[bold cyan]To connect via SSH, run in your shell:[/] [white]./ssh {name}[/]")
+            else:
+                self.log_message("[bold cyan]Local workstation shell already active in this terminal.[/]")
+        elif result:
+            self.log_message(f"[bold cyan]Connected to '{name}' via protocol:[/] [green]{result}[/]")
 
     def action_run_probe(self) -> None:
         self.log_message("[bold cyan]Running hardware & subsystem probe...[/]")
@@ -198,12 +210,28 @@ class Isaac9sApp(App):
     def action_run_start(self) -> None:
         selected_vm = self.workstations_pane.get_selected_workstation()
         name = selected_vm.get("name", "workstation")
-        self.log_message(f"[bold green]Starting workstation '{name}'...[/]")
+        if name == "local-workstation" or selected_vm.get("cloud") == "BARE-METAL":
+            self.log_message("[bold yellow]Notice:[/] local-workstation is a bare-metal node (always running).")
+            return
+
+        start_script = REPO_ROOT / "start"
+        if start_script.exists():
+            self.run_async_command(f"{start_script} {name}")
+        else:
+            self.log_message(f"[bold green]Starting workstation '{name}'...[/]")
 
     def action_run_stop(self) -> None:
         selected_vm = self.workstations_pane.get_selected_workstation()
         name = selected_vm.get("name", "workstation")
-        self.log_message(f"[bold yellow]Stopping workstation '{name}' to pause billing...[/]")
+        if name == "local-workstation" or selected_vm.get("cloud") == "BARE-METAL":
+            self.log_message("[bold yellow]Notice:[/] local-workstation is a bare-metal node. Cloud stop does not apply.")
+            return
+
+        stop_script = REPO_ROOT / "stop"
+        if stop_script.exists():
+            self.run_async_command(f"{stop_script} {name}")
+        else:
+            self.log_message(f"[bold yellow]Stopping workstation '{name}' to pause billing...[/]")
 
     def action_run_refresh(self) -> None:
         self.telemetry_widget.update_metrics()
@@ -229,7 +257,12 @@ class Isaac9sApp(App):
             except Exception as e:
                 self.call_from_thread(self.log_message, f"[bold red]Error: {e}[/]")
 
-        asyncio.get_event_loop().run_in_executor(None, worker)
+        self.run_worker(worker, thread=True)
+
+    # Table Row Double-Click / Enter to Connect
+    def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
+        if event.data_table.id == "workstations-table":
+            self.action_open_connect_modal()
 
     # Button Event Dispatchers
     def on_button_pressed(self, event: Button.Pressed) -> None:

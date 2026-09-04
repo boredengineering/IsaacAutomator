@@ -1,16 +1,26 @@
 """
 Popeye-Style Pre-Flight Conflict Matrix & System Doctor Screen for isaac9s
 """
+import json
 import os
 import shutil
-from textual.app import ComposeResult
-from textual.containers import Horizontal, Vertical, VerticalScroll
-from textual.widgets import Button, DataTable, Label, Static
+from pathlib import Path
 from rich.text import Text
+from textual.app import ComposeResult
+from textual.containers import Horizontal, Vertical
+from textual.widgets import Button, DataTable, Static
+
+from src.tui.backend import REPO_ROOT
 
 
 class DoctorPane(Vertical):
     """Pre-flight conflict matrix and system doctor with letter grade scoring."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.last_checks: list[dict] = []
+        self.last_score: int = 0
+        self.last_grade: str = "N/A"
 
     def compose(self) -> ComposeResult:
         with Horizontal(classes="action-bar"):
@@ -134,6 +144,10 @@ class DoctorPane(Vertical):
         grade = "A" if pct >= 90 else ("B" if pct >= 75 else ("C" if pct >= 60 else "F"))
         color = "green" if grade in ("A", "B") else ("yellow" if grade == "C" else "red")
 
+        self.last_checks = checks
+        self.last_score = pct
+        self.last_grade = grade
+
         banner = self.query_one("#doctor-score-banner", Static)
         banner.update(
             f"[bold cyan]System Health Score:[/] [{color}][bold]{pct}/100 [GRADE: {grade}][/][/]  |  "
@@ -150,3 +164,22 @@ class DoctorPane(Vertical):
                 Text.from_markup(badge),
                 c["remediation"],
             )
+
+    def export_json(self) -> Path:
+        out_dir = REPO_ROOT / "state"
+        out_dir.mkdir(parents=True, exist_ok=True)
+        out_file = out_dir / "doctor_report.json"
+        data = {
+            "score": self.last_score,
+            "grade": self.last_grade,
+            "checks": self.last_checks,
+        }
+        out_file.write_text(json.dumps(data, indent=2))
+        return out_file
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id == "btn-doc-probe":
+            self.refresh_doctor()
+        elif event.button.id == "btn-doc-export":
+            path = self.export_json()
+            self.notify(f"Exported diagnostic report to {path.name}")

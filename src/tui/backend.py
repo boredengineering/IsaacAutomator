@@ -9,6 +9,28 @@ INSTALLER_BIN = REPO_ROOT / "isaac-installer/bin/isaac-installer"
 
 class WorkstationBackend:
     @staticmethod
+    def _find_repo(repo_name: str) -> Path | None:
+        home = Path.home()
+        candidates = [
+            home / "Documents/GitHub" / repo_name,
+            home / "Documents/GitHub/BoredEngineer" / repo_name,
+            home / "workspace" / repo_name,
+            home / "projects" / repo_name,
+            home / "dev" / repo_name,
+            home / repo_name,
+            Path("/workspaces") / repo_name,
+            Path("/workspaces/IsaacAutomator") / repo_name,
+            Path.cwd() / repo_name,
+            Path.cwd().parent / repo_name,
+        ]
+        for c in candidates:
+            if c.exists() and (c / ".git").exists():
+                return c
+            elif c.exists() and c.is_dir():
+                return c
+        return None
+
+    @staticmethod
     def get_deployments():
         """Lists local state deployments in state/"""
         deployments = []
@@ -16,14 +38,14 @@ class WorkstationBackend:
         if not state_dir.exists():
             return deployments
 
-        for item in state_dir.iterdir():
+        for item in sorted(state_dir.iterdir()):
             if item.is_dir() and not item.name.startswith("."):
                 meta_file = item / "meta.json"
                 tfstate_file = item / ".tfstate"
                 name = item.name
-                cloud = "unknown"
+                cloud = "UNKNOWN"
                 gpu = "none"
-                status = "UNKNOWN"
+                status = "CONFIGURED"
                 ip = "N/A"
                 profile = "simple"
 
@@ -32,9 +54,15 @@ class WorkstationBackend:
                         with open(meta_file) as f:
                             meta = json.load(f)
                             params = meta.get("params", {})
-                            cloud = params.get("cloud", cloud)
-                            gpu = params.get("isaac_workstation_gpu_type", gpu)
-                            profile = params.get("security_profile", "simple")
+                            cloud = params.get("cloud") or meta.get("config", {}).get("cloud") or cloud
+                            gpu = (
+                                params.get("isaac_workstation_instance_type")
+                                or params.get("instance_type")
+                                or params.get("isaac_workstation_gpu_type", gpu)
+                            )
+                            profile = params.get("security_profile") or params.get("profile", "simple")
+                            if "aws_access_key_id" in params:
+                                cloud = "AWS"
                     except Exception:
                         pass
 
@@ -43,20 +71,26 @@ class WorkstationBackend:
                         with open(tfstate_file) as f:
                             state = json.load(f)
                             outputs = state.get("outputs", {})
-                            ip = outputs.get("isaac_workstation_ip", {}).get("value", ip)
-                            cloud = outputs.get("cloud", {}).get("value", cloud)
+                            ip = (
+                                outputs.get("isaac_workstation_ip", {}).get("value")
+                                or outputs.get("isaac_ip", {}).get("value")
+                                or ip
+                            )
+                            st_cloud = outputs.get("cloud", {}).get("value")
+                            if st_cloud:
+                                cloud = st_cloud
                             status = "PROVISIONED"
                     except Exception:
                         pass
 
                 deployments.append({
                     "name": name,
-                    "cloud": cloud.upper(),
+                    "cloud": str(cloud).upper(),
                     "status": status,
-                    "gpu": gpu,
-                    "ip": ip,
-                    "profile": profile,
-                    "path": str(item)
+                    "gpu": str(gpu),
+                    "ip": str(ip),
+                    "profile": str(profile).capitalize(),
+                    "path": str(item),
                 })
 
         return deployments
@@ -117,17 +151,23 @@ class WorkstationBackend:
 
         # 6. Isaac Sim
         sim_path = os.environ.get("ISAAC_PATH") or "/isaac-sim"
-        has_sim = Path(sim_path).exists() or Path("/root/.local/share/ov/pkg").exists()
+        has_sim = (
+            Path(sim_path).exists()
+            or Path("/root/.local/share/ov/pkg").exists()
+            or (home / ".local/share/ov/pkg").exists()
+            or (home / "IsaacSim").exists()
+            or (home / "isaac-sim").exists()
+        )
         subsystems.append({
             "name": "Isaac Sim Engine",
             "status": "PASS" if has_sim else "PENDING",
-            "details": f"Omniverse Kit at {sim_path}" if has_sim else "Ready for install or cloud workstation link",
+            "details": f"Omniverse Kit verified at {sim_path}" if has_sim else "Ready for install or cloud workstation link",
             "category": "Simulation"
         })
 
         # 7. Isaac Lab
-        lab_dir = home / "Documents/GitHub/BoredEngineer/IsaacLab"
-        has_lab = lab_dir.exists()
+        lab_dir = WorkstationBackend._find_repo("IsaacLab")
+        has_lab = lab_dir is not None
         subsystems.append({
             "name": "Isaac Lab",
             "status": "PASS" if has_lab else "PENDING",
@@ -136,8 +176,8 @@ class WorkstationBackend:
         })
 
         # 8. IsaacLab-Arena
-        arena_dir = home / "Documents/GitHub/BoredEngineer/IsaacLab-Arena"
-        has_arena = arena_dir.exists()
+        arena_dir = WorkstationBackend._find_repo("IsaacLab-Arena") or WorkstationBackend._find_repo("isaaclab_arena")
+        has_arena = arena_dir is not None
         subsystems.append({
             "name": "IsaacLab-Arena",
             "status": "PASS" if has_arena else "PENDING",
@@ -146,12 +186,12 @@ class WorkstationBackend:
         })
 
         # 9. Isaac-GR00T Foundation Model
-        gr00t_dir = home / "Documents/GitHub/BoredEngineer/Isaac-GR00T"
-        has_gr00t = gr00t_dir.exists()
+        gr00t_dir = WorkstationBackend._find_repo("Isaac-GR00T") or WorkstationBackend._find_repo("isaac-gr00t")
+        has_gr00t = gr00t_dir is not None
         subsystems.append({
             "name": "Isaac-GR00T VLA",
             "status": "PASS" if has_gr00t else "PENDING",
-            "details": "N1.7 VLA Foundation Model stack" if has_gr00t else "VLA repository ready to clone",
+            "details": f"N1.7 VLA stack found at {gr00t_dir}" if has_gr00t else "VLA repository ready to clone",
             "category": "Foundation Model"
         })
 

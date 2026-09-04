@@ -4,7 +4,7 @@ Headless unit tests for isaac9s TUI application using Textual Pilot
 """
 import unittest
 from textual.pilot import Pilot
-from textual.widgets import DataTable, RichLog
+from textual.widgets import Button, DataTable, Input, RichLog, TabbedContent
 
 from src.tui.app import Isaac9sApp, TelemetryBanner
 from src.tui.screens import (
@@ -56,6 +56,14 @@ class Test_Isaac9sApp(unittest.IsolatedAsyncioTestCase):
             await pilot.pause()
             self.assertEqual(app.query_one("#main-tabs").active, "tab-hardware")
 
+            await pilot.press("question_mark")
+            await pilot.pause()
+            self.assertEqual(app.query_one("#main-tabs").active, "tab-help")
+
+            await pilot.press("1")
+            await pilot.pause()
+            self.assertEqual(app.query_one("#main-tabs").active, "tab-subsystems")
+
             # 4. Test Hotkeys (Probe, Audit, Start, Stop, Refresh)
             await pilot.press("p")
             await pilot.pause()
@@ -74,11 +82,40 @@ class Test_Isaac9sApp(unittest.IsolatedAsyncioTestCase):
             await pilot.pause()
             self.assertIsInstance(app.screen, RemoteDesktopModal)
 
+            # Test modal protocol switching
+            await pilot.press("2")
+            await pilot.pause()
+            self.assertEqual(app.screen.selected_proto, "nomachine")
+
+            await pilot.press("4")
+            await pilot.pause()
+            self.assertEqual(app.screen.selected_proto, "ssh")
+
+            # Dismiss modal
             await pilot.press("escape")
             await pilot.pause()
             self.assertNotIsInstance(app.screen, RemoteDesktopModal)
 
-            # 6. Clean Quit
+            # 6. Test LogsPane Live Search / Filtering
+            logs_pane = app.query_one("#pane-logs", LogsPane)
+            logs_pane.write_line("Alpha Test Message")
+            logs_pane.write_line("Beta Debug Message")
+            log_input = app.query_one("#input-log-filter", Input)
+            log_input.value = "Alpha"
+            await pilot.pause()
+            self.assertEqual(logs_pane.active_filter, "Alpha")
+
+            # 7. Test Doctor JSON Export
+            doc_pane = app.query_one("#pane-doctor", DoctorPane)
+            report_path = doc_pane.export_json()
+            self.assertTrue(report_path.exists())
+
+            # 8. Test Profiles YAML Export
+            prof_pane = app.query_one("#pane-profiles", ProfilesPane)
+            yaml_path = prof_pane.export_yaml()
+            self.assertTrue(yaml_path.exists())
+
+            # 9. Clean Quit
             await pilot.press("q")
 
 

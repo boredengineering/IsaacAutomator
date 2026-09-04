@@ -29,9 +29,32 @@ class RemoteDesktopModal(ModalScreen):
         }
         self.selected_proto = "novnc"
 
-    def compose(self) -> ComposeResult:
+    def get_endpoint_info(self, proto: str) -> tuple[str, str]:
         ip = self.workstation.get("ip", "127.0.0.1")
+        valid_ip = ip and ip not in ("N/A", "None", "")
+        host = ip if valid_ip else "127.0.0.1"
+
+        if proto == "novnc":
+            url = f"http://{host}:6080/vnc.html?autoconnect=true&resize=remote"
+            desc = "Zero-install HTML5 browser client. Ideal for 2D UI, terminal, and file downloads."
+        elif proto == "nomachine":
+            url = f"nx://{host}:4000"
+            desc = "Hardware-accelerated H.264 stream. Recommended for live 60 FPS Isaac Sim 3D Viewport."
+        elif proto == "sunshine":
+            url = f"https://{host}:47990"
+            desc = "Ultra-low latency NVENC streaming (sub-15ms) for direct robot teleoperation."
+        else:
+            url = f"ssh://ubuntu@{host}:22"
+            desc = "Interactive direct shell without opening public SSH ports."
+
+        if not valid_ip:
+            url += " (Pending IP assignment)"
+
+        return url, desc
+
+    def compose(self) -> ComposeResult:
         name = self.workstation.get("name", "workstation")
+        url, desc = self.get_endpoint_info("novnc")
 
         with Vertical(id="dialog"):
             yield Label(f"Connect to Workstation: [bold cyan]{name}[/]", id="dialog-title")
@@ -47,7 +70,8 @@ class RemoteDesktopModal(ModalScreen):
                 yield RadioButton("4. Secure SSH Shell Tunnel (Port 22 / IAP / SSM) - Terminal Access", id="rb-ssh")
 
             yield Static(
-                f"[bold white]Target Endpoint:[/] [cyan]http://{ip}:6080/vnc.html?autoconnect=true&resize=remote[/]\n"
+                f"[bold white]Target Endpoint:[/] [cyan]{url}[/]\n"
+                f"[bold white]Protocol Note:[/]   {desc}\n"
                 f"[bold white]Security Lock:[/]   [green]Strict /32 Caller IP Filter[/] (Simple Mode Active)",
                 id="target-endpoint",
                 classes="box-panel",
@@ -58,45 +82,42 @@ class RemoteDesktopModal(ModalScreen):
                 yield Button("Copy Endpoint", id="btn-copy", variant="default")
                 yield Button("Close (Esc)", id="btn-close", variant="error")
 
-    def on_radio_set_changed(self, event: RadioSet.Changed) -> None:
-        ip = self.workstation.get("ip", "127.0.0.1")
-        btn_id = event.pressed.id
+    def update_proto(self, proto: str) -> None:
+        self.selected_proto = proto
+        url, desc = self.get_endpoint_info(proto)
         endpoint_widget = self.query_one("#target-endpoint", Static)
-
-        if btn_id == "rb-novnc":
-            self.selected_proto = "novnc"
-            url = f"http://{ip}:6080/vnc.html?autoconnect=true&resize=remote"
-            desc = "Zero-install HTML5 browser client. Ideal for 2D UI, terminal, and downloads."
-        elif btn_id == "rb-nomachine":
-            self.selected_proto = "nomachine"
-            url = f"nx://{ip}:4000"
-            desc = "Hardware-accelerated H.264 stream. Recommended for live 60 FPS Isaac Sim 3D Viewport."
-        elif btn_id == "rb-sunshine":
-            self.selected_proto = "sunshine"
-            url = f"https://{ip}:47990"
-            desc = "Ultra-low latency NVENC streaming (sub-15ms) for direct robot teleoperation."
-        else:
-            self.selected_proto = "ssh"
-            url = f"ssh://ubuntu@{ip}:22"
-            desc = "Interactive direct shell without opening public SSH ports."
-
         endpoint_widget.update(
             f"[bold white]Target Endpoint:[/] [cyan]{url}[/]\n"
             f"[bold white]Protocol Note:[/]   {desc}\n"
             f"[bold white]Security Lock:[/]   [green]Strict /32 Caller IP Filter[/]"
         )
 
+    def on_radio_set_changed(self, event: RadioSet.Changed) -> None:
+        mapping = {
+            "rb-novnc": "novnc",
+            "rb-nomachine": "nomachine",
+            "rb-sunshine": "sunshine",
+            "rb-ssh": "ssh",
+        }
+        proto = mapping.get(event.pressed.id, "novnc")
+        self.update_proto(proto)
+
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "btn-close":
             self.dismiss(None)
         elif event.button.id == "btn-launch":
             ip = self.workstation.get("ip", "127.0.0.1")
-            if self.selected_proto == "novnc":
-                webbrowser.open(f"http://{ip}:6080/vnc.html?autoconnect=true&resize=remote")
-            elif self.selected_proto == "sunshine":
-                webbrowser.open(f"https://{ip}:47990")
+            url, _ = self.get_endpoint_info(self.selected_proto)
+            if self.selected_proto in ("novnc", "sunshine"):
+                webbrowser.open(url)
             self.dismiss(self.selected_proto)
         elif event.button.id == "btn-copy":
+            url, _ = self.get_endpoint_info(self.selected_proto)
+            try:
+                self.app.copy_to_clipboard(url)
+                self.notify(f"Copied endpoint: {url}")
+            except Exception:
+                self.notify(f"Endpoint: {url}")
             self.dismiss(self.selected_proto)
 
     def action_dismiss_modal(self) -> None:
@@ -104,12 +125,16 @@ class RemoteDesktopModal(ModalScreen):
 
     def action_select_novnc(self) -> None:
         self.query_one("#rb-novnc", RadioButton).value = True
+        self.update_proto("novnc")
 
     def action_select_nomachine(self) -> None:
         self.query_one("#rb-nomachine", RadioButton).value = True
+        self.update_proto("nomachine")
 
     def action_select_sunshine(self) -> None:
         self.query_one("#rb-sunshine", RadioButton).value = True
+        self.update_proto("sunshine")
 
     def action_select_ssh(self) -> None:
         self.query_one("#rb-ssh", RadioButton).value = True
+        self.update_proto("ssh")

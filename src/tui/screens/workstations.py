@@ -12,6 +12,10 @@ from src.tui.backend import WorkstationBackend
 class WorkstationsPane(Vertical):
     """Multi-cloud workstation fleet and lifecycle management screen."""
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.current_vms: list[dict] = []
+
     def compose(self) -> ComposeResult:
         with Horizontal(classes="action-bar"):
             yield Button("Start VM [s]", id="btn-start-vm", variant="success")
@@ -31,6 +35,7 @@ class WorkstationsPane(Vertical):
         table = self.query_one("#workstations-table", DataTable)
         table.clear()
         vms = WorkstationBackend.get_deployments()
+        self.current_vms = vms
 
         if not vms:
             table.add_row(
@@ -56,14 +61,13 @@ class WorkstationsPane(Vertical):
 
     def get_selected_workstation(self) -> dict:
         table = self.query_one("#workstations-table", DataTable)
-        vms = WorkstationBackend.get_deployments()
-        if not vms:
+        if not self.current_vms:
             return {"name": "local-workstation", "ip": "127.0.0.1", "cloud": "BARE-METAL"}
 
         try:
             row_idx = table.cursor_row
-            if 0 <= row_idx < len(vms):
-                return vms[row_idx]
+            if row_idx is not None and 0 <= row_idx < len(self.current_vms):
+                return self.current_vms[row_idx]
         except Exception:
             pass
-        return vms[0]
+        return self.current_vms[0]
