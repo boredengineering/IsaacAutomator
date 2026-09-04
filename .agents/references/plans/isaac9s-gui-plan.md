@@ -458,66 +458,302 @@ Footer {
 
 ---
 
-## 5. Implementation & Rollout Roadmap
+---
+
+## 5. Brainstorming & Gap Analysis: What is Missing & How to Improve isaac9s
+
+Based on real-world operator testing, user feedback, and comparison against the Kubernetes `k9s` benchmark, the following key gaps and high-impact improvements have been identified:
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                               isaac9s IMPROVEMENT MATRIX & GAPS                                  │
+├────────────────────────────────┬───────────────────────┬────────────┬─────────────────────────────┤
+│ Feature / Capability           │ Current Status        │ Priority   │ Proposed Improvement        │
+├────────────────────────────────┼───────────────────────┼────────────┼─────────────────────────────┤
+│ 1. In-Cockpit Deploy Wizard    │ Shell CLI only        │ P0 (High)  │ [n] Interactive Modal       │
+│ 2. Cloud Auth Device-Code Flow │ Manual command prompt │ P0 (High)  │ Guided Device-Code Modal    │
+│ 3. Vim / k9s Command Palette   │ Number keys only      │ P1 (High)  │ `:` Command bar & `/` filter│
+│ 4. Workstation Deep Inspector  │ Table summary only    │ P1 (Med)   │ [Enter] / [i] Detail Drawer │
+│ 5. Robotics Demo Launcher      │ Shell scripts on VM   │ P1 (Med)   │ Interactive Demos Screen    │
+│ 6. Spot Preemption Watchdog    │ Architecture spec only│ P2 (Med)   │ Cloud metadata poll & alert │
+│ 7. 1-Click Native Browser Open │ Clipboard copy only   │ P2 (Quick) │ Python webbrowser.open()    │
+│ 8. In-TUI Session Memory Log   │ Manual markdown files │ P2 (Med)   │ [ctrl+s] Auto-Checkpointing │
+└────────────────────────────────┴───────────────────────┴────────────┴─────────────────────────────┘
+```
+
+---
+
+### 5.1 Gap 1: In-Cockpit Cloud Provisioning Wizard (`[n] New Workstation` Modal)
+
+**The Friction Today:**
+Operators must exit `isaac9s` to bash and memorize lengthy CLI flags (e.g. `./deploy-aws test-rig --profile simple --demo humanoid-locomotion`). An unanswered flag hangs non-interactive sessions.
+
+**The Improvement:**
+Pressing `n` (or clicking a "New Workstation" button on Screen 2) opens an interactive, non-blocking modal directly within `isaac9s`:
+
+```text
+┌────────────────────────────────────── New Isaac Workstation Deployer ──────────────────────────────────────┐
+│                                                                                                            │
+│  Workstation Name: [ isaac-lab-spot-01                 ]                                                   │
+│                                                                                                            │
+│  Target Cloud:     (•) AWS EC2    ( ) Google Cloud (GCP)    ( ) Microsoft Azure    ( ) Alibaba Cloud       │
+│                                                                                                            │
+│  Instance / GPU:   (•) g5.2xlarge (NVIDIA A10G 24GB, 8 vCPU, 32GB RAM) - ~$1.21/hr                        │
+│                    ( ) g5.4xlarge (NVIDIA A10G 24GB, 16 vCPU, 64GB RAM) - ~$1.62/hr                       │
+│                    ( ) g6e.2xlarge (NVIDIA L4 24GB, Ada Lovelace) - ~$1.10/hr                             │
+│                    ( ) g4dn.2xlarge (NVIDIA T4 16GB, Turing Budget) - ~$0.75/hr                            │
+│                                                                                                            │
+│  Security Tier:    (•) Simple Mode ($0/mo, auto /32 IP lock)                                               │
+│                    ( ) Team Mode (<$0.10/mo, GCS/S3 shared state)                                          │
+│                    ( ) Enterprise Mode ($35-$180/mo, Cloud NAT, CMEK, Zero-Trust IAP)                     │
+│                                                                                                            │
+│  Bundled Demos:    [x] Franka Manipulation    [x] Humanoid Locomotion    [ ] Unitree Go2 Quadruped         │
+│                                                                                                            │
+│  Spot / Preempt:   [x] Enable Spot Instance Pricing (save up to 70%)                                       │
+│                                                                                                            │
+│ ────────────────────────────────────────────────────────────────────────────────────────────────────────── │
+│  Estimated Cost: $0.38/hr (Spot) | Security: Locked to your IP (198.51.100.24/32)                          │
+│                                                                                                            │
+│                        [ Launch Deployment ]          [ Cancel (Esc) ]                                     │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Execution Flow:**
+1. Validates all inputs non-interactively.
+2. Dispatches `deployer.py` in a background worker thread (`run_worker`).
+3. Automatically transitions `isaac9s` to **Screen 4 (Logs)** to stream Terraform, Packer, and Ansible output live.
+
+---
+
+### 5.2 Gap 2: Guided Cloud Authentication Device-Code Bridge Modal
+
+**The Friction Today:**
+When AWS SSO or GCP ADC tokens expire, the Doctor screen displays a warning, but the user must manually switch to a separate terminal, execute the command, and copy authorization URLs.
+
+**The Improvement:**
+Pressing `a` on an unauthenticated cloud provider row in Doctor (or selecting "Authenticate Cloud") launches a guided Device-Code Bridge modal inside `isaac9s`:
+
+```text
+┌────────────────────────────── Cloud Authentication Bridge: AWS IAM Identity Center ───────────────────────┐
+│                                                                                                            │
+│  Device authorization is required to communicate with AWS EC2 & STS.                                      │
+│                                                                                                            │
+│  Step 1: Copy your one-time verification code:                                                            │
+│          ┌───────────────────────────┐                                                                     │
+│          │        ABCD - EFGH        │   [ Copy Code to Clipboard ]                                        │
+│          └───────────────────────────┘                                                                     │
+│                                                                                                            │
+│  Step 2: Open the AWS Device Verification Portal in your browser:                                          │
+│          https://device.sso.us-east-1.amazonaws.com/                                                       │
+│                                                                                                            │
+│  Step 3: Paste the code and approve authorization in your browser.                                         │
+│                                                                                                            │
+│ ────────────────────────────────────────────────────────────────────────────────────────────────────────── │
+│  Waiting for browser approval... (Checking STS token every 3s)                                             │
+│                                                                                                            │
+│                   [ Open Browser (Auto) ]         [ Manual Verify ]         [ Cancel (Esc) ]               │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Benefits:**
+- Eliminates context switching and command memorization.
+- Automatically captures the code from `aws sso login --use-device-code` or `gcloud auth application-default login --no-launch-browser`.
+- Once verified, automatically re-runs Doctor diagnostics and turns the badge to `[PASS]`.
+
+---
+
+### 5.3 Gap 3: Vim / `k9s` Command Palette (`:` Command Mode & `/` Universal Filter)
+
+**The Friction Today:**
+Navigation currently relies on pressing number keys `1`-`6`. Experienced Kubernetes / DevOps engineers expect the fluent Vim-style navigation that makes `k9s` legendary.
+
+**The Improvement:**
+- Pressing `:` activates a command input bar at the bottom:
+  - `:sub` or `:subsystems` $\to$ Switch to Subsystems Cockpit
+  - `:ws` or `:vms` $\to$ Switch to Workstations Fleet
+  - `:doc` or `:doctor` $\to$ Switch to Doctor Conflict Matrix
+  - `:logs` $\to$ Switch to Subprocess Execution Logs
+  - `:telemetry` $\to$ Switch to Deep Hardware Telemetry
+  - `:deploy` $\to$ Open New Workstation Deploy Wizard
+  - `:quit` or `:q` $\to$ Exit `isaac9s`
+- Pressing `/` on any screen activates a universal fuzzy search filter for the active table (e.g. filtering subsystems by "Isaac", or filtering workstations by "gcp").
+
+```text
+╭─ isaac9s v1.0.0 ───────────────────────────────────────────────────────────────────────────── 03:30:15 ─╮
+│ Host: workstation-alpha  OS: Ubuntu 22.04 LTS  Kernel: 6.5.0-35-generic                                  │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+  [1] Subsystems  [2] Workstations  [3] Logs  [4] Doctor  [5] Security  [6] Telemetry  [?] Help
+────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ... [Filtered Table Rows] ...
+────────────────────────────────────────────────────────────────────────────────────────────────────────────
+:deploy                                                                                   [Enter: Execute]
+```
+
+---
+
+### 5.4 Gap 4: Workstation Deep Inspector Drawer (`Enter` or `i`)
+
+**The Friction Today:**
+The Workstations fleet table displays a 6-column summary (Name, Cloud, Status, GPU, IP, Profile). Important runtime telemetry—such as cloud instance ID, VPC subnet, hourly burn rate, disk size, and Terraform state—is hidden.
+
+**The Improvement:**
+Pressing `Enter` or `i` on any highlighted workstation slides open the **Workstation Inspector Drawer**:
+
+```text
+┌──────────────────────────────── Workstation Inspector: [test03-gcp] ─────────────────────────────────────┐
+│                                                                                                            │
+│  GENERAL METADATA                      CLOUD NETWORKING & TOPOLOGY                                         │
+│  Instance ID:   8392019482910381920    Cloud Provider:    Google Cloud Platform (GCP)                      │
+│  Status:        RUNNING                Zone / Region:     us-central1-a                                    │
+│  Instance Type: g2-standard-8          Public IP:         34.120.85.14                                     │
+│  GPU Model:     NVIDIA L4 24GB VRAM    Private IP:        10.128.0.45                                      │
+│  Uptime:        4h 12m                 Ingress Whitelist: 198.51.100.24/32 (Simple Mode)                   │
+│                                                                                                            │
+│  COST & BILLING MONITOR                STORAGE & DISK SUBSYSTEM                                            │
+│  Billing State: ACTIVE (Billed hourly) Boot Disk:         200 GB NVMe (pd-ssd)                             │
+│  Instance Rate: $0.85 / hour           IOPS / Throughput: 6,000 IOPS / 240 MB/s                            │
+│  Session Cost:  $3.57 accrued          Disk Utilization:  64.2 GB / 200 GB (32%)                           │
+│                                                                                                            │
+│  INSTALLED PHYSICAL AI STACK                                                                               │
+│  Isaac Sim:     6.0.1 Standalone       Active Demos:      humanoid-locomotion (Ready)                      │
+│  Isaac Lab:     v3.0.0-beta2           Remote Access:     noVNC (:6080), NoMachine (:4000)                │
+│                                                                                                            │
+│ ────────────────────────────────────────────────────────────────────────────────────────────────────────── │
+│  [s] Start VM   [x] Stop (Pause Cost)   [c] Connect   [d] Destroy VM   [t] Raw State   [Esc] Close         │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 5.5 Gap 5: Out-of-the-Box Robotics Demos Launcher Screen
+
+**The Friction Today:**
+Demos (`franka-manipulation`, `humanoid-locomotion`, `quadruped-locomotion`, `gr00t-teleop`) are installed via Ansible and run through desktop icons, but cannot be monitored, launched, or killed directly from `isaac9s`.
+
+**The Improvement:**
+Add a dedicated Demos Launcher screen or drawer in `isaac9s`:
+- Lists all available pre-packaged Isaac Sim / Isaac Lab / GR00T demos.
+- Displays real-time status: `IDLE`, `RUNNING (PID 48192)`, `CRASHED`.
+- Shows live simulation performance metrics: Viewport FPS, Physics Step Time (ms), GPU VRAM footprint.
+- Provides `[Enter] Launch`, `[k] Kill Process`, and `[l] View Demo Logs`.
+
+---
+
+### 5.6 Gap 6: Spot Preemption Watchdog & Snapshot Safeguard
+
+**The Friction Today:**
+Cloud Spot/Preemptible instances offer 70–90% cost savings for robotics training, but cloud providers reclaim them with very short notice:
+- **AWS**: 2-minute termination notice via EC2 metadata.
+- **GCP**: 30-second preemption notice via Compute metadata.
+If an instance terminates unexpectedly, training checkpoints and local simulation files can be lost.
+
+**The Improvement:**
+- A background watchdog thread in `isaac9s` polls cloud instance metadata every 10 seconds.
+- Upon receiving a termination signal:
+  1. Flashes an urgent red alert banner on top of the TUI:
+     `[CRITICAL: SPOT PREEMPTION NOTICE RECEIVED - INSTANCE WILL TERMINATE IN 25s]`.
+  2. Dispatches an automated state/disk snapshot or `rsync` sync to GCS/S3 before instance shutdown.
+
+---
+
+### 5.7 Gap 7: 1-Click Native Web Browser Integration
+
+**The Friction Today:**
+In the Remote Desktop modal, clicking "Launch in Browser" copies the URL to the clipboard, but the operator still has to switch windows, open a browser, and paste the URL.
+
+**The Improvement:**
+Integrate Python's native `webbrowser` standard library:
+```python
+import webbrowser
+
+def launch_remote_browser(url: str) -> None:
+    # Opens default system browser directly on host or devcontainer
+    webbrowser.open(url, new=2)
+```
+Clicking `[ Launch in Browser ]` immediately pops open the noVNC remote desktop session in the user's browser in one click.
+
+---
+
+### 5.8 Gap 8: In-TUI Session Memory Checkpointing (`[ctrl+s]` / `:checkpoint`)
+
+**The Friction Today:**
+Saving session checkpoints currently requires manual markdown file creation in `.agents/memory/sessions/` adhering to the 25-character UUID standard.
+
+**The Improvement:**
+Pressing `ctrl+s` (or typing `:checkpoint`) inside `isaac9s`:
+1. Gathers current system health score, active workstations, cost accrual, and doctor checks.
+2. Generates the timestamped `YYYYMMDD_HHMMSS_<short_uuid>.md` checkpoint file in `.agents/memory/sessions/`.
+3. Appends the record automatically to `.agents/memory/INDEX.md`.
+4. Displays a confirmation toast notification in the TUI footer.
+
+---
+
+## 6. Updated Implementation Roadmap & Milestones
 
 ```mermaid
 gantt
-    title isaac9s Python Development & Rollout
+    title isaac9s Development & Rollout Milestones
     dateFormat  YYYY-MM-DD
-    section Core Infrastructure
-    Modular Screen Structure & TCSS   :done,    des1, 2026-09-01, 2d
-    Hardware Telemetry & pynvml Driver :done,    des2, 2026-09-03, 1d
-    Root isaac9s Executable Wrapper   :done,    des3, 2026-09-04, 1d
-    section Interactive Screens
-    Subsystems Table & Doctor Probe   :active,  scr1, 2026-09-04, 2d
-    Cloud Fleet Manager & Lifecycle   :         scr2, 2026-09-06, 2d
-    Remote Desktop Modal Launcher     :         scr3, 2026-09-08, 1d
-    Live Log Streamer & Search Pager  :         scr4, 2026-09-09, 2d
-    Pre-Flight Conflict Matrix & Audit:         scr5, 2026-09-11, 2d
-    Declarative Profile & Security    :         scr6, 2026-09-13, 2d
-    section Quality & Testing
-    Headless Test Suite (pytest)      :         tst1, 2026-09-15, 1d
-    Full End-to-End Verification      :         tst2, 2026-09-16, 1d
+    section Phase 1 - Core Cockpit (Completed)
+    Modular Screens & TCSS Theme        :done, p1_1, 2026-09-01, 2d
+    Subsystems Table & Hardware Telemetry:done, p1_2, 2026-09-03, 1d
+    System Doctor with Cloud & Docker   :done, p1_3, 2026-09-04, 1d
+    Remote Modal with Clipboard Copy    :done, p1_4, 2026-09-04, 1d
+    Headless Pilot Async Test Suite     :done, p1_5, 2026-09-04, 1d
+    section Phase 2 - Operator UX & Cloud Bridge (In Progress)
+    1-Click Native Browser (webbrowser) :active, p2_1, 2026-09-04, 1d
+    Vim Command Palette (:) & Filter (/):        p2_2, 2026-09-05, 2d
+    Workstation Deep Inspector Drawer   :        p2_3, 2026-09-07, 2d
+    Cloud Auth Device-Code Bridge Modal :        p2_4, 2026-09-09, 2d
+    In-Cockpit Deploy Wizard Modal [n]  :        p2_5, 2026-09-11, 3d
+    section Phase 3 - Advanced Robotics Fleet (Planned)
+    Interactive Robotics Demo Launcher  :        p3_1, 2026-09-14, 2d
+    Spot Preemption Watchdog & Sync     :        p3_2, 2026-09-16, 3d
+    In-TUI Session Memory Checkpointing :        p3_3, 2026-09-19, 1d
 ```
 
 ---
 
-## 6. Automated Headless Verification & Testing
+## 7. Automated Headless Verification & Testing
 
-Every screen in `isaac9s` is tested headlessly via Textual's async pilot harness in CI/CD without needing an X11/Wayland display:
+Every screen and modal in `isaac9s` is tested headlessly via Textual's async pilot harness in CI/CD without needing an X11/Wayland display:
 
 ```python
-import pytest
+import unittest
 from textual.pilot import Pilot
 from src.tui.app import Isaac9sApp
 
-@pytest.mark.asyncio
-async def test_isaac9s_full_navigation():
-    app = Isaac9sApp()
-    async with app.run_test() as pilot:
-        # 1. Verify initial state & telemetry banner mounted
-        assert len(app.query("TelemetryBanner")) == 1
-        assert len(app.query("DataTable")) >= 1
-        
-        # 2. Switch to Workstations screen
-        await pilot.press("2")
-        assert app.query_one("#main-tabs").active == "tab-workstations"
-        
-        # 3. Switch to Logs screen
-        await pilot.press("4")
-        assert app.query_one("#main-tabs").active == "tab-logs"
-        
-        # 4. Trigger probe action via hotkey
-        await pilot.press("p")
-        await pilot.pause()
-        
-        # 5. Clean exit
-        await pilot.press("q")
+class Test_Isaac9sPilot(unittest.IsolatedAsyncioTestCase):
+    async def test_isaac9s_full_navigation(self):
+        app = Isaac9sApp()
+        async with app.run_test() as pilot:
+            # 1. Verify initial state & telemetry banner mounted
+            self.assertEqual(len(app.query("TelemetryBanner")), 1)
+            self.assertGreaterEqual(len(app.query("DataTable")), 1)
+
+            # 2. Switch to Workstations screen
+            await pilot.press("2")
+            self.assertEqual(app.query_one("#main-tabs").active, "tab-workstations")
+
+            # 3. Switch to Logs screen
+            await pilot.press("3")
+            self.assertEqual(app.query_one("#main-tabs").active, "tab-logs")
+
+            # 4. Trigger remote desktop modal
+            await pilot.press("c")
+            await pilot.pause()
+            await pilot.press("escape")
+
+            # 5. Clean exit
+            await pilot.press("q")
+
+if __name__ == "__main__":
+    unittest.main()
 ```
 
 ---
 
-## 7. How to Launch and Use `isaac9s`
+## 8. How to Launch and Use `isaac9s`
 
 ```bash
 # Launch directly from repo root
@@ -526,6 +762,7 @@ async def test_isaac9s_full_navigation():
 # Or via isaac-installer CLI
 ./isaac-installer/bin/isaac-installer gui
 
-# Or run with Textual live hot-reload for development
-textual run --dev src/tui/app.py
+# Run automated headless tests across all 5 test suites
+PYTHONPATH=. ./src/tests/run_all.sh
 ```
+
