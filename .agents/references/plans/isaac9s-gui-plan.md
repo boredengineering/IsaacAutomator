@@ -1,11 +1,11 @@
 # isaac9s - The k9s-Style Graphical Terminal Interface for Isaac Automator & Isaac Installer
-**Architecture & Implementation Specification for the Physical AI & Robotics Workstation Terminal Cockpit**
+**Python Textual & Rich Architecture Specification with Interactive Terminal UI Previews**
 
 ---
 
 ## 1. Executive Summary & Design Philosophy
 
-Inspired by **`k9s`**—the gold standard in terminal-based Kubernetes operations—**`isaac9s`** is an interactive, keyboard-driven Graphical Terminal User Interface (TUI/GUI) engineered for:
+Inspired by **`k9s`**—the gold standard in terminal-based Kubernetes cluster operations—**`isaac9s`** is a high-performance, keyboard-driven Graphical Terminal User Interface (TUI/GUI) engineered specifically for:
 1. **Physical Bare-Metal Robotics Workstations** provisioned via [`isaac-installer`](file:///workspaces/IsaacAutomator/isaac-installer/README.md).
 2. **Multi-Cloud GPU Workstations** deployed via `IsaacAutomator` across **AWS, GCP, Azure, and Alibaba Cloud**.
 3. **Physical AI & Foundation Model Frameworks**: NVIDIA Isaac Sim, Isaac Lab, IsaacLab-Arena, NVIDIA Isaac-GR00T (VLA), and Hugging Face LeRobot.
@@ -20,306 +20,512 @@ Inspired by **`k9s`**—the gold standard in terminal-based Kubernetes operation
  Physical AI Workstation & Multi-Cloud Cockpit
 ```
 
-### 1.1 The k9s Paradigm Mapped to Physical AI & Cloud Robotics
+### 1.1 Why Python (Textual + Rich) is the Optimal Implementation Stack
 
-| `k9s` Kubernetes Concept | `isaac9s` Physical AI & Workstation Counterpart |
-| :--- | :--- |
-| **Clusters / Contexts** | Multi-Cloud Deployments (GCP, AWS, Azure, AliCloud) and Local Bare-Metal Workstations |
-| **Pods / Workload Health** | The 14 Physical AI Subsystems (Driver, CUDA, Vulkan, Conda, Isaac Sim, Isaac Lab, Arena, GR00T, WBC, etc.) |
-| **Describe & Status** | Deep hardware probing, PCIe link speed, thermal throttles, and pre-flight dependency audits |
-| **Logs Streamer (`<l>`)** | Real-time asynchronous subprocess execution window with ANSI color parsing and autoscroll |
-| **Self-Healing Reconciler** | Automated workspace hierarchy, branch drift, tag drift, and broken symlink self-healing (`repair`) |
-| **CRDs & YAML Config (`<y>`)** | Declarative Profile Editor (`default-profile.yaml`, `full-ecosystem.yaml`, `.tfvars.json`) |
-| **Port Forwarding (`<shift-f>`)** | ZeroMQ policy ports (5555/5556), WebRTC livestream (8211), and IAP/SSM zero-trust tunnels |
-| **Command Mode (`:`)** | Command palette (`:doctor`, `:drift`, `:repair`, `:eval`, `:deploy`, `:ssh`, `:quit`) |
-| **Filter Mode (`/`)** | Real-time instant text and regex filtering across all table views |
+Unlike Kubernetes tooling that is built in Golang, `isaac9s` is intentionally implemented in **Python 3.10+** utilizing **Textual 8.2** and **Rich 15**:
+
+- **Ecosystem Symmetry**: NVIDIA Isaac Sim, Isaac Lab, Arena, PyTorch, and GR00T are 100% Python-centric. Robotics and AI engineers live in Python.
+- **Direct Native Codebase Access**: Imports deployment logic directly from [`src/python/deployer.py`](file:///workspaces/IsaacAutomator/src/python/deployer.py) and cloud SDKs (`boto3`, `google-cloud-compute`, `azure-mgmt-compute`) without brittle CLI subprocess scraping.
+- **Modern Reactive TUI**: Textual provides reactive state bindings, declarative CSS (`.tcss`), async event loops (`asyncio`), and smooth 60 FPS rendering with zero compile time.
+- **Direct Hardware Telemetry**: Native C-bindings via `pynvml` (`nvidia-ml-py`) and `psutil` sample GPU VRAM, clocks, temperature, and PCIe bandwidth at sub-millisecond speeds.
 
 ---
 
-## 2. System Architecture & Reactive Component Hierarchy
+## 2. Interactive Terminal GUI Previews (Visual Screen Mockups)
 
-`isaac9s` is engineered with **Textual 8.2** and **Rich 15**, utilizing a fully reactive, asynchronous event-driven architecture that guarantees a silky-smooth 60 FPS terminal experience without blocking the UI during long-running tasks:
+Below are detailed visual previews of the 7 primary interactive screens in `isaac9s`.
+
+### 2.1 Screen 1: Physical AI Subsystems & Health Auditor (Primary Cockpit)
+
+The default landing screen maps the 14 Physical AI subsystems into a `k9s`-style resource table with live telemetry:
+
+```text
+╭─ isaac9s v1.0.0 ───────────────────────────────────────────────────────────────────────────────────────────────────────────── 03:30:15 ─╮
+│ Host: workstation-alpha  OS: Ubuntu 22.04 LTS  Kernel: 6.5.0-35-generic  Uptime: 4d 18h                                              │
+│ CPU: [████████░░░░░░░░░░░░░░░░░░░░░░] 24% (32 Cores)       RAM: [███████████████░░░░░░░░░░░] 54% (34.2 GB / 64.0 GB)                  │
+│ GPU: RTX 4090 (Ada)   VRAM: [██████████░░░░░░░░░░░░░░] 41% (9.8 GB / 24.0 GB)   Temp: 52°C   Fan: 38%   Power: 185W / 450W           │
+│ Disk: / [████████████░░░░░░░░░░░░] 48% (912 GB / 1.9 TB NVMe Gen4)                     Profile: default-workstation (Clean)        │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+  [1] Subsystems  [2] Workstations  [3] Remote  [4] Logs  [5] Pre-Flight Audit  [6] Profiles  [7] HW Telemetry  [?] Help  [q] Quit
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  SUBSYSTEM               CATEGORY         STATUS      VERSION / COMMIT      PATH / PORT             HEALTH DETAILS
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+▶ NVIDIA Driver           Hardware         [PASS]      550.90.07             /dev/nvidia0            DKMS Loaded, 32 PCIe Lanes, P0 State
+  CUDA Runtime            Compute          [PASS]      12.4 (V12.4.131)      /usr/local/cuda-12.4    Driver ABI Compatible, nvcc OK
+  Vulkan ICD Bridge       Graphics         [PASS]      1.3.277               /etc/vulkan/icd.d/      nvidia_icd.json verified (Direct 3D)
+  Conda Runtime           Environment      [PASS]      Miniconda 24.5.0      ~/miniconda3            base active, envs_dirs mapped
+  UV Package Engine       Tooling          [PASS]      0.12.5                ~/.local/bin/uv         Native Rust resolver, 10-50x speed
+  Isaac Sim Engine        Simulation       [PASS]      6.0.1 (Standalone)    ~/IsaacSim              Standalone kit binary verified
+  Isaac Lab               Robotics Framework [PASS]    v3.0.0-beta2 (Tag)    ~/Documents/GitHub/Lab  Git Clean, editable link verified
+  IsaacLab-Arena          Robotics Suite   [PASS]      0.3.0-prerelease      ~/Documents/GitHub/Ar.. Submodule synced, schemas linked
+  Isaac-GR00T (VLA)       Foundation Model [WARN]      Cached (No Server)    ~/models/GR00T-N1.7     Weights present (6.2 GB), daemon idle
+  Pinocchio / Pink WBC    Whole-Body Ctrl  [PASS]      3.1.0                 conda:isaaclab          CMEK bindings loaded, 120Hz loop
+  ZeroMQ Policy IPC       Networking       [PASS]      4.3.5                 Ports: 5555, 5556       Sockets open, 0 zombie processes
+  Remote Desktop          Display Server   [PASS]      NoMachine + noVNC     Port 4000 / 6080        Virtual X11 display :1 active
+  Dual-Remote Forks       Git Workspaces   [PASS]      Dual-Wired            origin + upstream       Push guard active on upstream
+  Security Profile        Cloud Hardening  [PASS]      Simple Mode ($0)      Local /32 IP Whitelist  Caller IP: 198.51.100.24 locked
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  <p> Probe All  <h> Heal Drift  <a> Run Audit  <s> Launch Daemon  <r> Open Remote  <y> View Config  </> Filter  <:> Command  <^c> Exit
+```
+
+---
+
+### 2.2 Screen 2: Multi-Cloud Workstation Fleet Manager
+
+Pressing `[2]` or `w` displays all cloud-provisioned instances across AWS, GCP, Azure, and local nodes:
+
+```text
+╭─ isaac9s » Cloud Fleet & Lifecycle Manager ───────────────────────────────────────────────────────────────────────────────────────────╮
+│ Active Cloud Context: GCP (project: robotics-ai-prod, zone: us-central1-a)                                                           │
+│ Total Running Cost: $1.24/hr  |  Active Workstations: 2 Running, 1 Stopped  |  Spot Watchdog: ACTIVE (30s watchdog, 10m snapshot)   │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+  WORKSTATION NAME    CLOUD     REGION            INSTANCE TYPE   GPU MODEL       IP / INGRESS           STATUS     UPTIME     COST/HR
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+▶ test03-gcp          GCP       us-central1-a     g2-standard-8   NVIDIA L4 24G   34.120.85.14 (/32)     RUNNING    4h 12m     $0.85/hr
+  isaac-spot-aws      AWS       us-east-1         g5.2xlarge      NVIDIA A10G     SSM Tunnel (Private)   RUNNING    1h 05m     $1.21/hr
+  dev-workstation-01  AZURE     eastus            NC4as_T4_v3     Tesla T4 16G    52.188.45.92           STOPPED    --         $0.00/hr
+  local-robotics-rig  BARE-MET  On-Premise Lab    Physical Host   RTX 4090 24G    192.168.1.150          RUNNING    4d 18h     $0.00/hr
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  [Selected: test03-gcp]
+  Provider: Google Cloud Platform  |  Preemption: Spot Flex-Start  |  State Bucket: gs://isaac-backups-test03/
+  Active Security Profile: Tier 1 - Simple Mode (Dynamic /32 Ingress Lock, Direct Ephemeral Outbound)
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  <s> Start VM  <x> Stop VM (Pause Cost)  <c> Connect Remote  <d> Destroy VM  <y> View State  <n> New Deploy  <r> Refresh  </> Search
+```
+
+---
+
+### 2.3 Screen 3: Remote Desktop & 3D Streaming Protocol Selector (Modal)
+
+Triggered by pressing `[3]` or `r` on any running workstation:
+
+```text
+┌────────────────────────────────────── Connect to Workstation: [test03-gcp] ──────────────────────────────────────┐
+│                                                                                                                  │
+│ Select desired remote access protocol:                                                                           │
+│                                                                                                                  │
+│   (•) 1. noVNC Browser Desktop (Port 6080)                                                                       │
+│          Zero-install HTML5 browser client. Ideal for 2D UI, terminal, VS Code, and file downloads.              │
+│                                                                                                                  │
+│   ( ) 2. NoMachine High-Performance 3D (Port 4000)                                                               │
+│          Hardware-accelerated H.264 stream. Recommended for live 60 FPS Isaac Sim 3D Viewport.                   │
+│                                                                                                                  │
+│   ( ) 3. Sunshine + Moonlight GameStream (Port 47989)                                                            │
+│          Ultra-low latency NVENC streaming (sub-15ms) for direct teleoperation and VR controllers.               │
+│                                                                                                                  │
+│   ( ) 4. Zero-Trust SSH Shell Tunnel (Port 22 / IAP / SSM)                                                       │
+│          Interactive direct shell without opening public SSH ports to the internet.                              │
+│                                                                                                                  │
+│ ──────────────────────────────────────────────────────────────────────────────────────────────────────────────── │
+│  Target Endpoint:  http://34.120.85.14:6080/vnc.html?autoconnect=true&resize=remote                             │
+│  Security Lock:    Strict /32 Caller IP Filter (Your IP: 198.51.100.24)                                          │
+│                                                                                                                  │
+│                     [ Launch in Browser ]      [ Copy URL ]      [ Cancel (Esc) ]                                │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 2.4 Screen 4: Real-Time Subprocess Log Streamer & Pager
+
+Pressing `[4]` or `l` displays live stdout/stderr streams from background installations, builds, or simulation benchmarks:
+
+```text
+╭─ isaac9s » Real-Time Task Execution Log Streamer ───────────────────────────────────────────────────────────────────────────────────╮
+│ Task: isaac-installer install --profile full  |  PID: 41289 (Async Background Worker)  |  Status: RUNNING  |  Elapsed: 03m 42s       │
+╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+[03:32:10] [INFO]  === Stage 4/12: Validating NVIDIA Driver & Vulkan ICD Topology ===
+[03:32:11] [PASS]  NVIDIA Driver 550.90.07 detected (Active GPU: NVIDIA RTX 4090, VRAM: 24564 MB)
+[03:32:12] [PASS]  Vulkan ICD JSON verified at /etc/vulkan/icd.d/nvidia_icd.json
+[03:32:13] [INFO]  === Stage 5/12: Checking Dual-Remote Git Repository Topology ===
+[03:32:14] [INFO]  Inspecting workspace: /home/boredengineer/Documents/GitHub/IsaacLab
+[03:32:15] [PASS]  Origin remote mapped -> git@github.com:boredengineering/IsaacLab.git (Personal Fork)
+[03:32:16] [PASS]  Upstream remote mapped -> https://github.com/isaac-sim/IsaacLab.git (Official Canonical)
+[03:32:17] [INFO]  Push guard configured: git push upstream prevented.
+[03:32:18] [INFO]  === Stage 6/12: Resolving Hybrid Conda + UV Python Environment ===
+[03:32:20] [INFO]  Activating Conda environment: /home/boredengineer/miniconda3/envs/isaaclab
+[03:32:21] [INFO]  Invoking UV fast package resolver: uv pip install --no-build-isolation -e .
+[03:32:23] [UV]    Resolved 142 dependencies in 184ms
+[03:32:25] [UV]    Installed torch==2.4.0, torchvision==0.19.0, isaaclab==3.0.0b2 (editable)
+[03:32:26] [PASS]  Conda site-packages verified: isaaclab.pth link active.
+[03:32:27] [INFO]  === Stage 7/12: Pre-Caching NVIDIA Isaac-GR00T Foundation Weights ===
+[03:32:30] [HUG]   Downloading checkpoint shards for nvidia/GR00T-N1.7-3B...
+[03:32:32] [HUG]   Shard 1/3 (2.1 GB): [████████████████████████████████████████████] 100% (84.2 MB/s)
+[03:32:35] [HUG]   Shard 2/3 (2.1 GB): [████████████████████████████████████████████] 100% (88.1 MB/s)
+[03:32:38] [HUG]   Shard 3/3 (2.0 GB): [████████████████████████░░░░░░░░░░░░░░░░░░░░]  60% (79.4 MB/s)
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  [Autoscroll: ON]   <space> Pause / Resume Scroll   <c> Clear Buffer   <w> Wrap Lines   </> Search Logs   <q> Return to Cockpit
+```
+
+---
+
+### 2.5 Screen 5: Popeye-Style Pre-Flight Audit & Conflict Matrix
+
+Pressing `[5]` or `a` renders a diagnostic audit of all system dependencies, APT package locks, and kernel incompatibilities:
+
+```text
+╭─ isaac9s » Pre-Flight Dependency & Conflict Matrix (System Doctor) ───────────────────────────────────────────────────────────────────╮
+│ Overall System Health Score: 94 / 100 [GRADE: A]  |  Target Profile: default-workstation.yaml  |  APT Lock: CLEAN (No blockers)       │
+╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+  COMPONENT               INSTALLED VERSION       TARGET / REQUIRED       DELTA / STATUS          REMEDIATION ACTION
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  Ubuntu OS               22.04.4 LTS (Jammy)     22.04 LTS               Exact Match [OK]        None required
+  Linux Kernel            6.5.0-35-generic        6.5.x or 5.15.x         Compatible [OK]         None required
+  NVIDIA Driver           550.90.07               >= 535.129.03           Compatible [OK]         None required
+  Nouveau Driver          Disabled (Blacklisted)  Disabled                Blacklisted [OK]        grub modprobe clean
+  CUDA Toolkit            12.4.131                12.1.x / 12.4.x         Compatible [OK]         Symlinked at /usr/local/cuda
+  Vulkan Loader           1.3.277                 >= 1.3.204              Compatible [OK]         libvulkan.so.1 present
+  NVIDIA Vulkan ICD       /usr/share/vulkan/...   NVIDIA Direct ICD       Verified [OK]           No software fallback
+  GLX / Direct Rendering  Enabled (NVIDIA)        Direct Rendering        Verified [OK]           glxinfo direct rendering: Yes
+  APT Lock Status         Unlocked (PID: None)    Unlocked                Clean [OK]              apt-get commands permitted
+  Miniconda3              24.5.0                  >= 23.1.0               Installed [OK]          Located at ~/miniconda3
+  Python in IsaacLab      Python 3.10.12          Python 3.10.x           Compatible [OK]         Pinned runtime
+  PyTorch CUDA Support    2.4.0+cu124             torch >= 2.2 + CUDA     Verified [OK]           torch.cuda.is_available() == True
+  Git LFS                 3.2.0                   Installed               Verified [OK]           Filters configured
+  NVMe Storage Sector     4K Alignment            4096 bytes              Optimal [OK]            Samsung 990 PRO 2TB (SMART 100%)
+  X11 Display Dummy       Virtual EDID 1920x1080  EDID Connected          Active [OK]             xorg.conf dummy screen mapped
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  Summary: 15 Checks Passed, 0 Warnings, 0 Critical Conflicts detected. Machine is certified for Isaac Sim 6.0.1 & Isaac Lab.
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  <p> Re-run Audit  <h> Auto-Heal Detected Warnings  <y> Export Diagnostic JSON  <q> Return
+```
+
+---
+
+### 2.6 Screen 6: Declarative Profile & 3-Tier Security Configurator
+
+Pressing `[6]` allows users to interactively inspect and switch profiles and security tiers:
+
+```text
+╭─ isaac9s » Declarative Profile & Multi-Cloud Security Configurator ───────────────────────────────────────────────────────────────────╮
+│ Active Workstation: test03-gcp  |  Config File: isaac-installer/config/default-profile.yaml                                          │
+╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+  SELECT WORKSTATION PROFILE:
+    (•) default-workstation.yaml    Clean interactive robotics workstation (Sim + Lab + Dev Apps + 1ms FTDI)
+    ( ) full-ecosystem.yaml         Full ecosystem (+ LeRobot, Arena, GR00T, Manus VR, SpaceMouse)
+    ( ) minimal-headless.yaml       Minimal headless node (Simulation server, CI/CD, training)
+
+  SELECT SECURITY & HARDENING TIER:
+    (•) Tier 1: Simple Mode (Zero-Cost Frictionless)  [RECOMMENDED FOR INDIE & RESEARCHERS]
+        ├── Infrastructure Cost: $0.00 / month added overhead
+        ├── Firewall Ingress:   Dynamic /32 IP Whitelist (auto-locked to your current IP: 198.51.100.24)
+        ├── Outbound Traffic:   Direct internet access for fast apt/pip/docker package downloads
+        └── State Storage:      Local state (.tfstate) stored securely in state/ folder
+
+    ( ) Tier 2: Team Mode (Collaborative Cloud Storage)
+        ├── Infrastructure Cost: ~$0.05 / month (Standard GCS/S3 bucket)
+        ├── Firewall Ingress:   Dynamic /32 IP Whitelist or shared team subnet
+        ├── Outbound Traffic:   Direct internet access
+        └── State Storage:      Cloud remote state (GCS/S3) with native distributed state locking
+
+    ( ) Tier 3: Enterprise Mode (Zero-Trust & Compliance)
+        ├── Infrastructure Cost: ~$35.00 - $140.00 / month (Cloud NAT + KMS CMEK keys)
+        ├── Firewall Ingress:   Zero public IP (Private-only access via GCP IAP or AWS SSM Session Manager)
+        ├── Outbound Traffic:   Managed Cloud NAT Gateway with Cloud Router
+        └── State Storage:      KMS CMEK-encrypted Cloud Bucket + Cloud Secret Manager credentials
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  <enter> Apply Configuration  <y> View Raw YAML  <e> Edit in $EDITOR  <Esc> Discard Changes
+```
+
+---
+
+### 2.7 Screen 7: Deep Hardware & NVMe Telemetry Dashboard
+
+Pressing `[7]` opens the dedicated hardware diagnostics console:
+
+```text
+╭─ isaac9s » Deep Hardware, GPU & NVMe Storage Telemetry ──────────────────────────────────────────────────────────────────────────────╮
+│ NVIDIA Ada Lovelace Architecture  |  Driver: 550.90.07  |  CUDA Version: 12.4  |  PCIe Link: Gen4 x16 (31.5 GB/s bidirectional)       │
+╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+  GPU CLOCK & THERMAL STATUS                    VRAM ALLOCATION BREAKDOWN (24,564 MB TOTAL)
+  GPU Core Clock:      2,550 MHz                Used:   9,824 MB [████████████░░░░░░░░░░░░░░] 40.0%
+  Memory Clock:       10,501 MHz                Free:  14,740 MB [░░░░░░░░░░░░░░░░░░░░░░░░░░] 60.0%
+  GPU Temperature:    52°C (Throttle: 88°C)     ├── Isaac Sim Engine (Kit):        5,420 MB
+  Hotspot Temp:       61°C                      ├── PyTorch CUDA Context:          3,180 MB
+  Fan Speed:          38% (Quiet Mode)          └── X11 / Desktop Compositor:      1,224 MB
+  Current Power Draw: 185 Watts / 450 Watts
+
+  CPU & MEMORY SUBSYSTEM                        HIGH-SPEED NVMe STORAGE & S.M.A.R.T. HEALTH
+  Processor: AMD Ryzen 9 7950X (16c/32t)        Disk 0: Samsung 990 PRO 2TB (PCIe 4.0 x4)
+  CPU Governor:      performance                ├── Mountpoint:   / (root filesystem, ext4)
+  CPU Temp:          58°C                       ├── Total Space:  1,890 GB
+  RAM Allocated:     34.2 GB / 64.0 GB (54%)    ├── Used Space:   912 GB (48%) [████████████░░░░░░░░░░░░]
+  RAM Frequency:     DDR5-6000 MT/s (EXPO)      ├── SMART Status: PASSED (Wear Life: 99% Remaining)
+  Swap Usage:        0 MB / 8,192 MB (0%)       └── NVMe Temp:    41°C (Safe threshold: < 70°C)
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  <r> Refresh Metrics (1s interval)  <space> Toggle Auto-Sampling  <q> Return to Cockpit
+```
+
+---
+
+## 3. Core Python Architecture & Reactive Engine
+
+### 3.1 Textual 8.2 + Rich 15 Design
+
+`isaac9s` is organized into a clean, modular Python package located in [`src/tui/`](file:///workspaces/IsaacAutomator/src/tui/):
+
+```text
+src/tui/
+├── __init__.py           # Package export and version definition
+├── app.py                # Isaac9sApp main entry, reactive bindings, key routing
+├── telemetry.py          # SystemTelemetry sampler (psutil + nvidia-smi / pynvml)
+├── backend.py            # WorkstationBackend (state parser, isaac-installer bridge)
+├── screens/              # Individual modular view screens
+│   ├── subsystems.py     # SubsystemsDataTable and probe card
+│   ├── workstations.py   # Cloud fleet manager DataTable and actions
+│   ├── remote_modal.py   # ModalScreen for streaming protocol selection
+│   ├── log_streamer.py   # RichLog terminal pane with async worker
+│   ├── audit_view.py     # Pre-flight conflict matrix & score renderer
+│   └── hardware_view.py  # Deep GPU & NVMe telemetry gauges
+└── styles/
+    └── isaac9s.tcss      # Textual CSS stylesheet for colors and responsive grids
+```
+
+---
+
+### 3.2 Reactive State Machine & Concurrency Model
+
+Textual uses reactive properties to automatically trigger DOM updates whenever underlying state changes:
+
+```python
+from textual.app import App, ComposeResult
+from textual.reactive import reactive
+from textual.worker import Worker, work
+
+class SubsystemsView(Widget):
+    """Reactive table view for the 14 Physical AI subsystems."""
+    
+    # Reactive state: updating this automatically re-renders affected UI components
+    subsystems_data = reactive(list)
+    is_probing = reactive(False)
+    
+    @work(exclusive=True, thread=True)
+    def trigger_background_probe(self) -> None:
+        """Asynchronous worker that probes subsystems without blocking the UI event loop."""
+        self.is_probing = True
+        try:
+            results = WorkstationBackend.probe_subsystems()
+            # Safely pass data back to Textual's main thread
+            self.app.call_from_thread(self._update_table, results)
+        finally:
+            self.is_probing = False
+
+    def _update_table(self, results: list[dict]) -> None:
+        table = self.query_one(DataTable)
+        table.clear()
+        for item in results:
+            badge = self._render_status_badge(item["status"])
+            table.add_row(item["name"], item["category"], badge, item["version"], item["details"])
+```
+
+---
+
+### 3.3 Direct In-Process Bridge to Cloud Deployer
+
+Instead of invoking shell scripts, `isaac9s` connects directly to `src/python/deployer.py` and cloud APIs:
+
+```python
+from src.python.deployer import CloudDeployer
+from src.tui.backend import WorkstationState
+
+class CloudWorkstationManager:
+    @staticmethod
+    async def list_active_workstations() -> list[WorkstationState]:
+        """Discovers workstations across AWS, GCP, Azure, and local state."""
+        workstations = []
+        # Query local state files
+        state_dir = Path("state")
+        for tfstate in state_dir.glob("*/terraform.tfstate"):
+            ws_info = WorkstationState.from_tfstate(tfstate)
+            workstations.append(ws_info)
+        return workstations
+
+    @staticmethod
+    def stop_workstation(name: str, provider: str) -> None:
+        """Invokes stop lifecycle asynchronously."""
+        deployer = CloudDeployer(name=name, provider=provider)
+        deployer.stop()
+```
+
+---
+
+### 3.4 Direct Hardware Telemetry Driver (`pynvml` + `psutil`)
+
+```python
+import psutil
+try:
+    import pynvml
+    pynvml.nvmlInit()
+    HAS_NVML = True
+except Exception:
+    HAS_NVML = False
+
+class HardwareSampler:
+    @staticmethod
+    def sample() -> dict:
+        data = {
+            "cpu_percent": psutil.cpu_percent(),
+            "cpu_cores": psutil.cpu_count(logical=True),
+            "ram_used_gb": psutil.virtual_memory().used / (1024**3),
+            "ram_total_gb": psutil.virtual_memory().total / (1024**3),
+            "ram_percent": psutil.virtual_memory().percent,
+            "disk_percent": psutil.disk_usage("/").percent,
+            "gpu": None
+        }
+        if HAS_NVML:
+            try:
+                handle = pynvml.nvmlDeviceGetHandleByIndex(0)
+                mem = pynvml.nvmlDeviceGetMemoryInfo(handle)
+                temp = pynvml.nvmlDeviceGetTemperature(handle, pynvml.NVML_TEMPERATURE_GPU)
+                util = pynvml.nvmlDeviceGetUtilizationRates(handle)
+                name = pynvml.nvmlDeviceGetName(handle)
+                data["gpu"] = {
+                    "name": name if isinstance(name, str) else name.decode("utf-8"),
+                    "vram_used_gb": mem.used / (1024**3),
+                    "vram_total_gb": mem.total / (1024**3),
+                    "vram_percent": round((mem.used / mem.total) * 100, 1),
+                    "temp_c": temp,
+                    "gpu_util_percent": util.gpu
+                }
+            except Exception:
+                pass
+        return data
+```
+
+---
+
+## 4. Textual CSS Styling & Theming (`src/tui/styles/isaac9s.tcss`)
+
+`isaac9s` utilizes a customized dark cyber/slate theme inspired by `k9s`:
+
+```css
+/* isaac9s master stylesheet */
+
+Screen {
+    background: #0f141c;
+    color: #e6edf3;
+}
+
+Header {
+    background: #161b22;
+    color: #58a6ff;
+    dock: top;
+    height: 1;
+}
+
+TelemetryBanner {
+    height: 3;
+    background: #161b22;
+    border-bottom: solid #30363d;
+    padding: 0 1;
+    color: #8b949e;
+}
+
+DataTable {
+    background: #0d1117;
+    color: #c9d1d9;
+    height: 1fr;
+    border: none;
+}
+
+DataTable > .datatable--header {
+    background: #21262d;
+    color: #58a6ff;
+    text-style: bold;
+}
+
+DataTable > .datatable--cursor {
+    background: #1f6feb;
+    color: #ffffff;
+    text-style: bold;
+}
+
+RichLog {
+    background: #05070a;
+    color: #7ee787;
+    border: solid #30363d;
+    height: 1fr;
+    padding: 0 1;
+}
+
+Footer {
+    background: #161b22;
+    color: #8b949e;
+    dock: bottom;
+    height: 1;
+}
+```
+
+---
+
+## 5. Implementation & Rollout Roadmap
 
 ```mermaid
-flowchart TD
-    subgraph "Presentation Layer (Textual 8.2 & Rich 15)"
-        App["Isaac9sApp (src/tui/app.py)"]
-        Header["Header & Clock"]
-        Banner["TelemetryBanner (psutil + nvidia-smi)"]
-        Tabs["TabbedContent Container"]
-        Footer["Footer & Hotkey Bar"]
-        
-        App --> Header
-        App --> Banner
-        App --> Tabs
-        App --> Footer
-    end
-
-    subgraph "Tabbed View Screens"
-        Tabs --> S1["Tab 1: Subsystems & Health Auditor"]
-        Tabs --> S2["Tab 2: Cloud Workstations & Lifecycle"]
-        Tabs --> S3["Tab 3: Foundation Model & Arena Benchmark Eval"]
-        Tabs --> S4["Tab 4: Dual-Remote Git Fork Topology"]
-        Tabs --> S5["Tab 5: Live Streaming Execution Logs"]
-        Tabs --> S6["Tab 6: Declarative Profiles & Security Tier"]
-    end
-
-    subgraph "Asynchronous Backend Engine"
-        App <--> Telemetry["SystemTelemetry (src/tui/telemetry.py)"]
-        App <--> Backend["WorkstationBackend (src/tui/backend.py)"]
-        Backend --> AsyncWorker["ThreadPoolExecutor & Subprocess Streamer"]
-        
-        AsyncWorker --> Installer["isaac-installer (isaac-installer/bin/isaac-installer)"]
-        AsyncWorker --> Deployer["Isaac Automator CLI (deployer.py / Terraform)"]
-    end
-
-    subgraph "Hardware & Cloud Plane"
-        Installer --> BareMetal["Local Bare-Metal Robotics Host\n(NVIDIA GPUs, Isaac Sim, Isaac Lab, Conda)"]
-        Deployer --> CloudVMs["Cloud GPU Instances (AWS, GCP, Azure, AliCloud)"]
-    end
+gantt
+    title isaac9s Python Development & Rollout
+    dateFormat  YYYY-MM-DD
+    section Core Infrastructure
+    Modular Screen Structure & TCSS   :done,    des1, 2026-09-01, 2d
+    Hardware Telemetry & pynvml Driver :done,    des2, 2026-09-03, 1d
+    Root isaac9s Executable Wrapper   :done,    des3, 2026-09-04, 1d
+    section Interactive Screens
+    Subsystems Table & Doctor Probe   :active,  scr1, 2026-09-04, 2d
+    Cloud Fleet Manager & Lifecycle   :         scr2, 2026-09-06, 2d
+    Remote Desktop Modal Launcher     :         scr3, 2026-09-08, 1d
+    Live Log Streamer & Search Pager  :         scr4, 2026-09-09, 2d
+    Pre-Flight Conflict Matrix & Audit:         scr5, 2026-09-11, 2d
+    Declarative Profile & Security    :         scr6, 2026-09-13, 2d
+    section Quality & Testing
+    Headless Test Suite (pytest)      :         tst1, 2026-09-15, 1d
+    Full End-to-End Verification      :         tst2, 2026-09-16, 1d
 ```
 
 ---
 
-## 3. Detailed Screen & View Specifications
+## 6. Automated Headless Verification & Testing
 
-### 3.1 Live Hardware Telemetry Banner (Permanent Header)
-Located directly beneath the main header, the telemetry banner samples host and GPU metrics every 2 seconds:
-
-```text
-Host: robotics-rig | OS: Ubuntu 22.04 LTS | CPU: 14% (32 cores) | RAM: 22.1G / 91.4G (24%) | Disk: 41% | GPU: RTX 4090 (44°C, 18%, 4.2G/24G)
-```
-
-**Data Sources**:
-- **CPU & Memory**: Polled via `psutil.cpu_percent()` and `psutil.virtual_memory()`.
-- **Disk Usage**: Polled via `psutil.disk_usage('/')`.
-- **GPU Telemetry**: Polled via `nvidia-smi --query-gpu=... --format=csv,noheader,nounits` (GPU index, name, driver version, memory total/used, temperature, and utilization). If no GPU driver is loaded, gracefully displays `No GPU (CPU Mode)`.
-
----
-
-### 3.2 View 1: Physical AI Subsystems & Health Auditor (`[1]`)
-An interactive DataTable tracking the 14 Physical AI subsystems required for physical robotics:
-
-| Subsystem | Category | Detection & Probe Method | Self-Healing / Action Trigger |
-| :--- | :--- | :--- | :--- |
-| **NVIDIA Driver** | Hardware | `nvidia-smi` query / `/proc/driver/nvidia/version` | Alerts on missing driver; prompts `isaac-installer driver` |
-| **CUDA Runtime** | Compute | `nvcc --version` and `/usr/local/cuda/version.json` | Validates CUDA 12.x / 11.8 ABI compatibility |
-| **Vulkan ICD Bridge** | Graphics | Probes `/etc/vulkan/icd.d/nvidia_icd.json` and `VK_ICD_FILENAMES` | Restores dynamic symlinks to fix Kit viewport segfaults |
-| **Conda Runtime** | Python | Checks `~/miniconda3/envs/isaaclab` and `/opt/conda/envs` | Automatically registers `envs_dirs` in `~/.condarc` |
-| **UV Package Engine** | Python | Verifies `/root/.local/bin/uv` or system `uv` | Accelerated pip resolver (10–50x speedup) |
-| **Isaac Sim Engine** | Simulation | Verifies standalone path (`~/IsaacSim` or `/isaac-sim`) | Deploys `setup_conda_env.sh` compatibility bridge |
-| **Isaac Lab** | Robotics | Inspects git commit, release tag (`v3.0.0-beta2`), and editable link | Validates `isaaclab.pth` in conda site-packages |
-| **IsaacLab-Arena** | Robotics | Checks `IsaacLab-Arena` directory and submodule integrity | Runs submodule clean sync and standalone linking |
-| **Isaac-GR00T VLA** | Foundation Model | Verifies weights (`nvidia/GR00T-N1.7-3B`) & Cosmos VLM | Pre-caches model checkpoints; verifies torchcodec |
-| **Pinocchio / Pink WBC** | Control | Verifies CMEK whole-body control package manifest | Installs CMEK Python bindings for humanoid locomotion |
-| **ZeroMQ Policy IPC** | Network | Checks ports 5555, 5556, and 8211 availability | Terminates orphaned zombie policy server processes |
-| **Remote Desktop** | Display | Probes noVNC, KasmVNC, and NoMachine systemd services | Configures virtual X11 display and EDID dummy plug |
-| **Dual-Remote Forks** | Git/Workspace | Audits `origin` (user fork) vs `upstream` (NVIDIA canonical) | Re-wires remote URLs and configures push guards |
-| **Security Profile** | Security | Inspects active tier: Simple ($0), Team, or Enterprise | Toggles CMEK, Secret Manager, and IAP/SSM tunnels |
-
-**Subsystem Status Indicators**:
-- `[PASS]` (Green): Fully verified, functional, and matching pinned baseline.
-- `[WARN]` (Yellow): Functional with software fallbacks (e.g. software Vulkan or non-pinned tag).
-- `[FAIL]` (Red): Broken dependency, segfault detected, or missing kernel driver.
-- `[PENDING]` (Cyan): Not yet cloned or installed.
-
-**Actions**:
-- `[p]` **Probe**: Executes `isaac-installer doctor` and refreshes the table.
-- `[h]` **Heal Drift**: Executes `isaac-installer repair` to resolve branch drift, missing remotes, and broken symlinks.
-- `[a]` **Audit**: Executes `isaac-installer plan` to perform pre-flight conflict analysis.
-
----
-
-### 3.3 View 2: Cloud Workstations & Deployments (`[2]`)
-An interactive dashboard displaying all provisioned cloud and local workstations:
-
-- **DataTable Columns**:
-  - `Workstation Name` (e.g. `test03`, `robotics-lab`, `local-rig`)
-  - `Cloud Provider` (`GCP`, `AWS`, `AZURE`, `ALICLOUD`, `BARE-METAL`)
-  - `Status` (`RUNNING`, `STOPPED`, `PROVISIONING`, `TERMINATED`)
-  - `GPU Model` (`NVIDIA L4`, `Tesla T4`, `A100-SXM4-80GB`, `RTX 4090`)
-  - `IP Address` (External public IP or `IAP/SSM Private`)
-  - `Security Profile` (`Simple ($0)`, `Team`, `Enterprise`)
-  - `Uptime` (Live uptime counter derived from start timestamps)
-- **Lifecycle Actions**:
-  - `[s]` **Start VM**: Powers on stopped instance via cloud CLI.
-  - `[x]` **Stop VM**: Stops running instance to immediately pause billing.
-  - `[c]` **Connect**: Prompts connection modal (launches noVNC in default browser, opens SSH terminal, or creates an IAP/SSM tunnel).
-  - `[d]` **Destroy VM**: Triggers a safety confirmation dialog requiring explicit confirmation before running `./destroy <name> --yes`.
-  - `[n]` **New Deployment**: Opens the Interactive Deployment Wizard.
-
----
-
-### 3.4 View 3: Foundation Models & Arena Policy Evaluation (`[3]`)
-A dedicated evaluation cockpit for running NVIDIA Isaac-GR00T and IsaacLab-Arena benchmarks:
-
-```text
-╭────────────────────────────── NVIDIA Isaac-GR00T Foundation Model Cockpit ──────────────────────────────╮
-│ Model: nvidia/GR00T-N1.7-3B | Backbone: Cosmos-Reason2-2B | Weights: CACHED (6.2 GB) | Server: 127.0.0.1:5555   │
-╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯
-```
-
-- **Metrics Displayed**:
-  - **Inference Latency**: Real-time evaluation loop latency (e.g. `89.9 ms`).
-  - **Action Trajectory MSE**: Mean squared error over DROID evaluation trajectories (e.g. `0.00328`).
-  - **Physics Simulation Rate**: Real-time Isaac Sim step rate (e.g. `120 Hz`).
-- **Interactive Actions**:
-  - `[r]` **Run Open-Loop Eval**: Evaluates policy against recorded DROID trajectories.
-  - `[g]` **Launch ZeroMQ Server**: Starts the headless background GR00T inference daemon.
-  - `[k]` **Kill Policy Server**: Frees GPU memory and shuts down ZeroMQ endpoints.
-
----
-
-### 3.5 View 4: Dual-Remote Git Fork Topology & Workspace Layout (`[4]`)
-Provides visual representation of the dual-remote fork topology:
-
-```text
-Repository               Branch / Tag           Origin (Your Fork)                     Upstream (NVIDIA Canonical)       Push Guard
-────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-IsaacLab                 v3.0.0-beta2 (Tag)     boredengineering/IsaacLab              isaac-sim/IsaacLab                PROTECTED
-IsaacLab-Arena           release/0.3.0-prerel   boredengineering/IsaacLab-Arena        isaac-sim/IsaacLab-Arena          PROTECTED
-lerobot                  v0.4.3 (Tag)           boredengineering/lerobot               huggingface/lerobot               PROTECTED
-Isaac-GR00T              main                   boredengineering/Isaac-GR00T           NVIDIA/Isaac-GR00T                PROTECTED
-```
-
-- **Actions**:
-  - `[s]` **Sync Upstream**: Rebase or fast-forward active branch from NVIDIA upstream.
-  - `[t]` **Switch Release Tag**: Select and checkout official pinned release tags.
-  - `[f]` **Auto-Fork**: Automatically generates user fork on GitHub via `gh repo fork`.
-
----
-
-### 3.6 View 5: Live Action Execution & Log Streamer (`[5]`)
-An embedded terminal running `RichLog` that captures stdout/stderr in real time:
-
-- **Features**:
-  - Full ANSI 256-color and truecolor styling.
-  - Asynchronous background execution (UI remains responsive during 15-minute installs).
-  - Search and filter within logs (`/`).
-  - Autoscroll toggle and one-key log clearance (`c`).
-
----
-
-### 3.7 View 6: Declarative Profiles & Security Tier Selector (`[6]`)
-Inspects and switches between configuration profiles:
-- **`default-profile.yaml`**: Standard interactive robotics workstation (NVIDIA driver, Isaac Sim, Isaac Lab, clean X11).
-- **`full-ecosystem.yaml`**: Complete stack with IsaacLab-Arena, Isaac-GR00T VLA, Pinocchio WBC, and LeRobot.
-- **`minimal-headless.yaml`**: Headless simulation runner for CI/CD and cloud GPU instances.
-- **Security Profile Toggle**:
-  - `[1] Simple Mode`: $0.00 added cost, dynamic `/32` IP whitelisting, local state.
-  - `[2] Team Mode`: <$0.10 added cost, cloud remote state with locking.
-  - `[3] Enterprise Mode`: KMS CMEK encryption, Secret Manager, IAP/SSM zero-trust private access.
-
----
-
-## 4. Keyboard Navigation & Shortcuts (k9s Keybindings)
-
-```text
-┌─────────────────────────────────────── Keyboard Navigation ───────────────────────────────────────┐
-│ [1] Subsystems  [2] Workstations  [3] Eval  [4] Forks  [5] Logs  [6] Profiles  [?] Help  [q] Quit │
-│ [p] Probe       [h] Heal Drift    [a] Audit [s] Start  [x] Stop  [c] Connect   [d] Destroy        │
-└───────────────────────────────────────────────────────────────────────────────────────────────────┘
-```
-
-| Key | Context | Action |
-| :---: | :--- | :--- |
-| `1` – `6` | Global | Switch between the 6 primary dashboard screens |
-| `p` | Global / Subsystems | Trigger hardware probing and doctor diagnostics |
-| `h` | Global / Subsystems | Execute automated self-healing state drift repair |
-| `a` | Global / Subsystems | Run pre-flight architecture audit & dependency diff |
-| `s` | Workstations | Start selected workstation instance |
-| `x` | Workstations | Stop selected workstation instance (pause billing) |
-| `c` | Workstations | Connect to workstation (SSH / noVNC / IAP) |
-| `d` | Workstations | Destroy workstation (with safety modal confirmation) |
-| `r` | Evaluation | Run benchmark policy evaluation |
-| `/` | Tables / Logs | Open search filter bar (filter rows / text in real time) |
-| `:` | Global | Open command palette (e.g. `:doctor`, `:repair`, `:deploy`, `:quit`) |
-| `?` | Global | Display help modal with complete keybinding documentation |
-| `q` | Global | Gracefully exit `isaac9s` |
-
----
-
-## 5. Asynchronous Concurrency & Subprocess Execution Engine
-
-To ensure that heavy operations (like running `apt-get`, building custom Isaac Sim extensions, downloading 6GB GR00T weights, or applying Terraform) do not freeze the UI, `isaac9s` uses a dual-plane execution model:
+Every screen in `isaac9s` is tested headlessly via Textual's async pilot harness in CI/CD without needing an X11/Wayland display:
 
 ```python
-def run_async_command(self, cmd: str, on_line=None, on_finish=None):
-    """
-    Spawns child subprocess inside a background thread executor.
-    Streams output line-by-line back to the Textual main thread via call_from_thread.
-    """
-    def worker():
-        proc = subprocess.Popen(
-            cmd,
-            shell=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            bufsize=1,
-            universal_newlines=True
-        )
-        for line in proc.stdout:
-            self.call_from_thread(self.log_message, f"  {line.rstrip()}")
-        proc.wait()
-        self.call_from_thread(self.log_message, f"[bold green]Finished with exit code {proc.returncode}[/]")
-        if on_finish:
-            self.call_from_thread(on_finish, proc.returncode)
-
-    asyncio.get_event_loop().run_in_executor(None, worker)
-```
-
----
-
-## 6. Verification, Testing & Quality Assurance Runbook
-
-### 6.1 Automated Headless Testing
-Textual includes a headless testing harness allowing continuous integration without a physical display:
-
-```python
-import asyncio
+import pytest
+from textual.pilot import Pilot
 from src.tui.app import Isaac9sApp
 
-async def test_tui_workflow():
+@pytest.mark.asyncio
+async def test_isaac9s_full_navigation():
     app = Isaac9sApp()
     async with app.run_test() as pilot:
-        # Verify initial mounting
-        assert len(app.query("*")) >= 40
+        # 1. Verify initial state & telemetry banner mounted
+        assert len(app.query("TelemetryBanner")) == 1
+        assert len(app.query("DataTable")) >= 1
         
-        # Test tab switching
-        app.action_tab_workstations()
-        await pilot.pause()
+        # 2. Switch to Workstations screen
+        await pilot.press("2")
         assert app.query_one("#main-tabs").active == "tab-workstations"
         
-        # Test probe action trigger
-        app.action_run_probe()
+        # 3. Switch to Logs screen
+        await pilot.press("4")
+        assert app.query_one("#main-tabs").active == "tab-logs"
+        
+        # 4. Trigger probe action via hotkey
+        await pilot.press("p")
         await pilot.pause()
         
-        # Test quit
+        # 5. Clean exit
         await pilot.press("q")
-
-asyncio.run(test_tui_workflow())
 ```
-
-### 6.2 Manual Verification Checklist
-1. **Launch**: Run `./isaac9s` from repo root. Verify header displays live CPU/RAM/GPU telemetry.
-2. **Subsystems Table**: Verify all 14 Physical AI subsystems render with proper status badges (`PASS`, `WARN`, `FAIL`, `PENDING`).
-3. **Probe Trigger**: Press `p`. Verify execution log updates and table refreshes.
-4. **Workstations Table**: Press `2`. Verify local and cloud workstations are discovered and listed.
-5. **Log Streaming**: Press `3`. Verify streaming log pane scrolls cleanly.
-6. **Exit**: Press `q`. Verify terminal state is restored cleanly without artifacting.
 
 ---
 
-## 7. How to Launch `isaac9s`
+## 7. How to Launch and Use `isaac9s`
 
 ```bash
-# From repository root:
+# Launch directly from repo root
 ./isaac9s
 
-# Or via Python module:
-python3 -m src.tui.app
-
-# Or via isaac-installer CLI:
+# Or via isaac-installer CLI
 ./isaac-installer/bin/isaac-installer gui
+
+# Or run with Textual live hot-reload for development
+textual run --dev src/tui/app.py
 ```
