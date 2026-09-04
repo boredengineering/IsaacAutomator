@@ -27,4 +27,5 @@ Catalog of high-level project specifications, architecture documents, and goal d
 | [`gcp-plans/gcp-security-architecture.md`](./gcp-plans/gcp-security-architecture.md) | GCP Security Architecture: Cloud KMS CMEK, Secret Manager, GCS Remote State, IAP, Shielded VMs & OS Login | Active Plan |
 | [`gcp-plans/gcp-security-implementation-plan.md`](./gcp-plans/gcp-security-implementation-plan.md) | Step-by-step implementation plan for GCP security hardening, KMS, Secret Manager, GCS backend, and IAP | Active Plan |
 | [`gcp-plans/multi-cloud-security-tiering-plan.md`](./gcp-plans/multi-cloud-security-tiering-plan.md) | Multi-Cloud Tiered Security Plan: Progressive Architecture for AWS, GCP, Azure & Alibaba Cloud | Active Plan |
+| [`gcp-plans/beginner-friendly-security-plan.md`](./gcp-plans/beginner-friendly-security-plan.md) | Beginner-Friendly Simple Mode Security & User Choice Implementation Plan | Active Plan |
 
