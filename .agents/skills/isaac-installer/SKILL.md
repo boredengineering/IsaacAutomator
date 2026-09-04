@@ -20,7 +20,7 @@ description: Discover, provision, audit, heal, and evaluate physical bare-metal 
 
 The **Isaac Bare-Metal Installer (`isaac-installer`)** is a zero-infrastructure provisioner for Ubuntu 22.04 physical machines and GPU nodes. Unlike containerized cloud automation, it configures local developer workspaces (`~/Documents/GitHub/<Owner>/<Repo>`), Dual-Remote Git topologies, hybrid Conda+UV Python runtimes, and desktop UI launchers.
 
-Binary location: `.agents/references/isaac-installer/bin/isaac-installer` (or `/usr/local/bin/isaac-installer` if installed globally).
+Binary location: `isaac-installer/bin/isaac-installer` (or `/usr/local/bin/isaac-installer` if installed globally).
 
 ---
 
@@ -29,7 +29,7 @@ Binary location: `.agents/references/isaac-installer/bin/isaac-installer` (or `/
 Before running installations, probe the hardware and conflict matrix:
 
 ```bash
-cd /workspaces/IsaacAutomator/.agents/references/isaac-installer
+cd /workspaces/IsaacAutomator/isaac-installer
 
 # 1. Probe CPU, RAM, NVMe SSDs, LVM, NVIDIA Blackwell/Ada GPUs, and Display:
 ./bin/isaac-installer doctor

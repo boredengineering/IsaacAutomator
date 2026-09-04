@@ -5,7 +5,7 @@ import subprocess
 from pathlib import Path
 
 REPO_ROOT = Path("/workspaces/IsaacAutomator")
-INSTALLER_BIN = REPO_ROOT / ".agents/references/isaac-installer/bin/isaac-installer"
+INSTALLER_BIN = REPO_ROOT / "isaac-installer/bin/isaac-installer"
 
 class WorkstationBackend:
     @staticmethod

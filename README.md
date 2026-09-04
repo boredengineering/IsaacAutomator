@@ -11,6 +11,8 @@ The result is a fully configured remote desktop cloud VM with NVIDIA drivers, Is
 ## Table of Contents
 
 - [TLDR ;)](#tldr-)
+- [Interactive Terminal Cockpit (`isaac9s`)](#interactive-terminal-cockpit-isaac9s)
+- [Bare-Metal Physical Workstations (`isaac-installer`)](#bare-metal-physical-workstations-isaac-installer)
 - [Development Environments](#development-environments)
   - [Option A: VS Code DevContainer (Recommended)](#option-a-vs-code-devcontainer-recommended)
   - [Option B: Local Docker CLI](#option-b-local-docker-cli)
@@ -64,7 +66,56 @@ The result is a fully configured remote desktop cloud VM with NVIDIA drivers, Is
 ./deploy-aws my-workstation   # follow prompts to deploy
 ./novnc my-workstation
 ./destroy my-workstation --yes
+
+# Option 3: Interactive Terminal Cockpit (isaac9s)
+./isaac9s                     # launch k9s-style terminal GUI for status, audits & lifecycle
+
+# Option 4: Bare-Metal Physical Workstations (isaac-installer)
+cd isaac-installer
+sudo ./bin/isaac-installer install --profile full
 ```
+
+---
+
+## Interactive Terminal Cockpit (`isaac9s`)
+
+**`isaac9s`** is a high-performance terminal graphical user interface (TUI) inspired by [`k9s`](https://k9scli.io/). It provides a unified command center for both cloud-provisioned Isaac Workstations and bare-metal robotics nodes:
+
+- **Live System Telemetry:** Real-time monitoring of CPU, RAM, NVMe disk usage, and GPU utilization / VRAM (via `nvidia-smi` / `pynvml`).
+- **Subsystem Health Matrix:** 1-key audit (`d`) probing 14 robotics subsystems (NVIDIA Driver, CUDA, Vulkan ICD, Conda/UV, Isaac Sim, Isaac Lab, Arena, GR00T, Pinocchio WBC, ZeroMQ, Remote Desktop, and Security Profiles).
+- **Deployment Lifecycle Management:** View, inspect, stop, start, and destroy cloud workstations across AWS, GCP, Azure, and Alibaba Cloud with hotkey triggers (`s` to stop, `u` to start, `x` to destroy).
+- **Subsystem & Deployment Logs:** Real-time log inspector (`l`) for setup, verification, and runtime outputs.
+- **Hardware Telemetry Inspector:** Drill into PCIe bandwidth, GPU clock speeds, power draw, and NVMe SMART health metrics (`h`).
+
+```bash
+# Launch the cockpit directly
+./isaac9s
+
+# Or via isaac-installer
+./isaac-installer/bin/isaac-installer gui
+```
+
+Detailed specification and architecture: [`.agents/references/plans/isaac9s-gui-plan.md`](file:///workspaces/IsaacAutomator/.agents/references/plans/isaac9s-gui-plan.md).
+
+---
+
+## Bare-Metal Physical Workstations (`isaac-installer`)
+
+Located at [`isaac-installer/`](file:///workspaces/IsaacAutomator/isaac-installer/), **`isaac-installer`** is a zero-infrastructure, modular bash/CLI provisioner for physical Ubuntu 22.04 LTS workstations and on-premise GPU clusters.
+
+- **Declarative YAML Profiles:** `default-profile.yaml` (clean daily driver), `minimal-headless.yaml` (CI/RL training nodes), and `full-ecosystem.yaml` (LeRobot, Arena, GR00T, VR gloves, SpaceMouse).
+- **Smart Git Discovery & Dual-Remote Fork Topology:** Discovers local codebases and configures `origin` (personal fork) + `upstream` (official NVIDIA/HF) automatically.
+- **System Doctor & Pre-Flight Conflict Matrix:** Deep audit of 20 system components, APT lock holder detection, and GPU/display topologies.
+- **Atomic Sim Version Switcher:** Seamlessly toggle between Isaac Sim 4.2.0, 4.5.0, 5.1.0, and custom source builds.
+
+```bash
+cd isaac-installer
+./bin/isaac-installer doctor   # probe system and GPU topology
+./bin/isaac-installer plan     # pre-flight audit against active YAML profile
+sudo ./bin/isaac-installer install # provision clean robotics workstation
+```
+
+Full documentation: [`isaac-installer/README.md`](file:///workspaces/IsaacAutomator/isaac-installer/README.md).
 
 ---
 

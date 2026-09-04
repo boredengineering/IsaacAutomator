@@ -107,6 +107,7 @@ Master index of session memory checkpoints for Isaac Automator.
 | 2026-09-04 02:36 | `e9f0a1b2` | Multi-Cloud Tiered Security & Hardening Plan | 3-tier progressive disclosure architecture for AWS, GCP, Azure & Alibaba Cloud balancing simple users and enterprise | [`20260904_023635_e9f0a1b2.md`](./sessions/20260904_023635_e9f0a1b2.md) |
 | 2026-09-04 02:40 | `f0a1b2c3` | Beginner-Friendly Simple Mode Security & User Choice Plan | Frictionless, zero-cost architecture with interactive choice wizard, auto /32 IP lock, and zero-touch default | [`20260904_024012_f0a1b2c3.md`](./sessions/20260904_024012_f0a1b2c3.md) |
 | 2026-09-04 02:44 | `a1b2c3d4` | isaac9s: k9s-Style Terminal Cockpit for Automator & Installer | Built Textual/Rich interactive terminal GUI with live telemetry, subsystem health auditor, and async logs | [`20260904_024415_a1b2c3d4.md`](./sessions/20260904_024415_a1b2c3d4.md) |
+| 2026-09-04 02:52 | `b2c3d4e5` | Root isaac-installer Migration & Deep isaac9s-gui-plan.md | Elevated isaac-installer to repo root, relocated and deepened plans/isaac9s-gui-plan.md | [`20260904_025250_b2c3d4e5.md`](./sessions/20260904_025250_b2c3d4e5.md) |
 
 
 

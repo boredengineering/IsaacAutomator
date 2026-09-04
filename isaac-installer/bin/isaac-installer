@@ -718,6 +718,7 @@ Commands:
   resume                                       Resume installation from last recorded checkpoint
   test                                         Run profile-aware verification suite
   logs [latest|--tail|-t|--list|-l|--follow|-f] Inspect persistent session and error logs
+  gui | tui | k9s                              Launch interactive k9s-style terminal cockpit (isaac9s)
   stream <provider>                            Setup 3D streaming (nomachine | sunshine)
   backups                                      List configuration safety snapshots
   help                                         Show this message
@@ -846,6 +847,20 @@ case "${COMMAND}" in
             gr00t) test_gr00t ;;
             *)     test_isaaclab_arena ;;
         esac
+        ;;
+    gui|tui|k9s|isaac9s)
+        if [[ -f "${SCRIPT_DIR}/../isaac9s" ]]; then
+            exec "${SCRIPT_DIR}/../isaac9s" "$@"
+        elif [[ -f "${SCRIPT_DIR}/isaac9s" ]]; then
+            exec "${SCRIPT_DIR}/isaac9s" "$@"
+        elif command -v isaac9s >/dev/null 2>&1; then
+            exec isaac9s "$@"
+        elif command -v python3 >/dev/null 2>&1; then
+            exec python3 -m src.tui.app "$@"
+        else
+            log_error "isaac9s GUI requires python3"
+            exit 1
+        fi
         ;;
     logs)             cmd_logs "${PASSTHROUGH_ARGS[@]:-latest}" ;;
     stream)           install_streaming_provider "${PASSTHROUGH_ARGS[0]:-nomachine}" ;;

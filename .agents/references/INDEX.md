@@ -20,7 +20,7 @@ Catalog of high-level project specifications, architecture documents, and goal d
 | [`gcp-plans/debugging-instance.md`](./gcp-plans/debugging-instance.md) | Incident report & root cause analysis for Isaac Sim full.kit segfault & base.kit resolution on test03 | Active Reference |
 | [`devcontainer/isaacautomator-devcontainer-plan.md`](./devcontainer/isaacautomator-devcontainer-plan.md) | Architectural evaluation & parity validation for unified DevContainer with OCI features | Active Reference |
 | [`devcontainer/devcontainer-mcp-skills-plan.md`](./devcontainer/devcontainer-mcp-skills-plan.md) | Step-by-step integration plan for robotics MCP servers (docker, hw-probe) and skills | Active Plan |
-| [`isaac-installer/README.md`](./isaac-installer/README.md) | Universal bare-metal Ubuntu 22.04 installer CLI & modular library | Active Tool |
+| [`isaac-installer/README.md`](file:///workspaces/IsaacAutomator/isaac-installer/README.md) | Universal bare-metal Ubuntu 22.04 installer CLI & modular library (Root Project) | Active Tool |
 | [`devcontainer/auth-strategy.md`](./devcontainer/auth-strategy.md) | DevContainer Git & GitHub authentication strategy (Pattern B: persistent named volume + setup hook) | Active Reference |
 | [`agentic_env_generation/agentic_env_generation.md`](./agentic_env_generation/agentic_env_generation.md) | Master guide for Agentic Environment Generation & Policy Evaluation in IsaacLab-Arena | Active Guide |
 | [`agentic_env_generation/agentic_env_gen_plan.md`](./agentic_env_generation/agentic_env_gen_plan.md) | Master implementation plan for RDF-star, LPG & PROV-O semantic pipeline in IsaacLab-Arena | Active Plan |
@@ -28,5 +28,5 @@ Catalog of high-level project specifications, architecture documents, and goal d
 | [`gcp-plans/gcp-security-implementation-plan.md`](./gcp-plans/gcp-security-implementation-plan.md) | Step-by-step implementation plan for GCP security hardening, KMS, Secret Manager, GCS backend, and IAP | Active Plan |
 | [`gcp-plans/multi-cloud-security-tiering-plan.md`](./gcp-plans/multi-cloud-security-tiering-plan.md) | Multi-Cloud Tiered Security Plan: Progressive Architecture for AWS, GCP, Azure & Alibaba Cloud | Active Plan |
 | [`gcp-plans/beginner-friendly-security-plan.md`](./gcp-plans/beginner-friendly-security-plan.md) | Beginner-Friendly Simple Mode Security & User Choice Implementation Plan | Active Plan |
-| [`isaac-installer/isaac9s-tui-plan.md`](./isaac-installer/isaac9s-tui-plan.md) | isaac9s: k9s-Style Terminal User Interface for Isaac Automator & Installer | Active Tool & Plan |
+| [`plans/isaac9s-gui-plan.md`](./plans/isaac9s-gui-plan.md) | isaac9s: k9s-Style Graphical Terminal Interface for Isaac Automator & Installer | Active Tool & Plan |
 
