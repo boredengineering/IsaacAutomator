@@ -102,3 +102,46 @@ RemoteDesktopModal {
     padding: 1;
     margin: 1;
 }
+
+/* Command Bar (k9s style) */
+#command-bar {
+    dock: bottom;
+    height: 3;
+    background: #161b22;
+    border-top: solid #58a6ff;
+    padding: 0 1;
+    display: none;
+}
+
+#command-bar.active {
+    display: block;
+}
+
+#command-prefix {
+    width: 2;
+    height: 1;
+    color: #58a6ff;
+    text-style: bold;
+    margin-top: 1;
+}
+
+#command-input {
+    width: 1fr;
+    border: none;
+    background: #0d1117;
+    color: #e6edf3;
+}
+
+WorkstationInspectorModal, CloudAuthBridgeModal, DeployWorkstationModal {
+    align: center middle;
+}
+
+#deploy-body, #inspector-body, #auth-body {
+    max-height: 24;
+}
+
+.checkbox-row {
+    height: 3;
+    margin: 1 0;
+}
+

@@ -16,6 +16,7 @@ from textual.widgets import (
     DataTable,
     Footer,
     Header,
+    Input,
     Label,
     Static,
     TabbedContent,
@@ -24,12 +25,15 @@ from textual.widgets import (
 
 from src.tui.backend import INSTALLER_BIN, REPO_ROOT, WorkstationBackend
 from src.tui.screens import (
+    CloudAuthBridgeModal,
+    DeployWorkstationModal,
     DoctorPane,
     HardwarePane,
     LogsPane,
     ProfilesPane,
     RemoteDesktopModal,
     SubsystemsPane,
+    WorkstationInspectorModal,
     WorkstationsPane,
 )
 from src.tui.telemetry import SystemTelemetry
@@ -71,14 +75,19 @@ class Isaac9sApp(App):
         Binding("4", "tab_doctor", "Doctor", show=True),
         Binding("5", "tab_profiles", "Profiles", show=True),
         Binding("6", "tab_hardware", "Hardware", show=True),
+        Binding("colon", "open_command_palette", "Cmd", show=True, key_display=":"),
+        Binding("slash", "open_filter", "Filter", show=True, key_display="/"),
+        Binding("n", "open_deploy_modal", "Deploy", show=True),
+        Binding("i", "open_inspector_modal", "Inspect", show=True),
         Binding("question_mark", "tab_help", "Help", show=True, key_display="?"),
         Binding("c", "open_connect_modal", "Connect", show=True),
         Binding("p", "run_probe", "Probe", show=True),
         Binding("h", "run_heal", "Heal", show=True),
-        Binding("a", "run_audit", "Audit", show=True),
+        Binding("a", "open_auth_modal", "Auth", show=True),
         Binding("s", "run_start", "Start", show=True),
         Binding("x", "run_stop", "Stop", show=True),
         Binding("r", "run_refresh", "Refresh", show=True),
+        Binding("escape", "handle_escape", "Cancel", show=False),
         Binding("q", "quit", "Quit", show=True),
     ]
 
@@ -110,11 +119,15 @@ class Isaac9sApp(App):
                     yield Static(
                         "[bold cyan]isaac9s - Keyboard Shortcuts & Cockpit Reference[/]\n\n"
                         "  [bold white]1 - 6[/]: Switch dashboard screens\n"
+                        "  [bold white]:[/]: Open Vim / k9s command palette (:sub, :ws, :deploy, :q)\n"
+                        "  [bold white]/[/]: Focus active search and log filter\n"
+                        "  [bold white]n[/]: Deploy new cloud workstation wizard\n"
+                        "  [bold white]i[/]: Deep inspect highlighted workstation metadata & billing\n"
                         "  [bold white]?[/]: Open this Help reference\n"
-                        "  [bold white]c[/]: Open Remote Desktop protocol selector modal (noVNC, NoMachine, Sunshine, SSH)\n"
+                        "  [bold white]c[/]: Open Remote Desktop selector modal (noVNC, NoMachine, Sunshine, SSH)\n"
                         "  [bold white]p[/]: Run hardware probe & diagnostic tests\n"
                         "  [bold white]h[/]: Run automated state drift reconciliation & healing\n"
-                        "  [bold white]a[/]: Run pre-flight architecture audit\n"
+                        "  [bold white]a[/]: Open Cloud Authentication & SSO bridge modal\n"
                         "  [bold white]s[/]: Start highlighted workstation\n"
                         "  [bold white]x[/]: Stop highlighted workstation (pauses billing)\n"
                         "  [bold white]r[/]: Refresh current tab metrics\n"
@@ -133,6 +146,10 @@ class Isaac9sApp(App):
                         "  AWS Interactive Login:     aws login\n"
                         "  GCP ADC Headless Login:    gcloud auth application-default login --no-launch-browser"
                     )
+
+        with Horizontal(id="command-bar"):
+            yield Static(":", id="command-prefix")
+            yield Input(placeholder="sub, ws, logs, doc, profiles, hw, deploy, inspect, auth, q", id="command-input")
 
         yield Footer()
 
@@ -264,10 +281,112 @@ class Isaac9sApp(App):
 
         self.run_worker(worker, thread=True)
 
-    # Table Row Double-Click / Enter to Connect
+    # Table Row Double-Click / Enter to Inspect
     def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
         if event.data_table.id == "workstations-table":
+            self.action_open_inspector_modal()
+
+    # Phase 2 Modals & Commands
+    def action_open_command_palette(self) -> None:
+        cmd_bar = self.query_one("#command-bar")
+        cmd_bar.add_class("active")
+        cmd_inp = self.query_one("#command-input", Input)
+        cmd_inp.value = ""
+        cmd_inp.focus()
+
+    def action_open_filter(self) -> None:
+        active_tab = self.query_one("#main-tabs", TabbedContent).active
+        if active_tab == "tab-logs":
+            try:
+                self.query_one("#input-log-filter", Input).focus()
+            except Exception:
+                self.action_open_command_palette()
+        else:
+            self.action_open_command_palette()
+
+    def action_handle_escape(self) -> None:
+        cmd_bar = self.query_one("#command-bar")
+        if "active" in cmd_bar.classes:
+            cmd_bar.remove_class("active")
+            cmd_inp = self.query_one("#command-input", Input)
+            cmd_inp.blur()
+
+    def action_open_deploy_modal(self) -> None:
+        self.push_screen(DeployWorkstationModal(), self.on_deploy_submitted)
+
+    def on_deploy_submitted(self, result: dict | None) -> None:
+        if not result:
+            return
+        name = result.get("name", "workstation")
+        cloud = result.get("cloud", "aws")
+        gpu = result.get("gpu", "")
+        profile = result.get("profile", "simple")
+        demos = result.get("demos", [])
+
+        deploy_script = REPO_ROOT / f"deploy-{cloud}"
+        cmd = f"{deploy_script} {name} --profile {profile} --existing replace"
+        for demo in demos:
+            cmd += f" --demo {demo}"
+
+        self.log_message(f"[bold green]Dispatching cloud deployment for '{name}' on {cloud.upper()}...[/]")
+        self.log_message(f"[cyan]Selected Profile: {profile.capitalize()} | Target GPU: {gpu}[/]")
+        self.run_async_command(cmd)
+
+    def action_open_inspector_modal(self) -> None:
+        selected_vm = self.workstations_pane.get_selected_workstation()
+        self.push_screen(WorkstationInspectorModal(workstation=selected_vm), self.on_inspector_closed)
+
+    def on_inspector_closed(self, result: str | None) -> None:
+        if result == "connect":
             self.action_open_connect_modal()
+
+    def action_open_auth_modal(self) -> None:
+        self.push_screen(CloudAuthBridgeModal(), self.on_auth_closed)
+
+    def on_auth_closed(self, result: str | None) -> None:
+        self.doctor_pane.refresh_doctor()
+
+    def on_input_submitted(self, event: Input.Submitted) -> None:
+        if event.input.id == "command-input":
+            cmd = event.value.strip().lstrip(":").lower()
+            cmd_bar = self.query_one("#command-bar")
+            cmd_bar.remove_class("active")
+            event.input.blur()
+            self.execute_command(cmd)
+
+    def execute_command(self, cmd: str) -> None:
+        if cmd in ("sub", "subsystems", "1"):
+            self.action_tab_subsystems()
+        elif cmd in ("ws", "vms", "workstations", "fleet", "2"):
+            self.action_tab_workstations()
+        elif cmd in ("logs", "log", "3"):
+            self.action_tab_logs()
+        elif cmd in ("doc", "doctor", "4"):
+            self.action_tab_doctor()
+        elif cmd in ("profiles", "sec", "security", "5"):
+            self.action_tab_profiles()
+        elif cmd in ("hw", "hardware", "telemetry", "6"):
+            self.action_tab_hardware()
+        elif cmd in ("help", "?"):
+            self.action_tab_help()
+        elif cmd in ("deploy", "new", "n"):
+            self.action_open_deploy_modal()
+        elif cmd in ("inspect", "info", "i"):
+            self.action_open_inspector_modal()
+        elif cmd in ("auth", "login", "a"):
+            self.action_open_auth_modal()
+        elif cmd in ("connect", "c"):
+            self.action_open_connect_modal()
+        elif cmd in ("probe", "p"):
+            self.action_run_probe()
+        elif cmd in ("heal", "h"):
+            self.action_run_heal()
+        elif cmd in ("refresh", "r"):
+            self.action_run_refresh()
+        elif cmd in ("q", "quit", "exit"):
+            self.exit()
+        elif cmd:
+            self.notify(f"Unknown command: :{cmd}", severity="warning")
 
     # Button Event Dispatchers
     def on_button_pressed(self, event: Button.Pressed) -> None:
@@ -288,6 +407,12 @@ class Isaac9sApp(App):
             self.action_run_stop()
         elif btn_id == "btn-connect-vm":
             self.action_open_connect_modal()
+        elif btn_id == "btn-deploy-vm":
+            self.action_open_deploy_modal()
+        elif btn_id == "btn-inspect-vm":
+            self.action_open_inspector_modal()
+        elif btn_id == "btn-doc-auth":
+            self.action_open_auth_modal()
         elif btn_id == "btn-clear-log":
             self.logs_pane.clear_log()
         elif btn_id == "btn-doc-probe":

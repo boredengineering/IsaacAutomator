@@ -18,9 +18,11 @@ class WorkstationsPane(Vertical):
 
     def compose(self) -> ComposeResult:
         with Horizontal(classes="action-bar"):
+            yield Button("Deploy [n]", id="btn-deploy-vm", variant="primary")
+            yield Button("Inspect [i]", id="btn-inspect-vm", variant="default")
             yield Button("Start VM [s]", id="btn-start-vm", variant="success")
             yield Button("Stop VM [x]", id="btn-stop-vm", variant="warning")
-            yield Button("Connect [c]", id="btn-connect-vm", variant="primary")
+            yield Button("Connect [c]", id="btn-connect-vm", variant="default")
             yield Button("Refresh [r]", id="btn-refresh-vms", variant="default")
 
         yield DataTable(id="workstations-table")
@@ -71,3 +73,21 @@ class WorkstationsPane(Vertical):
         except Exception:
             pass
         return self.current_vms[0]
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id == "btn-deploy-vm":
+            self.app.open_deploy_modal()
+        elif event.button.id == "btn-inspect-vm":
+            self.app.open_inspector_modal()
+        elif event.button.id == "btn-start-vm":
+            self.app.action_run_start()
+        elif event.button.id == "btn-stop-vm":
+            self.app.action_run_stop()
+        elif event.button.id == "btn-connect-vm":
+            self.app.action_open_connect_modal()
+        elif event.button.id == "btn-refresh-vms":
+            self.refresh_workstations()
+
+    def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
+        self.app.open_inspector_modal()
+

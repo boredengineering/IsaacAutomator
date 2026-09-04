@@ -8,12 +8,15 @@ from textual.widgets import Button, DataTable, Input, RichLog, TabbedContent
 
 from src.tui.app import Isaac9sApp, TelemetryBanner
 from src.tui.screens import (
+    CloudAuthBridgeModal,
+    DeployWorkstationModal,
     DoctorPane,
     HardwarePane,
     LogsPane,
     ProfilesPane,
     RemoteDesktopModal,
     SubsystemsPane,
+    WorkstationInspectorModal,
     WorkstationsPane,
 )
 
@@ -94,9 +97,41 @@ class Test_Isaac9sApp(unittest.IsolatedAsyncioTestCase):
             # Dismiss modal
             await pilot.press("escape")
             await pilot.pause()
-            self.assertNotIsInstance(app.screen, RemoteDesktopModal)
+            # 6. Test Deploy Modal Trigger & Dismiss
+            await pilot.press("n")
+            await pilot.pause()
+            self.assertIsInstance(app.screen, DeployWorkstationModal)
+            await pilot.press("escape")
+            await pilot.pause()
+            self.assertNotIsInstance(app.screen, DeployWorkstationModal)
 
-            # 6. Test LogsPane Live Search / Filtering
+            # 7. Test Workstation Deep Inspector Trigger & Dismiss
+            await pilot.press("i")
+            await pilot.pause()
+            self.assertIsInstance(app.screen, WorkstationInspectorModal)
+            app.screen.toggle_state_view()
+            self.assertTrue(app.screen.show_raw_state)
+            await pilot.press("escape")
+            await pilot.pause()
+            self.assertNotIsInstance(app.screen, WorkstationInspectorModal)
+
+            # 8. Test Cloud Auth Bridge Modal Trigger & Dismiss
+            await pilot.press("a")
+            await pilot.pause()
+            self.assertIsInstance(app.screen, CloudAuthBridgeModal)
+            await pilot.press("escape")
+            await pilot.pause()
+            self.assertNotIsInstance(app.screen, CloudAuthBridgeModal)
+
+            # 9. Test Command Palette Execution
+            app.execute_command("ws")
+            self.assertEqual(app.query_one("#main-tabs").active, "tab-workstations")
+            app.execute_command("doc")
+            self.assertEqual(app.query_one("#main-tabs").active, "tab-doctor")
+            app.execute_command("sub")
+            self.assertEqual(app.query_one("#main-tabs").active, "tab-subsystems")
+
+            # 10. Test LogsPane Live Search / Filtering
             logs_pane = app.query_one("#pane-logs", LogsPane)
             logs_pane.write_line("Alpha Test Message")
             logs_pane.write_line("Beta Debug Message")
@@ -105,17 +140,17 @@ class Test_Isaac9sApp(unittest.IsolatedAsyncioTestCase):
             await pilot.pause()
             self.assertEqual(logs_pane.active_filter, "Alpha")
 
-            # 7. Test Doctor JSON Export
+            # 11. Test Doctor JSON Export
             doc_pane = app.query_one("#pane-doctor", DoctorPane)
             report_path = doc_pane.export_json()
             self.assertTrue(report_path.exists())
 
-            # 8. Test Profiles YAML Export
+            # 12. Test Profiles YAML Export
             prof_pane = app.query_one("#pane-profiles", ProfilesPane)
             yaml_path = prof_pane.export_yaml()
             self.assertTrue(yaml_path.exists())
 
-            # 9. Clean Quit
+            # 13. Clean Quit
             await pilot.press("q")
 
 

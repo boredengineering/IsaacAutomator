@@ -1,0 +1,148 @@
+"""
+Cloud Authentication Bridge Modal for isaac9s
+"""
+import os
+import shutil
+import subprocess
+import webbrowser
+from rich.text import Text
+from textual.app import ComposeResult
+from textual.binding import Binding
+from textual.containers import Horizontal, Vertical, VerticalScroll
+from textual.screen import ModalScreen
+from textual.widgets import Button, Label, RadioButton, RadioSet, Static
+
+
+class CloudAuthBridgeModal(ModalScreen):
+    """Interactive modal guiding operators through AWS SSO and GCP ADC authentication."""
+
+    BINDINGS = [
+        Binding("escape", "dismiss_modal", "Close", show=True),
+        Binding("1", "select_aws", "AWS Auth", show=False),
+        Binding("2", "select_gcp", "GCP Auth", show=False),
+    ]
+
+    def __init__(self):
+        super().__init__()
+        self.selected_provider = "aws"
+        self.auth_status = {"aws": False, "gcp": False}
+
+    def check_auth_sync(self) -> dict:
+        aws_ok = False
+        if os.environ.get("AWS_ACCESS_KEY_ID") and os.environ.get("AWS_SECRET_ACCESS_KEY"):
+            aws_ok = True
+        elif shutil.which("aws"):
+            try:
+                res = subprocess.run(["aws", "sts", "get-caller-identity"], capture_output=True, text=True, timeout=1.5)
+                aws_ok = (res.returncode == 0)
+            except Exception:
+                pass
+
+        gcp_ok = False
+        adc_path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS") or os.path.expanduser("~/.config/gcloud/application_default_credentials.json")
+        if os.path.exists(adc_path):
+            gcp_ok = True
+
+        return {"aws": aws_ok, "gcp": gcp_ok}
+
+    def compose(self) -> ComposeResult:
+        self.auth_status = self.check_auth_sync()
+        aws_badge = "[green]AUTHENTICATED[/]" if self.auth_status["aws"] else "[yellow]UNAUTHENTICATED[/]"
+        gcp_badge = "[green]AUTHENTICATED[/]" if self.auth_status["gcp"] else "[yellow]UNAUTHENTICATED[/]"
+
+        with Vertical(id="dialog"):
+            yield Label("Cloud Authentication & SSO Bridge", id="dialog-title")
+
+            with RadioSet(id="auth-provider-select"):
+                yield RadioButton(f"1. Amazon Web Services (AWS) - {aws_badge}", value=True, id="rb-auth-aws")
+                yield RadioButton(f"2. Google Cloud Platform (GCP) - {gcp_badge}", id="rb-auth-gcp")
+
+            with VerticalScroll(id="auth-body"):
+                yield Static(
+                    self.get_provider_content("aws"),
+                    id="auth-instructions",
+                    classes="box-panel"
+                )
+
+            with Horizontal(classes="modal-btn-bar"):
+                yield Button("Copy Auth Command", id="btn-copy-auth", variant="primary")
+                yield Button("Open Portal in Browser", id="btn-open-portal", variant="default")
+                yield Button("Verify Status Now", id="btn-verify-status", variant="success")
+                yield Button("Close (Esc)", id="btn-auth-close", variant="error")
+
+    def get_provider_content(self, provider: str) -> str:
+        if provider == "aws":
+            status_str = "[green][bold]OK: Authenticated[/][/]" if self.auth_status["aws"] else "[yellow][bold]Action Required: Login Needed[/][/]"
+            return (
+                f"[bold cyan]AWS IAM Identity Center / SSO Authentication[/]\n\n"
+                f"Current Status: {status_str}\n\n"
+                f"[bold white]Step 1:[/] Run the device-code login command in your terminal:\n"
+                f"  [cyan]aws sso login --use-device-code[/]\n"
+                f"  (or one-time configuration wizard: [cyan]aws configure sso[/])\n\n"
+                f"[bold white]Step 2:[/] Copy the verification code from the terminal and open:\n"
+                f"  [cyan]https://device.sso.us-east-1.amazonaws.com/[/]\n\n"
+                f"[bold white]Step 3:[/] Confirm authorization in your browser, then click 'Verify Status Now'."
+            )
+        else:
+            status_str = "[green][bold]OK: ADC Active[/][/]" if self.auth_status["gcp"] else "[yellow][bold]Action Required: Token Needed[/][/]"
+            return (
+                f"[bold cyan]Google Cloud Platform (GCP) ADC Authentication[/]\n\n"
+                f"Current Status: {status_str}\n\n"
+                f"[bold white]Step 1:[/] Run the headless application default login command:\n"
+                f"  [cyan]gcloud auth application-default login --no-launch-browser[/]\n\n"
+                f"[bold white]Step 2:[/] Copy the generated URL into your laptop's browser to sign in.\n\n"
+                f"[bold white]Step 3:[/] Paste the verification code back into the terminal, then click 'Verify Status Now'."
+            )
+
+    def update_view(self) -> None:
+        inst_widget = self.query_one("#auth-instructions", Static)
+        inst_widget.update(self.get_provider_content(self.selected_provider))
+
+    def on_radio_set_changed(self, event: RadioSet.Changed) -> None:
+        if event.pressed.id == "rb-auth-aws":
+            self.selected_provider = "aws"
+        else:
+            self.selected_provider = "gcp"
+        self.update_view()
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id == "btn-auth-close":
+            self.dismiss(None)
+        elif event.button.id == "btn-copy-auth":
+            cmd = "aws sso login --use-device-code" if self.selected_provider == "aws" else "gcloud auth application-default login --no-launch-browser"
+            try:
+                self.app.copy_to_clipboard(cmd)
+                self.notify(f"Copied command: {cmd}")
+            except Exception:
+                self.notify(f"Command: {cmd}")
+        elif event.button.id == "btn-open-portal":
+            if self.selected_provider == "aws":
+                url = "https://device.sso.us-east-1.amazonaws.com/"
+                try:
+                    webbrowser.open(url)
+                    self.notify(f"Opening portal: {url}")
+                except Exception:
+                    self.notify(f"URL: {url}")
+            else:
+                self.notify("Please run gcloud command in terminal to generate unique OAuth URL.")
+        elif event.button.id == "btn-verify-status":
+            self.auth_status = self.check_auth_sync()
+            self.update_view()
+            is_ok = self.auth_status.get(self.selected_provider, False)
+            if is_ok:
+                self.notify(f"{self.selected_provider.upper()} credentials verified successfully!", severity="information")
+            else:
+                self.notify(f"{self.selected_provider.upper()} credentials still unauthenticated.", severity="warning")
+
+    def action_dismiss_modal(self) -> None:
+        self.dismiss(None)
+
+    def action_select_aws(self) -> None:
+        self.query_one("#rb-auth-aws", RadioButton).value = True
+        self.selected_provider = "aws"
+        self.update_view()
+
+    def action_select_gcp(self) -> None:
+        self.query_one("#rb-auth-gcp", RadioButton).value = True
+        self.selected_provider = "gcp"
+        self.update_view()

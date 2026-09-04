@@ -26,6 +26,7 @@ class DoctorPane(Vertical):
     def compose(self) -> ComposeResult:
         with Horizontal(classes="action-bar"):
             yield Button("Run Diagnostics [p]", id="btn-doc-probe", variant="primary")
+            yield Button("Cloud Auth Bridge [a]", id="btn-doc-auth", variant="warning")
             yield Button("Auto-Heal Warnings [h]", id="btn-doc-heal", variant="success")
             yield Button("Export Diagnostic JSON", id="btn-doc-export", variant="default")
 
@@ -252,6 +253,10 @@ class DoctorPane(Vertical):
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "btn-doc-probe":
             self.refresh_doctor()
+        elif event.button.id == "btn-doc-auth":
+            self.app.open_auth_modal()
+        elif event.button.id == "btn-doc-heal":
+            self.app.action_run_heal()
         elif event.button.id == "btn-doc-export":
             path = self.export_json()
             self.notify(f"Exported diagnostic report to {path.name}")
