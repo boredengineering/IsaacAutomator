@@ -4,6 +4,7 @@ Popeye-Style Pre-Flight Conflict Matrix & System Doctor Screen for isaac9s
 import json
 import os
 import shutil
+import subprocess
 from pathlib import Path
 from rich.text import Text
 from textual.app import ComposeResult
@@ -134,6 +135,77 @@ class DoctorPane(Vertical):
             "target": "git-lfs >= 3.0",
             "status": "PASS" if has_git_lfs else "WARN",
             "remediation": "None required" if has_git_lfs else "sudo apt-get install -y git-lfs"
+        })
+
+        # 9. Docker Engine
+        has_docker = shutil.which("docker") is not None
+        docker_active = False
+        docker_desc = "Not Found"
+        if has_docker:
+            try:
+                res = subprocess.run(["docker", "--version"], capture_output=True, text=True, timeout=1.5)
+                if res.returncode == 0:
+                    docker_desc = res.stdout.strip().split(",")[0]
+                    docker_active = True
+            except Exception:
+                docker_desc = "Installed (Daemon Unreachable)"
+        checks.append({
+            "name": "Docker Engine",
+            "installed": docker_desc,
+            "target": "Docker >= 24.0",
+            "status": "PASS" if docker_active else "WARN",
+            "remediation": "None required" if docker_active else "Install Docker or start dockerd"
+        })
+
+        # 10. AWS Cloud Auth
+        has_aws = shutil.which("aws") is not None
+        aws_auth = False
+        aws_status_desc = "Not Found"
+        if has_aws:
+            aws_status_desc = "Unauthenticated"
+            if os.environ.get("AWS_ACCESS_KEY_ID") and os.environ.get("AWS_SECRET_ACCESS_KEY"):
+                aws_status_desc = "Env Vars Configured"
+                aws_auth = True
+            else:
+                try:
+                    res = subprocess.run(["aws", "sts", "get-caller-identity"], capture_output=True, text=True, timeout=1.5)
+                    if res.returncode == 0:
+                        aws_auth = True
+                        aws_status_desc = "Active (STS Verified)"
+                except Exception:
+                    pass
+        checks.append({
+            "name": "AWS Cloud Auth",
+            "installed": aws_status_desc,
+            "target": "IAM / SSO Session",
+            "status": "PASS" if aws_auth else "WARN",
+            "remediation": "None required" if aws_auth else "Run 'aws sso login --use-device-code' or 'aws login'"
+        })
+
+        # 11. GCP Cloud Auth
+        has_gcloud = shutil.which("gcloud") is not None
+        gcp_auth = False
+        gcp_status_desc = "Not Found"
+        if has_gcloud:
+            gcp_status_desc = "Unauthenticated"
+            adc_file = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS") or os.path.expanduser("~/.config/gcloud/application_default_credentials.json")
+            if os.path.exists(adc_file):
+                gcp_auth = True
+                gcp_status_desc = "Active ADC Token"
+            else:
+                try:
+                    res = subprocess.run(["gcloud", "config", "get-value", "account"], capture_output=True, text=True, timeout=1.5)
+                    act = res.stdout.strip()
+                    if act and act != "(unset)":
+                        gcp_status_desc = f"{act} (ADC Missing)"
+                except Exception:
+                    pass
+        checks.append({
+            "name": "GCP Cloud Auth",
+            "installed": gcp_status_desc,
+            "target": "Application Default Credentials",
+            "status": "PASS" if gcp_auth else "WARN",
+            "remediation": "None required" if gcp_auth else "Run 'gcloud auth application-default login --no-launch-browser'"
         })
 
         # Calculate Score

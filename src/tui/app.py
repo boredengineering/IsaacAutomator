@@ -126,7 +126,12 @@ class Isaac9sApp(App):
                         "[bold cyan]Security Profiles:[/]\n"
                         "  Tier 1: Simple Mode        $0.00 / mo, Dynamic /32 IP lock, Direct Outbound\n"
                         "  Tier 2: Collaborative      <$0.10 / mo, Cloud remote state with native locking\n"
-                        "  Tier 3: Enterprise         ~$35-$180 / mo, KMS CMEK keys, Cloud Secret Manager, Zero-Trust IAP"
+                        "  Tier 3: Enterprise         ~$35-$180 / mo, KMS CMEK keys, Cloud Secret Manager, Zero-Trust IAP\n\n"
+                        "[bold cyan]Cloud Authentication Wizards (SSO / Device Flow):[/]\n"
+                        "  AWS SSO Login:             aws sso login --use-device-code\n"
+                        "  AWS Configure SSO:         aws configure sso\n"
+                        "  AWS Interactive Login:     aws login\n"
+                        "  GCP ADC Headless Login:    gcloud auth application-default login --no-launch-browser"
                     )
 
         yield Footer()
