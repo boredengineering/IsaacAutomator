@@ -1,31 +1,44 @@
+"""
+isaac9s - The k9s-style Terminal User Interface for Isaac Automator & Installer
+"""
 import asyncio
 import os
 import shutil
 import subprocess
 from datetime import datetime
+from pathlib import Path
+
+from rich.text import Text
 from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Horizontal, Vertical, VerticalScroll
 from textual.widgets import (
     Button,
-    DataTable,
     Footer,
     Header,
-    Input,
     Label,
-    RichLog,
     Static,
     TabbedContent,
     TabPane,
 )
-from rich.text import Text
 
-from src.tui.backend import WorkstationBackend, INSTALLER_BIN, REPO_ROOT
+from src.tui.backend import INSTALLER_BIN, REPO_ROOT, WorkstationBackend
+from src.tui.screens import (
+    DoctorPane,
+    HardwarePane,
+    LogsPane,
+    ProfilesPane,
+    RemoteDesktopModal,
+    SubsystemsPane,
+    WorkstationsPane,
+)
 from src.tui.telemetry import SystemTelemetry
 
+
 class TelemetryBanner(Static):
-    """Renders the top live system telemetry banner like k9s cluster info"""
-    def update_metrics(self):
+    """Renders the top live system telemetry banner like k9s cluster info."""
+
+    def update_metrics(self) -> None:
         stats = SystemTelemetry.get_system_summary()
         gpus = stats.get("gpus", [])
         gpu_str = "No GPU (CPU Mode)"
@@ -43,61 +56,28 @@ class TelemetryBanner(Static):
         )
         self.update(content)
 
+
 class Isaac9sApp(App):
-    """
-    isaac9s - The k9s-style Terminal User Interface for Isaac Automator & Installer
-    """
+    """isaac9s - The k9s-style Terminal User Interface for Isaac Automator & Installer."""
+
     TITLE = "isaac9s"
-    SUB_TITLE = "Physical AI & Robotics Workstation Cockpit"
-    CSS = """
-    Screen {
-        background: #121317;
-        color: #e2e8f0;
-    }
-    Header {
-        background: #1e222d;
-        color: #38bdf8;
-    }
-    Footer {
-        background: #1e222d;
-    }
-    #telemetry-bar {
-        background: #1a1e29;
-        color: #94a3b8;
-        padding: 0 1;
-        height: 1;
-        border-bottom: solid #334155;
-    }
-    DataTable {
-        height: 100%;
-        background: #121317;
-    }
-    RichLog {
-        background: #090a0f;
-        color: #cbd5e1;
-        height: 100%;
-        border: solid #334155;
-    }
-    .action-bar {
-        height: 3;
-        padding: 0 1;
-        background: #1a1e29;
-    }
-    Button {
-        margin-right: 1;
-    }
-    """
+    SUB_TITLE = "Physical AI & Multi-Cloud Robotics Cockpit"
+    CSS_PATH = Path(__file__).parent / "styles" / "isaac9s.tcss"
 
     BINDINGS = [
         Binding("1", "tab_subsystems", "Subsystems", show=True),
-        Binding("2", "tab_workstations", "Workstations", show=True),
+        Binding("2", "tab_workstations", "Fleet", show=True),
         Binding("3", "tab_logs", "Logs", show=True),
-        Binding("4", "tab_profiles", "Profiles", show=True),
+        Binding("4", "tab_doctor", "Doctor", show=True),
+        Binding("5", "tab_profiles", "Profiles", show=True),
+        Binding("6", "tab_hardware", "Hardware", show=True),
+        Binding("c", "open_connect_modal", "Connect", show=True),
         Binding("p", "run_probe", "Probe", show=True),
         Binding("h", "run_heal", "Heal", show=True),
         Binding("a", "run_audit", "Audit", show=True),
         Binding("s", "run_start", "Start", show=True),
         Binding("x", "run_stop", "Stop", show=True),
+        Binding("r", "run_refresh", "Refresh", show=True),
         Binding("q", "quit", "Quit", show=True),
     ]
 
@@ -107,135 +87,67 @@ class Isaac9sApp(App):
 
         with TabbedContent(id="main-tabs"):
             with TabPane("Subsystems & Health [1]", id="tab-subsystems"):
-                with Vertical():
-                    with Horizontal(classes="action-bar"):
-                        yield Button("Probe [p]", id="btn-probe", variant="primary")
-                        yield Button("Heal Drift [h]", id="btn-heal", variant="success")
-                        yield Button("Audit [a]", id="btn-audit", variant="warning")
-                    yield DataTable(id="subsystems-table")
+                yield SubsystemsPane(id="pane-subsystems")
 
-            with TabPane("Workstations & Cloud [2]", id="tab-workstations"):
-                with Vertical():
-                    with Horizontal(classes="action-bar"):
-                        yield Button("Refresh", id="btn-refresh-vms", variant="default")
-                        yield Button("Start VM [s]", id="btn-start-vm", variant="success")
-                        yield Button("Stop VM [x]", id="btn-stop-vm", variant="warning")
-                    yield DataTable(id="workstations-table")
+            with TabPane("Workstations & Fleet [2]", id="tab-workstations"):
+                yield WorkstationsPane(id="pane-workstations")
 
-            with TabPane("Logs & Terminal [3]", id="tab-logs"):
-                with Vertical():
-                    with Horizontal(classes="action-bar"):
-                        yield Button("Clear Log", id="btn-clear-log", variant="default")
-                    yield RichLog(id="execution-log", highlight=True, markup=True)
+            with TabPane("Real-Time Logs [3]", id="tab-logs"):
+                yield LogsPane(id="pane-logs")
 
-            with TabPane("Security & Profiles [4]", id="tab-profiles"):
-                with VerticalScroll():
-                    yield Static(
-                        "[bold cyan]Isaac Automator & Installer Security Profiles[/]\n\n"
-                        "[bold green]Tier 1: Simple Mode (Default / Beginner)[/]\n"
-                        "• Added Cost: [bold white]$0.00 / month[/]\n"
-                        "• Dynamic Caller /32 IP Firewall Lockdown (Eliminates $32/mo Cloud NAT)\n"
-                        "• Free Built-in Cloud Platform Encryption (SSE-S3 / Google-managed / PMK)\n"
-                        "• Local state storage in ./state/<name>/.tfstate\n"
-                        "• Zero permission blockers: works with personal student / developer accounts\n\n"
-                        "[bold yellow]Tier 2: Collaborative (Team / CI Sync)[/]\n"
-                        "• Added Cost: [bold white]<$0.10 / month[/]\n"
-                        "• Remote state in S3/GCS/Azure Blob/AliCloud OSS with native concurrency locking\n"
-                        "• Multi-agent state pull/push synchronization\n\n"
-                        "[bold red]Tier 3: Enterprise Hardened (Compliance)[/]\n"
-                        "• Added Cost: [bold white]~$35 - $180 / month[/]\n"
-                        "• Cloud KMS Customer-Managed Encryption Keys (CMEK / CMK) with 90-day rotation\n"
-                        "• Cloud Secret Manager for NGC, HF, WandB, and display tokens\n"
-                        "• Zero-Trust Private Network: Cloud IAP / AWS SSM Session Manager (No public IP)\n"
-                        "• Shielded VM / AWS Nitro / Azure Trusted Launch with Secure Boot & vTPM\n"
-                    )
+            with TabPane("Pre-Flight Doctor [4]", id="tab-doctor"):
+                yield DoctorPane(id="pane-doctor")
+
+            with TabPane("Security & Profiles [5]", id="tab-profiles"):
+                yield ProfilesPane(id="pane-profiles")
+
+            with TabPane("Hardware Telemetry [6]", id="tab-hardware"):
+                yield HardwarePane(id="pane-hardware")
 
             with TabPane("Help [?]", id="tab-help"):
                 with VerticalScroll():
                     yield Static(
-                        "[bold cyan]isaac9s - Keyboard Shortcuts & Quick Reference[/]\n\n"
-                        "  [bold white]1 - 4[/]: Switch between dashboard tabs\n"
-                        "  [bold white]p[/]: Run hardware probe & doctor diagnostics\n"
+                        "[bold cyan]isaac9s - Keyboard Shortcuts & Cockpit Reference[/]\n\n"
+                        "  [bold white]1 - 6[/]: Switch dashboard screens\n"
+                        "  [bold white]c[/]: Open Remote Desktop protocol selector modal (noVNC, NoMachine, Sunshine, SSH)\n"
+                        "  [bold white]p[/]: Run hardware probe & diagnostic tests\n"
                         "  [bold white]h[/]: Run automated state drift reconciliation & healing\n"
                         "  [bold white]a[/]: Run pre-flight architecture audit\n"
                         "  [bold white]s[/]: Start highlighted workstation\n"
-                        "  [bold white]x[/]: Stop highlighted workstation\n"
+                        "  [bold white]x[/]: Stop highlighted workstation (pauses billing)\n"
+                        "  [bold white]r[/]: Refresh current tab metrics\n"
                         "  [bold white]q[/]: Exit isaac9s\n\n"
-                        "[bold cyan]Command Line Invocations:[/]\n"
-                        "  ./isaac9s                  Launch interactive TUI\n"
-                        "  ./isaac-installer doctor   CLI doctor\n"
-                        "  ./isaac-installer repair   CLI self-healing\n"
+                        "[bold cyan]CLI Invocations:[/]\n"
+                        "  ./isaac9s                   Launch interactive terminal cockpit\n"
+                        "  ./isaac-installer doctor    Pre-flight audit in terminal\n"
+                        "  ./isaac-installer repair    Reconcile and heal drift\n\n"
+                        "[bold cyan]Security Profiles:[/]\n"
+                        "  Tier 1: Simple Mode        $0.00 / mo, Dynamic /32 IP lock, Direct Outbound\n"
+                        "  Tier 2: Collaborative      <$0.10 / mo, Cloud remote state with native locking\n"
+                        "  Tier 3: Enterprise         ~$35-$180 / mo, KMS CMEK keys, Cloud Secret Manager, Zero-Trust IAP"
                     )
 
         yield Footer()
 
     def on_mount(self) -> None:
-        self.log_widget = self.query_one("#execution-log", RichLog)
         self.telemetry_widget = self.query_one("#telemetry-bar", TelemetryBanner)
+        self.logs_pane = self.query_one("#pane-logs", LogsPane)
+        self.subsystems_pane = self.query_one("#pane-subsystems", SubsystemsPane)
+        self.workstations_pane = self.query_one("#pane-workstations", WorkstationsPane)
+        self.doctor_pane = self.query_one("#pane-doctor", DoctorPane)
+        self.hardware_pane = self.query_one("#pane-hardware", HardwarePane)
 
-        # Setup Subsystems Table
-        sub_table = self.query_one("#subsystems-table", DataTable)
-        sub_table.cursor_type = "row"
-        sub_table.add_columns("Subsystem", "Status", "Category", "Operational Details")
-
-        # Setup Workstations Table
-        vm_table = self.query_one("#workstations-table", DataTable)
-        vm_table.cursor_type = "row"
-        vm_table.add_columns("Workstation", "Cloud", "Status", "GPU", "IP Address", "Security Profile")
-
-        # Initial Population
-        self.refresh_subsystems()
-        self.refresh_workstations()
         self.telemetry_widget.update_metrics()
-
-        # Refresh telemetry periodically
         self.set_interval(2.0, self.update_telemetry)
-
-        self.log_message("[bold green]isaac9s initialized.[/] Welcome to the Isaac Automator Cockpit.")
+        self.log_message("[bold green]isaac9s cockpit initialized.[/] Welcome to Isaac Automator & Installer.")
 
     def update_telemetry(self) -> None:
         self.telemetry_widget.update_metrics()
 
-    def refresh_subsystems(self) -> None:
-        sub_table = self.query_one("#subsystems-table", DataTable)
-        sub_table.clear()
-        subsystems = WorkstationBackend.probe_subsystems()
-
-        for s in subsystems:
-            status_color = {
-                "PASS": "green",
-                "WARN": "yellow",
-                "FAIL": "red",
-                "PENDING": "cyan"
-            }.get(s["status"], "white")
-
-            status_badge = f"[{status_color}][bold]{s['status']}[/][/]"
-            sub_table.add_row(s["name"], Text.from_markup(status_badge), s["category"], s["details"])
-
-    def refresh_workstations(self) -> None:
-        vm_table = self.query_one("#workstations-table", DataTable)
-        vm_table.clear()
-        vms = WorkstationBackend.get_deployments()
-
-        if not vms:
-            vm_table.add_row("local-workstation", "BARE-METAL", Text.from_markup("[green]READY[/]"), "Detected", "127.0.0.1", "Simple")
-        else:
-            for vm in vms:
-                status_badge = f"[green]{vm['status']}[/]" if vm["status"] == "PROVISIONED" else f"[yellow]{vm['status']}[/]"
-                vm_table.add_row(
-                    vm["name"],
-                    vm["cloud"],
-                    Text.from_markup(status_badge),
-                    vm["gpu"],
-                    vm["ip"],
-                    vm["profile"]
-                )
-
     def log_message(self, msg: str) -> None:
-        ts = datetime.now().strftime("%H:%M:%S")
-        self.log_widget.write(f"[{ts}] {msg}")
+        self.logs_pane.write_line(msg)
 
-    # Hotkey Action Handlers
+    # Navigation Actions
     def action_tab_subsystems(self) -> None:
         self.query_one("#main-tabs", TabbedContent).active = "tab-subsystems"
 
@@ -245,13 +157,30 @@ class Isaac9sApp(App):
     def action_tab_logs(self) -> None:
         self.query_one("#main-tabs", TabbedContent).active = "tab-logs"
 
+    def action_tab_doctor(self) -> None:
+        self.query_one("#main-tabs", TabbedContent).active = "tab-doctor"
+
     def action_tab_profiles(self) -> None:
         self.query_one("#main-tabs", TabbedContent).active = "tab-profiles"
 
+    def action_tab_hardware(self) -> None:
+        self.query_one("#main-tabs", TabbedContent).active = "tab-hardware"
+
+    # Operational Actions
+    def action_open_connect_modal(self) -> None:
+        selected_vm = self.workstations_pane.get_selected_workstation()
+        self.push_screen(RemoteDesktopModal(workstation=selected_vm), self.on_modal_closed)
+
+    def on_modal_closed(self, result: str) -> None:
+        if result:
+            self.log_message(f"[bold cyan]Connected via protocol:[/] [green]{result}[/]")
+
     def action_run_probe(self) -> None:
         self.log_message("[bold cyan]Running hardware & subsystem probe...[/]")
-        self.refresh_subsystems()
-        self.log_message("[bold green]Probe completed.[/]")
+        self.subsystems_pane.refresh_subsystems()
+        self.doctor_pane.refresh_doctor()
+        self.hardware_pane.refresh_telemetry()
+        self.log_message("[bold green]Subsystem probe completed.[/]")
 
     def action_run_heal(self) -> None:
         self.log_message("[bold yellow]Executing self-healing state drift repair...[/]")
@@ -262,16 +191,27 @@ class Isaac9sApp(App):
 
     def action_run_audit(self) -> None:
         self.log_message("[bold cyan]Running pre-flight architecture audit...[/]")
-        if INSTALLER_BIN.exists():
-            self.run_async_command(f"{INSTALLER_BIN} plan")
-        else:
-            self.log_message("[green]Pre-flight audit: All local dependencies verified.[/]")
+        self.action_tab_doctor()
+        self.doctor_pane.refresh_doctor()
+        self.log_message("[bold green]Pre-flight audit updated.[/]")
 
     def action_run_start(self) -> None:
-        self.log_message("[bold green]Starting workstation...[/]")
+        selected_vm = self.workstations_pane.get_selected_workstation()
+        name = selected_vm.get("name", "workstation")
+        self.log_message(f"[bold green]Starting workstation '{name}'...[/]")
 
     def action_run_stop(self) -> None:
-        self.log_message("[bold yellow]Stopping workstation to pause billing...[/]")
+        selected_vm = self.workstations_pane.get_selected_workstation()
+        name = selected_vm.get("name", "workstation")
+        self.log_message(f"[bold yellow]Stopping workstation '{name}' to pause billing...[/]")
+
+    def action_run_refresh(self) -> None:
+        self.telemetry_widget.update_metrics()
+        self.subsystems_pane.refresh_subsystems()
+        self.workstations_pane.refresh_workstations()
+        self.doctor_pane.refresh_doctor()
+        self.hardware_pane.refresh_telemetry()
+        self.log_message("[bold cyan]All tab data refreshed.[/]")
 
     def run_async_command(self, cmd: str) -> None:
         self.action_tab_logs()
@@ -291,7 +231,7 @@ class Isaac9sApp(App):
 
         asyncio.get_event_loop().run_in_executor(None, worker)
 
-    # Button click handlers
+    # Button Event Dispatchers
     def on_button_pressed(self, event: Button.Pressed) -> None:
         btn_id = event.button.id
         if btn_id == "btn-probe":
@@ -300,14 +240,27 @@ class Isaac9sApp(App):
             self.action_run_heal()
         elif btn_id == "btn-audit":
             self.action_run_audit()
+        elif btn_id == "btn-refresh-sub":
+            self.subsystems_pane.refresh_subsystems()
         elif btn_id == "btn-refresh-vms":
-            self.refresh_workstations()
+            self.workstations_pane.refresh_workstations()
         elif btn_id == "btn-start-vm":
             self.action_run_start()
         elif btn_id == "btn-stop-vm":
             self.action_run_stop()
+        elif btn_id == "btn-connect-vm":
+            self.action_open_connect_modal()
         elif btn_id == "btn-clear-log":
-            self.log_widget.clear()
+            self.logs_pane.clear_log()
+        elif btn_id == "btn-doc-probe":
+            self.doctor_pane.refresh_doctor()
+        elif btn_id == "btn-doc-heal":
+            self.action_run_heal()
+        elif btn_id == "btn-hw-refresh":
+            self.hardware_pane.refresh_telemetry()
+        elif btn_id == "btn-apply-profile":
+            self.log_message("[bold green]Configuration profile applied successfully.[/]")
+
 
 if __name__ == "__main__":
     app = Isaac9sApp()

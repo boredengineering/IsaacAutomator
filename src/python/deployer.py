@@ -58,6 +58,9 @@ class Deployer:
         # resolve --remote-desktop: validate providers
         self.resolve_remote_desktop()
 
+        # resolve --security-profile: simple / team / enterprise
+        self.resolve_security_profile()
+
         # create state directory if it doesn't exist
         os.makedirs(self.config["state_dir"], exist_ok=True)
 
@@ -177,6 +180,36 @@ class Deployer:
         self.params["remote_desktop"] = (
             ",".join(dict.fromkeys(selected)) if selected else "standard"
         )
+
+    def resolve_security_profile(self):
+        """
+        Resolves security profile with beginner-friendly defaults and user choice.
+        Valid profiles: 'simple', 'team', 'enterprise'.
+        """
+        if self.params.get("simple"):
+            profile = "simple"
+        else:
+            profile = self.params.get("profile") or self.params.get("security_profile")
+
+        if not profile:
+            profile = self.config.get("default_security_profile", "simple")
+
+        valid_profiles = ["simple", "team", "enterprise"]
+        if profile not in valid_profiles:
+            click.echo(
+                colorize_error(
+                    f"* Unknown security profile '{profile}'. "
+                    f"Valid profiles: {', '.join(valid_profiles)}."
+                ),
+                err=True,
+            )
+            sys.exit(1)
+
+        self.params["security_profile"] = profile
+        self.params["profile"] = profile
+
+        if self.params.get("debug"):
+            click.echo(colorize_info(f"* Selected security profile: '{profile}'"))
 
     def __del__(self):
         # update meta info
@@ -351,6 +384,21 @@ class Deployer:
         # remove duplicates
         ingress_cidrs_actual = list(set(ingress_cidrs_actual))
 
+        # Simple Mode IP Lockdown:
+        # In simple mode, lock ingress strictly to caller IP if default (0.0.0.0/0, auto, empty)
+        # to guarantee zero open-port internet exposure for beginners.
+        if self.params.get("security_profile") == "simple":
+            raw_cidrs = str(self.params.get("ingress_cidrs", "")).strip().lower()
+            if raw_cidrs in ("", "auto", "myip", "0.0.0.0/0", "none"):
+                my_ip = get_my_public_ip(verbose=debug)
+                ingress_cidrs_actual = [f"{my_ip}/32"]
+                if debug:
+                    click.echo(
+                        colorize_info(
+                            f"* Simple Mode: Ingress firewall locked strictly to caller IP ({my_ip}/32)."
+                        )
+                    )
+
         # default values common for all clouds
         tfvars.update(
             {
@@ -372,6 +420,7 @@ class Deployer:
                 "deployment_name": self.params["deployment_name"],
                 "ingress_cidrs": ingress_cidrs_actual,
                 "os_username": self.config["default_ssh_user"],
+                "security_profile": self.params.get("security_profile", "simple"),
             }
         )
 

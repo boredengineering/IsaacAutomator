@@ -90,8 +90,14 @@ c["isaacsim_git_repo"] = "https://github.com/isaac-sim/IsaacSim.git"
 c["isaaclab_git_repo"] = "https://github.com/isaac-sim/IsaacLab.git"
 c["isaaclab_arena_git_repo"] = "https://github.com/isaac-sim/IsaacLab-Arena.git"
 
+# --profile / --security-profile
+# Security tier: "simple" ($0 added cost, auto-locked /32 IP firewall),
+# "team" (<$0.10/mo, remote state with locking), or
+# "enterprise" (KMS CMEK, secret manager, zero-trust private access).
+c["default_security_profile"] = "simple"
+
 # --ingress-cidrs
-# empty value will be replaced with the current public IP
+# empty or auto value will be replaced with the current public IP
 c["default_ingress_cidrs"] = "0.0.0.0/0"
 
 # --demos

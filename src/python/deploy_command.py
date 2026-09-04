@@ -421,6 +421,33 @@ class DeployCommand(click.core.Command):
             ),
         )
 
+        # --profile / --security-profile
+        help = (
+            'Security & deployment profile. Valid values: "simple" ($0 added cost, auto-locked /32 IP firewall), '
+            + '"team" (<$0.10 added cost, remote state with locking), or '
+            + '"enterprise" (KMS CMEK, secret manager, zero-trust private access)'
+        )
+        self.params.insert(
+            len(self.params),
+            click.core.Option(
+                ("--profile", "--security-profile"),
+                type=click.Choice(["simple", "team", "enterprise"]),
+                default=config.get("default_security_profile", "simple"),
+                show_default=True,
+                help=help + ".",
+            ),
+        )
+
+        self.params.insert(
+            len(self.params),
+            click.core.Option(
+                ("--simple",),
+                is_flag=True,
+                default=False,
+                help="Shorthand for --profile simple (beginner-friendly, $0 added cost).",
+            ),
+        )
+
         self.params.insert(
             len(self.params),
             click.core.Option(

@@ -64,3 +64,9 @@ variable "use_flex_start" {
   default     = false
 }
 
+variable "security_profile" {
+  description = "Security profile tier: simple, team, or enterprise"
+  type        = string
+  default     = "simple"
+}
+

@@ -69,3 +69,9 @@ variable "ami_id" {
 variable "ingress_cidrs" {
   type = list(string)
 }
+
+variable "security_profile" {
+  description = "Security profile tier: simple, team, or enterprise"
+  type        = string
+  default     = "simple"
+}

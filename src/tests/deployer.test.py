@@ -225,5 +225,40 @@ class Test_ResolveDemos(unittest.TestCase):
         )
 
 
+class Test_SecurityProfile(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def test_default_profile_is_simple(self):
+        deployer = _make_deployer(state_dir=self.tmp)
+        self.assertEqual(deployer.params["security_profile"], "simple")
+        self.assertEqual(deployer.params["profile"], "simple")
+
+    def test_simple_flag_sets_simple_profile(self):
+        deployer = _make_deployer(state_dir=self.tmp, extra={"simple": True, "profile": "enterprise"})
+        self.assertEqual(deployer.params["security_profile"], "simple")
+
+    def test_team_and_enterprise_profiles(self):
+        deployer_team = _make_deployer(state_dir=self.tmp, extra={"profile": "team"})
+        self.assertEqual(deployer_team.params["security_profile"], "team")
+
+        deployer_ent = _make_deployer(state_dir=self.tmp, extra={"profile": "enterprise"})
+        self.assertEqual(deployer_ent.params["security_profile"], "enterprise")
+
+    def test_unknown_profile_exits(self):
+        with self.assertRaises(SystemExit):
+            _make_deployer(state_dir=self.tmp, extra={"profile": "invalid-profile"})
+
+    def test_simple_mode_tfvars_contains_security_profile(self):
+        deployer = _make_deployer(state_dir=self.tmp, extra={"profile": "simple"})
+        tfvars = {}
+        deployer.create_tfvars(tfvars=tfvars)
+        self.assertEqual(tfvars.get("security_profile"), "simple")
+
+
 if __name__ == "__main__":
     unittest.main()
+

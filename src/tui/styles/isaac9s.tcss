@@ -1,0 +1,104 @@
+/* isaac9s master stylesheet */
+
+Screen {
+    background: #0f141c;
+    color: #e6edf3;
+}
+
+Header {
+    background: #161b22;
+    color: #58a6ff;
+    dock: top;
+    height: 1;
+}
+
+#telemetry-bar {
+    height: 1;
+    background: #161b22;
+    border-bottom: solid #30363d;
+    padding: 0 1;
+    color: #8b949e;
+}
+
+DataTable {
+    background: #0d1117;
+    color: #c9d1d9;
+    height: 1fr;
+    border: none;
+}
+
+DataTable > .datatable--header {
+    background: #21262d;
+    color: #58a6ff;
+    text-style: bold;
+}
+
+DataTable > .datatable--cursor {
+    background: #1f6feb;
+    color: #ffffff;
+    text-style: bold;
+}
+
+RichLog {
+    background: #05070a;
+    color: #7ee787;
+    border: solid #30363d;
+    height: 1fr;
+    padding: 0 1;
+}
+
+.action-bar {
+    height: 3;
+    padding: 0 1;
+    background: #161b22;
+    border-bottom: solid #30363d;
+}
+
+Button {
+    margin-right: 1;
+}
+
+Footer {
+    background: #161b22;
+    color: #8b949e;
+    dock: bottom;
+    height: 1;
+}
+
+/* Modal styles */
+RemoteDesktopModal {
+    align: center middle;
+}
+
+#dialog {
+    padding: 1 2;
+    width: 84;
+    height: auto;
+    border: thick #58a6ff;
+    background: #161b22;
+}
+
+#dialog-title {
+    text-style: bold;
+    color: #58a6ff;
+    margin-bottom: 1;
+}
+
+#dialog-info {
+    color: #8b949e;
+    margin-bottom: 1;
+}
+
+.modal-btn-bar {
+    margin-top: 1;
+    height: 3;
+    align: right middle;
+}
+
+/* Panels */
+.box-panel {
+    border: solid #30363d;
+    background: #161b22;
+    padding: 1;
+    margin: 1;
+}

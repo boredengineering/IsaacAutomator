@@ -31,3 +31,15 @@ variable "os_username" {
   type    = string
   default = "ubuntu"
 }
+
+variable "security_profile" {
+  description = "Security profile tier: simple, team, or enterprise"
+  type        = string
+  default     = "simple"
+}
+
+variable "ingress_cidrs" {
+  description = "CIDR blocks for ingress traffic"
+  type        = list(string)
+  default     = ["0.0.0.0/0"]
+}

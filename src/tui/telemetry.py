@@ -24,6 +24,7 @@ class SystemTelemetry:
             "mem_percent": mem.percent,
             "disk_percent": disk.percent,
             "disk_total_gb": round(disk.total / (1024 ** 3), 1),
+            "disk_used_gb": round(disk.used / (1024 ** 3), 1),
             "disk_free_gb": round(disk.free / (1024 ** 3), 1),
             "gpus": gpu_info
         }

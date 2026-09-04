@@ -289,5 +289,19 @@ class Test_RemoteDesktopCallback(unittest.TestCase):
             DeployCommand.remote_desktop_callback(None, None, "invalid-provider")
 
 
+class Test_SecurityProfileOptions(unittest.TestCase):
+    def test_options_present(self):
+        cmd = DeployCommand("test-cloud")
+        param_names = [opt.name for opt in cmd.params]
+        self.assertIn("profile", param_names)
+        self.assertIn("simple", param_names)
+
+    def test_default_profile_value(self):
+        cmd = DeployCommand("test-cloud")
+        profile_opt = next(opt for opt in cmd.params if opt.name == "profile")
+        self.assertEqual(profile_opt.default, "simple")
+
+
 if __name__ == "__main__":
     unittest.main()
+
