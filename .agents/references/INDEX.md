@@ -25,4 +25,5 @@ Catalog of high-level project specifications, architecture documents, and goal d
 | [`agentic_env_generation/agentic_env_generation.md`](./agentic_env_generation/agentic_env_generation.md) | Master guide for Agentic Environment Generation & Policy Evaluation in IsaacLab-Arena | Active Guide |
 | [`agentic_env_generation/agentic_env_gen_plan.md`](./agentic_env_generation/agentic_env_gen_plan.md) | Master implementation plan for RDF-star, LPG & PROV-O semantic pipeline in IsaacLab-Arena | Active Plan |
 | [`gcp-plans/gcp-security-architecture.md`](./gcp-plans/gcp-security-architecture.md) | GCP Security Architecture: Cloud KMS CMEK, Secret Manager, GCS Remote State, IAP, Shielded VMs & OS Login | Active Plan |
+| [`gcp-plans/gcp-security-implementation-plan.md`](./gcp-plans/gcp-security-implementation-plan.md) | Step-by-step implementation plan for GCP security hardening, KMS, Secret Manager, GCS backend, and IAP | Active Plan |
 
