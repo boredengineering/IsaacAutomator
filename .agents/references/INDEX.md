@@ -28,4 +28,5 @@ Catalog of high-level project specifications, architecture documents, and goal d
 | [`gcp-plans/gcp-security-implementation-plan.md`](./gcp-plans/gcp-security-implementation-plan.md) | Step-by-step implementation plan for GCP security hardening, KMS, Secret Manager, GCS backend, and IAP | Active Plan |
 | [`gcp-plans/multi-cloud-security-tiering-plan.md`](./gcp-plans/multi-cloud-security-tiering-plan.md) | Multi-Cloud Tiered Security Plan: Progressive Architecture for AWS, GCP, Azure & Alibaba Cloud | Active Plan |
 | [`gcp-plans/beginner-friendly-security-plan.md`](./gcp-plans/beginner-friendly-security-plan.md) | Beginner-Friendly Simple Mode Security & User Choice Implementation Plan | Active Plan |
+| [`isaac-installer/isaac9s-tui-plan.md`](./isaac-installer/isaac9s-tui-plan.md) | isaac9s: k9s-Style Terminal User Interface for Isaac Automator & Installer | Active Tool & Plan |
 
