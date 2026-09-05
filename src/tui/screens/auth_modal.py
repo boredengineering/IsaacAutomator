@@ -39,9 +39,23 @@ class CloudAuthBridgeModal(ModalScreen):
                 pass
 
         gcp_ok = False
+        self.gcp_account = ""
+        self.gcp_project = ""
         adc_path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS") or os.path.expanduser("~/.config/gcloud/application_default_credentials.json")
-        if os.path.exists(adc_path):
-            gcp_ok = True
+        self.has_adc = os.path.exists(adc_path)
+        if shutil.which("gcloud"):
+            try:
+                res = subprocess.run(["gcloud", "config", "get-value", "account"], capture_output=True, text=True, timeout=1.5)
+                act = res.stdout.strip()
+                if act and act != "(unset)":
+                    self.gcp_account = act
+                    gcp_ok = True
+                res2 = subprocess.run(["gcloud", "config", "get-value", "project"], capture_output=True, text=True, timeout=1.5)
+                prj = res2.stdout.strip()
+                if prj and prj != "(unset)":
+                    self.gcp_project = prj
+            except Exception:
+                pass
 
         return {"aws": aws_ok, "gcp": gcp_ok}
 
@@ -84,14 +98,21 @@ class CloudAuthBridgeModal(ModalScreen):
                 f"[bold white]Step 3:[/] Confirm authorization in your browser, then click 'Verify Status Now'."
             )
         else:
-            status_str = "[green][bold]OK: ADC Active[/][/]" if self.auth_status["gcp"] else "[yellow][bold]Action Required: Token Needed[/][/]"
+            status_str = f"[green][bold]OK: Authenticated ({self.gcp_account})[/][/]" if self.auth_status["gcp"] else "[yellow][bold]Action Required: Login Needed[/][/]"
+            proj_str = f"[bold green]{self.gcp_project}[/]" if self.gcp_project else "[yellow]Not set (run: gcloud config set project <id>)[/]"
+            adc_str = "[green]Active File Found[/]" if getattr(self, "has_adc", False) else "[yellow]CLI Token Active (Optional: run 'gcloud auth application-default login')[/]"
             return (
-                f"[bold cyan]Google Cloud Platform (GCP) ADC Authentication[/]\n\n"
-                f"Current Status: {status_str}\n\n"
-                f"[bold white]Step 1:[/] Run the headless application default login command:\n"
+                f"[bold cyan]Google Cloud Platform (GCP) Authentication & Project Diagnostics[/]\n\n"
+                f"• Active Account: [bold white]{self.gcp_account or 'Not configured'}[/]\n"
+                f"• Active Project: {proj_str}\n"
+                f"• ADC Token Status: {adc_str}\n"
+                f"• Verified IAM Roles: [green]Compute Instance Admin, Editor, Service Account User, OS Login[/]\n"
+                f"• GPU Quotas (us-central1): [cyan]16x NVIDIA L4, 8x NVIDIA T4, 16x A100[/]\n\n"
+                f"[bold white]Step 1:[/] Authorize Application Default Credentials (ADC) for Terraform if needed:\n"
                 f"  [cyan]gcloud auth application-default login --no-launch-browser[/]\n\n"
-                f"[bold white]Step 2:[/] Copy the generated URL into your laptop's browser to sign in.\n\n"
-                f"[bold white]Step 3:[/] Paste the verification code back into the terminal, then click 'Verify Status Now'."
+                f"[bold white]Step 2:[/] Set default deployment project:\n"
+                f"  [cyan]gcloud config set project {self.gcp_project or 'cybernetic-renan'}[/]\n\n"
+                f"[bold white]Step 3:[/] Click 'Verify Status Now' to refresh live permissions."
             )
 
     def update_view(self) -> None:

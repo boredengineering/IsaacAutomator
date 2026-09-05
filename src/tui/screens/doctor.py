@@ -190,23 +190,24 @@ class DoctorPane(Vertical):
         if has_gcloud:
             gcp_status_desc = "Unauthenticated"
             adc_file = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS") or os.path.expanduser("~/.config/gcloud/application_default_credentials.json")
-            if os.path.exists(adc_file):
-                gcp_auth = True
-                gcp_status_desc = "Active ADC Token"
-            else:
-                try:
-                    res = subprocess.run(["gcloud", "config", "get-value", "account"], capture_output=True, text=True, timeout=1.5)
-                    act = res.stdout.strip()
-                    if act and act != "(unset)":
-                        gcp_status_desc = f"{act} (ADC Missing)"
-                except Exception:
-                    pass
+            has_adc = os.path.exists(adc_file)
+            try:
+                res = subprocess.run(["gcloud", "config", "get-value", "account"], capture_output=True, text=True, timeout=1.5)
+                act = res.stdout.strip()
+                res_p = subprocess.run(["gcloud", "config", "get-value", "project"], capture_output=True, text=True, timeout=1.5)
+                prj = res_p.stdout.strip()
+                if act and act != "(unset)":
+                    gcp_auth = True
+                    proj_info = f" [{prj}]" if prj and prj != "(unset)" else ""
+                    gcp_status_desc = f"{act}{proj_info}"
+            except Exception:
+                pass
         checks.append({
             "name": "GCP Cloud Auth",
             "installed": gcp_status_desc,
-            "target": "Application Default Credentials",
+            "target": "Active Account & Project",
             "status": "PASS" if gcp_auth else "WARN",
-            "remediation": "None required" if gcp_auth else "Run 'gcloud auth application-default login --no-launch-browser'"
+            "remediation": "None required" if gcp_auth else "Run 'gcloud auth login' or 'gcloud auth application-default login'"
         })
 
         # Calculate Score
