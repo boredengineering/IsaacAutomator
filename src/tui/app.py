@@ -341,6 +341,7 @@ class Isaac9sApp(App):
         gpu = result.get("gpu", "")
         zone = result.get("zone", "")
         spot = result.get("spot", False)
+        flex_start = result.get("flex_start", False)
         profile = result.get("profile", "simple")
         demos = result.get("demos", [])
         dry_run = result.get("dry_run", False)
@@ -352,7 +353,9 @@ class Isaac9sApp(App):
                 cmd += f" --zone {zone}"
             elif cloud in ("aws", "alicloud"):
                 cmd += f" --region {zone}"
-        if spot:
+        if flex_start and cloud == "gcp":
+            cmd += " --flex-start"
+        elif spot:
             if cloud == "gcp":
                 cmd += " --spot --auto-restore"
         if dry_run:
@@ -362,12 +365,18 @@ class Isaac9sApp(App):
         else:
             cmd += " --demos no"
 
-        spot_desc = " [SPOT VM]" if spot else ""
+        if flex_start:
+            sched_desc = " [FLEX-START DWS]"
+        elif spot:
+            sched_desc = " [SPOT VM]"
+        else:
+            sched_desc = ""
+
         if dry_run:
-            self.log_message(f"[bold yellow]Dispatching pre-flight DRY-RUN validation for '{name}'{spot_desc} on {cloud.upper()}...[/]")
+            self.log_message(f"[bold yellow]Dispatching pre-flight DRY-RUN validation for '{name}'{sched_desc} on {cloud.upper()}...[/]")
             self.log_message(f"[yellow]Target: {gpu} | Zone: {zone or 'default'} | Testing Terraform HCL & Ansible syntax without billing.[/]")
         else:
-            self.log_message(f"[bold green]Dispatching cloud deployment for '{name}'{spot_desc} on {cloud.upper()}...[/]")
+            self.log_message(f"[bold green]Dispatching cloud deployment for '{name}'{sched_desc} on {cloud.upper()}...[/]")
             self.log_message(f"[cyan]Selected Profile: {profile.capitalize()} | GPU: {gpu} | Zone: {zone}[/]")
         self.run_async_command(cmd)
 

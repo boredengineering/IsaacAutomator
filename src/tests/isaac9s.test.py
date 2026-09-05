@@ -97,11 +97,22 @@ class Test_Isaac9sApp(unittest.IsolatedAsyncioTestCase):
             # Dismiss modal
             await pilot.press("escape")
             await pilot.pause()
-            # 6. Test Deploy Modal Trigger & Dismiss
+            # 6. Test Deploy Modal Trigger, Flex-start selection & Dismiss with 'q'
             await pilot.press("n")
             await pilot.pause()
             self.assertIsInstance(app.screen, DeployWorkstationModal)
-            await pilot.press("escape")
+            deploy_modal = app.screen
+            self.assertEqual(deploy_modal.scheduling_model, "standard")
+
+            # Select Flex-start option
+            rb_flex = deploy_modal.query_one("#rb-sched-flex")
+            rb_flex.value = True
+            await pilot.pause()
+            self.assertEqual(deploy_modal.scheduling_model, "flex")
+            self.assertTrue(deploy_modal.use_flex_start)
+            self.assertIn("Flex-start Active", deploy_modal.build_summary_text())
+
+            await pilot.press("q")
             await pilot.pause()
             self.assertNotIsInstance(app.screen, DeployWorkstationModal)
 

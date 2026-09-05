@@ -61,7 +61,9 @@ class DeployWorkstationModal(ModalScreen):
         self.selected_profile = "simple"
         self.selected_gpu = "g2-standard-8"
         self.selected_zone = "us-central1-a"
+        self.scheduling_model = "standard"
         self.use_spot = False
+        self.use_flex_start = False
 
     @staticmethod
     def get_zones_for_selection(cloud: str, gpu: str) -> list[tuple[str, str]]:
@@ -93,7 +95,8 @@ class DeployWorkstationModal(ModalScreen):
                 ]
             elif gpu.startswith("g4-"):
                 return [
-                    ("us-central1-a (Iowa - RTX Pro 6000) [Recommended]", "us-central1-a"),
+                    ("us-central1-b (Iowa - RTX Pro 6000 - Flex-start Verified) [Recommended]", "us-central1-b"),
+                    ("us-central1-a (Iowa - RTX Pro 6000)", "us-central1-a"),
                     ("us-east4-a (N. Virginia - RTX Pro 6000)", "us-east4-a"),
                 ]
             return [("us-central1-a (Iowa - Default)", "us-central1-a")]
@@ -148,12 +151,11 @@ class DeployWorkstationModal(ModalScreen):
                     allow_blank=False,
                 )
 
-                yield Label("[bold white]5. Cost Optimization & Spot Resilience:[/]")
-                yield Checkbox(
-                    "Deploy as Spot / Preemptible VM (60-91% discount, auto-backup & preemption watchdog)",
-                    value=False,
-                    id="cb-deploy-spot",
-                )
+                yield Label("[bold white]5. Provisioning & Cost Optimization Model:[/]")
+                with RadioSet(id="deploy-scheduling-model"):
+                    yield RadioButton("Standard On-Demand (Immediate launch, standard billing)", value=True, id="rb-sched-standard")
+                    yield RadioButton("GCP Flex-start (Dynamic Workload Scheduler, 7-day queued run, ./cycle-vm)", id="rb-sched-flex")
+                    yield RadioButton("Spot / Preemptible VM (60-91% discount, auto-backup & 30s watchdog)", id="rb-sched-spot")
 
                 yield Label("[bold white]6. Multi-Cloud Security Profile:[/]")
                 with RadioSet(id="deploy-profile-select"):
@@ -183,11 +185,20 @@ class DeployWorkstationModal(ModalScreen):
                 yield Button("Cancel [Esc / q]", id="btn-deploy-cancel", variant="error")
 
     def build_summary_text(self) -> str:
-        spot_badge = "[bold green]Spot Discount Active (~60-75% off compute)[/]" if self.use_spot else "[dim]Standard On-Demand Compute[/]"
-        resilience_str = (
-            "\n[bold green]Spot Resilience Pipeline:[/] Active 30s metadata watchdog (`preempt-listener`) & 10-min GCS backups enabled."
-            if self.use_spot and self.selected_cloud == "gcp" else ""
-        )
+        if self.scheduling_model == "flex":
+            sched_badge = "[bold yellow]GCP Flex-start Active (Dynamic Workload Scheduler)[/]"
+            resilience_str = (
+                "\n[bold yellow]DWS Scheduling:[/] Queued allocation (up to 60m timeout) & 7-day max duration (managed via `./cycle-vm`)."
+            )
+        elif self.scheduling_model == "spot":
+            sched_badge = "[bold green]Spot Discount Active (~60-75% off compute)[/]"
+            resilience_str = (
+                "\n[bold green]Spot Resilience Pipeline:[/] Active 30s metadata watchdog (`preempt-listener`) & 10-min GCS backups enabled."
+                if self.selected_cloud == "gcp" else ""
+            )
+        else:
+            sched_badge = "[dim]Standard On-Demand Compute[/]"
+            resilience_str = ""
 
         prof_desc = "Simple Mode ($0.00/mo added infrastructure). Dynamic /32 IP lock."
         if self.selected_profile == "team":
@@ -202,7 +213,7 @@ class DeployWorkstationModal(ModalScreen):
         return (
             f"[bold cyan]Deployment Preview ({self.selected_cloud.upper()}):[/]\n"
             f"• Instance & GPU: [bold white]{self.selected_gpu}[/] | Zone: [cyan]{self.selected_zone}[/]\n"
-            f"• Compute Tier: {spot_badge}{resilience_str}\n"
+            f"• Provisioning Model: {sched_badge}{resilience_str}\n"
             f"• Security & Storage: [white]{prof_desc}[/]"
         )
 
@@ -210,6 +221,19 @@ class DeployWorkstationModal(ModalScreen):
         try:
             summary = self.query_one("#deploy-summary", Static)
             summary.update(self.build_summary_text())
+        except Exception:
+            pass
+
+    def update_scheduling_visibility(self) -> None:
+        try:
+            rb_flex = self.query_one("#rb-sched-flex", RadioButton)
+            is_gcp = (self.selected_cloud == "gcp")
+            rb_flex.display = is_gcp
+            if not is_gcp and self.scheduling_model == "flex":
+                self.scheduling_model = "standard"
+                self.use_flex_start = False
+                rb_flex.value = False
+                self.query_one("#rb-sched-standard", RadioButton).value = True
         except Exception:
             pass
 
@@ -236,6 +260,18 @@ class DeployWorkstationModal(ModalScreen):
                 zone_select.value = self.selected_zone
             except Exception:
                 pass
+            self.update_scheduling_visibility()
+            self.update_summary()
+
+        elif event.radio_set.id == "deploy-scheduling-model":
+            sched_map = {
+                "rb-sched-standard": "standard",
+                "rb-sched-flex": "flex",
+                "rb-sched-spot": "spot",
+            }
+            self.scheduling_model = sched_map.get(event.pressed.id, "standard")
+            self.use_spot = (self.scheduling_model == "spot")
+            self.use_flex_start = (self.scheduling_model == "flex")
             self.update_summary()
 
         elif event.radio_set.id == "deploy-profile-select":
@@ -269,11 +305,6 @@ class DeployWorkstationModal(ModalScreen):
             self.selected_zone = str(event.value)
             self.update_summary()
 
-    def on_checkbox_changed(self, event: Checkbox.Changed) -> None:
-        if event.checkbox.id == "cb-deploy-spot":
-            self.use_spot = bool(event.value)
-            self.update_summary()
-
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "btn-deploy-cancel":
             self.dismiss(None)
@@ -299,7 +330,8 @@ class DeployWorkstationModal(ModalScreen):
             "cloud": self.selected_cloud,
             "gpu": self.selected_gpu,
             "zone": self.selected_zone,
-            "spot": self.use_spot,
+            "spot": (self.scheduling_model == "spot"),
+            "flex_start": (self.scheduling_model == "flex"),
             "profile": self.selected_profile,
             "demos": demos,
             "dry_run": dry_run,
