@@ -612,6 +612,35 @@ class Deployer:
             verbose=debug,
         )
 
+    def plan_terraform(self, cwd: str):
+        """
+        Validate Terraform configuration and generate speculative plan without applying.
+        """
+        debug = self.params.get("debug", False)
+        deployment_name = self.params["deployment_name"]
+
+        click.echo(colorize_info("* Running `terraform validate`..."))
+        shell_command("terraform validate -no-color", cwd=cwd, verbose=debug)
+
+        click.echo(colorize_info("* Running `terraform plan` (speculative dry-run)..."))
+        shell_command(
+            "terraform plan -no-color "
+            + f"-var-file={self.config['state_dir']}/{deployment_name}/.tfvars",
+            cwd=cwd,
+            verbose=True,
+        )
+
+    def validate_ansible(self, playbook_name: str = "isaac-workstation"):
+        """
+        Validate Ansible playbook syntax without running tasks.
+        """
+        click.echo(colorize_info(f"* Validating Ansible playbook syntax ({playbook_name}.yaml)..."))
+        shell_command(
+            f"ansible-playbook --syntax-check {playbook_name}.yaml",
+            cwd=f"{self.config['ansible_dir']}",
+            verbose=self.params.get("debug", False),
+        )
+
     def export_ssh_key(self):
         """
         Export SSH key from Terraform state

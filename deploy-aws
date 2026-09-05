@@ -241,6 +241,19 @@ class AWSDeployer(Deployer):
                 }
             )
 
+            if self.params.get("dry_run", False):
+                click.echo(colorize_info("\n" + "=" * 70))
+                click.echo(colorize_info("* [DRY-RUN] Validating Terraform and Ansible configuration..."))
+                click.echo(colorize_info("=" * 70 + "\n"))
+                self.initialize_terraform(cwd=f"{config['terraform_dir']}/aws")
+                self.plan_terraform(cwd=f"{config['terraform_dir']}/aws")
+                self.validate_ansible()
+                click.echo(colorize_info("\n" + "=" * 70))
+                click.echo(colorize_info("* [DRY-RUN] SUCCESS: Terraform plan and Ansible syntax checks passed!"))
+                click.echo(colorize_info("* No cloud resources were provisioned and no costs were incurred."))
+                click.echo(colorize_info("=" * 70 + "\n"))
+                return
+
             # run terraform
             click.echo(colorize_info("* Running Terraform..."))
             self.initialize_terraform(cwd=f"{config['terraform_dir']}/aws")

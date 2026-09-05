@@ -4,6 +4,7 @@ import os
 import shutil
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 from src.python.config import c
@@ -298,6 +299,20 @@ security:
         deployer = _make_deployer(state_dir=self.tmp, extra={"profile": "team-studio"})
         self.assertEqual(deployer.params["security_profile"], "team")
         self.assertEqual(deployer.params["state_bucket"], "auto")
+
+    @mock.patch("src.python.deployer.shell_command")
+    def test_dry_run_plan_and_validate(self, mock_shell):
+        deployer = _make_deployer(state_dir=self.tmp, extra={"dry_run": True})
+        deployer.plan_terraform(cwd="/fake/tf/gcp")
+        self.assertEqual(mock_shell.call_count, 2)
+        val_call, plan_call = mock_shell.call_args_list
+        self.assertIn("terraform validate", val_call[0][0])
+        self.assertIn("terraform plan", plan_call[0][0])
+
+        mock_shell.reset_mock()
+        deployer.validate_ansible()
+        self.assertEqual(mock_shell.call_count, 1)
+        self.assertIn("ansible-playbook --syntax-check", mock_shell.call_args_list[0][0][0])
 
 
 if __name__ == "__main__":

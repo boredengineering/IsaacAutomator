@@ -74,6 +74,7 @@ class DeployWorkstationModal(ModalScreen):
                 )
 
             with Horizontal(classes="modal-btn-bar"):
+                yield Button("Dry Run / Validate", id="btn-deploy-dryrun", variant="warning")
                 yield Button("Launch Deployment [Enter]", id="btn-deploy-launch", variant="success")
                 yield Button("Cancel (Esc)", id="btn-deploy-cancel", variant="error")
 
@@ -133,10 +134,12 @@ class DeployWorkstationModal(ModalScreen):
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "btn-deploy-cancel":
             self.dismiss(None)
+        elif event.button.id == "btn-deploy-dryrun":
+            self.submit_deployment(dry_run=True)
         elif event.button.id == "btn-deploy-launch":
-            self.submit_deployment()
+            self.submit_deployment(dry_run=False)
 
-    def submit_deployment(self) -> None:
+    def submit_deployment(self, dry_run: bool = False) -> None:
         name_input = self.query_one("#inp-deploy-name", Input)
         name = name_input.value.strip() or "isaac-ws-01"
         gpu = self.query_one("#sel-deploy-gpu", Select).value or "g5.2xlarge"
@@ -155,6 +158,7 @@ class DeployWorkstationModal(ModalScreen):
             "gpu": gpu,
             "profile": self.selected_profile,
             "demos": demos,
+            "dry_run": dry_run,
         }
         self.dismiss(result)
 

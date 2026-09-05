@@ -647,3 +647,15 @@ class DeployCommand(click.core.Command):
                 + f"instances (to \"{config['default_remote_uploads_dir']}\")?",
             ),
         )
+
+        # --dry-run/--no-dry-run
+        self.params.insert(
+            len(self.params),
+            click.core.Option(
+                ("--dry-run/--no-dry-run",),
+                prompt=False,
+                default=False,
+                show_default=True,
+                help="Validate Terraform plan and Ansible playbooks without provisioning resources or incurring billing.",
+            ),
+        )

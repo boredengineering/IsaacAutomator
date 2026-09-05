@@ -119,9 +119,9 @@ class Isaac9sApp(App):
                     yield Static(
                         "[bold cyan]isaac9s - Keyboard Shortcuts & Cockpit Reference[/]\n\n"
                         "  [bold white]1 - 6[/]: Switch dashboard screens\n"
-                        "  [bold white]:[/]: Open Vim / k9s command palette (:sub, :ws, :deploy, :q)\n"
+                        "  [bold white]:[/]: Open Vim / k9s command palette (:sub, :ws, :deploy, :copy, :q)\n"
                         "  [bold white]/[/]: Focus active search and log filter\n"
-                        "  [bold white]n[/]: Deploy new cloud workstation wizard\n"
+                        "  [bold white]n[/]: Deploy new cloud workstation wizard (with Dry-Run Validation)\n"
                         "  [bold white]i[/]: Deep inspect highlighted workstation metadata & billing\n"
                         "  [bold white]?[/]: Open this Help reference\n"
                         "  [bold white]c[/]: Open Remote Desktop selector modal (noVNC, NoMachine, Sunshine, SSH)\n"
@@ -132,8 +132,15 @@ class Isaac9sApp(App):
                         "  [bold white]x[/]: Stop highlighted workstation (pauses billing)\n"
                         "  [bold white]r[/]: Refresh current tab metrics\n"
                         "  [bold white]q[/]: Exit isaac9s\n\n"
+                        "[bold cyan]Terminal Copy & AI Chat Assistance:[/]\n"
+                        "  • [bold yellow]Shift + Drag (or Option + Drag)[/]: Bypasses TUI mouse tracking so your terminal selects text natively for copy/pasting.\n"
+                        "  • [bold yellow]Copy All (AI Paste)[/]: Click in Tab [3] or type [cyan]:copy[/] to export stripped logs to OS clipboard & /tmp/isaac9s.log.\n\n"
+                        "[bold cyan]Speculative Dry-Run Validation:[/]\n"
+                        "  • Click [bold yellow]'Dry Run / Validate'[/] in the Deploy Wizard ([cyan]n[/]) or run with [cyan]--dry-run[/].\n"
+                        "  • Performs 'terraform validate', 'terraform plan', and 'ansible --syntax-check' without creating cloud resources or incurring costs.\n\n"
                         "[bold cyan]CLI Invocations:[/]\n"
                         "  ./isaac9s                   Launch interactive terminal cockpit\n"
+                        "  ./deploy-<cloud> --dry-run  Test Terraform & Ansible dry-run\n"
                         "  ./isaac-installer doctor    Pre-flight audit in terminal\n"
                         "  ./isaac-installer repair    Reconcile and heal drift\n\n"
                         "[bold cyan]Security Profiles:[/]\n"
@@ -323,13 +330,21 @@ class Isaac9sApp(App):
         profile = result.get("profile", "simple")
         demos = result.get("demos", [])
 
+        dry_run = result.get("dry_run", False)
+
         deploy_script = REPO_ROOT / f"deploy-{cloud}"
-        cmd = f"{deploy_script} {name} --profile {profile} --existing replace"
+        cmd = f"{deploy_script} {name} --instance-type {gpu} --profile {profile} --existing replace"
+        if dry_run:
+            cmd += " --dry-run"
         for demo in demos:
             cmd += f" --demo {demo}"
 
-        self.log_message(f"[bold green]Dispatching cloud deployment for '{name}' on {cloud.upper()}...[/]")
-        self.log_message(f"[cyan]Selected Profile: {profile.capitalize()} | Target GPU: {gpu}[/]")
+        if dry_run:
+            self.log_message(f"[bold yellow]Dispatching pre-flight DRY-RUN validation for '{name}' on {cloud.upper()}...[/]")
+            self.log_message("[yellow]Validating Terraform HCL, provider auth, and Ansible playbooks without provisioning resources or billing.[/]")
+        else:
+            self.log_message(f"[bold green]Dispatching cloud deployment for '{name}' on {cloud.upper()}...[/]")
+            self.log_message(f"[cyan]Selected Profile: {profile.capitalize()} | Target GPU: {gpu}[/]")
         self.run_async_command(cmd)
 
     def action_open_inspector_modal(self) -> None:
@@ -383,6 +398,10 @@ class Isaac9sApp(App):
             self.action_run_heal()
         elif cmd in ("refresh", "r"):
             self.action_run_refresh()
+        elif cmd in ("copy", "export", "copylogs"):
+            self.logs_pane.copy_logs()
+        elif cmd in ("validate", "dryrun", "plan"):
+            self.action_open_deploy_modal()
         elif cmd in ("q", "quit", "exit"):
             self.exit()
         elif cmd:
@@ -415,6 +434,8 @@ class Isaac9sApp(App):
             self.action_open_auth_modal()
         elif btn_id == "btn-clear-log":
             self.logs_pane.clear_log()
+        elif btn_id == "btn-copy-logs":
+            self.logs_pane.copy_logs()
         elif btn_id == "btn-doc-probe":
             self.doctor_pane.refresh_doctor()
         elif btn_id == "btn-doc-heal":
