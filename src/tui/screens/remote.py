@@ -14,6 +14,7 @@ class RemoteDesktopModal(ModalScreen):
 
     BINDINGS = [
         Binding("escape", "dismiss_modal", "Close", show=True),
+        Binding("q", "dismiss_modal", "Close", show=True),
         Binding("1", "select_novnc", "noVNC", show=False),
         Binding("2", "select_nomachine", "NoMachine", show=False),
         Binding("3", "select_sunshine", "Sunshine", show=False),
@@ -80,7 +81,7 @@ class RemoteDesktopModal(ModalScreen):
             with Horizontal(classes="modal-btn-bar"):
                 yield Button("Launch in Browser", id="btn-launch", variant="primary")
                 yield Button("Copy Endpoint", id="btn-copy", variant="default")
-                yield Button("Close (Esc)", id="btn-close", variant="error")
+                yield Button("Close [Esc / q]", id="btn-close", variant="error")
 
     def update_proto(self, proto: str) -> None:
         self.selected_proto = proto

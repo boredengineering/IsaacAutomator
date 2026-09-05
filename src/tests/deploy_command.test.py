@@ -302,6 +302,39 @@ class Test_SecurityProfileOptions(unittest.TestCase):
         self.assertEqual(profile_opt.default, "simple")
 
 
+class Test_DemosOption(unittest.TestCase):
+    def test_demos_options_present(self):
+        cmd = DeployCommand("test-cloud")
+        demos_opt = next(opt for opt in cmd.params if opt.name == "demos")
+        self.assertIn("--demos", demos_opt.opts)
+        self.assertIn("--demo", demos_opt.opts)
+        self.assertTrue(demos_opt.multiple)
+
+    def test_demos_callback(self):
+        # Empty or None
+        self.assertEqual(DeployCommand.demos_callback(None, None, None), "no")
+        self.assertEqual(DeployCommand.demos_callback(None, None, ()), "no")
+        self.assertEqual(DeployCommand.demos_callback(None, None, ("no",)), "no")
+
+        # Single demo flag
+        self.assertEqual(
+            DeployCommand.demos_callback(None, None, ("quadruped-locomotion",)),
+            "quadruped-locomotion",
+        )
+
+        # Comma-separated demo flag
+        self.assertEqual(
+            DeployCommand.demos_callback(None, None, ("quadruped-locomotion,humanoid-locomotion",)),
+            "quadruped-locomotion,humanoid-locomotion",
+        )
+
+        # Multiple demo flags
+        self.assertEqual(
+            DeployCommand.demos_callback(None, None, ("quadruped-locomotion", "humanoid-locomotion")),
+            "quadruped-locomotion,humanoid-locomotion",
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
 

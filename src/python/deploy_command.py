@@ -326,6 +326,25 @@ class DeployCommand(click.core.Command):
         dbg(f"ref '{value}' OK")
         return value
 
+    @staticmethod
+    def demos_callback(ctx, param, value):
+        """
+        Normalize --demos / --demo values into a comma-separated string,
+        supporting multiple flags (--demo A --demo B), comma lists (--demos A,B),
+        or 'no'.
+        """
+        if not value:
+            return "no"
+        if isinstance(value, (list, tuple)):
+            items = []
+            for v in value:
+                for item in str(v).split(","):
+                    item = item.strip()
+                    if item and item.lower() not in ("no", "none"):
+                        items.append(item)
+            return ",".join(items) if items else "no"
+        return str(value)
+
     def param_index(self, param_name):
         """
         Return index of parameter with given name.
@@ -548,7 +567,7 @@ class DeployCommand(click.core.Command):
             ),
         )
 
-        # --demos
+        # --demos / --demo
         demo_names = ", ".join(sorted(config["demos"].keys()))
         help = (
             'Out-of-the-box demos to install as desktop shortcuts. Valid values: "no", '
@@ -558,10 +577,12 @@ class DeployCommand(click.core.Command):
         self.params.insert(
             len(self.params),
             click.core.Option(
-                ("--demos",),
+                ("--demos", "--demo"),
                 help=help,
-                default=config["default_demos"],
+                default=[config["default_demos"]],
+                multiple=True,
                 show_default=True,
+                callback=DeployCommand.demos_callback,
             ),
         )
 

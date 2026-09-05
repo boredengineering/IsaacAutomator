@@ -94,7 +94,11 @@ class Deployer:
         if "demos" not in self.params:
             return
 
-        raw = str(self.params.get("demos") or "no").strip()
+        raw = self.params.get("demos")
+        if isinstance(raw, (list, tuple)):
+            raw = ",".join(str(x) for x in raw)
+        else:
+            raw = str(raw or "no").strip()
 
         # treat "no"/empty as no demos
         if raw.lower() in ("", "no", "none"):

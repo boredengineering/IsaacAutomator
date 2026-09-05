@@ -13,6 +13,7 @@ class DeployWorkstationModal(ModalScreen):
 
     BINDINGS = [
         Binding("escape", "dismiss_modal", "Close", show=True),
+        Binding("q", "dismiss_modal", "Close", show=True),
     ]
 
     CLOUD_GPUS = {
@@ -179,7 +180,7 @@ class DeployWorkstationModal(ModalScreen):
             with Horizontal(classes="modal-btn-bar"):
                 yield Button("Dry Run / Validate", id="btn-deploy-dryrun", variant="warning")
                 yield Button("Launch Deployment [Enter]", id="btn-deploy-launch", variant="success")
-                yield Button("Cancel (Esc)", id="btn-deploy-cancel", variant="error")
+                yield Button("Cancel [Esc / q]", id="btn-deploy-cancel", variant="error")
 
     def build_summary_text(self) -> str:
         spot_badge = "[bold green]Spot Discount Active (~60-75% off compute)[/]" if self.use_spot else "[dim]Standard On-Demand Compute[/]"

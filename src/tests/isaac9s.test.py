@@ -105,21 +105,22 @@ class Test_Isaac9sApp(unittest.IsolatedAsyncioTestCase):
             await pilot.pause()
             self.assertNotIsInstance(app.screen, DeployWorkstationModal)
 
-            # 7. Test Workstation Deep Inspector Trigger & Dismiss
+            # 7. Test Workstation Deep Inspector Trigger & Dismiss (with raw state / inline code and 'q')
             await pilot.press("i")
             await pilot.pause()
             self.assertIsInstance(app.screen, WorkstationInspectorModal)
             app.screen.toggle_state_view()
             self.assertTrue(app.screen.show_raw_state)
-            await pilot.press("escape")
+            # Verify 'q' closes inspector even when raw inline code is active
+            await pilot.press("q")
             await pilot.pause()
             self.assertNotIsInstance(app.screen, WorkstationInspectorModal)
 
-            # 8. Test Cloud Auth Bridge Modal Trigger & Dismiss
+            # 8. Test Cloud Auth Bridge Modal Trigger & Dismiss with 'q'
             await pilot.press("a")
             await pilot.pause()
             self.assertIsInstance(app.screen, CloudAuthBridgeModal)
-            await pilot.press("escape")
+            await pilot.press("q")
             await pilot.pause()
             self.assertNotIsInstance(app.screen, CloudAuthBridgeModal)
 

@@ -18,6 +18,7 @@ class WorkstationInspectorModal(ModalScreen):
 
     BINDINGS = [
         Binding("escape", "dismiss_modal", "Close", show=True),
+        Binding("q", "dismiss_modal", "Close", show=True),
         Binding("c", "connect_workstation", "Connect", show=True),
         Binding("s", "start_workstation", "Start", show=False),
         Binding("x", "stop_workstation", "Stop", show=False),
@@ -123,7 +124,7 @@ class WorkstationInspectorModal(ModalScreen):
             with Horizontal(classes="modal-btn-bar"):
                 yield Button("Connect [c]", id="btn-inspect-connect", variant="primary")
                 yield Button("Toggle Raw State [t]", id="btn-inspect-raw", variant="default")
-                yield Button("Close (Esc)", id="btn-inspect-close", variant="error")
+                yield Button("Close [Esc / q]", id="btn-inspect-close", variant="error")
 
     def toggle_state_view(self) -> None:
         self.show_raw_state = not self.show_raw_state

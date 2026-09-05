@@ -18,6 +18,7 @@ class CloudAuthBridgeModal(ModalScreen):
 
     BINDINGS = [
         Binding("escape", "dismiss_modal", "Close", show=True),
+        Binding("q", "dismiss_modal", "Close", show=True),
         Binding("1", "select_aws", "AWS Auth", show=False),
         Binding("2", "select_gcp", "GCP Auth", show=False),
     ]
@@ -102,7 +103,7 @@ class CloudAuthBridgeModal(ModalScreen):
                 yield Button("Copy Auth Command", id="btn-copy-auth", variant="primary")
                 yield Button("Open Portal in Browser", id="btn-open-portal", variant="default")
                 yield Button("Verify Status Now", id="btn-verify-status", variant="success")
-                yield Button("Close (Esc)", id="btn-auth-close", variant="error")
+                yield Button("Close [Esc / q]", id="btn-auth-close", variant="error")
 
     def get_provider_content(self, provider: str) -> str:
         if provider == "aws":

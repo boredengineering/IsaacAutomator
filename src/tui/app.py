@@ -315,8 +315,20 @@ class Isaac9sApp(App):
         cmd_bar = self.query_one("#command-bar")
         if "active" in cmd_bar.classes:
             cmd_bar.remove_class("active")
-            cmd_inp = self.query_one("#command-input", Input)
-            cmd_inp.blur()
+        if self.focused:
+            self.focused.blur()
+
+    def open_deploy_modal(self) -> None:
+        self.action_open_deploy_modal()
+
+    def open_inspector_modal(self) -> None:
+        self.action_open_inspector_modal()
+
+    def open_auth_modal(self) -> None:
+        self.action_open_auth_modal()
+
+    def open_connect_modal(self) -> None:
+        self.action_open_connect_modal()
 
     def action_open_deploy_modal(self) -> None:
         self.push_screen(DeployWorkstationModal(), self.on_deploy_submitted)
@@ -345,8 +357,10 @@ class Isaac9sApp(App):
                 cmd += " --spot --auto-restore"
         if dry_run:
             cmd += " --dry-run"
-        for demo in demos:
-            cmd += f" --demo {demo}"
+        if demos:
+            cmd += f" --demos {','.join(demos)}"
+        else:
+            cmd += " --demos no"
 
         spot_desc = " [SPOT VM]" if spot else ""
         if dry_run:
