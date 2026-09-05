@@ -169,10 +169,16 @@ class DoctorPane(Vertical):
                 aws_auth = True
             else:
                 try:
-                    res = subprocess.run(["aws", "sts", "get-caller-identity"], capture_output=True, text=True, timeout=1.5)
+                    env = os.environ.copy()
+                    region = env.get("AWS_REGION") or env.get("AWS_DEFAULT_REGION") or "us-east-1"
+                    env["AWS_REGION"] = region
+                    env["AWS_DEFAULT_REGION"] = region
+                    res = subprocess.run(["aws", "sts", "get-caller-identity", "--region", region], env=env, capture_output=True, text=True, timeout=2.0)
                     if res.returncode == 0:
                         aws_auth = True
                         aws_status_desc = "Active (STS Verified)"
+                    elif "expired" in (res.stderr or "").lower():
+                        aws_status_desc = "Session Expired"
                 except Exception:
                     pass
         checks.append({

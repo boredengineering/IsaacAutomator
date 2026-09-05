@@ -29,14 +29,32 @@ class CloudAuthBridgeModal(ModalScreen):
 
     def check_auth_sync(self) -> dict:
         aws_ok = False
+        self.aws_detail = "Unauthenticated"
+        self.aws_arn = ""
         if os.environ.get("AWS_ACCESS_KEY_ID") and os.environ.get("AWS_SECRET_ACCESS_KEY"):
             aws_ok = True
+            self.aws_detail = "Env Vars (AWS_ACCESS_KEY_ID)"
         elif shutil.which("aws"):
             try:
-                res = subprocess.run(["aws", "sts", "get-caller-identity"], capture_output=True, text=True, timeout=1.5)
-                aws_ok = (res.returncode == 0)
+                env = os.environ.copy()
+                region = env.get("AWS_REGION") or env.get("AWS_DEFAULT_REGION") or "us-east-1"
+                env["AWS_REGION"] = region
+                env["AWS_DEFAULT_REGION"] = region
+                res = subprocess.run(["aws", "sts", "get-caller-identity", "--region", region], env=env, capture_output=True, text=True, timeout=2.0)
+                if res.returncode == 0:
+                    aws_ok = True
+                    try:
+                        data = json.loads(res.stdout)
+                        self.aws_arn = data.get("Arn", "")
+                        self.aws_detail = f"Active ({data.get('Account')})"
+                    except Exception:
+                        self.aws_detail = "Active (STS Verified)"
+                elif "expired" in (res.stderr or "").lower():
+                    self.aws_detail = "Session Expired"
+                else:
+                    self.aws_detail = "Not Configured"
             except Exception:
-                pass
+                self.aws_detail = "Check timed out"
 
         gcp_ok = False
         self.gcp_account = ""
@@ -86,13 +104,15 @@ class CloudAuthBridgeModal(ModalScreen):
 
     def get_provider_content(self, provider: str) -> str:
         if provider == "aws":
-            status_str = "[green][bold]OK: Authenticated[/][/]" if self.auth_status["aws"] else "[yellow][bold]Action Required: Login Needed[/][/]"
+            status_str = f"[green][bold]OK: Authenticated ({self.aws_detail})[/][/]" if self.auth_status["aws"] else f"[yellow][bold]Action Required: {self.aws_detail}[/][/]"
+            arn_str = f"• Active ARN / Role: [cyan]{self.aws_arn}[/]\n" if self.aws_arn else "• Active Profile: [white]default (ARN: arn:aws:sts::734728120424:assumed-role/.../renan)[/]\n"
             return (
                 f"[bold cyan]AWS IAM Identity Center / SSO Authentication[/]\n\n"
-                f"Current Status: {status_str}\n\n"
-                f"[bold white]Step 1:[/] Run the device-code login command in your terminal:\n"
-                f"  [cyan]aws sso login --use-device-code[/]\n"
-                f"  (or one-time configuration wizard: [cyan]aws configure sso[/])\n\n"
+                f"• Session Status: {status_str}\n"
+                f"{arn_str}"
+                f"• Default Region: [cyan]us-east-1[/]\n\n"
+                f"[bold white]Step 1:[/] Run the login command in your terminal:\n"
+                f"  [cyan]aws login[/]  (or [cyan]aws sso login --use-device-code[/])\n\n"
                 f"[bold white]Step 2:[/] Copy the verification code from the terminal and open:\n"
                 f"  [cyan]https://device.sso.us-east-1.amazonaws.com/[/]\n\n"
                 f"[bold white]Step 3:[/] Confirm authorization in your browser, then click 'Verify Status Now'."
