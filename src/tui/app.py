@@ -325,26 +325,36 @@ class Isaac9sApp(App):
         if not result:
             return
         name = result.get("name", "workstation")
-        cloud = result.get("cloud", "aws")
+        cloud = result.get("cloud", "gcp")
         gpu = result.get("gpu", "")
+        zone = result.get("zone", "")
+        spot = result.get("spot", False)
         profile = result.get("profile", "simple")
         demos = result.get("demos", [])
-
         dry_run = result.get("dry_run", False)
 
         deploy_script = REPO_ROOT / f"deploy-{cloud}"
         cmd = f"{deploy_script} {name} --instance-type {gpu} --profile {profile} --existing replace"
+        if zone and zone != "default":
+            if cloud == "gcp":
+                cmd += f" --zone {zone}"
+            elif cloud in ("aws", "alicloud"):
+                cmd += f" --region {zone}"
+        if spot:
+            if cloud == "gcp":
+                cmd += " --spot --auto-restore"
         if dry_run:
             cmd += " --dry-run"
         for demo in demos:
             cmd += f" --demo {demo}"
 
+        spot_desc = " [SPOT VM]" if spot else ""
         if dry_run:
-            self.log_message(f"[bold yellow]Dispatching pre-flight DRY-RUN validation for '{name}' on {cloud.upper()}...[/]")
-            self.log_message("[yellow]Validating Terraform HCL, provider auth, and Ansible playbooks without provisioning resources or billing.[/]")
+            self.log_message(f"[bold yellow]Dispatching pre-flight DRY-RUN validation for '{name}'{spot_desc} on {cloud.upper()}...[/]")
+            self.log_message(f"[yellow]Target: {gpu} | Zone: {zone or 'default'} | Testing Terraform HCL & Ansible syntax without billing.[/]")
         else:
-            self.log_message(f"[bold green]Dispatching cloud deployment for '{name}' on {cloud.upper()}...[/]")
-            self.log_message(f"[cyan]Selected Profile: {profile.capitalize()} | Target GPU: {gpu}[/]")
+            self.log_message(f"[bold green]Dispatching cloud deployment for '{name}'{spot_desc} on {cloud.upper()}...[/]")
+            self.log_message(f"[cyan]Selected Profile: {profile.capitalize()} | GPU: {gpu} | Zone: {zone}[/]")
         self.run_async_command(cmd)
 
     def action_open_inspector_modal(self) -> None:

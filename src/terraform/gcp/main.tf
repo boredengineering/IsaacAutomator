@@ -45,6 +45,7 @@ module "isaac_workstation" {
   from_image         = var.from_image
   image_project             = var.project
   use_flex_start            = var.use_flex_start
+  use_spot                  = var.use_spot
   project                   = var.project
   enable_cmek               = var.enable_cmek
   enable_iap_only           = var.enable_iap_only

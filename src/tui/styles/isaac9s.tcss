@@ -72,10 +72,16 @@ RemoteDesktopModal {
 
 #dialog {
     padding: 1 2;
-    width: 84;
+    width: 86;
     height: auto;
+    max-height: 92%;
     border: thick #58a6ff;
     background: #161b22;
+}
+
+#deploy-body {
+    height: auto;
+    max-height: 26;
 }
 
 #dialog-title {

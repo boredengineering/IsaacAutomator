@@ -35,7 +35,18 @@ resource "google_compute_instance" "default" {
   }
 
   dynamic "scheduling" {
-    for_each = var.use_flex_start ? [1] : []
+    for_each = var.use_spot ? [1] : []
+    content {
+      provisioning_model          = "SPOT"
+      instance_termination_action = "STOP"
+      preemptible                 = true
+      automatic_restart           = false
+      on_host_maintenance         = "TERMINATE" # required for GPUs
+    }
+  }
+
+  dynamic "scheduling" {
+    for_each = (!var.use_spot && var.use_flex_start) ? [1] : []
     content {
       provisioning_model          = "FLEX_START"
       instance_termination_action = "STOP"
@@ -49,7 +60,7 @@ resource "google_compute_instance" "default" {
   }
 
   dynamic "scheduling" {
-    for_each = var.use_flex_start ? [] : [1]
+    for_each = (!var.use_spot && !var.use_flex_start) ? [1] : []
     content {
       provisioning_model  = "STANDARD"
       on_host_maintenance = "TERMINATE" # required for GPUs

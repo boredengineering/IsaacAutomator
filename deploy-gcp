@@ -45,6 +45,7 @@ class DeployGCPCommand(DeployCommand):
         + [f"n1-standard-{i}" for i in [4, 8, 16, 32, 64, 96]]
         + [f"n1-highmem-{i}" for i in [4, 8, 16, 32, 64, 96]]
         + [f"n1-highcpu-{i}" for i in [16, 32, 64, 96]]
+        + [f"a2-highgpu-{i}g" for i in [1, 2, 4, 8]]
         + [f"g4-standard-{i}" for i in [48, 96, 192, 384]]
     )
 
@@ -155,6 +156,17 @@ class DeployGCPCommand(DeployCommand):
             ),
         )
 
+        # --spot/--no-spot
+        self.params.insert(
+            self.param_index("flex_start"),
+            click.core.Option(
+                ("--spot/--no-spot",),
+                default=False,
+                show_default=True,
+                help="Deploy as GCP Spot VM (preemptible with 60-91% discount and automated backup).",
+            ),
+        )
+
         # --backup-bucket
 
         self.params.insert(
@@ -196,25 +208,48 @@ class GCPDeployer(Deployer):
 
         if self.existing_behavior != "run_ansible":
             # create tfvars file, deal with existing deployment
-            instance_type_prefix = self.params["isaac_workstation_instance_type"][:2]
+            instance_type = self.params["isaac_workstation_instance_type"]
+            instance_type_prefix = instance_type[:2]
             boot_disk_type = (
                 "hyperdisk-balanced" if instance_type_prefix == "g4" else "pd-ssd"
             )
+
+            gpu_type = {
+                "g2": "nvidia-l4",
+                "n1": "nvidia-tesla-t4",
+                "a2": "nvidia-tesla-a100",
+                "g4": "nvidia-rtx-pro-6000",
+            }.get(instance_type_prefix, "nvidia-l4")
+
+            # Determine GPU count automatically if multi-GPU machine type
+            user_gpu_count = self.params.get("isaac_workstation_gpu_count")
+            if user_gpu_count and str(user_gpu_count) != "1":
+                gpu_count = int(user_gpu_count)
+            elif "24" in instance_type or "2g" in instance_type:
+                gpu_count = 2
+            elif "48" in instance_type or "4g" in instance_type:
+                gpu_count = 4
+            elif "96" in instance_type or "8g" in instance_type:
+                gpu_count = 8
+            else:
+                gpu_count = 1
+
+            use_spot = self.params.get("spot", False)
+            backup_bucket = self.params.get("backup_bucket", "")
+            if use_spot and not backup_bucket:
+                backup_bucket = f"{self.params['project']}-{self.params['deployment_name']}-backups"
+                self.params["backup_bucket"] = backup_bucket
+                self.params["auto_restore"] = True
 
             self.create_tfvars(
                 {
                     "zone": self.params["zone"],
                     "project": self.params["project"],
-                    "isaac_workstation_gpu_count": int(
-                        self.params["isaac_workstation_gpu_count"]
-                    ),
-                    "isaac_workstation_gpu_type": {
-                        "g2": "nvidia-l4",
-                        "n1": "nvidia-tesla-t4",
-                        "g4": "nvidia-rtx-pro-6000",
-                    }[instance_type_prefix],
+                    "isaac_workstation_gpu_count": gpu_count,
+                    "isaac_workstation_gpu_type": gpu_type,
                     "boot_disk_type": boot_disk_type,
                     "use_flex_start": self.params.get("flex_start", False),
+                    "use_spot": use_spot,
                 }
             )
 

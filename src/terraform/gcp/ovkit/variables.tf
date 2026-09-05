@@ -64,6 +64,12 @@ variable "use_flex_start" {
   default     = false
 }
 
+variable "use_spot" {
+  description = "Deploy using GCP Spot VM (preemptible with 60-91% discount)"
+  type        = bool
+  default     = false
+}
+
 variable "security_profile" {
   description = "Security profile tier: simple, team, or enterprise"
   type        = string
