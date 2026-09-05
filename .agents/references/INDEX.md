@@ -29,4 +29,6 @@ Catalog of high-level project specifications, architecture documents, and goal d
 | [`gcp-plans/multi-cloud-security-tiering-plan.md`](./gcp-plans/multi-cloud-security-tiering-plan.md) | Multi-Cloud Tiered Security Plan: Progressive Architecture for AWS, GCP, Azure & Alibaba Cloud | Active Plan |
 | [`gcp-plans/beginner-friendly-security-plan.md`](./gcp-plans/beginner-friendly-security-plan.md) | Beginner-Friendly Simple Mode Security & User Choice Implementation Plan | Active Plan |
 | [`plans/isaac9s-gui-plan.md`](./plans/isaac9s-gui-plan.md) | isaac9s: k9s-Style Graphical Terminal Interface for Isaac Automator & Installer | Active Tool & Plan |
+| [`docs/isaac9s-cockpit-guide.md`](./docs/isaac9s-cockpit-guide.md) | isaac9s Terminal Cockpit User Guide, Keyboard Shortcuts & Operator Runbook | Active Guide |
+| [`docs/dynamic-security-and-storage-guide.md`](./docs/dynamic-security-and-storage-guide.md) | Dynamic Multi-Cloud Security Tiering, Custom Profiles & Hardened Storage Guide | Active Guide |
 
