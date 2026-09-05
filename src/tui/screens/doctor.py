@@ -179,6 +179,8 @@ class DoctorPane(Vertical):
                         aws_status_desc = "Active (STS Verified)"
                     elif "expired" in (res.stderr or "").lower():
                         aws_status_desc = "Session Expired"
+                    elif "token" in (res.stderr or "").lower() or "does not exist" in (res.stderr or "").lower():
+                        aws_status_desc = "Login Required"
                 except Exception:
                     pass
         checks.append({

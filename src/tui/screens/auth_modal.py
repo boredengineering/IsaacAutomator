@@ -51,6 +51,8 @@ class CloudAuthBridgeModal(ModalScreen):
                         self.aws_detail = "Active (STS Verified)"
                 elif "expired" in (res.stderr or "").lower():
                     self.aws_detail = "Session Expired"
+                elif "token" in (res.stderr or "").lower() or "does not exist" in (res.stderr or "").lower():
+                    self.aws_detail = "Login Required"
                 else:
                     self.aws_detail = "Not Configured"
             except Exception:
