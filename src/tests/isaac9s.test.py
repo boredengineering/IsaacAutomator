@@ -143,7 +143,7 @@ class Test_Isaac9sApp(unittest.IsolatedAsyncioTestCase):
             app.execute_command("sub")
             self.assertEqual(app.query_one("#main-tabs").active, "tab-subsystems")
 
-            # 10. Test LogsPane Live Search / Filtering
+            # 10. Test LogsPane Live Search, Filtering & Process Lifecycle Controls
             logs_pane = app.query_one("#pane-logs", LogsPane)
             logs_pane.write_line("Alpha Test Message")
             logs_pane.write_line("Beta Debug Message")
@@ -151,6 +151,23 @@ class Test_Isaac9sApp(unittest.IsolatedAsyncioTestCase):
             log_input.value = "Alpha"
             await pilot.pause()
             self.assertEqual(logs_pane.active_filter, "Alpha")
+
+            # Process badge and cancel button state transitions
+            logs_pane.set_proc_running(99999, "test-proc")
+            self.assertFalse(logs_pane.query_one("#btn-cancel-proc", Button).disabled)
+            badge_text = str(logs_pane.query_one("#proc-status-badge").render())
+            self.assertIn("RUNNING", badge_text)
+
+            logs_pane.set_proc_idle("IDLE")
+            self.assertTrue(logs_pane.query_one("#btn-cancel-proc", Button).disabled)
+            badge_text_idle = str(logs_pane.query_one("#proc-status-badge").render())
+            self.assertIn("IDLE", badge_text_idle)
+
+            # Test hotkey 'k' and command palette stop/kill
+            await pilot.press("k")
+            await pilot.pause()
+            app.execute_command("kill")
+            app.execute_command("stop")
 
             # 11. Test Doctor JSON Export
             doc_pane = app.query_one("#pane-doctor", DoctorPane)

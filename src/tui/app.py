@@ -4,6 +4,7 @@ isaac9s - The k9s-style Terminal User Interface for Isaac Automator & Installer
 import os
 import shutil
 import subprocess
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -86,10 +87,15 @@ class Isaac9sApp(App):
         Binding("a", "open_auth_modal", "Auth", show=True),
         Binding("s", "run_start", "Start", show=True),
         Binding("x", "run_stop", "Stop", show=True),
+        Binding("k", "cancel_running_process", "Stop/Kill", show=True),
         Binding("r", "run_refresh", "Refresh", show=True),
         Binding("escape", "handle_escape", "Cancel", show=False),
         Binding("q", "quit", "Quit", show=True),
     ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.active_proc: subprocess.Popen | None = None
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
@@ -270,21 +276,100 @@ class Isaac9sApp(App):
         self.hardware_pane.refresh_telemetry()
         self.log_message("[bold cyan]All tab data refreshed.[/]")
 
+    def action_cancel_running_process(self) -> None:
+        if self.active_proc and self.active_proc.poll() is None:
+            pid = self.active_proc.pid
+            self.log_message(f"[bold red]Aborting active subprocess (PID {pid})...[/]")
+            try:
+                self.active_proc.terminate()
+                try:
+                    self.active_proc.wait(timeout=2.0)
+                except subprocess.TimeoutExpired:
+                    self.active_proc.kill()
+                self.log_message(f"[bold red]Subprocess (PID {pid}) terminated by operator.[/]")
+                self.logs_pane.set_proc_idle("ABORTED")
+            except Exception as e:
+                self.log_message(f"[bold red]Error terminating process: {e}[/]")
+            finally:
+                self.active_proc = None
+        else:
+            self.notify("No active background command is currently running.", title="Process Monitor", severity="information")
+
     def run_async_command(self, cmd: str) -> None:
+        if self.active_proc and self.active_proc.poll() is None:
+            self.log_message(
+                f"[bold yellow]Warning: Process (PID {self.active_proc.pid}) is already running. Press 'Stop Process' [k] or wait for completion.[/]"
+            )
+            self.action_tab_logs()
+            return
+
         self.action_tab_logs()
         self.log_message(f"[bold white]$ {cmd}[/]")
 
+        # GCP ADC Pre-check & auto-recovery
+        if "deploy-gcp" in cmd:
+            adc_path = Path(os.environ.get("GOOGLE_APPLICATION_CREDENTIALS") or os.path.expanduser("~/.config/gcloud/application_default_credentials.json"))
+            if not adc_path.exists():
+                legacy_dir = Path(os.path.expanduser("~/.config/gcloud/legacy_credentials"))
+                found_adc = None
+                if legacy_dir.exists():
+                    for acc in legacy_dir.iterdir():
+                        cand = acc / "adc.json"
+                        if cand.exists():
+                            found_adc = cand
+                            break
+                if found_adc:
+                    try:
+                        adc_path.parent.mkdir(parents=True, exist_ok=True)
+                        shutil.copyfile(found_adc, adc_path)
+                        self.log_message(f"[dim cyan]Recovered GCP Application Default Credentials from {found_adc.parent.name}[/]")
+                    except Exception:
+                        pass
+
         def worker():
+            env = os.environ.copy()
+            env["PYTHONUNBUFFERED"] = "1"
+            start_time = time.time()
             try:
                 proc = subprocess.Popen(
-                    cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
+                    cmd,
+                    shell=True,
+                    stdin=subprocess.DEVNULL,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    bufsize=1,
+                    env=env,
                 )
-                for line in proc.stdout:
-                    self.call_from_thread(self.log_message, f"  {line.rstrip()}")
+                self.active_proc = proc
+                pid = proc.pid
+                self.call_from_thread(self.logs_pane.set_proc_running, pid, cmd)
+
+                for line in iter(proc.stdout.readline, ""):
+                    clean = line.rstrip("\r\n")
+                    if clean:
+                        self.call_from_thread(self.log_message, f"  {clean}")
+
                 proc.wait()
-                self.call_from_thread(self.log_message, f"[bold green]Finished with exit code {proc.returncode}[/]")
+                elapsed = time.time() - start_time
+                if proc.returncode == 0:
+                    self.call_from_thread(
+                        self.log_message,
+                        f"[bold green]Finished successfully (exit code 0) in {elapsed:.1f}s[/]"
+                    )
+                    self.call_from_thread(self.logs_pane.set_proc_idle, "SUCCESS")
+                else:
+                    self.call_from_thread(
+                        self.log_message,
+                        f"[bold red]Finished with exit code {proc.returncode} after {elapsed:.1f}s[/]"
+                    )
+                    self.call_from_thread(self.logs_pane.set_proc_idle, f"EXIT {proc.returncode}")
             except Exception as e:
-                self.call_from_thread(self.log_message, f"[bold red]Error: {e}[/]")
+                self.call_from_thread(self.log_message, f"[bold red]Subprocess execution error: {e}[/]")
+                self.call_from_thread(self.logs_pane.set_proc_idle, "ERROR")
+            finally:
+                self.active_proc = None
+                self.call_from_thread(self.workstations_pane.refresh_workstations)
 
         self.run_worker(worker, thread=True)
 
@@ -347,17 +432,37 @@ class Isaac9sApp(App):
         dry_run = result.get("dry_run", False)
 
         deploy_script = REPO_ROOT / f"deploy-{cloud}"
-        cmd = f"{deploy_script} {name} --instance-type {gpu} --profile {profile} --existing replace"
-        if zone and zone != "default":
-            if cloud == "gcp":
+        cmd = (
+            f"{deploy_script} "
+            f"--deployment-name {name} "
+            f"--instance-type {gpu} "
+            f"--profile {profile} "
+            f"--existing replace "
+            f"--ingress-cidrs 0.0.0.0/0 "
+            f"--isaacsim latest "
+            f"--isaaclab latest "
+            f"--isaaclab-arena latest "
+            f"--no-upload"
+        )
+        if cloud == "gcp":
+            res = subprocess.run(["gcloud", "config", "get-value", "project"], capture_output=True, text=True)
+            project = res.stdout.strip() or "cybernetic-renan"
+            cmd += f" --project {project} --isaac-workstation-gpu-count 1"
+            if zone and zone != "default":
                 cmd += f" --zone {zone}"
-            elif cloud in ("aws", "alicloud"):
-                cmd += f" --region {zone}"
-        if flex_start and cloud == "gcp":
-            cmd += " --flex-start"
-        elif spot:
-            if cloud == "gcp":
+            if flex_start:
+                cmd += " --flex-start"
+            elif spot:
                 cmd += " --spot --auto-restore"
+        elif cloud in ("aws", "alicloud"):
+            if zone and zone != "default":
+                cmd += f" --region {zone}"
+            if spot and cloud == "aws":
+                cmd += " --spot"
+        elif cloud == "azure":
+            if zone and zone != "default":
+                cmd += f" --region {zone}"
+
         if dry_run:
             cmd += " --dry-run"
         if demos:
@@ -435,6 +540,8 @@ class Isaac9sApp(App):
             self.logs_pane.copy_logs()
         elif cmd in ("validate", "dryrun", "plan"):
             self.action_open_deploy_modal()
+        elif cmd in ("kill", "stop", "abort", "k"):
+            self.action_cancel_running_process()
         elif cmd in ("q", "quit", "exit"):
             self.exit()
         elif cmd:

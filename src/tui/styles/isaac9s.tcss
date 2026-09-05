@@ -54,6 +54,12 @@ RichLog {
     border-bottom: solid #30363d;
 }
 
+#proc-status-badge {
+    margin: 1 1 0 1;
+    min-width: 14;
+    text-style: bold;
+}
+
 Button {
     margin-right: 1;
 }

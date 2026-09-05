@@ -3,7 +3,7 @@ from pathlib import Path
 from rich.text import Text
 from textual.app import ComposeResult
 from textual.containers import Horizontal, Vertical
-from textual.widgets import Button, Input, RichLog
+from textual.widgets import Button, Input, Label, RichLog
 
 
 class LogsPane(Vertical):
@@ -18,6 +18,8 @@ class LogsPane(Vertical):
         with Horizontal(classes="action-bar"):
             yield Button("Copy All (AI Paste)", id="btn-copy-logs", variant="primary")
             yield Button("Clear Log", id="btn-clear-log", variant="default")
+            yield Button("Stop Process", id="btn-cancel-proc", variant="error", disabled=True)
+            yield Label("[bold green]● IDLE[/]", id="proc-status-badge")
             yield Input(placeholder="Filter logs (live search)...", id="input-log-filter")
 
         yield RichLog(id="execution-log", highlight=True, markup=True)
@@ -70,11 +72,33 @@ class LogsPane(Vertical):
             timeout=5.0,
         )
 
+    def set_proc_running(self, pid: int, cmd: str = "") -> None:
+        try:
+            badge = self.query_one("#proc-status-badge", Label)
+            btn = self.query_one("#btn-cancel-proc", Button)
+            badge.update(f"[bold yellow]● RUNNING (PID {pid})[/]")
+            btn.disabled = False
+        except Exception:
+            pass
+
+    def set_proc_idle(self, status: str = "IDLE") -> None:
+        try:
+            badge = self.query_one("#proc-status-badge", Label)
+            btn = self.query_one("#btn-cancel-proc", Button)
+            color = "green" if status in ("IDLE", "SUCCESS") else "red"
+            badge.update(f"[bold {color}]● {status}[/]")
+            btn.disabled = True
+        except Exception:
+            pass
+
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "btn-clear-log":
             self.clear_log()
         elif event.button.id == "btn-copy-logs":
             self.copy_logs()
+        elif event.button.id == "btn-cancel-proc":
+            if hasattr(self.app, "action_cancel_running_process"):
+                self.app.action_cancel_running_process()
 
     def on_input_changed(self, event: Input.Changed) -> None:
         self.active_filter = event.value.strip()
@@ -82,3 +106,4 @@ class LogsPane(Vertical):
         for line in self.log_history:
             if not self.active_filter or self.active_filter.lower() in line.lower():
                 self.log_widget.write(line)
+
