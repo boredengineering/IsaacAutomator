@@ -114,6 +114,7 @@ Master index of session memory checkpoints for Isaac Automator.
 | 2026-09-04 14:10 | `f6a7b8c9` | Implementation of Phase 2 for isaac9s Cockpit | Implemented in-cockpit deploy wizard [n], deep inspector [i], cloud auth bridge [a], and Vim command palette (:) | [`20260904_141030_f6a7b8c9.md`](./sessions/20260904_141030_f6a7b8c9.md) |
 | 2026-09-05 00:10 | `a4b7c8d9` | Dynamic Non-Hardcoded Infrastructure & Custom Declarative Profiles Specification | Updated plans with dynamic feature-flagged IaC, custom profile schema, isaac9s live cost calculator, and YAML profile persistence | [`20260905_001030_a4b7c8d9.md`](./sessions/20260905_001030_a4b7c8d9.md) |
 | 2026-09-05 00:26 | `b5c8d9e0` | Implementation of Dynamic Multi-Cloud Security Tiering & Custom Profile Builder | Built dynamic Terraform KMS/IAP/Secrets, Python profile discovery/loader, isaac9s custom configurator & cost estimator | [`20260905_002630_b5c8d9e0.md`](./sessions/20260905_002630_b5c8d9e0.md) |
+| 2026-09-05 05:20 | `c6d9e0f1` | CLI --demo Option & Modal Dismissal with 'q' in isaac9s | Fixed --demo CLI option in Click/TUI, enabled 'q' to dismiss modals and raw inline code views, and fixed input focus escaping | [`20260905_052000_c6d9e0f1.md`](./sessions/20260905_052000_c6d9e0f1.md) |
 
 
 
