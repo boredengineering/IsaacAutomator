@@ -116,6 +116,7 @@ Master index of session memory checkpoints for Isaac Automator.
 | 2026-09-05 00:26 | `b5c8d9e0` | Implementation of Dynamic Multi-Cloud Security Tiering & Custom Profile Builder | Built dynamic Terraform KMS/IAP/Secrets, Python profile discovery/loader, isaac9s custom configurator & cost estimator | [`20260905_002630_b5c8d9e0.md`](./sessions/20260905_002630_b5c8d9e0.md) |
 | 2026-09-05 05:20 | `c6d9e0f1` | CLI --demo Option & Modal Dismissal with 'q' in isaac9s | Fixed --demo CLI option in Click/TUI, enabled 'q' to dismiss modals and raw inline code views, and fixed input focus escaping | [`20260905_052000_c6d9e0f1.md`](./sessions/20260905_052000_c6d9e0f1.md) |
 | 2026-09-05 14:25 | `d7e8f9a0` | GCP Flex-start Integration into isaac9s Deploy Modal | Added GCP Flex-start (DWS) selection to isaac9s deploy modal, verified g4- us-central1-b zone, and handled dispatch | [`20260905_142500_d7e8f9a0.md`](./sessions/20260905_142500_d7e8f9a0.md) |
+| 2026-09-05 15:05 | `e1f2a3b4` | Subprocess Hang Diagnosis, Process Cancellation Controls, and Codebase Architecture | Fixed stuck commands with unbuffered streaming & DEVNULL, added Stop Process button [k], GCP ADC auto-recovery, and documented full codebase architecture | [`20260905_150500_e1f2a3b4.md`](./sessions/20260905_150500_e1f2a3b4.md) |
 
 
 
