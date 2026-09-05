@@ -67,3 +67,58 @@ variable "use_flex_start" {
   default     = false
 }
 
+# ------------------------------------------------------------------------------
+# Security, Storage & Zero-Trust Variables (Dynamic Feature Flags)
+# ------------------------------------------------------------------------------
+
+variable "enable_cmek" {
+  description = "Enable Customer-Managed Encryption Keys (Cloud KMS CMEK) for disks and storage"
+  type        = bool
+  default     = false
+}
+
+variable "enable_iap_only" {
+  description = "Enforce Zero Public IP; instances are private and accessed via Cloud IAP TCP forwarding"
+  type        = bool
+  default     = false
+}
+
+variable "enable_oslogin" {
+  description = "Enforce Google Cloud OS Login with mandatory 2FA instead of static metadata SSH keys"
+  type        = bool
+  default     = false
+}
+
+variable "enable_secrets" {
+  description = "Provision and manage credentials in Google Secret Manager"
+  type        = bool
+  default     = false
+}
+
+variable "state_bucket" {
+  description = "GCS bucket name for remote Terraform state backend (empty for local state)"
+  type        = string
+  default     = ""
+}
+
+variable "ngc_api_key" {
+  description = "NVIDIA NGC API Key for container registries and Omniverse"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "hf_token" {
+  description = "Hugging Face User Access Token for model checkpoint downloads"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "wandb_api_key" {
+  description = "Weights & Biases API Key for robotics experiment logging"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+

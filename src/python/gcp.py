@@ -122,3 +122,23 @@ def gcp_get_instance_uptime_seconds(instance_name: str, zone: str = None, projec
         if verbose:
             click.echo(colorize_error(f"Failed to parse timestamp '{ts_str}': {e}"))
         return -1
+
+
+def gcp_ssh_iap(instance_name: str, zone: str = None, project: str = None, os_login: bool = True, extra_ssh_args: str = ""):
+    """
+    Establish an SSH connection to a private Compute Engine instance through Cloud IAP.
+    """
+    extra_args = _build_gcloud_args(zone, project)
+    cmd = f"gcloud compute ssh {instance_name} --tunnel-through-iap {extra_args}"
+    if extra_ssh_args:
+        cmd += f" -- {extra_ssh_args}"
+    return shell_command(cmd, verbose=True, exit_on_error=True, capture_output=False)
+
+
+def gcp_start_iap_tunnel(instance_name: str, remote_port: int, local_port: int, zone: str = None, project: str = None):
+    """
+    Start an Identity-Aware Proxy (IAP) TCP forwarding tunnel in the background.
+    """
+    extra_args = _build_gcloud_args(zone, project)
+    cmd = f"gcloud compute start-iap-tunnel {instance_name} {remote_port} --local-host-port=localhost:{local_port} {extra_args}"
+    return shell_command(cmd, verbose=True, exit_on_error=False, capture_output=False)

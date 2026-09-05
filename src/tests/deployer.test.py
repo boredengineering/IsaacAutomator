@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import shutil
 import tempfile
 import unittest
@@ -257,6 +258,46 @@ class Test_SecurityProfile(unittest.TestCase):
         tfvars = {}
         deployer.create_tfvars(tfvars=tfvars)
         self.assertEqual(tfvars.get("security_profile"), "simple")
+        self.assertFalse(tfvars.get("enable_cmek"))
+        self.assertFalse(tfvars.get("enable_iap_only"))
+
+    def test_custom_yaml_profile_loading(self):
+        custom_yaml = os.path.join(self.tmp, "my-custom-profile.yaml")
+        with open(custom_yaml, "w") as f:
+            f.write("""
+schema_version: "v1alpha1"
+profile_name: "my-custom-profile"
+security:
+  tier: "custom"
+  network:
+    iap_only: true
+    cloud_nat: true
+  storage:
+    state_backend: "gcs"
+    state_bucket: "gs://custom-state-bucket"
+  cryptography:
+    encryption_type: "kms_cmek"
+  compute:
+    os_login: true
+""")
+        deployer = _make_deployer(state_dir=self.tmp, extra={"profile": custom_yaml})
+        self.assertEqual(deployer.params["security_profile"], "custom")
+        self.assertTrue(deployer.params["enable_iap_only"])
+        self.assertTrue(deployer.params["enable_cmek"])
+        self.assertTrue(deployer.params["enable_oslogin"])
+        self.assertEqual(deployer.params["state_bucket"], "gs://custom-state-bucket")
+
+        tfvars = {}
+        deployer.create_tfvars(tfvars=tfvars)
+        self.assertTrue(tfvars["enable_iap_only"])
+        self.assertTrue(tfvars["enable_cmek"])
+        self.assertTrue(tfvars["enable_oslogin"])
+        self.assertEqual(tfvars["state_bucket"], "gs://custom-state-bucket")
+
+    def test_discovered_profile_name_resolution(self):
+        deployer = _make_deployer(state_dir=self.tmp, extra={"profile": "team-studio"})
+        self.assertEqual(deployer.params["security_profile"], "team")
+        self.assertEqual(deployer.params["state_bucket"], "auto")
 
 
 if __name__ == "__main__":

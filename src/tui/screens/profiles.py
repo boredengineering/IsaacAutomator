@@ -1,16 +1,19 @@
 """
-Declarative Profile & 3-Tier Security Configurator Screen for isaac9s
+Declarative Profile & Dynamic Security Configurator Screen for isaac9s
+Supports Simple, Team, Enterprise, and Custom modes with persistent YAML profiles.
 """
 from pathlib import Path
+from typing import Any
 from textual.app import ComposeResult
 from textual.containers import Horizontal, Vertical, VerticalScroll
-from textual.widgets import Button, Label, RadioButton, RadioSet, Static
+from textual.widgets import Button, Checkbox, Input, Label, RadioButton, RadioSet, Static
 
+from src.python.config import list_available_profiles, load_profile_spec, save_profile_spec
 from src.tui.backend import REPO_ROOT
 
 
 class ProfilesPane(VerticalScroll):
-    """Declarative profile and 3-tier security configurator."""
+    """Declarative profile and dynamic multi-cloud security configurator."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -19,32 +22,56 @@ class ProfilesPane(VerticalScroll):
 
     def compose(self) -> ComposeResult:
         yield Static(
-            "[bold cyan]isaac9s » Declarative Profile & Multi-Cloud Security Configurator[/]",
+            "[bold cyan]isaac9s » Declarative Profile & Dynamic Security Configurator[/]",
             classes="box-panel",
         )
 
         with Vertical(classes="box-panel"):
-            yield Label("[bold yellow]1. SELECT WORKSTATION PROFILE:[/]")
+            yield Label("[bold yellow]1. SELECT WORKSTATION BASE PROFILE:[/]")
             with RadioSet(id="rs-workstation-profile"):
                 yield RadioButton("default-workstation.yaml - Clean robotics workstation (Sim + Lab + Dev Apps)", value=True, id="p-default")
                 yield RadioButton("full-ecosystem.yaml    - Full ecosystem (+ LeRobot, Arena, GR00T, Manus VR)", id="p-full")
                 yield RadioButton("minimal-headless.yaml  - Minimal headless compute node (Sim server, CI/CD, training)", id="p-minimal")
 
         with Vertical(classes="box-panel"):
-            yield Label("[bold yellow]2. SELECT SECURITY & HARDENING TIER:[/]")
+            yield Label("[bold yellow]2. SELECT SECURITY & INFRASTRUCTURE MODE:[/]")
             with RadioSet(id="rs-security-tier"):
                 yield RadioButton("Tier 1: Simple Mode ($0.00 / mo added cost) [RECOMMENDED FOR BEGINNERS]", value=True, id="tier-simple")
                 yield RadioButton("Tier 2: Team Mode (<$0.10 / mo added cost) [FOR COLLABORATION & CI]", id="tier-team")
                 yield RadioButton("Tier 3: Enterprise Mode (~$35 - $180 / mo) [FOR REGULATED / COMPLIANCE]", id="tier-enterprise")
+                yield RadioButton("Special Custom Mode (Interactive Granular Configurator)", id="tier-custom")
+
+        with Vertical(id="custom-config-container", classes="box-panel"):
+            yield Label("[bold cyan]3. CUSTOM SUBSYSTEM TOGGLES & COST CALCULATOR:[/]")
+            yield Checkbox("Zero Public IP (Cloud IAP TCP Forwarding Tunnel)", value=True, id="cb-custom-iap")
+            yield Checkbox("Cloud NAT Gateway (Required for Private Outbound Packages) [+$32.40/mo]", value=True, id="cb-custom-nat")
+            yield Checkbox("Remote GCS State Storage with Native Object Locking [+$0.05/mo]", value=True, id="cb-custom-gcs")
+            yield Checkbox("Customer-Managed Encryption Keys (Cloud KMS CMEK) [+$1.80/mo]", value=False, id="cb-custom-kmscmek")
+            yield Checkbox("Shielded VM (Secure Boot, vTPM, Integrity Monitoring) [$0.00/mo]", value=True, id="cb-custom-shielded")
+            yield Checkbox("Centralized OS Login with Mandatory 2FA [$0.00/mo]", value=True, id="cb-custom-oslogin")
+            yield Checkbox("Google Secret Manager (Zero-Bake Credentials) [+$0.06/mo]", value=True, id="cb-custom-secrets")
+
+            with Horizontal(classes="action-bar"):
+                yield Label("[bold white]Profile Name:[/] ", classes="action-label")
+                yield Input(value="cybernetic-custom", id="inp-custom-profile-name", placeholder="profile-name")
 
         yield Static(id="profile-details-panel", classes="box-panel")
 
         with Horizontal(classes="action-bar"):
             yield Button("Apply Configuration", id="btn-apply-profile", variant="primary")
-            yield Button("Export YAML Spec", id="btn-export-profile", variant="default")
+            yield Button("Save Profile to YAML", id="btn-save-custom-profile", variant="success")
+            yield Button("Export Active Spec", id="btn-export-profile", variant="default")
 
     def on_mount(self) -> None:
+        self.update_custom_visibility(False)
         self.update_details("tier-simple")
+
+    def update_custom_visibility(self, visible: bool) -> None:
+        try:
+            container = self.query_one("#custom-config-container", Vertical)
+            container.display = visible
+        except Exception:
+            pass
 
     def on_radio_set_changed(self, event: RadioSet.Changed) -> None:
         if event.radio_set.id == "rs-security-tier":
@@ -52,8 +79,10 @@ class ProfilesPane(VerticalScroll):
                 "tier-simple": "simple",
                 "tier-team": "team",
                 "tier-enterprise": "enterprise",
+                "tier-custom": "custom",
             }
             self.selected_tier = tier_map.get(event.pressed.id, "simple")
+            self.update_custom_visibility(self.selected_tier == "custom")
             self.update_details(event.pressed.id)
         elif event.radio_set.id == "rs-workstation-profile":
             prof_map = {
@@ -62,6 +91,30 @@ class ProfilesPane(VerticalScroll):
                 "p-minimal": "minimal-headless.yaml",
             }
             self.selected_profile = prof_map.get(event.pressed.id, "default-workstation.yaml")
+
+    def on_checkbox_changed(self, event: Checkbox.Changed) -> None:
+        if self.selected_tier == "custom":
+            self.update_details("tier-custom")
+
+    def calculate_custom_overhead(self) -> tuple[float, list[str]]:
+        added_cost = 0.0
+        breakdown = []
+        try:
+            if self.query_one("#cb-custom-nat", Checkbox).value:
+                added_cost += 32.40
+                breakdown.append("Cloud NAT Gateway ($32.40)")
+            if self.query_one("#cb-custom-gcs", Checkbox).value:
+                added_cost += 0.05
+                breakdown.append("GCS Remote State ($0.05)")
+            if self.query_one("#cb-custom-kmscmek", Checkbox).value:
+                added_cost += 1.80
+                breakdown.append("Cloud KMS CMEK ($1.80)")
+            if self.query_one("#cb-custom-secrets", Checkbox).value:
+                added_cost += 0.06
+                breakdown.append("Secret Manager ($0.06)")
+        except Exception:
+            pass
+        return added_cost, breakdown
 
     def update_details(self, tier_id: str) -> None:
         panel = self.query_one("#profile-details-panel", Static)
@@ -85,7 +138,7 @@ class ProfilesPane(VerticalScroll):
                 "• [bold white]State Storage:[/]      Cloud remote state (S3, GCS, Azure Blob, AliCloud OSS) with native locking\n"
                 "• [bold white]IAM Requirements:[/]   Object Admin on dedicated team state bucket"
             )
-        else:
+        elif tier_id == "tier-enterprise":
             panel.update(
                 "[bold red]Active Selection: Tier 3 - Enterprise Hardened (Defense / Compliance)[/]\n\n"
                 "• [bold white]Added Monthly Cost:[/] [red]~$35.00 - $180.00+ / month[/] (Cloud NAT, KMS keys, Bastion)\n"
@@ -94,6 +147,20 @@ class ProfilesPane(VerticalScroll):
                 "• [bold white]Data Encryption:[/]    Customer-Managed Encryption Keys (KMS CMEK / CMK) with 90-day auto-rotation\n"
                 "• [bold white]Secrets Handling:[/]   Cloud Secret Manager (GCP, AWS, Azure Key Vault, AliCloud KMS)\n"
                 "• [bold white]Hardware Security:[/]  Shielded VM (Secure Boot & vTPM) / AWS Nitro Enclaves / Trusted Launch"
+            )
+        else:
+            cost, breakdown = self.calculate_custom_overhead()
+            cost_str = f"+${cost:.2f} / month" if cost > 0 else "$0.00 / month"
+            items_str = ", ".join(breakdown) if breakdown else "Zero added infrastructure overhead"
+            panel.update(
+                f"[bold cyan]Active Selection: Special Custom Mode (Interactive Granular Spec)[/]\n\n"
+                f"• [bold white]Dynamic Added Cost:[/]  [bold green]{cost_str}[/] ({items_str})\n"
+                f"• [bold white]Network Perimeter:[/]  {'Zero Public IP (Cloud IAP Tunnel)' if self.query_one('#cb-custom-iap', Checkbox).value else 'Public IP (/32 Lock)'}\n"
+                f"• [bold white]Outbound Routing:[/]   {'Managed Cloud NAT Gateway' if self.query_one('#cb-custom-nat', Checkbox).value else 'Direct Ephemeral Public'}\n"
+                f"• [bold white]Storage Backend:[/]    {'GCS Remote State with Distributed Locking' if self.query_one('#cb-custom-gcs', Checkbox).value else 'Local State (.tfstate)'}\n"
+                f"• [bold white]Cryptographic Key:[/]  {'Customer-Managed KMS CMEK (90d rotation)' if self.query_one('#cb-custom-kmscmek', Checkbox).value else 'Google-Managed Default ($0)'}\n"
+                f"• [bold white]Hardware Security:[/]  {'Shielded VM (Secure Boot + vTPM)' if self.query_one('#cb-custom-shielded', Checkbox).value else 'Standard VM'}\n"
+                f"• [bold white]Identity & Access:[/]  {'OS Login with Mandatory 2FA' if self.query_one('#cb-custom-oslogin', Checkbox).value else 'Static Metadata RSA Key'}"
             )
 
     def export_yaml(self) -> Path:
@@ -109,10 +176,56 @@ class ProfilesPane(VerticalScroll):
         out_file.write_text(content)
         return out_file
 
+    def save_custom_profile_yaml(self) -> Path:
+        prof_name = self.query_one("#inp-custom-profile-name", Input).value.strip() or "custom-profile"
+        spec = {
+            "schema_version": "v1alpha1",
+            "profile_name": prof_name,
+            "description": f"Custom profile saved from isaac9s ({prof_name})",
+            "cloud": "gcp",
+            "security": {
+                "tier": "custom",
+                "network": {
+                    "iap_only": self.query_one("#cb-custom-iap", Checkbox).value,
+                    "cloud_nat": self.query_one("#cb-custom-nat", Checkbox).value,
+                    "ingress_cidrs": [] if self.query_one("#cb-custom-iap", Checkbox).value else ["auto"],
+                },
+                "storage": {
+                    "state_backend": "gcs" if self.query_one("#cb-custom-gcs", Checkbox).value else "local",
+                    "state_bucket": "auto" if self.query_one("#cb-custom-gcs", Checkbox).value else "",
+                    "state_locking": self.query_one("#cb-custom-gcs", Checkbox).value,
+                    "soft_delete_days": 7,
+                },
+                "cryptography": {
+                    "encryption_type": "kms_cmek" if self.query_one("#cb-custom-kmscmek", Checkbox).value else "google_managed",
+                    "kms_keyring_name": "auto" if self.query_one("#cb-custom-kmscmek", Checkbox).value else "",
+                },
+                "compute": {
+                    "shielded_vm": self.query_one("#cb-custom-shielded", Checkbox).value,
+                    "os_login": self.query_one("#cb-custom-oslogin", Checkbox).value,
+                    "service_account_type": "dedicated" if self.query_one("#cb-custom-iap", Checkbox).value else "default",
+                },
+                "secrets": {
+                    "engine": "secret_manager" if self.query_one("#cb-custom-secrets", Checkbox).value else "env_vars",
+                },
+            },
+            "workstation": {
+                "base_profile": self.selected_profile,
+            },
+        }
+        return save_profile_spec(prof_name, spec, repo_root=str(REPO_ROOT))
+
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "btn-export-profile":
             path = self.export_yaml()
             self.notify(f"Exported spec to {path.name}")
+        elif event.button.id == "btn-save-custom-profile":
+            saved_path = self.save_custom_profile_yaml()
+            self.notify(f"Saved custom profile to {saved_path.relative_to(REPO_ROOT)}")
         elif event.button.id == "btn-apply-profile":
-            self.export_yaml()
-            self.notify(f"Profile '{self.selected_profile}' applied with {self.selected_tier.capitalize()} security.")
+            if self.selected_tier == "custom":
+                saved_path = self.save_custom_profile_yaml()
+                self.notify(f"Custom profile '{saved_path.stem}' saved & applied!")
+            else:
+                self.export_yaml()
+                self.notify(f"Profile '{self.selected_profile}' applied with {self.selected_tier.capitalize()} security.")

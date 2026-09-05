@@ -1,0 +1,34 @@
+# ==============================================================================
+# Isaac Automator - Team Studio Profile
+# Collaborative cloud storage with distributed state locking (<$0.10/mo).
+# ==============================================================================
+schema_version: "v1alpha1"
+profile_name: "team-studio"
+description: "Collaborative studio profile with remote GCS state locking and shared asset access"
+cloud: "gcp"
+
+security:
+  tier: "team"
+  network:
+    iap_only: false              # Direct ephemeral public IP
+    cloud_nat: false             # No Cloud NAT required
+    ingress_cidrs: ["auto"]      # Auto /32 lock or team CIDR
+  storage:
+    state_backend: "gcs"         # Hardened GCS Remote State
+    state_bucket: "auto"         # Auto-provisioned: isaacautomator-state-<project>-<region>
+    state_locking: true
+    soft_delete_days: 7
+  cryptography:
+    encryption_type: "google_managed"
+    kms_keyring_name: ""
+  compute:
+    shielded_vm: true
+    os_login: false
+    service_account_type: "dedicated"
+  secrets:
+    engine: "secret_manager"
+
+workstation:
+  gpu_model: "g2-standard-8"
+  demos: ["franka-manipulation", "quadruped-locomotion"]
+  remote_desktop: "standard"

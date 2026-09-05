@@ -424,14 +424,15 @@ class DeployCommand(click.core.Command):
         # --profile / --security-profile
         help = (
             'Security & deployment profile. Valid values: "simple" ($0 added cost, auto-locked /32 IP firewall), '
-            + '"team" (<$0.10 added cost, remote state with locking), or '
-            + '"enterprise" (KMS CMEK, secret manager, zero-trust private access)'
+            + '"team" (<$0.10 added cost, remote state with locking), '
+            + '"enterprise" (KMS CMEK, secret manager, zero-trust private access), '
+            + 'or any custom profile name / YAML path in configs/profiles/'
         )
         self.params.insert(
             len(self.params),
             click.core.Option(
                 ("--profile", "--security-profile"),
-                type=click.Choice(["simple", "team", "enterprise"]),
+                type=str,
                 default=config.get("default_security_profile", "simple"),
                 show_default=True,
                 help=help + ".",
@@ -445,6 +446,46 @@ class DeployCommand(click.core.Command):
                 is_flag=True,
                 default=False,
                 help="Shorthand for --profile simple (beginner-friendly, $0 added cost).",
+            ),
+        )
+
+        self.params.insert(
+            len(self.params),
+            click.core.Option(
+                ("--state-bucket",),
+                type=str,
+                default="",
+                help="Remote state bucket name (e.g. gs://my-state-bucket or 'auto').",
+            ),
+        )
+
+        self.params.insert(
+            len(self.params),
+            click.core.Option(
+                ("--cmek",),
+                is_flag=True,
+                default=False,
+                help="Enable Customer-Managed Encryption Keys (KMS CMEK).",
+            ),
+        )
+
+        self.params.insert(
+            len(self.params),
+            click.core.Option(
+                ("--iap", "--enable-iap-only"),
+                is_flag=True,
+                default=False,
+                help="Enforce private VM with Identity-Aware Proxy (IAP) access and zero public IP.",
+            ),
+        )
+
+        self.params.insert(
+            len(self.params),
+            click.core.Option(
+                ("--oslogin", "--enable-oslogin"),
+                is_flag=True,
+                default=False,
+                help="Enforce OS Login with 2FA instead of metadata SSH keys.",
             ),
         )
 

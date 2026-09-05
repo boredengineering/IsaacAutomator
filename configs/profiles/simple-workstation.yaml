@@ -1,0 +1,33 @@
+# ==============================================================================
+# Isaac Automator - Simple Profile (Default / Frictionless)
+# Zero added cloud infrastructure cost. Ideal for indie developers & researchers.
+# ==============================================================================
+schema_version: "v1alpha1"
+profile_name: "simple-workstation"
+description: "Zero-cost personal developer workstation with auto /32 IP firewall lock and local state"
+cloud: "gcp"
+
+security:
+  tier: "simple"
+  network:
+    iap_only: false              # Direct ephemeral public IP
+    cloud_nat: false             # No Cloud NAT required ($0.00/mo)
+    ingress_cidrs: ["auto"]      # Auto-detects caller public IP and locks to /32
+  storage:
+    state_backend: "local"       # Stored in ./state/<name>/.tfstate
+    state_bucket: ""
+    state_locking: false
+  cryptography:
+    encryption_type: "google_managed" # Standard Google-managed encryption ($0.00/mo)
+    kms_keyring_name: ""
+  compute:
+    shielded_vm: true            # Secure Boot and vTPM enabled ($0.00/mo)
+    os_login: false              # Direct OS-level SSH key injection
+    service_account_type: "default"
+  secrets:
+    engine: "env_vars"           # Secrets provided via environment variables
+
+workstation:
+  gpu_model: "g2-standard-8"
+  demos: ["franka-manipulation"]
+  remote_desktop: "standard"

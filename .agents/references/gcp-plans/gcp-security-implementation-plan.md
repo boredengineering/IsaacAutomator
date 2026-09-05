@@ -50,22 +50,62 @@ sequenceDiagram
 
 ---
 
+### 1.2 The Dynamic, Non-Hardcoded Infrastructure Principle
+
+**Core Invariant: Zero Mandatory Overhead, Zero Forced Cost.**
+
+Most robotics researchers, hobbyists, and solo engineers do not need—and cannot justify—the financial or operational overhead of enterprise cloud infrastructure (e.g. Cloud NAT alone costs ~$32.40/month baseline, and regional KMS key rings add per-key fees). Therefore:
+
+1. **Strictly Feature-Flagged IaC**:
+   - Every single enterprise resource (`google_compute_router`, `google_compute_router_nat`, `google_kms_key_ring`, `google_kms_crypto_key`, `google_secret_manager_secret`, `google_service_account`) uses conditional counts:
+     ```hcl
+     count = var.enable_<feature> ? 1 : 0
+     ```
+   - When flags are disabled (the default), **zero extra resources are provisioned**. The monthly added infrastructure cost is strictly **$0.00**.
+2. **Zero Hardcoded Paths or Topology**:
+   - All network subnets, KMS key links, bucket names, and authentication modes are dynamically evaluated based on user choice.
+   - Deploying in default simple mode does not require Cloud KMS, Org Admin privileges, or Cloud NAT.
+
+---
+
+### 1.3 Pre-Configured Presets & Custom Saved Configurations
+
+To support both simplicity and advanced tailoring, the architecture provides 3 pre-configured presets plus a **Special Custom Configurator**:
+
+| Tier / Profile | Added Monthly Cost | Network Perimeter | Storage & State | Encryption | Auth & Identity |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **`simple`** *(Default)* | **$0.00 / mo** | Ephemeral Public IP auto-restricted to caller's `/32` | Local `.tfstate` in `./state/<name>/` | Cloud-default Google-managed | OS-level metadata RSA key |
+| **`team`** | **<$0.10 / mo** | Ephemeral Public IP (/32 lock or team CIDR) | Hardened GCS Remote State with native object locking | Cloud-default Google-managed | Scoped Service Account + Metadata key |
+| **`enterprise`** | **~$35 - $180 / mo** | Zero Public IP (IAP TCP Forwarding + Cloud NAT) | Hardened GCS Remote State | Cloud KMS CMEK (90-day auto-rotation) | OS Login with 2FA + Shielded VM |
+| **`custom`** *(User-Defined)* | **Dynamic ($0 - $180+)** | **User-Selected** (Public /32 vs IAP-only) | **User-Selected** (Local vs GCS Remote Bucket) | **User-Selected** (Google vs KMS CMEK) | **User-Selected** (OS Login vs Metadata key) |
+
+#### Persistent Custom Profiles
+Custom configurations can be given a custom name (e.g. `robotics-lab-iap`, `cybernetic-studio`) and persisted as declarative YAML files in `configs/profiles/<profile_name>.yaml` (or `~/.isaacautomator/profiles/`). 
+
+Both the **CLI** (`./deploy-gcp <name> --profile configs/profiles/my-profile.yaml`) and the **`isaac9s` Cockpit** can read, validate, save, and launch from these custom profile specs dynamically.
+
+---
+
 ## 2. File-by-File Implementation Plan
 
 | File Path | Action | Description |
 | :--- | :--- | :--- |
-| `src/terraform/gcp/kms.tf` | **Create** | Regional KMS Key Ring, 3 CryptoKeys (compute-disk, storage, secrets), and service agent IAM bindings. |
-| `src/terraform/gcp/secrets.tf` | **Create** | CMEK-encrypted Secret Manager resources for NGC, HF, WandB, and desktop tokens. |
+| `configs/profiles/` | **Create** | Directory for persistent declarative YAML profile definitions (both pre-configured and user-saved custom profiles). |
+| `src/terraform/gcp/kms.tf` | **Create** | Regional KMS Key Ring, 3 CryptoKeys (compute-disk, storage, secrets), and service agent IAM bindings (conditional on `var.enable_cmek`). |
+| `src/terraform/gcp/secrets.tf` | **Create** | CMEK-encrypted Secret Manager resources for NGC, HF, WandB, and desktop tokens (conditional on `var.enable_secrets`). |
 | `src/terraform/bootstrap/gcp/main.tf` | **Create** | Standalone bootstrap module to provision the hardened GCS state bucket and KMS keys. |
-| `src/terraform/gcp/variables.tf` | **Modify** | Add toggles: `enable_cmek`, `enable_iap`, `enable_oslogin`, `state_bucket`, and secret variables. |
+| `src/terraform/gcp/variables.tf` | **Modify** | Add toggles: `enable_cmek`, `enable_iap_only`, `enable_oslogin`, `enable_secrets`, `state_bucket`, and secret variables. |
 | `src/terraform/gcp/main.tf` | **Modify** | Parameterize backend, instantiate KMS and secrets modules, pass security variables to `ovkit`. |
 | `src/terraform/gcp/outputs.tf` | **Modify** | Replace plaintext `output "ssh_key"` with Secret Manager secret URI or OS Login status. |
 | `src/terraform/gcp/ovkit/variables.tf` | **Modify** | Accept KMS key links, service account email, and IAP/private networking flags. |
-| `src/terraform/gcp/ovkit/main.tf` | **Modify** | Implement CMEK boot disk, Shielded VM config, dedicated SA, and OS Login metadata. |
-| `src/terraform/gcp/ovkit/security.tf` | **Modify** | Add IAP firewall rule (`35.235.240.0/20`), Private Google Access subnet, and optional Cloud NAT. |
+| `src/terraform/gcp/ovkit/main.tf` | **Modify** | Implement CMEK boot disk, Shielded VM config, dedicated SA, and OS Login metadata based on feature flags. |
+| `src/terraform/gcp/ovkit/security.tf` | **Modify** | Add IAP firewall rule (`35.235.240.0/20`), Private Google Access subnet, and optional Cloud Router + Cloud NAT. |
+| `src/python/config.py` | **Modify** | Add profile resolver: supports built-in presets (`simple`, `team`, `enterprise`) or custom YAML files from `configs/profiles/`. |
 | `src/python/deployer.py` | **Modify** | Add dynamic GCS backend configuration, state bucket auto-provisioning, and IAP SSH tunnel handling. |
-| `deploy-gcp` | **Modify** | Add Click CLI arguments for `--state-bucket`, `--cmek`, `--iap`, and secret injection. |
+| `deploy-gcp` | **Modify** | Add Click CLI arguments for `--state-bucket`, `--cmek`, `--iap`, `--profile`, and custom YAML loading. |
 | `src/python/gcp.py` | **Modify** | Add IAP tunneling helpers and OS Login SSH execution wrappers. |
+| `src/tui/screens/profiles.py` | **Modify** | Custom Profile Builder in `isaac9s`: interactive toggle form, live dynamic cost estimator, Save to YAML, and Load Profile. |
+| `src/tui/screens/deploy_modal.py` | **Modify** | Wire dynamic profiles and custom profile selection directly into the deployment modal. |
 
 ---
 
@@ -538,6 +578,110 @@ Modify `initialize_terraform()` in `src/python/deployer.py` to dynamically wire 
             cwd=cwd,
         )
 ```
+
+---
+
+### 3.7 Step 7: Custom Profile Schema & Persistence Engine (`configs/profiles/*.yaml`)
+
+To ensure that infrastructure remains **100% dynamic** and never hardcoded, `IsaacAutomator` introduces a declarative profile schema. Users can define custom profiles or save configurations built inside `isaac9s`.
+
+Stored in `configs/profiles/<profile_name>.yaml` (or user directory `~/.isaacautomator/profiles/`):
+
+```yaml
+# ==============================================================================
+# Isaac Automator - Declarative Workstation Profile Specification
+# ==============================================================================
+schema_version: "v1alpha1"
+profile_name: "cybernetic-studio"
+description: "Collaborative team profile with remote GCS state and IAP zero-trust without KMS overhead"
+cloud: "gcp"
+
+security:
+  tier: "custom" # "simple" | "team" | "enterprise" | "custom"
+  
+  # Network & Ingress Perimeter
+  network:
+    iap_only: true              # True = Zero public IP (IAP-only access)
+    cloud_nat: true             # Required if iap_only is true for outbound package traffic
+    ingress_cidrs: []           # Empty when iap_only is true, or ["auto"] for /32 lock
+  
+  # Storage & State Locking
+  storage:
+    state_backend: "gcs"        # "local" | "gcs"
+    state_bucket: "auto"        # "auto" or custom bucket name "gs://my-bucket"
+    state_locking: true
+    soft_delete_days: 7
+  
+  # Cryptographic Engine
+  cryptography:
+    encryption_type: "google_managed" # "google_managed" | "kms_cmek"
+    kms_keyring_name: ""        # Only evaluated when encryption_type == "kms_cmek"
+    rotation_days: 90
+  
+  # Compute & Hardware Integrity
+  compute:
+    shielded_vm: true           # Secure Boot, vTPM, and Runtime Integrity Monitoring
+    os_login: true              # Central IAM authentication with mandatory 2FA
+    service_account_type: "dedicated" # "dedicated" (PoLP) | "default"
+  
+  # Credentials & Secrets Handling
+  secrets:
+    engine: "secret_manager"    # "secret_manager" | "env_vars"
+
+workstation:
+  gpu_model: "g2-standard-8"
+  demos: ["franka-manipulation"]
+  remote_desktop: "standard"
+```
+
+#### CLI Loading & Validation
+The CLI dynamically resolves `--profile`:
+```bash
+# Using a built-in preset:
+./deploy-gcp box01 --profile simple
+
+# Using a saved custom profile by name:
+./deploy-gcp box01 --profile cybernetic-studio
+
+# Using an explicit YAML path:
+./deploy-gcp box01 --profile configs/profiles/my-special-rig.yaml
+```
+
+---
+
+### 3.8 Step 8: `isaac9s` Dynamic Configurator & Real-Time Cost Calculator
+
+In `isaac9s`, the **Profiles Screen** (`p` / `:profile`) and **Deploy Modal** (`n` / `:deploy`) are enhanced with an interactive custom builder:
+
+```text
+╭─ isaac9s » Declarative Profile & Dynamic Security Builder ───────────────────────────────────────────╮
+│ Active Workstation Context: test03-gcp  |  Config Engine: Dynamic Feature-Flagged                     │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────╯
+  PRESET MODES:
+    (•) Simple Mode ($0.00/mo)       - Dynamic /32 IP lock, local state, Google-managed encryption
+    ( ) Team Mode (<$0.10/mo)        - Remote GCS state locking, shared asset bucket
+    ( ) Enterprise Mode ($35-180/mo) - Private VM, IAP tunnel, Cloud NAT, KMS CMEK, Shielded VM
+    ( ) Custom Mode (Interactive)    - Tailor every subsystem individually and save to YAML
+
+  CUSTOM SUBSYSTEM TOGGLES:
+    [X] Zero Public IP (IAP TCP Forwarding)                [Added Cost: $0.00 / mo]
+    [X] Cloud NAT Gateway (Required for Private Outbound)  [Added Cost: +$32.40 / mo]
+    [X] Remote GCS State Storage with Native Locking       [Added Cost: +$0.05 / mo]
+    [ ] Customer-Managed Encryption Keys (Cloud KMS CMEK)  [Added Cost: +$1.80 / mo]
+    [X] Shielded VM (Secure Boot, vTPM, Integrity Mon)     [Added Cost: $0.00 / mo]
+    [X] OS Login with Mandatory 2FA                        [Added Cost: $0.00 / mo]
+    [X] Google Secret Manager (Zero-Bake Credentials)      [Added Cost: +$0.06 / mo]
+
+  DYNAMIC ESTIMATED OVERHEAD:  +$32.51 / month  (Cloud NAT + GCS + GSM)
+
+  PROFILE NAME: [ cybernetic-studio                 ]
+  ─────────────────────────────────────────────────────────────────────────────────────────────────────
+  [s] Save Custom Profile to YAML    [l] Load Saved Profile    [a] Apply to Deploy Context    [Esc] Back
+```
+
+- **Live Reactive Calculation**: As checkboxes are toggled, Textual's reactive properties recalculate the exact cloud cost delta in real time.
+- **Persistence**: Pressing `[s]` serializes the configuration to `configs/profiles/<profile_name>.yaml`.
+- **Automatic Discovery**: Any `.yaml` file added to `configs/profiles/` immediately appears in the profile selection dropdown across both `isaac9s` and the CLI.
 
 ---
 

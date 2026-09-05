@@ -184,32 +184,51 @@ class Deployer:
     def resolve_security_profile(self):
         """
         Resolves security profile with beginner-friendly defaults and user choice.
-        Valid profiles: 'simple', 'team', 'enterprise'.
+        Supports built-in profiles ('simple', 'team', 'enterprise') or custom YAML specs
+        discovered in configs/profiles/ or passed as paths.
         """
         if self.params.get("simple"):
-            profile = "simple"
+            profile_name = "simple"
         else:
-            profile = self.params.get("profile") or self.params.get("security_profile")
+            profile_name = self.params.get("profile") or self.params.get("security_profile")
 
-        if not profile:
-            profile = self.config.get("default_security_profile", "simple")
+        if not profile_name:
+            profile_name = self.config.get("default_security_profile", "simple")
 
-        valid_profiles = ["simple", "team", "enterprise"]
-        if profile not in valid_profiles:
+        from src.python.config import list_available_profiles, load_profile_spec
+
+        spec = load_profile_spec(str(profile_name), repo_root=self.config.get("app_dir"))
+
+        if not spec:
+            available = list(list_available_profiles(self.config.get("app_dir")).keys())
             click.echo(
                 colorize_error(
-                    f"* Unknown security profile '{profile}'. "
-                    f"Valid profiles: {', '.join(valid_profiles)}."
+                    f"* Unknown security profile '{profile_name}'. "
+                    f"Valid profiles: {', '.join(sorted(available))}."
                 ),
                 err=True,
             )
             sys.exit(1)
 
-        self.params["security_profile"] = profile
-        self.params["profile"] = profile
+        tier = spec.get("tier", "simple")
+        self.params["security_profile"] = tier
+        self.params["profile"] = profile_name
+        self.params["profile_spec"] = spec
+
+        # Apply profile toggles to params if not explicitly overridden on CLI
+        if "enable_cmek" not in self.params:
+            self.params["enable_cmek"] = spec.get("enable_cmek", False)
+        if "enable_iap_only" not in self.params:
+            self.params["enable_iap_only"] = spec.get("enable_iap_only", False)
+        if "enable_oslogin" not in self.params:
+            self.params["enable_oslogin"] = spec.get("enable_oslogin", False)
+        if "enable_secrets" not in self.params:
+            self.params["enable_secrets"] = spec.get("enable_secrets", False)
+        if "state_bucket" not in self.params or not self.params.get("state_bucket"):
+            self.params["state_bucket"] = spec.get("state_bucket", "")
 
         if self.params.get("debug"):
-            click.echo(colorize_info(f"* Selected security profile: '{profile}'"))
+            click.echo(colorize_info(f"* Selected security profile: '{profile_name}' (Tier: {tier})"))
 
     def __del__(self):
         # update meta info
@@ -421,6 +440,11 @@ class Deployer:
                 "ingress_cidrs": ingress_cidrs_actual,
                 "os_username": self.config["default_ssh_user"],
                 "security_profile": self.params.get("security_profile", "simple"),
+                "enable_cmek": self.params.get("enable_cmek", False),
+                "enable_iap_only": self.params.get("enable_iap_only", False),
+                "enable_oslogin": self.params.get("enable_oslogin", False),
+                "enable_secrets": self.params.get("enable_secrets", False),
+                "state_bucket": self.params.get("state_bucket", ""),
             }
         )
 
@@ -542,17 +566,32 @@ class Deployer:
 
     def initialize_terraform(self, cwd: str):
         """
-        Initialize Terraform via shell command
+        Initialize Terraform via shell command supporting local state or dynamic GCS remote backend
         cwd: directory where terraform scripts are located
         """
         debug = self.params["debug"]
         deployment_name = self.params["deployment_name"]
-        tfstate_file = Path(
-            f"{self.config['state_dir']}/{deployment_name}/.tfstate"
-        ).absolute()
+        state_bucket = self.params.get("state_bucket") or os.environ.get("ISAAC_STATE_BUCKET")
+
+        if not state_bucket:
+            tfstate_file = Path(
+                f"{self.config['state_dir']}/{deployment_name}/.tfstate"
+            ).absolute()
+            backend_args = f'-backend-config="path={tfstate_file}"'
+        else:
+            bucket = state_bucket.replace("gs://", "").rstrip("/")
+            if bucket == "auto":
+                project = self.params.get("project") or "default"
+                region = self.params.get("region") or "us-central1"
+                bucket = f"isaacautomator-state-{project}-{region}"
+            prefix = f"isaacautomator/v1/deployments/{deployment_name}/terraform"
+            backend_args = (
+                f'-backend-config="bucket={bucket}" '
+                f'-backend-config="prefix={prefix}"'
+            )
 
         shell_command(
-            f"terraform init -upgrade -no-color -input=false -reconfigure -backend-config=\"path={tfstate_file}\" {' > /dev/null' if not debug else ''}",
+            f"terraform init -upgrade -no-color -input=false -reconfigure {backend_args} {' > /dev/null' if not debug else ''}",
             verbose=debug,
             cwd=cwd,
         )

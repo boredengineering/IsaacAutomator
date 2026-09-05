@@ -197,15 +197,15 @@ Pressing `[5]` or `a` renders a diagnostic audit of all system dependencies, APT
 Pressing `[6]` allows users to interactively inspect and switch profiles and security tiers:
 
 ```text
-╭─ isaac9s » Declarative Profile & Multi-Cloud Security Configurator ───────────────────────────────────────────────────────────────────╮
-│ Active Workstation: test03-gcp  |  Config File: isaac-installer/config/default-profile.yaml                                          │
-╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
-  SELECT WORKSTATION PROFILE:
+╭─ isaac9s » Declarative Profile & Dynamic Security Configurator ─────────────────────────────────────────────────────────╮
+│ Active Workstation: test03-gcp  |  Config Engine: Dynamic Feature-Flagged (Zero Forced Overhead)                       │
+╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+  SELECT WORKSTATION BASE:
     (•) default-workstation.yaml    Clean interactive robotics workstation (Sim + Lab + Dev Apps + 1ms FTDI)
     ( ) full-ecosystem.yaml         Full ecosystem (+ LeRobot, Arena, GR00T, Manus VR, SpaceMouse)
     ( ) minimal-headless.yaml       Minimal headless node (Simulation server, CI/CD, training)
 
-  SELECT SECURITY & HARDENING TIER:
+  SELECT SECURITY & HARDENING MODE:
     (•) Tier 1: Simple Mode (Zero-Cost Frictionless)  [RECOMMENDED FOR INDIE & RESEARCHERS]
         ├── Infrastructure Cost: $0.00 / month added overhead
         ├── Firewall Ingress:   Dynamic /32 IP Whitelist (auto-locked to your current IP: 198.51.100.24)
@@ -223,8 +223,19 @@ Pressing `[6]` allows users to interactively inspect and switch profiles and sec
         ├── Firewall Ingress:   Zero public IP (Private-only access via GCP IAP or AWS SSM Session Manager)
         ├── Outbound Traffic:   Managed Cloud NAT Gateway with Cloud Router
         └── State Storage:      KMS CMEK-encrypted Cloud Bucket + Cloud Secret Manager credentials
-───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-  <enter> Apply Configuration  <y> View Raw YAML  <e> Edit in $EDITOR  <Esc> Discard Changes
+
+    ( ) Special Custom Mode (Dynamic Granular Configurator)
+        [X] Zero Public IP (IAP TCP Forwarding)                [Added Cost: $0.00 / mo]
+        [X] Cloud NAT Gateway (Required for Private Outbound)  [Added Cost: +$32.40 / mo]
+        [X] Remote GCS State Storage with Native Locking       [Added Cost: +$0.05 / mo]
+        [ ] Customer-Managed Encryption Keys (Cloud KMS CMEK)  [Added Cost: +$1.80 / mo]
+        [X] Shielded VM (Secure Boot, vTPM, Integrity Mon)     [Added Cost: $0.00 / mo]
+        [X] OS Login with Mandatory 2FA                        [Added Cost: $0.00 / mo]
+        [X] Google Secret Manager (Zero-Bake Credentials)      [Added Cost: +$0.06 / mo]
+        ├── Dynamic Real-Time Added Overhead: [bold green]+$32.51 / month[/]
+        └── Profile Name: [ cybernetic-studio                 ]
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  <enter> Apply Configuration  <s> Save Profile to YAML  <l> Load Custom Profile  <y> View Raw YAML  <Esc> Discard Changes
 ```
 
 ---

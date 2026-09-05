@@ -43,7 +43,12 @@ module "isaac_workstation" {
   os_username        = var.os_username
   region             = local.region
   from_image         = var.from_image
-  image_project      = var.project
-  use_flex_start     = var.use_flex_start
+  image_project             = var.project
+  use_flex_start            = var.use_flex_start
+  project                   = var.project
+  enable_cmek               = var.enable_cmek
+  enable_iap_only           = var.enable_iap_only
+  enable_oslogin            = var.enable_oslogin
+  kms_compute_disk_key_link = var.enable_cmek && length(google_kms_crypto_key.compute_disk_key) > 0 ? google_kms_crypto_key.compute_disk_key[0].id : ""
 }
 

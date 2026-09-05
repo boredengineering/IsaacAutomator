@@ -70,3 +70,33 @@ variable "security_profile" {
   default     = "simple"
 }
 
+variable "project" {
+  description = "GCP Project ID"
+  type        = string
+  default     = ""
+}
+
+variable "enable_cmek" {
+  description = "Whether CMEK is active"
+  type        = bool
+  default     = false
+}
+
+variable "enable_iap_only" {
+  description = "Zero public IP; instances are private and accessed via Cloud IAP TCP forwarding"
+  type        = bool
+  default     = false
+}
+
+variable "enable_oslogin" {
+  description = "Enforce Google Cloud OS Login instead of metadata SSH keys"
+  type        = bool
+  default     = false
+}
+
+variable "kms_compute_disk_key_link" {
+  description = "Self link to KMS CryptoKey for boot disk encryption"
+  type        = string
+  default     = ""
+}
+

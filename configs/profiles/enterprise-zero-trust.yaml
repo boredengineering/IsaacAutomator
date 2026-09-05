@@ -1,0 +1,34 @@
+# ==============================================================================
+# Isaac Automator - Enterprise Zero-Trust Profile
+# Fully isolated private infrastructure, IAP, Cloud NAT, KMS CMEK ($35-$180/mo).
+# ==============================================================================
+schema_version: "v1alpha1"
+profile_name: "enterprise-zero-trust"
+description: "Enterprise Zero-Trust workstation with private IP, IAP TCP forwarding, Cloud NAT, and KMS CMEK"
+cloud: "gcp"
+
+security:
+  tier: "enterprise"
+  network:
+    iap_only: true               # Zero public IP (Cloud IAP TCP Forwarding only)
+    cloud_nat: true              # Cloud NAT gateway for outbound updates
+    ingress_cidrs: []            # No direct public ingress
+  storage:
+    state_backend: "gcs"
+    state_bucket: "auto"
+    state_locking: true
+    soft_delete_days: 7
+  cryptography:
+    encryption_type: "kms_cmek"  # Regional KMS Key Ring with 90-day auto-rotation
+    kms_keyring_name: "auto"
+  compute:
+    shielded_vm: true            # Secure Boot, vTPM, and Integrity Monitoring
+    os_login: true               # Central IAM identity with mandatory 2FA
+    service_account_type: "dedicated"
+  secrets:
+    engine: "secret_manager"
+
+workstation:
+  gpu_model: "g2-standard-8"
+  demos: ["franka-manipulation"]
+  remote_desktop: "standard"

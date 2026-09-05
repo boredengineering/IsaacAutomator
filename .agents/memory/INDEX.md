@@ -112,6 +112,8 @@ Master index of session memory checkpoints for Isaac Automator.
 | 2026-09-04 05:58 | `d4e5f6a7` | Implementation of Multi-Cloud Security Tiering & isaac9s Cockpit | Implemented --profile simple/team/enterprise, auto-IP /32 lock, modular isaac9s screens, TCSS styles, Remote modal & async test suite | [`20260904_055830_d4e5f6a7.md`](./sessions/20260904_055830_d4e5f6a7.md) |
 | 2026-09-04 13:46 | `e5f6a7b8` | isaac9s Master Plan Update: Gap Analysis, Brainstorming & Phase 2 Roadmap | Brainstormed 8 key operational gaps, designed interactive deploy wizard modal, cloud auth bridge, Vim palette, and updated roadmap | [`20260904_134630_e5f6a7b8.md`](./sessions/20260904_134630_e5f6a7b8.md) |
 | 2026-09-04 14:10 | `f6a7b8c9` | Implementation of Phase 2 for isaac9s Cockpit | Implemented in-cockpit deploy wizard [n], deep inspector [i], cloud auth bridge [a], and Vim command palette (:) | [`20260904_141030_f6a7b8c9.md`](./sessions/20260904_141030_f6a7b8c9.md) |
+| 2026-09-05 00:10 | `a4b7c8d9` | Dynamic Non-Hardcoded Infrastructure & Custom Declarative Profiles Specification | Updated plans with dynamic feature-flagged IaC, custom profile schema, isaac9s live cost calculator, and YAML profile persistence | [`20260905_001030_a4b7c8d9.md`](./sessions/20260905_001030_a4b7c8d9.md) |
+| 2026-09-05 00:26 | `b5c8d9e0` | Implementation of Dynamic Multi-Cloud Security Tiering & Custom Profile Builder | Built dynamic Terraform KMS/IAP/Secrets, Python profile discovery/loader, isaac9s custom configurator & cost estimator | [`20260905_002630_b5c8d9e0.md`](./sessions/20260905_002630_b5c8d9e0.md) |
 
 
 

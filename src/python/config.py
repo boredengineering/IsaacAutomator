@@ -159,3 +159,151 @@ c["remote_desktop_providers"] = {
         "standard": False,
     },
 }
+
+# ------------------------------------------------------------------------------
+# Declarative Profile & Dynamic Security Discovery Engine
+# ------------------------------------------------------------------------------
+from pathlib import Path
+import yaml
+
+BUILTIN_PROFILES: dict[str, dict[str, Any]] = {
+    "simple": {
+        "name": "simple",
+        "tier": "simple",
+        "description": "Zero-cost personal developer workstation with auto /32 IP firewall lock and local state",
+        "enable_cmek": False,
+        "enable_iap_only": False,
+        "enable_oslogin": False,
+        "enable_secrets": False,
+        "state_bucket": "",
+        "ingress_cidrs": ["auto"],
+    },
+    "team": {
+        "name": "team",
+        "tier": "team",
+        "description": "Collaborative studio profile with remote GCS state locking and shared asset access",
+        "enable_cmek": False,
+        "enable_iap_only": False,
+        "enable_oslogin": False,
+        "enable_secrets": True,
+        "state_bucket": "auto",
+        "ingress_cidrs": ["auto"],
+    },
+    "enterprise": {
+        "name": "enterprise",
+        "tier": "enterprise",
+        "description": "Enterprise Zero-Trust workstation with private IP, IAP TCP forwarding, Cloud NAT, and KMS CMEK",
+        "enable_cmek": True,
+        "enable_iap_only": True,
+        "enable_oslogin": True,
+        "enable_secrets": True,
+        "state_bucket": "auto",
+        "ingress_cidrs": [],
+    },
+}
+
+
+def get_profile_search_dirs(repo_root: str | None = None) -> list[Path]:
+    """Returns candidate directories for declarative profiles."""
+    root = Path(repo_root or _repo_root)
+    dirs = [
+        root / "configs" / "profiles",
+        Path.home() / ".isaacautomator" / "profiles",
+    ]
+    return [d for d in dirs if d.exists()]
+
+
+def list_available_profiles(repo_root: str | None = None) -> dict[str, dict[str, Any]]:
+    """
+    Returns a unified mapping of all available profiles:
+    built-in presets ('simple', 'team', 'enterprise') plus any custom YAML files
+    discovered in configs/profiles/ and ~/.isaacautomator/profiles/.
+    """
+    profiles: dict[str, dict[str, Any]] = dict(BUILTIN_PROFILES)
+
+    for pdir in get_profile_search_dirs(repo_root):
+        for path in sorted(pdir.glob("*.y*ml")):
+            stem = path.stem
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    data = yaml.safe_load(f) or {}
+                prof_name = data.get("profile_name", stem)
+                sec = data.get("security", {})
+                profiles[prof_name] = {
+                    "name": prof_name,
+                    "tier": sec.get("tier", "custom"),
+                    "description": data.get("description", f"Custom profile ({path.name})"),
+                    "path": str(path),
+                    "enable_cmek": sec.get("cryptography", {}).get("encryption_type") == "kms_cmek",
+                    "enable_iap_only": sec.get("network", {}).get("iap_only", False),
+                    "enable_oslogin": sec.get("compute", {}).get("os_login", False),
+                    "enable_secrets": sec.get("secrets", {}).get("engine") == "secret_manager",
+                    "state_bucket": sec.get("storage", {}).get("state_bucket", ""),
+                    "ingress_cidrs": sec.get("network", {}).get("ingress_cidrs", ["auto"]),
+                }
+            except Exception:
+                pass
+
+    return profiles
+
+
+def load_profile_spec(identifier: str, repo_root: str | None = None) -> dict[str, Any] | None:
+    """
+    Resolves a profile identifier (name, stem, or direct file path) into normalized parameters.
+    """
+    if not identifier:
+        return BUILTIN_PROFILES["simple"]
+
+    clean_id = identifier.strip().lower()
+    if clean_id in BUILTIN_PROFILES:
+        return BUILTIN_PROFILES[clean_id]
+
+    # Check direct file path
+    direct_path = Path(identifier)
+    if direct_path.exists() and direct_path.is_file():
+        try:
+            with open(direct_path, "r", encoding="utf-8") as f:
+                data = yaml.safe_load(f) or {}
+            sec = data.get("security", {})
+            return {
+                "name": data.get("profile_name", direct_path.stem),
+                "tier": sec.get("tier", "custom"),
+                "description": data.get("description", ""),
+                "path": str(direct_path),
+                "enable_cmek": sec.get("cryptography", {}).get("encryption_type") == "kms_cmek",
+                "enable_iap_only": sec.get("network", {}).get("iap_only", False),
+                "enable_oslogin": sec.get("compute", {}).get("os_login", False),
+                "enable_secrets": sec.get("secrets", {}).get("engine") == "secret_manager",
+                "state_bucket": sec.get("storage", {}).get("state_bucket", ""),
+                "ingress_cidrs": sec.get("network", {}).get("ingress_cidrs", ["auto"]),
+                "raw": data,
+            }
+        except Exception:
+            return None
+
+    # Check in search directories
+    available = list_available_profiles(repo_root)
+    if identifier in available:
+        return available[identifier]
+    if clean_id in available:
+        return available[clean_id]
+
+    return None
+
+
+def save_profile_spec(name: str, spec: dict[str, Any], repo_root: str | None = None) -> Path:
+    """
+    Serializes a custom profile specification to configs/profiles/<name>.yaml.
+    """
+    root = Path(repo_root or _repo_root)
+    out_dir = root / "configs" / "profiles"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    clean_name = name.strip().lower().replace(" ", "-")
+    if not clean_name.endswith(".yaml"):
+        clean_name += ".yaml"
+    out_path = out_dir / clean_name
+
+    with open(out_path, "w", encoding="utf-8") as f:
+        yaml.safe_dump(spec, f, sort_keys=False)
+
+    return out_path

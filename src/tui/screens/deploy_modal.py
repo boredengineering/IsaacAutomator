@@ -55,6 +55,10 @@ class DeployWorkstationModal(ModalScreen):
                     yield RadioButton("Tier 1: Simple Mode ($0.00/mo, dynamic /32 IP whitelist)", value=True, id="rb-profile-simple")
                     yield RadioButton("Tier 2: Team Mode (<$0.10/mo, shared GCS/S3 remote state)", id="rb-profile-team")
                     yield RadioButton("Tier 3: Enterprise ($35-$180/mo, Cloud NAT, CMEK, Zero-Trust IAP)", id="rb-profile-enterprise")
+                    from src.python.config import list_available_profiles
+                    for custom_name, custom_meta in list_available_profiles().items():
+                        if custom_name not in ("simple", "team", "enterprise"):
+                            yield RadioButton(f"Custom: {custom_name} ({custom_meta.get('tier', 'custom')})", id=f"rb-profile-custom-{custom_name}")
 
                 yield Label("[bold white]5. Optional Pre-Installed Robotics Demos:[/]")
                 with Horizontal(classes="checkbox-row"):
@@ -94,7 +98,13 @@ class DeployWorkstationModal(ModalScreen):
                 "rb-profile-team": "team",
                 "rb-profile-enterprise": "enterprise",
             }
-            self.selected_profile = p_map.get(event.pressed.id, "simple")
+            if event.pressed.id in p_map:
+                self.selected_profile = p_map[event.pressed.id]
+            elif event.pressed.id.startswith("rb-profile-custom-"):
+                self.selected_profile = event.pressed.id.replace("rb-profile-custom-", "")
+            else:
+                self.selected_profile = "simple"
+
             summary = self.query_one("#deploy-summary", Static)
             if self.selected_profile == "simple":
                 summary.update(
@@ -106,10 +116,18 @@ class DeployWorkstationModal(ModalScreen):
                     "[bold cyan]Security & Cost Summary:[/] Team Mode (<$0.10/mo storage cost).\n"
                     "Cloud remote state backend with native distributed state locking."
                 )
-            else:
+            elif self.selected_profile == "enterprise":
                 summary.update(
                     "[bold red]Security & Cost Summary:[/] Enterprise Mode ($35-$180/mo infrastructure).\n"
                     "Zero public IP, KMS CMEK encryption, Cloud NAT gateway, and Zero-Trust IAP."
+                )
+            else:
+                from src.python.config import list_available_profiles
+                prof_data = list_available_profiles().get(self.selected_profile, {})
+                tier = prof_data.get("tier", "custom")
+                summary.update(
+                    f"[bold cyan]Security & Cost Summary:[/] Custom Profile '{self.selected_profile}' (Tier: {tier}).\n"
+                    f"{prof_data.get('description', 'Custom declarative specification.')}"
                 )
 
     def on_button_pressed(self, event: Button.Pressed) -> None:

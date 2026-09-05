@@ -1,13 +1,55 @@
-
 resource "google_compute_network" "default" {
-  name = "${var.prefix}-network"
+  name                    = "${var.prefix}-network"
+  auto_create_subnetworks = false
+}
+
+# Dedicated subnetwork with Private Google Access (PGA)
+resource "google_compute_subnetwork" "default" {
+  name                     = "${var.prefix}-subnet"
+  ip_cidr_range            = "10.10.0.0/24"
+  region                   = var.region
+  network                  = google_compute_network.default.id
+  private_ip_google_access = true
 }
 
 # Static external IP so the instance keeps the same public address
-# across stop/start cycles. An ephemeral IP would be released on stop.
+# across stop/start cycles. Omitted when enable_iap_only is true (zero public IP).
 resource "google_compute_address" "static_ip" {
+  count  = var.enable_iap_only ? 0 : 1
   name   = "${var.prefix}-ip"
   region = var.region
+}
+
+# Cloud Router & NAT for outbound package downloads on private instances
+resource "google_compute_router" "router" {
+  count   = var.enable_iap_only ? 1 : 0
+  name    = "${var.prefix}-router"
+  region  = var.region
+  network = google_compute_network.default.id
+}
+
+resource "google_compute_router_nat" "nat" {
+  count                              = var.enable_iap_only ? 1 : 0
+  name                               = "${var.prefix}-nat"
+  router                             = google_compute_router.router[0].name
+  region                             = var.region
+  nat_ip_allocate_option             = "AUTO_ONLY"
+  source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
+}
+
+# Identity-Aware Proxy (IAP) TCP Forwarding Ingress Rule
+resource "google_compute_firewall" "iap_ingress" {
+  count   = var.enable_iap_only ? 1 : 0
+  name    = "${var.prefix}-fwrules-iap-ingress"
+  network = google_compute_network.default.self_link
+
+  direction     = "INGRESS"
+  source_ranges = ["35.235.240.0/20"] # Official Google IAP CIDR Block
+
+  allow {
+    protocol = "tcp"
+    ports    = ["22", "8443", "8444", "6080", "4000"]
+  }
 }
 
 # all egress
@@ -23,8 +65,11 @@ resource "google_compute_firewall" "egress" {
   destination_ranges = ["0.0.0.0/0"]
 }
 
+# Public ingress firewall rules (Omitted when enable_iap_only is true)
+
 # ssh
 resource "google_compute_firewall" "ssh" {
+  count   = var.enable_iap_only ? 0 : 1
   name    = "${var.prefix}-fwrules-ssh"
   network = google_compute_network.default.self_link
 
@@ -38,6 +83,7 @@ resource "google_compute_firewall" "ssh" {
 
 # nomachine
 resource "google_compute_firewall" "nomachine" {
+  count   = var.enable_iap_only ? 0 : 1
   name    = "${var.prefix}-fwrules-nomachine"
   network = google_compute_network.default.self_link
 
@@ -56,6 +102,7 @@ resource "google_compute_firewall" "nomachine" {
 
 # vnc
 resource "google_compute_firewall" "vnc" {
+  count   = var.enable_iap_only ? 0 : 1
   name    = "${var.prefix}-fwrules-vnc"
   network = google_compute_network.default.self_link
 
@@ -69,6 +116,7 @@ resource "google_compute_firewall" "vnc" {
 
 # novnc
 resource "google_compute_firewall" "novnc" {
+  count   = var.enable_iap_only ? 0 : 1
   name    = "${var.prefix}-fwrules-novnc"
   network = google_compute_network.default.self_link
 
@@ -80,12 +128,9 @@ resource "google_compute_firewall" "novnc" {
   source_ranges = var.ingress_cidrs
 }
 
-# Isaac Sim WebRTC livestream: browser client (8211), signaling (49100) and the
-# media/session port ranges. Without these open the stream works on localhost
-# (inside the desktop) but not via the instance's public IP (see issue #19).
-# Scoped to ingress_cidrs like every other rule - the stream is unauthenticated,
-# so keep it restricted to your client IP(s).
+# Isaac Sim WebRTC livestream
 resource "google_compute_firewall" "webrtc" {
+  count   = var.enable_iap_only ? 0 : 1
   name    = "${var.prefix}-fwrules-webrtc"
   network = google_compute_network.default.self_link
 
@@ -104,6 +149,7 @@ resource "google_compute_firewall" "webrtc" {
 
 # custom ssh port
 resource "google_compute_firewall" "ssh_custom" {
+  count   = var.enable_iap_only ? 0 : 1
   name    = "${var.prefix}-fwrules-ssh-custom"
   network = google_compute_network.default.self_link
 
@@ -117,6 +163,7 @@ resource "google_compute_firewall" "ssh_custom" {
 
 # KasmVNC (HTTPS WebRTC)
 resource "google_compute_firewall" "kasmvnc" {
+  count   = var.enable_iap_only ? 0 : 1
   name    = "${var.prefix}-fwrules-kasmvnc"
   network = google_compute_network.default.self_link
 
@@ -130,6 +177,7 @@ resource "google_compute_firewall" "kasmvnc" {
 
 # NICE DCV (TCP & UDP)
 resource "google_compute_firewall" "dcv" {
+  count   = var.enable_iap_only ? 0 : 1
   name    = "${var.prefix}-fwrules-dcv"
   network = google_compute_network.default.self_link
 
@@ -148,6 +196,7 @@ resource "google_compute_firewall" "dcv" {
 
 # xrdp (Microsoft Remote Desktop)
 resource "google_compute_firewall" "xrdp" {
+  count   = var.enable_iap_only ? 0 : 1
   name    = "${var.prefix}-fwrules-xrdp"
   network = google_compute_network.default.self_link
 
@@ -161,6 +210,7 @@ resource "google_compute_firewall" "xrdp" {
 
 # Sunshine / Moonlight streaming
 resource "google_compute_firewall" "sunshine" {
+  count   = var.enable_iap_only ? 0 : 1
   name    = "${var.prefix}-fwrules-sunshine"
   network = google_compute_network.default.self_link
 
@@ -179,6 +229,7 @@ resource "google_compute_firewall" "sunshine" {
 
 # Parsec (UDP peer-to-peer range)
 resource "google_compute_firewall" "parsec" {
+  count   = var.enable_iap_only ? 0 : 1
   name    = "${var.prefix}-fwrules-parsec"
   network = google_compute_network.default.self_link
 
