@@ -118,6 +118,7 @@ Master index of session memory checkpoints for Isaac Automator.
 | 2026-09-05 14:25 | `d7e8f9a0` | GCP Flex-start Integration into isaac9s Deploy Modal | Added GCP Flex-start (DWS) selection to isaac9s deploy modal, verified g4- us-central1-b zone, and handled dispatch | [`20260905_142500_d7e8f9a0.md`](./sessions/20260905_142500_d7e8f9a0.md) |
 | 2026-09-05 15:05 | `e1f2a3b4` | Subprocess Hang Diagnosis, Process Cancellation Controls, and Codebase Architecture | Fixed stuck commands with unbuffered streaming & DEVNULL, added Stop Process button [k], GCP ADC auto-recovery, and documented full codebase architecture | [`20260905_150500_e1f2a3b4.md`](./sessions/20260905_150500_e1f2a3b4.md) |
 | 2026-09-05 21:19 | `f2a3b4c5` | Terminal Visibility Diagnosis, VS Code WebGL GPU Glitch, and Strict Settings Guard | Diagnosed WebGL terminal glitch (text visible only on selection), fixed via GPU acceleration off, codified strict prohibition against altering VS Code settings without explicit permission | [`20260905_211900_f2a3b4c5.md`](./sessions/20260905_211900_f2a3b4c5.md) |
+| 2026-09-06 16:55 | `f11bc21e` | Enterprise Zero-Trust Dry-Run Validation, Firewall Name Truncation & Dynamic Backend Override | Resolved Terraform dynamic backend config in dry-run, prevented GCP firewall rule names exceeding 63 chars, updated references catalog, and validated 18-resource Enterprise dry-run | [`20260906_165540_f11bc21e.md`](./sessions/20260906_165540_f11bc21e.md) |
 
 
 
