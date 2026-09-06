@@ -37,10 +37,16 @@ resource "google_compute_router_nat" "nat" {
   source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
 }
 
+locals {
+  # GCP firewall rules have a strict 63 character maximum length.
+  # Truncate prefix if necessary to guarantee all rule names remain <= 63 chars.
+  fw_prefix = trimsuffix(substr(var.prefix, 0, 42), "-")
+}
+
 # Identity-Aware Proxy (IAP) TCP Forwarding Ingress Rule
 resource "google_compute_firewall" "iap_ingress" {
   count   = var.enable_iap_only ? 1 : 0
-  name    = "${var.prefix}-fwrules-iap-ingress"
+  name    = "${local.fw_prefix}-fw-iap"
   network = google_compute_network.default.self_link
 
   direction     = "INGRESS"
@@ -54,7 +60,7 @@ resource "google_compute_firewall" "iap_ingress" {
 
 # all egress
 resource "google_compute_firewall" "egress" {
-  name    = "${var.prefix}-fwrules-egress"
+  name    = "${local.fw_prefix}-fw-egress"
   network = google_compute_network.default.self_link
 
   allow {
@@ -70,7 +76,7 @@ resource "google_compute_firewall" "egress" {
 # ssh
 resource "google_compute_firewall" "ssh" {
   count   = var.enable_iap_only ? 0 : 1
-  name    = "${var.prefix}-fwrules-ssh"
+  name    = "${local.fw_prefix}-fw-ssh"
   network = google_compute_network.default.self_link
 
   allow {
@@ -84,7 +90,7 @@ resource "google_compute_firewall" "ssh" {
 # nomachine
 resource "google_compute_firewall" "nomachine" {
   count   = var.enable_iap_only ? 0 : 1
-  name    = "${var.prefix}-fwrules-nomachine"
+  name    = "${local.fw_prefix}-fw-nomachine"
   network = google_compute_network.default.self_link
 
   allow {
@@ -103,7 +109,7 @@ resource "google_compute_firewall" "nomachine" {
 # vnc
 resource "google_compute_firewall" "vnc" {
   count   = var.enable_iap_only ? 0 : 1
-  name    = "${var.prefix}-fwrules-vnc"
+  name    = "${local.fw_prefix}-fw-vnc"
   network = google_compute_network.default.self_link
 
   allow {
@@ -117,7 +123,7 @@ resource "google_compute_firewall" "vnc" {
 # novnc
 resource "google_compute_firewall" "novnc" {
   count   = var.enable_iap_only ? 0 : 1
-  name    = "${var.prefix}-fwrules-novnc"
+  name    = "${local.fw_prefix}-fw-novnc"
   network = google_compute_network.default.self_link
 
   allow {
@@ -131,7 +137,7 @@ resource "google_compute_firewall" "novnc" {
 # Isaac Sim WebRTC livestream
 resource "google_compute_firewall" "webrtc" {
   count   = var.enable_iap_only ? 0 : 1
-  name    = "${var.prefix}-fwrules-webrtc"
+  name    = "${local.fw_prefix}-fw-webrtc"
   network = google_compute_network.default.self_link
 
   allow {
@@ -150,7 +156,7 @@ resource "google_compute_firewall" "webrtc" {
 # custom ssh port
 resource "google_compute_firewall" "ssh_custom" {
   count   = var.enable_iap_only ? 0 : 1
-  name    = "${var.prefix}-fwrules-ssh-custom"
+  name    = "${local.fw_prefix}-fw-ssh-custom"
   network = google_compute_network.default.self_link
 
   allow {
@@ -164,7 +170,7 @@ resource "google_compute_firewall" "ssh_custom" {
 # KasmVNC (HTTPS WebRTC)
 resource "google_compute_firewall" "kasmvnc" {
   count   = var.enable_iap_only ? 0 : 1
-  name    = "${var.prefix}-fwrules-kasmvnc"
+  name    = "${local.fw_prefix}-fw-kasmvnc"
   network = google_compute_network.default.self_link
 
   allow {
@@ -178,7 +184,7 @@ resource "google_compute_firewall" "kasmvnc" {
 # NICE DCV (TCP & UDP)
 resource "google_compute_firewall" "dcv" {
   count   = var.enable_iap_only ? 0 : 1
-  name    = "${var.prefix}-fwrules-dcv"
+  name    = "${local.fw_prefix}-fw-dcv"
   network = google_compute_network.default.self_link
 
   allow {
@@ -197,7 +203,7 @@ resource "google_compute_firewall" "dcv" {
 # xrdp (Microsoft Remote Desktop)
 resource "google_compute_firewall" "xrdp" {
   count   = var.enable_iap_only ? 0 : 1
-  name    = "${var.prefix}-fwrules-xrdp"
+  name    = "${local.fw_prefix}-fw-xrdp"
   network = google_compute_network.default.self_link
 
   allow {
@@ -211,7 +217,7 @@ resource "google_compute_firewall" "xrdp" {
 # Sunshine / Moonlight streaming
 resource "google_compute_firewall" "sunshine" {
   count   = var.enable_iap_only ? 0 : 1
-  name    = "${var.prefix}-fwrules-sunshine"
+  name    = "${local.fw_prefix}-fw-sunshine"
   network = google_compute_network.default.self_link
 
   allow {
@@ -230,7 +236,7 @@ resource "google_compute_firewall" "sunshine" {
 # Parsec (UDP peer-to-peer range)
 resource "google_compute_firewall" "parsec" {
   count   = var.enable_iap_only ? 0 : 1
-  name    = "${var.prefix}-fwrules-parsec"
+  name    = "${local.fw_prefix}-fw-parsec"
   network = google_compute_network.default.self_link
 
   allow {
@@ -240,3 +246,4 @@ resource "google_compute_firewall" "parsec" {
 
   source_ranges = var.ingress_cidrs
 }
+

@@ -128,3 +128,9 @@ variable "wandb_api_key" {
   sensitive   = true
 }
 
+variable "security_profile" {
+  description = "Security & deployment profile tier"
+  type        = string
+  default     = "simple"
+}
+

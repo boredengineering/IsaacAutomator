@@ -576,22 +576,31 @@ class Deployer:
         debug = self.params["debug"]
         deployment_name = self.params["deployment_name"]
         state_bucket = self.params.get("state_bucket") or os.environ.get("ISAAC_STATE_BUCKET")
+        is_dry_run = self.params.get("dry_run", False)
+        backend_override_path = Path(cwd) / "backend_override.tf.json"
 
-        if not state_bucket:
+        if not state_bucket or is_dry_run:
             tfstate_file = Path(
                 f"{self.config['state_dir']}/{deployment_name}/.tfstate"
             ).absolute()
             backend_args = f'-backend-config="path={tfstate_file}"'
+            backend_override_path.write_text(
+                json.dumps({"terraform": {"backend": {"local": {}}}}, indent=2)
+            )
         else:
             bucket = state_bucket.replace("gs://", "").rstrip("/")
             if bucket == "auto":
                 project = self.params.get("project") or "default"
-                region = self.params.get("region") or "us-central1"
+                zone = self.params.get("zone") or "us-central1-a"
+                region = "-".join(zone.split("-")[:-1]) if "-" in zone else "us-central1"
                 bucket = f"isaacautomator-state-{project}-{region}"
             prefix = f"isaacautomator/v1/deployments/{deployment_name}/terraform"
             backend_args = (
                 f'-backend-config="bucket={bucket}" '
                 f'-backend-config="prefix={prefix}"'
+            )
+            backend_override_path.write_text(
+                json.dumps({"terraform": {"backend": {"gcs": {}}}}, indent=2)
             )
 
         shell_command(

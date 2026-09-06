@@ -31,4 +31,10 @@ Catalog of high-level project specifications, architecture documents, and goal d
 | [`plans/isaac9s-gui-plan.md`](./plans/isaac9s-gui-plan.md) | isaac9s: k9s-Style Graphical Terminal Interface for Isaac Automator & Installer | Active Tool & Plan |
 | [`docs/isaac9s-cockpit-guide.md`](./docs/isaac9s-cockpit-guide.md) | isaac9s Terminal Cockpit User Guide, Keyboard Shortcuts & Operator Runbook | Active Guide |
 | [`docs/dynamic-security-and-storage-guide.md`](./docs/dynamic-security-and-storage-guide.md) | Dynamic Multi-Cloud Security Tiering, Custom Profiles & Hardened Storage Guide | Active Guide |
+| [`docs/physical-ai_agents.md`](./docs/physical-ai_agents.md) | Universal Physical AI Agent Framework Specification (IsaacLab, Arena, GR00T) | Active Specification |
+| [`docs/debugging_arena_gr00t.md`](./docs/debugging_arena_gr00t.md) | IsaacLab-Arena & Isaac-GR00T Foundation Model Debugging & Dual-Track Analysis | Active Reference |
+| [`docs/SM120_issues.md`](./docs/SM120_issues.md) | NVIDIA Blackwell (sm_120) SDPA & Flash-Attention Kernel Diagnostics | Active Reference |
+| [`docs/setup-isaaclab-arena.md`](./docs/setup-isaaclab-arena.md) | Submodule Linking & Isolated Runtime Setup for IsaacLab-Arena | Active Reference |
+| [`docs/env_generation_notes.md`](./docs/env_generation_notes.md) | Agentic Environment Generation Notes, Scene Graphs & Symbolic-Geometric Gap | Active Guide |
+| [`docs/session-continuity-debugging.md`](./docs/session-continuity-debugging.md) | Session Continuity Debugging & Environment Recovery Runbook | Active Reference |
 
