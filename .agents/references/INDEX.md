@@ -39,4 +39,5 @@ Catalog of high-level project specifications, architecture documents, and goal d
 | [`docs/session-continuity-debugging.md`](./docs/session-continuity-debugging.md) | Session Continuity Debugging & Environment Recovery Runbook | Active Reference |
 | [`plans/network-plans.md`](./plans/network-plans.md) | Network Topologies, Flowcharts & Architectural Plan for Omniverse Nucleus & Isaac Workstations | Active Plan |
 | [`plans/isaac-installer-ansible-compat.md`](./plans/isaac-installer-ansible-compat.md) | Native Cloud Ansible Replication Plan: Bringing Isaac Installer Capabilities into Ansible | Active Plan |
+| [`plans/ansible-testing-plan.md`](./plans/ansible-testing-plan.md) | Master Testing Plan for Cloud Ansible Engine: 7-Tier Strategy, Local Docker Simulation & Validation | Active Plan |
 

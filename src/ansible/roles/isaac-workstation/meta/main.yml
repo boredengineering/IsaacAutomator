@@ -21,16 +21,16 @@ galaxy_info:
   description: Isaac Workstation
   standalone: false
 dependencies:
-  - { role: system }
-  - { role: auth }
-  - { role: nvidia-driver }
-  - { role: remote-desktop }
-  - { role: conda }
-  - { role: hardware-teleop }
-  - { role: isaacsim-source }
-  - { role: isaaclab-source }
-  - { role: isaaclab-arena-source }
-  - { role: gr00t }
-  - { role: lerobot }
-  - { role: demos }
-  - { role: state-ledger }
+  - { role: system, tags: ['__system'] }
+  - { role: auth, tags: ['__auth'] }
+  - { role: nvidia-driver, tags: ['__nvidia_driver'] }
+  - { role: remote-desktop, tags: ['__remote_desktop'] }
+  - { role: conda, tags: ['__conda'] }
+  - { role: hardware-teleop, tags: ['__hardware_teleop'] }
+  - { role: isaacsim-source, tags: ['__isaacsim_source'] }
+  - { role: isaaclab-source, tags: ['__isaaclab_source'] }
+  - { role: isaaclab-arena-source, tags: ['__isaaclab_arena_source'] }
+  - { role: gr00t, tags: ['__gr00t'] }
+  - { role: lerobot, tags: ['__lerobot'] }
+  - { role: demos, tags: ['__demos'] }
+  - { role: state-ledger, tags: ['__state_ledger', '__verify'] }
