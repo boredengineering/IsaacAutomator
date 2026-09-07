@@ -115,9 +115,10 @@ The [`studio-enterprise.yaml`](studio-enterprise.yaml) profile is specifically e
 4. **Distributed Team State Locking**:
    * State is stored in a hardened cloud storage bucket (`gs://` or `s3://`) with distributed object locking.
    * Multiple engineers, CI/CD runners, and automation pipelines can operate concurrently without risking Terraform state corruption or conflicting deployments.
-5. **Spot Resilience & Automated Checkpoint Synchronization**:
-   * Operates cost-effectively on Spot / Preemptible GPU instances.
-   * Includes a 30-second instance termination listener and continuous 10-minute snapshot timer that syncs local workspaces to cloud object storage.
+5. **GCP Flex-start (Dynamic Workload Scheduler) & Spot Resilience**:
+   * **Guaranteed Runtime Without Instant Stockouts**: Leverages Google Cloud's Dynamic Workload Scheduler (**Flex-start**) to queue GPU requests during regional capacity crunches, provisioning the VM when available with a **guaranteed run duration of up to 7 days** (`max_run_duration: 604800s`) and `STOP` termination action.
+   * **Non-Preemptible Stability**: Unlike standard Spot VMs which can be terminated at any moment with 30 seconds notice, Flex-start instances run uninterrupted for their allocated window, making them ideal for long-running Isaac Lab training, Arena benchmark evaluations, and multi-day robotics experiments.
+   * **Automated Checkpoint Synchronization**: Includes continuous 10-minute snapshot timers syncing local state to GCS so data is preserved across stop/start cycles.
 
 ---
 

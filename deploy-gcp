@@ -269,9 +269,33 @@ class GCPDeployer(Deployer):
                 else:
                     gpu_count = 1
 
+            # Scheduling resolution: Profile-driven flex_start/spot defaults with CLI override
+            explicit_flex = False
+            explicit_spot = False
+            if ctx:
+                explicit_flex = ctx.get_parameter_source("flex_start") in (
+                    click.core.ParameterSource.COMMANDLINE,
+                    click.core.ParameterSource.PROMPT,
+                )
+                explicit_spot = ctx.get_parameter_source("spot") in (
+                    click.core.ParameterSource.COMMANDLINE,
+                    click.core.ParameterSource.PROMPT,
+                )
+
+            prof_spec = self.params.get("profile_spec", {})
+            prof_flex = prof_spec.get("enable_flex_start", False) or (
+                prof_spec.get("raw", {}).get("security", {}).get("compute", {}).get("scheduling") == "flex_start"
+            )
+
+            if not explicit_flex and prof_flex:
+                self.params["flex_start"] = True
+                if not explicit_spot:
+                    self.params["spot"] = False
+
             use_spot = self.params.get("spot", False)
+            use_flex_start = self.params.get("flex_start", False)
             backup_bucket = self.params.get("backup_bucket", "")
-            if use_spot and not backup_bucket:
+            if (use_spot or use_flex_start) and (not backup_bucket or backup_bucket == "auto"):
                 backup_bucket = f"{self.params['project']}-{self.params['deployment_name']}-backups"
                 self.params["backup_bucket"] = backup_bucket
                 self.params["auto_restore"] = True

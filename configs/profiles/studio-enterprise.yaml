@@ -24,6 +24,8 @@ security:
     encryption_type: "kms_cmek"  # Customer-Managed Encryption Keys with 90-day automatic rotation
     kms_keyring_name: "auto"     # Dedicated Cloud KMS / Key Vault / AWS KMS key ring
   compute:
+    scheduling: "flex_start"     # GCP Dynamic Workload Scheduler (Flex-start): queued GPU provisioning with 7-day runtime
+    max_run_duration_days: 7
     shielded_vm: true            # Hardware security: Secure Boot, vTPM, and Integrity Monitoring ($0.00/mo)
     os_login: true               # Central IAM identity (Google OS Login / Microsoft Entra ID / AWS SSO) with 2FA
     service_account_type: "dedicated" # Principle of Least Privilege: dedicated IAM service account per node
