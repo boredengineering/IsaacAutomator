@@ -120,6 +120,7 @@ Master index of session memory checkpoints for Isaac Automator.
 | 2026-09-05 21:19 | `f2a3b4c5` | Terminal Visibility Diagnosis, VS Code WebGL GPU Glitch, and Strict Settings Guard | Diagnosed WebGL terminal glitch (text visible only on selection), fixed via GPU acceleration off, codified strict prohibition against altering VS Code settings without explicit permission | [`20260905_211900_f2a3b4c5.md`](./sessions/20260905_211900_f2a3b4c5.md) |
 | 2026-09-06 16:55 | `f11bc21e` | Enterprise Zero-Trust Dry-Run Validation, Firewall Name Truncation & Dynamic Backend Override | Resolved Terraform dynamic backend config in dry-run, prevented GCP firewall rule names exceeding 63 chars, updated references catalog, and validated 18-resource Enterprise dry-run | [`20260906_165540_f11bc21e.md`](./sessions/20260906_165540_f11bc21e.md) |
 | 2026-09-07 02:30 | `a3b4c5d6` | Standalone Single-Cloud Network Topologies, G4 GPU Count Resolution & Custom Profiles | Resolved G4 GPU count mapping bug, authored custom profile documentation and example, designed standalone single-cloud topologies for AWS, GCP, and Azure | [`20260907_023000_a3b4c5d6.md`](./sessions/20260907_023000_a3b4c5d6.md) |
+| 2026-09-07 03:32 | `b4c5d6e7` | Architectural Comparison & 5-Phase Convergence Plan: Isaac Installer vs. Ansible | Evaluated 7 major gaps where Ansible is behind, authored 5-phase compatibility plan in plans/isaac-installer-ansible-compat.md | [`20260907_033230_b4c5d6e7.md`](./sessions/20260907_033230_b4c5d6e7.md) |
 
 
 
