@@ -1,0 +1,7 @@
+---
+galaxy_info:
+  role_name: "hardware_teleop"
+  author: "Isaac Automator"
+  description: "Robotics hardware teleoperation drivers, 1ms FTDI latency rule, SpaceMouse and camera daemons"
+  standalone: false
+dependencies: []

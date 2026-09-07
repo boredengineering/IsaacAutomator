@@ -1,0 +1,57 @@
+---
+- name: Ensure hardware and system groups exist
+  group:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ hardware_groups }}"
+
+- name: Add user to hardware and system groups
+  user:
+    name: "{{ ansible_user }}"
+    groups: "{{ item }}"
+    append: yes
+  loop: "{{ hardware_groups }}"
+
+- name: Configure Git author name
+  git_config:
+    name: user.name
+    value: "{{ git_user_name }}"
+    scope: global
+  become_user: "{{ ansible_user }}"
+  when: git_user_name | default('') != ''
+
+- name: Configure Git author email
+  git_config:
+    name: user.email
+    value: "{{ git_user_email }}"
+    scope: global
+  become_user: "{{ ansible_user }}"
+  when: git_user_email | default('') != ''
+
+- name: Configure Hugging Face CLI authentication
+  shell: huggingface-cli login --token "{{ huggingface_token }}" --add-to-git-credential
+  become_user: "{{ ansible_user }}"
+  when: huggingface_token | default('') != ''
+  changed_when: false
+  ignore_errors: true
+
+- name: Configure NVIDIA NGC Docker authentication
+  shell: echo "{{ ngc_api_key }}" | docker login nvcr.io -u '$oauthtoken' --password-stdin
+  become_user: "{{ ansible_user }}"
+  when: ngc_api_key | default('') != ''
+  changed_when: false
+  ignore_errors: true
+
+- name: Configure Weights & Biases authentication
+  shell: wandb login "{{ wandb_api_key }}"
+  become_user: "{{ ansible_user }}"
+  when: wandb_api_key | default('') != ''
+  changed_when: false
+  ignore_errors: true
+
+- name: Configure GitHub CLI authentication
+  shell: echo "{{ github_token }}" | gh auth login --with-token
+  become_user: "{{ ansible_user }}"
+  when: github_token | default('') != ''
+  changed_when: false
+  ignore_errors: true

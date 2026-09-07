@@ -17,3 +17,5 @@
 isaaclab_dir: /home/{{ ansible_user }}/IsaacLab
 isaaclab_git_checkpoint: main
 isaaclab_git_repo: https://github.com/isaac-sim/IsaacLab.git
+isaaclab_upstream_repo: https://github.com/isaac-sim/IsaacLab.git
+conda_env_name: isaaclab

@@ -21,15 +21,25 @@
 
 - name: Install Quadruped Locomotion RL demo
   import_tasks: quadruped-locomotion.yml
-  when: "'quadruped-locomotion' in selected_demos"
+  when: "'quadruped-locomotion' in selected_demos or 'all' in selected_demos"
   tags: __demos_quadruped_locomotion
 
 - name: Install Humanoid Locomotion RL demo
   import_tasks: humanoid-locomotion.yml
-  when: "'humanoid-locomotion' in selected_demos"
+  when: "'humanoid-locomotion' in selected_demos or 'all' in selected_demos"
   tags: __demos_humanoid_locomotion
 
 - name: Install Franka Manipulation RL demo
   import_tasks: franka-manipulation.yml
-  when: "'franka-manipulation' in selected_demos"
+  when: "'franka-manipulation' in selected_demos or 'all' in selected_demos"
   tags: __demos_franka_manipulation
+
+- name: Install IsaacLab-Arena Benchmark Kit demo
+  import_tasks: arena-benchmark.yml
+  when: "'arena-benchmark' in selected_demos or 'all' in selected_demos"
+  tags: __demos_arena_benchmark
+
+- name: Install Arena + GR00T Closed-Loop demo
+  import_tasks: arena-gr00t.yml
+  when: "'arena-gr00t' in selected_demos or 'all' in selected_demos"
+  tags: __demos_arena_gr00t

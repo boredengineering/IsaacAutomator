@@ -22,9 +22,15 @@ galaxy_info:
   standalone: false
 dependencies:
   - { role: system }
+  - { role: auth }
   - { role: nvidia-driver }
   - { role: remote-desktop }
+  - { role: conda }
+  - { role: hardware-teleop }
   - { role: isaacsim-source }
   - { role: isaaclab-source }
   - { role: isaaclab-arena-source }
+  - { role: gr00t }
+  - { role: lerobot }
   - { role: demos }
+  - { role: state-ledger }

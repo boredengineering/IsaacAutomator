@@ -14,7 +14,13 @@
 # limitations under the License.
 # endregion
 
-isaaclab_arena_dir: /home/{{ ansible_user }}/IsaacLab-Arena
-isaaclab_arena_git_checkpoint: release/0.1.1
-isaaclab_arena_git_repo: https://github.com/isaac-sim/IsaacLab-Arena.git
-isaaclab_arena_upstream_repo: https://github.com/isaac-sim/IsaacLab-Arena.git
+---
+# Enable/disable LeRobot installation
+install_lerobot: false
+
+lerobot_org: huggingface
+lerobot_dir: "/home/{{ ansible_user }}/Documents/GitHub/{{ lerobot_org }}/lerobot"
+lerobot_git_repo: "https://github.com/{{ lerobot_org }}/lerobot.git"
+lerobot_upstream_repo: "https://github.com/huggingface/lerobot.git"
+lerobot_git_checkpoint: main
+lerobot_extras: "[all,dataset_viz]"

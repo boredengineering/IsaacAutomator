@@ -44,8 +44,34 @@
 
 # add packages for convinience
 - name: Install common apt packages
-  apt: name=htop
-    state=latest
+  apt:
+    name:
+      - htop
+      - nvme-cli
+      - smartmontools
+      - fio
+      - iotop
+      - git-lfs
+      - tree
+      - jq
+      - curl
+      - rsync
+    state: present
+
+- name: Check if GitHub CLI is installed
+  command: which gh
+  register: gh_check
+  failed_when: false
+  changed_when: false
+
+- name: Install GitHub CLI
+  shell: |
+    curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+    chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" > /etc/apt/sources.list.d/github-cli.list
+    apt-get update
+    apt-get install -y gh
+  when: gh_check.rc != 0
 
 - name: Add user {{ ansible_user }} to sudo group
   user: name={{ ansible_user }}

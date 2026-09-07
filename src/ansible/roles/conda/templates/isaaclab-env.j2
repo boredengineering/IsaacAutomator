@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# isaaclab-env: Isolated CLI runner for Isaac Lab named Conda environment
+# ==============================================================================
+set -e
+
+CONDA_DIR="{{ miniconda_install_dir }}"
+
+if [[ -f "${CONDA_DIR}/etc/profile.d/conda.sh" ]]; then
+    # shellcheck disable=SC1091
+    source "${CONDA_DIR}/etc/profile.d/conda.sh"
+    conda activate "{{ conda_env_name }}"
+else
+    echo "Error: Miniconda profile not found at ${CONDA_DIR}/etc/profile.d/conda.sh" >&2
+    exit 1
+fi
+
+exec "$@"

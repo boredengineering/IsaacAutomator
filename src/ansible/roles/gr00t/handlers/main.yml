@@ -14,7 +14,8 @@
 # limitations under the License.
 # endregion
 
-isaaclab_arena_dir: /home/{{ ansible_user }}/IsaacLab-Arena
-isaaclab_arena_git_checkpoint: release/0.1.1
-isaaclab_arena_git_repo: https://github.com/isaac-sim/IsaacLab-Arena.git
-isaaclab_arena_upstream_repo: https://github.com/isaac-sim/IsaacLab-Arena.git
+---
+- name: Reload systemd daemon
+  systemd:
+    daemon_reload: true
+  listen: reload_systemd

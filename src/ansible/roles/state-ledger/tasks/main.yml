@@ -1,0 +1,138 @@
+# region copyright
+# Copyright 2023-2026 NVIDIA Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# endregion
+
+---
+- name: Probe NVIDIA driver information
+  shell: nvidia-smi --query-gpu=driver_version,gpu_name --format=csv,noheader 2>/dev/null || echo "not_detected"
+  register: nvidia_probe
+  changed_when: false
+
+- name: Probe CUDA version
+  shell: nvcc --version 2>/dev/null | grep "release" | awk '{print $5}' | tr -d ',' || echo "not_detected"
+  register: cuda_probe
+  changed_when: false
+
+- name: Probe Isaac Sim directory
+  stat:
+    path: "/home/{{ ansible_user }}/IsaacSim"
+  register: isaacsim_stat
+
+- name: Probe Isaac Lab directory and commit
+  shell: |
+    if [ -d "/home/{{ ansible_user }}/IsaacLab/.git" ]; then
+      cd "/home/{{ ansible_user }}/IsaacLab"
+      git rev-parse HEAD
+    else
+      echo "none"
+    fi
+  register: isaaclab_commit
+  changed_when: false
+
+- name: Probe IsaacLab-Arena directory and commit
+  shell: |
+    ARENA_DIR=$(find "/home/{{ ansible_user }}/Documents/GitHub" "/home/{{ ansible_user }}" -maxdepth 3 -name "IsaacLab-Arena" -type d 2>/dev/null | head -n 1 || echo "")
+    if [ -n "$ARENA_DIR" ] && [ -d "$ARENA_DIR/.git" ]; then
+      cd "$ARENA_DIR"
+      git rev-parse HEAD
+    else
+      echo "none"
+    fi
+  register: arena_commit
+  changed_when: false
+
+- name: Probe Isaac-GR00T directory and commit
+  shell: |
+    GR00T_DIR=$(find "/home/{{ ansible_user }}/Documents/GitHub" "/home/{{ ansible_user }}" -maxdepth 3 -name "Isaac-GR00T" -type d 2>/dev/null | head -n 1 || echo "")
+    if [ -n "$GR00T_DIR" ] && [ -d "$GR00T_DIR/.git" ]; then
+      cd "$GR00T_DIR"
+      git rev-parse HEAD
+    else
+      echo "none"
+    fi
+  register: gr00t_commit
+  changed_when: false
+
+- name: Generate Isaac Workstation State Ledger JSON
+  copy:
+    content: |
+      {
+        "generated_at": "{{ lookup('pipe', 'date -u +%Y-%m-%dT%H:%M:%SZ') }}",
+        "workstation_user": "{{ ansible_user }}",
+        "system": {
+          "os": "{{ ansible_distribution }} {{ ansible_distribution_version }}",
+          "kernel": "{{ ansible_kernel }}",
+          "nvidia_driver": "{{ nvidia_probe.stdout | trim }}",
+          "cuda_version": "{{ cuda_probe.stdout | trim }}"
+        },
+        "components": {
+          "isaacsim": {
+            "installed": {{ isaacsim_stat.stat.exists | default(false) | bool | to_json }},
+            "path": "/home/{{ ansible_user }}/IsaacSim"
+          },
+          "isaaclab": {
+            "installed": {{ (isaaclab_commit.stdout | trim != 'none') | bool | to_json }},
+            "commit": "{{ isaaclab_commit.stdout | trim }}"
+          },
+          "isaaclab_arena": {
+            "installed": {{ (arena_commit.stdout | trim != 'none') | bool | to_json }},
+            "commit": "{{ arena_commit.stdout | trim }}"
+          },
+          "gr00t": {
+            "installed": {{ (gr00t_commit.stdout | trim != 'none') | bool | to_json }},
+            "commit": "{{ gr00t_commit.stdout | trim }}"
+          }
+        },
+        "runtime": {
+          "conda_shim": "/usr/local/bin/isaaclab-env",
+          "state_engine": "native-ansible-convergence"
+        }
+      }
+    dest: "{{ state_ledger_file }}"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0644"
+
+- name: Ensure .isaac-installer directory exists for backward compatibility
+  file:
+    path: "{{ state_ledger_dir }}"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0755"
+
+- name: Mirror state to .isaac-installer/state.json for legacy tools
+  copy:
+    src: "{{ state_ledger_file }}"
+    dest: "{{ state_ledger_dir }}/state.json"
+    remote_src: true
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0644"
+
+- name: Deploy state verification and self-healing engine
+  template:
+    src: isaac-verify-state.j2
+    dest: /usr/local/bin/isaac-verify-state
+    mode: "0755"
+
+- name: Run state verification probe
+  shell: /usr/local/bin/isaac-verify-state
+  changed_when: false
+  register: verify_output
+
+- name: Display state verification summary
+  debug:
+    var: verify_output.stdout_lines

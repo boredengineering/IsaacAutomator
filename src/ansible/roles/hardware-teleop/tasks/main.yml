@@ -1,0 +1,40 @@
+---
+- name: Deploy 1ms FTDI USB-serial low-latency udev rule
+  copy:
+    src: 99-ftdi-latency.rules
+    dest: /etc/udev/rules.d/99-ftdi-latency.rules
+    owner: root
+    group: root
+    mode: "0644"
+  when: enable_ftdi_latency_rule
+
+- name: Reload and trigger udev rules
+  shell: udevadm control --reload-rules && udevadm trigger
+  when: enable_ftdi_latency_rule
+  changed_when: false
+  ignore_errors: true
+
+- name: Install 3Dconnexion SpaceMouse daemon
+  apt:
+    name: spacenavd
+    state: present
+    update_cache: yes
+  when: enable_spacemouse
+
+- name: Enable and start spacenavd service
+  systemd:
+    name: spacenavd
+    enabled: yes
+    state: started
+  when: enable_spacemouse
+  ignore_errors: true
+
+- name: Install Intel RealSense utilities
+  apt:
+    name:
+      - librealsense2-utils
+      - librealsense2-udev-rules
+    state: present
+    update_cache: yes
+  when: enable_realsense
+  ignore_errors: true

@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+GR00T_DIR="{{ gr00t_dir }}"
+if [[ -d "$GR00T_DIR" ]]; then
+    cd "$GR00T_DIR"
+    export PATH="/usr/local/bin:$HOME/.local/bin:$PATH"
+    echo "Starting NVIDIA Isaac-GR00T ZeroMQ Policy Server on Port {{ gr00t_port }}..."
+    if command -v isaaclab-env &>/dev/null; then
+        exec isaaclab-env python gr00t/eval/run_gr00t_server.py \
+            --model-path {{ gr00t_model_path }} \
+            --embodiment-tag {{ gr00t_embodiment_tag }} \
+            --port {{ gr00t_port }} \
+            --device {{ gr00t_device }}
+    else
+        exec python3 gr00t/eval/run_gr00t_server.py \
+            --model-path {{ gr00t_model_path }} \
+            --embodiment-tag {{ gr00t_embodiment_tag }} \
+            --port {{ gr00t_port }} \
+            --device {{ gr00t_device }}
+    fi
+else
+    echo "Isaac-GR00T directory not found at $GR00T_DIR"
+    sleep 3
+fi

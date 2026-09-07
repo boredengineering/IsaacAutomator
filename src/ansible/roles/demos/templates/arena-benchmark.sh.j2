@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# region copyright
+# Copyright 2023-2026 NVIDIA Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# endregion
+
+set -euo pipefail
+
+LAB_DIR="$(find "$HOME/Documents/GitHub" "$HOME" -maxdepth 4 -name "IsaacLab" -type d 2>/dev/null | head -n 1 || echo "$HOME/IsaacLab")"
+ARENA_DIR="$(find "$HOME/Documents/GitHub" "$HOME" -maxdepth 4 -name "IsaacLab-Arena" -type d 2>/dev/null | head -n 1 || echo "$HOME/IsaacLab-Arena")"
+
+if [[ -d "$ARENA_DIR" && -d "$LAB_DIR" ]]; then
+    cd "$ARENA_DIR"
+    echo "Starting IsaacLab-Arena Visual Benchmark Rollout (cube_goal_pose)..."
+    exec "$LAB_DIR/isaaclab.sh" -p isaaclab_arena/evaluation/policy_runner.py --viz kit --policy_type zero_action --num_steps 300 cube_goal_pose
+else
+    echo "IsaacLab-Arena directory not found at $ARENA_DIR or IsaacLab at $LAB_DIR"
+    sleep 3
+fi

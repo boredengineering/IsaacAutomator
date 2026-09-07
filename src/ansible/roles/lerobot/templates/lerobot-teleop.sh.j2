@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+LEROBOT_DIR="{{ lerobot_dir }}"
+if [[ -d "$LEROBOT_DIR" ]]; then
+    cd "$LEROBOT_DIR"
+    export PATH="/usr/local/bin:$HOME/.local/bin:$PATH"
+    echo "Starting Hugging Face LeRobot Visualizer..."
+    if command -v isaaclab-env &>/dev/null; then
+        exec isaaclab-env python -m lerobot.scripts.visualize_dataset "$@"
+    else
+        exec python3 -m lerobot.scripts.visualize_dataset "$@"
+    fi
+else
+    echo "LeRobot directory not found at $LEROBOT_DIR"
+    sleep 3
+fi

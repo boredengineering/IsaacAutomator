@@ -121,6 +121,14 @@ c["demos"] = {
         "description": "Train a Franka arm to reach targets using RSL-RL in Isaac Lab.",
         "requires": ["isaacsim", "isaaclab"],
     },
+    "arena-benchmark": {
+        "description": "Launch IsaacLab-Arena visual benchmark task runner with Kit 3D viewport.",
+        "requires": ["isaacsim", "isaaclab", "isaaclab_arena"],
+    },
+    "arena-gr00t": {
+        "description": "Launch closed-loop IsaacLab-Arena rollout driven by Isaac-GR00T policy server.",
+        "requires": ["isaacsim", "isaaclab", "isaaclab_arena"],
+    },
 }
 
 # --remote-desktop

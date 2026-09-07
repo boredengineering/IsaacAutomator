@@ -1,0 +1,7 @@
+---
+galaxy_info:
+  role_name: "conda"
+  author: "Isaac Automator"
+  description: "Miniconda3, named isaaclab Conda environment, UV acceleration, and scoped hooks"
+  standalone: false
+dependencies: []

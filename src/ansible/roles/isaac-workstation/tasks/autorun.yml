@@ -35,6 +35,17 @@
     - __autorun
     - skip_in_image
 
+- name: Verify workstation state and self-heal symlinks on startup
+  shell: |
+    if [ -x /usr/local/bin/isaac-verify-state ]; then
+      /usr/local/bin/isaac-verify-state
+    fi
+  ignore_errors: true
+  tags:
+    - __autorun
+    - on_stop_start
+    - skip_in_image
+
 - name: Start Application
   shell: |
     if [ -f {{ uploads_dir }}/autorun.sh ]; then

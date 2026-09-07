@@ -53,6 +53,26 @@
   debug:
     msg: "isaaclab_install_needed: {{ isaaclab_install_needed }} (current: {{ isaaclab_current_commit.stdout }}, tag: {{ isaaclab_install_tag.stdout | default('none', true) }})"
 
+- name: Configure upstream remote for Isaac Lab
+  git_config:
+    name: remote.upstream.url
+    value: "{{ isaaclab_upstream_repo }}"
+    repo: "{{ isaaclab_dir }}"
+    scope: local
+  become_user: "{{ ansible_user }}"
+  when: isaaclab_git_repo != isaaclab_upstream_repo and isaaclab_install_needed
+  ignore_errors: true
+
+- name: Set branch pushRemote to origin
+  git_config:
+    name: "branch.{{ isaaclab_git_checkpoint }}.pushRemote"
+    value: "origin"
+    repo: "{{ isaaclab_dir }}"
+    scope: local
+  become_user: "{{ ansible_user }}"
+  when: isaaclab_install_needed
+  ignore_errors: true
+
 - name: Check if Isaac Sim source directory exists
   stat:
     path: "{{ isaacsim_install_dir }}"
@@ -72,14 +92,28 @@
     msg: "WARNING: Isaac Sim source directory {{ isaacsim_install_dir }} not found. Skipping _isaac_sim symlink."
   when: not isaacsim_dir_stat.stat.exists
 
-- name: Install Isaac Lab
+- name: Check if isaaclab conda environment or shim exists
+  stat:
+    path: /usr/local/bin/isaaclab-env
+  register: isaaclab_env_check
+
+- name: Install Isaac Lab into conda environment
+  shell: ./isaaclab.sh --conda {{ conda_env_name }} 2>&1 | tee /tmp/isaaclab-install.log
+  args:
+    chdir: "{{ isaaclab_dir }}"
+  become_user: "{{ ansible_user }}"
+  async: 3600
+  poll: 30
+  when: isaaclab_install_needed and isaaclab_env_check.stat.exists
+
+- name: Install Isaac Lab standalone (fallback)
   shell: ./isaaclab.sh --install 2>&1 | tee /tmp/isaaclab-install.log
   args:
     chdir: "{{ isaaclab_dir }}"
   become_user: "{{ ansible_user }}"
   async: 3600
   poll: 30
-  when: isaaclab_install_needed
+  when: isaaclab_install_needed and not isaaclab_env_check.stat.exists
 
 - name: Write install tag
   copy:

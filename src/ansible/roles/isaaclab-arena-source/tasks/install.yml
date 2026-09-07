@@ -76,3 +76,33 @@
   register: clone_result
   changed_when: "'Already up to date' not in clone_result.stdout"
   when: isaaclab_arena_needs_install
+
+- name: Configure upstream remote for Isaac Lab Arena
+  git_config:
+    name: remote.upstream.url
+    value: "{{ isaaclab_arena_upstream_repo }}"
+    repo: "{{ isaaclab_arena_dir }}"
+    scope: local
+  become_user: "{{ ansible_user }}"
+  when: isaaclab_arena_git_repo != isaaclab_arena_upstream_repo and isaaclab_arena_needs_install
+  ignore_errors: true
+
+- name: Check if isaaclab-env is available for Arena installation
+  stat:
+    path: /usr/local/bin/isaaclab-env
+  register: isaaclab_env_check
+
+- name: Install IsaacLab-Arena in editable mode
+  shell: /usr/local/bin/isaaclab-env pip install -e . 2>&1 | tee /tmp/arena-install.log
+  args:
+    chdir: "{{ isaaclab_arena_dir }}"
+  become_user: "{{ ansible_user }}"
+  when: isaaclab_arena_needs_install and isaaclab_env_check.stat.exists
+  async: 1800
+  poll: 15
+
+- name: Install CMEEL, Pinocchio, and Pink WBC
+  shell: /usr/local/bin/isaaclab-env pip install cmeel pinocchio pink 2>&1 | tee -a /tmp/arena-install.log
+  become_user: "{{ ansible_user }}"
+  when: isaaclab_arena_needs_install and isaaclab_env_check.stat.exists
+  ignore_errors: true

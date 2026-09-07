@@ -1,0 +1,4 @@
+---
+enable_ftdi_latency_rule: true
+enable_spacemouse: false
+enable_realsense: false

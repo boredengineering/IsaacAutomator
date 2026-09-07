@@ -1,0 +1,125 @@
+# region copyright
+# Copyright 2023-2026 NVIDIA Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# endregion
+
+---
+- name: Check if LeRobot installation is requested
+  set_fact:
+    should_install_lerobot: "{{ install_lerobot | default(false) | bool }}"
+
+- name: Install Hugging Face LeRobot Stack
+  when: should_install_lerobot
+  block:
+    - name: Install FFmpeg video codec development libraries
+      apt:
+        name:
+          - pkg-config
+          - libavformat-dev
+          - libavcodec-dev
+          - libavdevice-dev
+          - libavutil-dev
+          - libswscale-dev
+          - libswresample-dev
+          - libavfilter-dev
+          - ffmpeg
+        state: present
+
+    - name: Create parent directories for LeRobot
+      file:
+        path: "{{ lerobot_dir | dirname }}"
+        state: directory
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: "0755"
+
+    - name: Check if LeRobot repository exists
+      stat:
+        path: "{{ lerobot_dir }}/.git"
+      register: lerobot_repo_stat
+
+    - name: Clone LeRobot repository
+      git:
+        repo: "{{ lerobot_git_repo }}"
+        dest: "{{ lerobot_dir }}"
+        version: "{{ lerobot_git_checkpoint }}"
+        force: true
+      become_user: "{{ ansible_user }}"
+      when: not lerobot_repo_stat.stat.exists
+
+    - name: Configure upstream remote for LeRobot
+      git_config:
+        name: remote.upstream.url
+        value: "{{ lerobot_upstream_repo }}"
+        repo: "{{ lerobot_dir }}"
+        scope: local
+      become_user: "{{ ansible_user }}"
+      when: lerobot_git_repo != lerobot_upstream_repo
+
+    - name: Set branch pushRemote to origin
+      git_config:
+        name: "branch.{{ lerobot_git_checkpoint }}.pushRemote"
+        value: "origin"
+        repo: "{{ lerobot_dir }}"
+        scope: local
+      become_user: "{{ ansible_user }}"
+      ignore_errors: true
+
+    - name: Check if isaaclab-env is available
+      stat:
+        path: /usr/local/bin/isaaclab-env
+      register: isaaclab_env_bin
+
+    - name: Install LeRobot into isaaclab environment
+      shell: /usr/local/bin/isaaclab-env pip install -e '.{{ lerobot_extras }}' rerun-sdk 2>&1 | tee /tmp/lerobot-install.log
+      args:
+        chdir: "{{ lerobot_dir }}"
+      become_user: "{{ ansible_user }}"
+      when: isaaclab_env_bin.stat.exists
+      async: 1800
+      poll: 15
+
+    - name: Deploy lerobot-dataset-viz global wrapper shim
+      template:
+        src: lerobot-dataset-viz.j2
+        dest: /usr/local/bin/lerobot-dataset-viz
+        mode: "0755"
+
+    - name: Deploy LeRobot teleop launcher script
+      template:
+        src: lerobot-teleop.sh.j2
+        dest: "{{ lerobot_dir }}/lerobot-teleop.sh"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: "0755"
+
+    - name: Check if Desktop directory exists
+      stat:
+        path: "/home/{{ ansible_user }}/Desktop"
+      register: desktop_dir_stat
+
+    - name: Deploy LeRobot Desktop shortcut
+      template:
+        src: LeRobot-Teleop.desktop.j2
+        dest: "/home/{{ ansible_user }}/Desktop/LeRobot-Teleop.desktop"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: "0755"
+      when: desktop_dir_stat.stat.exists
+
+    - name: Trust LeRobot Desktop shortcut
+      shell: gio set "/home/{{ ansible_user }}/Desktop/LeRobot-Teleop.desktop" metadata::trusted true
+      become_user: "{{ ansible_user }}"
+      ignore_errors: true
+      when: desktop_dir_stat.stat.exists

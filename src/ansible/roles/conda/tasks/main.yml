@@ -1,0 +1,88 @@
+---
+- name: Check if Miniconda is already installed
+  stat:
+    path: "{{ miniconda_install_dir }}/bin/conda"
+  register: miniconda_bin
+
+- name: Download Miniconda installer
+  get_url:
+    url: "{{ miniconda_installer_url }}"
+    dest: "/tmp/miniconda_installer.sh"
+    mode: "0755"
+  when: not miniconda_bin.stat.exists
+
+- name: Install Miniconda
+  shell: "/tmp/miniconda_installer.sh -b -u -p {{ miniconda_install_dir }}"
+  become_user: "{{ ansible_user }}"
+  when: not miniconda_bin.stat.exists
+
+- name: Remove Miniconda installer
+  file:
+    path: "/tmp/miniconda_installer.sh"
+    state: absent
+  when: not miniconda_bin.stat.exists
+
+- name: Initialize Conda for bash
+  shell: "{{ miniconda_install_dir }}/bin/conda init bash"
+  become_user: "{{ ansible_user }}"
+  changed_when: false
+
+- name: Configure Conda ToS auto-accept
+  shell: |
+    {{ miniconda_install_dir }}/bin/conda config --set auto_activate_base false
+    {{ miniconda_install_dir }}/bin/conda config --add channels conda-forge
+  become_user: "{{ ansible_user }}"
+  changed_when: false
+
+- name: Check if named conda environment exists
+  shell: "{{ miniconda_install_dir }}/bin/conda env list | grep -E '^({{ conda_env_name }})\\s'"
+  become_user: "{{ ansible_user }}"
+  register: conda_env_check
+  failed_when: false
+  changed_when: false
+
+- name: Create named conda environment
+  shell: "{{ miniconda_install_dir }}/bin/conda create -y -n {{ conda_env_name }} python={{ conda_python_version }}"
+  become_user: "{{ ansible_user }}"
+  when: conda_env_check.rc != 0
+
+- name: Install UV for fast pip resolution
+  shell: "{{ miniconda_install_dir }}/envs/{{ conda_env_name }}/bin/python -m pip install uv"
+  become_user: "{{ ansible_user }}"
+  when: enable_uv
+  changed_when: false
+
+- name: Ensure activation and deactivation hook directories exist
+  file:
+    path: "{{ miniconda_install_dir }}/envs/{{ conda_env_name }}/etc/conda/{{ item }}"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0755"
+  loop:
+    - activate.d
+    - deactivate.d
+
+- name: Deploy dynamic Vulkan ICD activation hook
+  template:
+    src: vulkan_icd.sh.j2
+    dest: "{{ miniconda_install_dir }}/envs/{{ conda_env_name }}/etc/conda/activate.d/vulkan_icd.sh"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0755"
+
+- name: Deploy PYTHONPATH cleanup deactivation hook
+  template:
+    src: cleanup_pythonpath.sh.j2
+    dest: "{{ miniconda_install_dir }}/envs/{{ conda_env_name }}/etc/conda/deactivate.d/cleanup_pythonpath.sh"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0755"
+
+- name: Deploy isaaclab-env CLI shim
+  template:
+    src: isaaclab-env.j2
+    dest: /usr/local/bin/isaaclab-env
+    owner: root
+    group: root
+    mode: "0755"

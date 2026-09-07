@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+if command -v isaaclab-env &>/dev/null; then
+    exec isaaclab-env python -m lerobot.scripts.visualize_dataset "$@"
+else
+    exec python3 -m lerobot.scripts.visualize_dataset "$@"
+fi

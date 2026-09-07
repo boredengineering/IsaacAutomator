@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# Scoped Conda Deactivation Hook: Zero PYTHONPATH Leakage into Base Environment
+# ==============================================================================
+if [[ -n "${_ORIG_VK_ICD_FILENAMES:-}" ]]; then
+    export VK_ICD_FILENAMES="${_ORIG_VK_ICD_FILENAMES}"
+    unset _ORIG_VK_ICD_FILENAMES
+else
+    unset VK_ICD_FILENAMES
+fi
+
+# Sanitize PYTHONPATH by removing Kit prebundled paths
+if [[ -n "${PYTHONPATH:-}" ]]; then
+    NEW_PP=""
+    IFS=':' read -ra PARTS <<< "${PYTHONPATH}"
+    for p in "${PARTS[@]}"; do
+        if [[ "$p" != *"pip_archive"* && "$p" != *"_build"* && "$p" != *"omni"* ]]; then
+            NEW_PP="${NEW_PP:+${NEW_PP}:}${p}"
+        fi
+    done
+    export PYTHONPATH="${NEW_PP}"
+fi

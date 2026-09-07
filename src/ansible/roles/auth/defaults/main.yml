@@ -1,0 +1,13 @@
+---
+git_user_name: ""
+git_user_email: ""
+huggingface_token: ""
+ngc_api_key: ""
+wandb_api_key: ""
+github_token: ""
+hardware_groups:
+  - dialout
+  - plugdev
+  - input
+  - video
+  - docker

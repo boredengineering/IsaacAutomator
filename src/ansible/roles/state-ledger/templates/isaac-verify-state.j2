@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# isaac-verify-state - State Verification & Self-Healing Engine
+# ==============================================================================
+set -euo pipefail
+
+TARGET_USER="{{ ansible_user }}"
+TARGET_HOME="/home/${TARGET_USER}"
+STATE_FILE="{{ state_ledger_file }}"
+
+echo "=== Isaac Workstation State Verification ==="
+
+ISSUES_FOUND=0
+REPAIRS_MADE=0
+
+# 1. Check Isaac Sim Symlink
+if [[ -L "${TARGET_HOME}/IsaacSim" && -d "${TARGET_HOME}/IsaacSim" ]]; then
+    echo "[OK] IsaacSim link valid: $(readlink -f "${TARGET_HOME}/IsaacSim")"
+elif [[ -d "${TARGET_HOME}/IsaacSim" ]]; then
+    echo "[OK] IsaacSim directory present."
+else
+    echo "[WARN] IsaacSim link missing or broken."
+    ISSUES_FOUND=$((ISSUES_FOUND + 1))
+    # Self-healing attempt: look for built or release directory
+    CANDIDATE="$(find "${TARGET_HOME}" /opt/nvidia -maxdepth 4 -name "isaac-sim.sh" 2>/dev/null | head -n 1 || echo "")"
+    if [[ -n "$CANDIDATE" ]]; then
+        SIM_DIR="$(dirname "$CANDIDATE")"
+        echo "[HEAL] Auto-relinking ${TARGET_HOME}/IsaacSim -> ${SIM_DIR}"
+        ln -sfn "${SIM_DIR}" "${TARGET_HOME}/IsaacSim"
+        chown -h "${TARGET_USER}:${TARGET_USER}" "${TARGET_HOME}/IsaacSim"
+        REPAIRS_MADE=$((REPAIRS_MADE + 1))
+    fi
+fi
+
+# 2. Check Isaac Lab _isaac_sim Symlink
+LAB_DIR="${TARGET_HOME}/IsaacLab"
+if [[ -d "${LAB_DIR}" ]]; then
+    if [[ -L "${LAB_DIR}/_isaac_sim" && -d "${LAB_DIR}/_isaac_sim" ]]; then
+        echo "[OK] IsaacLab _isaac_sim symlink valid."
+    else
+        echo "[WARN] IsaacLab _isaac_sim symlink missing or broken."
+        ISSUES_FOUND=$((ISSUES_FOUND + 1))
+        if [[ -d "${TARGET_HOME}/IsaacSim" ]]; then
+            echo "[HEAL] Auto-relinking ${LAB_DIR}/_isaac_sim -> ${TARGET_HOME}/IsaacSim"
+            ln -sfn "${TARGET_HOME}/IsaacSim" "${LAB_DIR}/_isaac_sim"
+            chown -h "${TARGET_USER}:${TARGET_USER}" "${LAB_DIR}/_isaac_sim"
+            REPAIRS_MADE=$((REPAIRS_MADE + 1))
+        fi
+    fi
+fi
+
+# 3. Check Conda Environment & CLI Shim
+if [[ -x "/usr/local/bin/isaaclab-env" ]]; then
+    echo "[OK] /usr/local/bin/isaaclab-env CLI shim present and executable."
+else
+    echo "[WARN] /usr/local/bin/isaaclab-env missing."
+    ISSUES_FOUND=$((ISSUES_FOUND + 1))
+fi
+
+# 4. Check Vulkan ICD Manifest
+VULKAN_NVIDIA=""
+for p in /usr/share/vulkan/icd.d/nvidia_icd.json /etc/vulkan/icd.d/nvidia_icd.json; do
+    if [[ -f "$p" ]]; then
+        VULKAN_NVIDIA="$p"
+        break
+    fi
+done
+if [[ -n "$VULKAN_NVIDIA" ]]; then
+    echo "[OK] NVIDIA Vulkan ICD manifest found at ${VULKAN_NVIDIA}"
+else
+    echo "[WARN] No NVIDIA Vulkan ICD manifest found in standard search paths."
+    ISSUES_FOUND=$((ISSUES_FOUND + 1))
+fi
+
+# 5. Check FTDI Serial Latency Rule
+if [[ -f "/etc/udev/rules.d/99-ftdi-latency.rules" ]]; then
+    echo "[OK] FTDI 1ms serial latency udev rule installed."
+else
+    echo "[INFO] FTDI udev latency rule not present (optional for non-hardware profiles)."
+fi
+
+# Summary
+echo "============================================="
+echo "Verification complete: ${ISSUES_FOUND} issues detected, ${REPAIRS_MADE} automatically repaired."
+
+if [[ -f "${STATE_FILE}" ]]; then
+    echo "State ledger intact at ${STATE_FILE}."
+fi
+
+exit 0

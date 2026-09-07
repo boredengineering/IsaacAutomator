@@ -1,0 +1,7 @@
+---
+galaxy_info:
+  role_name: "auth"
+  author: "Isaac Automator"
+  description: "Unified OAuth, Git identity, hardware groups, and cloud hub management"
+  standalone: false
+dependencies: []

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Isaac-GR00T Policy Server
+Comment=Launch NVIDIA Isaac-GR00T ZeroMQ VLA Policy Server (Port {{ gr00t_port }})
+Exec=gnome-terminal -- /bin/bash -c "DISPLAY=:0 {{ gr00t_dir }}/gr00t-policy-server.sh; exec bash"
+Icon=utilities-terminal
+Terminal=false
+Categories=Development;Science;Robotics;
