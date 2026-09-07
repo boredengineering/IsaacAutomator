@@ -23,7 +23,7 @@ This plan specifies the architecture to update both **`isaac-installer`** and **
 
 ---
 
-## 2. Host Reality vs. Installer Assumptions: The 12 Core Discrepancies
+## 2. Host Reality vs. Installer Assumptions: The 14 Core Discrepancies
 
 The table below contrasts what the automated tools currently assume versus what the host workstation actually requires:
 
@@ -41,6 +41,8 @@ The table below contrasts what the automated tools currently assume versus what 
 | **10** | **Agent Setup & Fresh Machine Permissions** | Assumes raw script execution. Ignores host directory preparation. | Docker mounts create `models`, `datasets`, `.agents/memory` as `root:root`. Missing `.env` credentials, missing Docker group access. | Permission denial (`PermissionError [Errno 13]`), failed first run on fresh machines. |
 | **11** | **GR00T & IsaacLab Branch Fragmentation** | Assumes vanilla upstream repos tracking `main` or detached tags. | Embedded submodules track forked **`dev/arena_v0.3.0-compat`** (`7b8f37e` with geometry conditioning, 6 nested submodules); standalone clones track release tags. | Submodule desynchronization, `reference is not a tree`, missing nested dependencies. |
 | **12** | **Graph-RAG Knowledge Memory (Neo4j)** | Ignores agentic environment memory; no Neo4j provisioning. | `neo4j-arena` (Neo4j 5.26) on ports **`7475/7688`** storing RDF-star / LPG experience graphs (650+ episodes). | Evaluation loop cannot retrieve prior failure modes; repeated GPU waste. |
+| **13** | **Missing Persistent State Ledger & Post-Install Commit** | Assumes procedural "fire-and-forget" script execution; logs success without committing ground-truth state. | Software has state amnesia; `~/.isaac-installer/state.json` left at `{"current_stage": "init"}` because `sync_state_ledger` was omitted upon `install`. No `local-state.json` or queryable state CLI (`isaac-installer state`). | Operators and AI agents must parse markdown session logs (`.agents/memory/sessions/`) to deduce active profile and packages. Automated drift detection cannot run without an authoritative ground truth. |
+| **14** | **Declarative Profile & Ansible Orchestration Decoupling** | Assumes profiles in `isaac-installer/config/` (`default-profile`, `full-ecosystem`, `minimal-headless`) are solely for local bash scripts, and profiles in `configs/profiles/` are solely for Terraform cloud tiers. | Workstations require a unified 2-tier contract (Robotics Stack + Infrastructure Tier). In Automator, `inventory.template` and `deployer.py` never passed profile variables (`install_gr00t`, `install_lerobot`, `enable_neo4j`, `enable_ftdi_latency_rule`, repos/tags) to Ansible or Packer. | Deploying cloud workstations or baking Packer golden images falls back to static defaults, ignoring the requested workstation profile specification. |
 
 ---
 
@@ -295,6 +297,48 @@ flowchart TD
 
 ---
 
+### Phase 12: Deterministic State Machine, Authoritative JSON Ledger & `isaac-installer state` CLI
+* **Objectives**: Eliminate system state amnesia by guaranteeing that every installation, repair, and Ansible run atomically commits the machine's ground-truth state to disk in structured JSON.
+* **Tasks**:
+  1. **Authoritative State Schema (`~/.isaac-state.json` / `state/local-state.json`)**:
+     * Schema fields:
+       * `schema_version`: "1.0"
+       * `active_profile`: Exact profile name (e.g. `default-workstation`, `full-ecosystem`, `minimal-headless`)
+       * `profile_file`: Path to active YAML profile
+       * `last_reconciled`: ISO 8601 UTC timestamp
+       * `status`: `converged` | `drift_detected` | `in_progress` | `failed`
+       * `system`: OS, kernel, NVIDIA driver version, CUDA version, display server (X11/Wayland)
+       * `workspace`: `root`, `layout`, `default_owner`
+       * `components`: Verified versions and commit hashes for `isaacsim`, `isaaclab`, `arena`, `gr00t`, `lerobot`, `neo4j`, and `teleoperation`
+       * `runtime`: Conda path, Python executable, PyTorch build + CUDA architecture (`sm_120`), and `isaaclab-env` shim
+  2. **Mandatory Post-Execution State Commit**:
+     * In `isaac-installer/bin/isaac-installer`: Call `sync_state_ledger` as a mandatory completion step in `cmd_install()` and `cmd_repair()`.
+     * In `isaac-installer/lib/core/state.sh`: Expand `sync_state_ledger` to record `active_profile`, `profile_file`, and full system facts, mirroring to both `~/.isaac-state.json` and `${SCRIPT_DIR}/../state/local-state.json`.
+     * In Ansible `roles/state-ledger`: Update `main.yml` to inject `active_profile: "{{ active_profile | default('default-workstation') }}"`.
+  3. **First-Class CLI Subcommand (`isaac-installer state`)**:
+     * Add `state` subcommand to `isaac-installer`:
+       * Human-readable formatted summary table: Active Profile, System Facts, Component Status, Git Commits, and Drift Invariants.
+       * `--json` flag to dump raw structured JSON for automated agents and tooling.
+  4. **`isaac9s` Cockpit State Panel**:
+     * Connect `src/tui/screens/` to read `local-state.json` or `~/.isaac-state.json` directly, displaying live workstation facts instead of querying ad-hoc shell commands.
+
+---
+
+### Phase 13: 2-Tier Composable Profile Engine (Workstation Stack + Cloud Infrastructure Tier)
+* **Objectives**: Bridge the gap between `isaac-installer` workstation profiles and `IsaacAutomator` cloud infrastructure profiles, allowing seamless composition.
+* **Tasks**:
+  1. **Unified Profile Discovery**:
+     * Update `get_profile_search_dirs()` in `src/python/config.py` to include `isaac-installer/config/`, discovering `default-profile.yaml`, `full-ecosystem.yaml`, and `minimal-headless.yaml`.
+  2. **Full Workstation Parameter Extraction in `config.py`**:
+     * Extract `install_gr00t`, `install_lerobot`, `enable_neo4j`, `install_arena`, `enable_ftdi_latency_rule`, `enable_spacemouse`, `enable_realsense`, `workspace_layout`, `workspace_default_owner`, and repository checkpoints (`isaaclab`, `arena`, `lerobot`, `gr00t`).
+     * Support `workstation.base_profile` inheritance in cloud profiles (e.g. `simple-workstation.yaml` inheriting `default-profile.yaml`).
+  3. **Ansible Inventory Parameterization**:
+     * Update `src/ansible/inventory.template` and `src/python/deployer.py` to inject all extracted workstation profile variables into `[targets:vars]`.
+  4. **Packer Image Baking Profile Support**:
+     * Update `image-gcp`, `image-aws`, `image-azure`, and Packer HCL templates to accept `--profile <name>` (e.g. `VERSION=v6.0.1 ./image-gcp --profile full-ecosystem`), dynamically configuring image build variables.
+
+---
+
 ## 5. Technical Verification & Acceptance Criteria
 
 | Subsystem | Verification Command | Expected Successful Output |
@@ -311,6 +355,10 @@ flowchart TD
 | **ZeroMQ Service** | `python -c "import zmq; ctx=zmq.Context(); s=ctx.socket(zmq.REQ); s.connect('tcp://127.0.0.1:5561'); s.send_json({'command': 'ping'}); print(s.recv_json())"` | Outputs `{'status': 'ok', 'message': 'Server is running'}`. |
 | **Neo4j Bolt Connectivity**| `nc -zv 127.0.0.1 7688` | Outputs `Connection to 127.0.0.1 7688 port [tcp/*] succeeded!`. |
 | **WBC Concurrency** | `python -c "assert '--num_envs 1' in open('tools/run_g1_eval.sh').read()"` | Passes assertion without exception. |
+| **State Ledger CLI** | `./bin/isaac-installer state --json` | Outputs valid JSON containing `"active_profile": "default-workstation"`, `"status": "converged"`, and component tree. |
+| **Persistent State Files** | `test -f ~/.isaac-state.json && test -f state/local-state.json` | Both files exist and contain identical synchronized JSON state. |
+| **Profile Discovery** | `python3 -c "from src.python.config import list_available_profiles; p = list_available_profiles(); assert 'default-workstation' in p and 'full-ecosystem' in p; print('Profiles OK')"` | Outputs `Profiles OK`. |
+| **Packer Profile Bake** | `./image-gcp --profile full-ecosystem --dry-run` | Passes dry run with `-var install_gr00t=true` and `-var enable_neo4j=true`. |
 
 ---
 
