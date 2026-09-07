@@ -38,5 +38,5 @@ Catalog of high-level project specifications, architecture documents, and goal d
 | [`docs/env_generation_notes.md`](./docs/env_generation_notes.md) | Agentic Environment Generation Notes, Scene Graphs & Symbolic-Geometric Gap | Active Guide |
 | [`docs/session-continuity-debugging.md`](./docs/session-continuity-debugging.md) | Session Continuity Debugging & Environment Recovery Runbook | Active Reference |
 | [`plans/network-plans.md`](./plans/network-plans.md) | Network Topologies, Flowcharts & Architectural Plan for Omniverse Nucleus & Isaac Workstations | Active Plan |
-| [`plans/isaac-installer-ansible-compat.md`](./plans/isaac-installer-ansible-compat.md) | Architectural Comparison & 5-Phase Convergence Plan: Isaac Installer vs. Ansible | Active Plan |
+| [`plans/isaac-installer-ansible-compat.md`](./plans/isaac-installer-ansible-compat.md) | Native Cloud Ansible Replication Plan: Bringing Isaac Installer Capabilities into Ansible | Active Plan |
 
