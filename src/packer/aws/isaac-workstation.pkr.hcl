@@ -85,7 +85,7 @@ variable "isaaclab" {
 }
 
 variable "isaaclab_arena" {
-  default = "release/0.1.1"
+  default = "release/0.3.0-prerelease"
 }
 
 variable "vnc_password" {
@@ -162,9 +162,9 @@ build {
   provisioner "ansible" {
     use_proxy     = false
     groups        = ["isaac_workstation"]
-    playbook_file = "/app/src/ansible/isaac-workstation.yaml"
+    playbook_file = "${path.root}/../../ansible/isaac-workstation.yaml"
     ansible_env_vars = [
-      "ANSIBLE_CONFIG=/app/src/ansible/ansible.cfg"
+      "ANSIBLE_CONFIG=${path.root}/../../ansible/ansible.cfg"
     ]
     extra_arguments = [
       "--skip-tags", "${var.skip_tags}",

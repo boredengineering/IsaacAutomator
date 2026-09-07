@@ -23,7 +23,7 @@ gr00t_dir: "/home/{{ ansible_user }}/Documents/GitHub/{{ gr00t_org }}/Isaac-GR00
 gr00t_git_repo: "https://github.com/{{ gr00t_org }}/Isaac-GR00T.git"
 gr00t_upstream_repo: "https://github.com/NVIDIA/Isaac-GR00T.git"
 gr00t_git_checkpoint: main
-gr00t_port: 5555
+gr00t_port: 5556
 gr00t_model_path: "nvidia/GR00T-N1.7-3B"
 gr00t_vlm_backbone: "nvidia/Cosmos-Reason2-2B"
 gr00t_cache_dir: "/home/{{ ansible_user }}/.cache/isaac-gr00t"

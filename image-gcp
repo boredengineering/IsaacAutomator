@@ -310,6 +310,18 @@ def build_gcp_image(params, config):
     if image_name:
         packer_vars.append(_v("image_name", full_image_name))
 
+    if params.get("dry_run", False):
+        click.echo(colorize_info("* Dry-run mode: validating Packer configuration and Ansible playbooks..."))
+        packer_validate_cmd = (
+            f"packer validate " + " ".join(packer_vars) + f" {packer_dir}/isaac-workstation.pkr.hcl"
+        )
+        if debug:
+            click.echo(colorize_info(f"* Command: {packer_validate_cmd}"))
+        shell_command(packer_validate_cmd, verbose=debug)
+        shell_command(f"ansible-playbook --syntax-check {config['ansible_dir']}/isaac-workstation.yaml", verbose=debug)
+        click.echo(colorize_info("✓ Dry-run complete: Packer template and Ansible playbooks are fully valid!"))
+        return
+
     packer_cmd = (
         f"packer build " + " ".join(packer_vars) + f" {packer_dir}/isaac-workstation.pkr.hcl"
     )
