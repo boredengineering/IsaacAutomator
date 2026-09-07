@@ -20,7 +20,7 @@ A modular, zero-infrastructure, bare-metal robotics and Physical AI workstation 
 - **High-Speed Multi-NVMe Storage & LVM2 Subsystem**:
   - Probes all PCIe Gen4/Gen5 NVMe SSDs (Model, Capacity, SMART health, S.M.A.R.T. thermal logs) and LVM volume groups across `doctor`, `plan`, and `test`.
 - **POSIX Atomic Multi-Version & Custom Source Engine Switcher (`sim`)**:
-  - Seamlessly switch between Isaac Sim versions (4.2.0, 4.5.0, 5.1.0) and custom source builds with 0.1s atomic symlink swapping and automated rollback.
+  - Seamlessly switch between Isaac Sim versions (6.0.1 active workspace, 5.1.0, and custom source builds) with 0.1s atomic symlink swapping and automated rollback.
 - **Unified OAuth & Cloud Hub Manager (`auth`)**:
   - Single pane of glass to audit, login, and configure GitHub, Hugging Face Hub, NVIDIA NGC (`nvcr.io`), Weights & Biases, GCP ADC, AWS, and local hardware groups (`docker`, `dialout`, `plugdev`, `input`, `video`).
   - Git Author Identity (`user.name` / `user.email`) & SSH public key generator (`auth gen-ssh`).
@@ -137,7 +137,7 @@ git push -u origin feature/my-new-robot
 # (Via GitHub Desktop or 'gh pr create')
 ```
 
-#### Workflow B: Pinned Release Tags (e.g. Isaac Sim 6.0 Compatibility)
+#### Workflow B: Pinned Release Tags (e.g. Isaac Sim 6.0.1 Compatibility)
 ```bash
 # To switch to a different official release tag:
 ./bin/isaac-installer lab list-tags

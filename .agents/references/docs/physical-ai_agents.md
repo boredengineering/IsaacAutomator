@@ -127,7 +127,7 @@ flowchart TD
 * **Critical Rule**: For non-Hopper / Blackwell architectures, pass `GR00T_DIT_SDPA_MODE=math` and `TORCH_SDPA_USE_FLASH=0` until CUTLASS CuTe DSL (PR #609) is fully merged.
 
 ### 3. `IsaacLab` Adaptation Guide
-* **Runtime**: Official NVIDIA Isaac Sim Container (`nvcr.io/nvidia/isaac-sim:4.5.0` or native Conda).
+* **Runtime**: Official NVIDIA Isaac Sim Container (`nvcr.io/nvidia/isaac-sim:6.0.1` or native Conda).
 * **Primary Responsibilities**:
   - Core PhysX 5 physics simulation and GPU tensor pipelines.
   - Base robot asset definitions (URDF/USD converters) and manager-based MDP environments.

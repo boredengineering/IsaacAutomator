@@ -106,7 +106,7 @@ Located at [`isaac-installer/`](file:///workspaces/IsaacAutomator/isaac-installe
 - **Declarative YAML Profiles:** `default-profile.yaml` (clean daily driver), `minimal-headless.yaml` (CI/RL training nodes), and `full-ecosystem.yaml` (LeRobot, Arena, GR00T, VR gloves, SpaceMouse).
 - **Smart Git Discovery & Dual-Remote Fork Topology:** Discovers local codebases and configures `origin` (personal fork) + `upstream` (official NVIDIA/HF) automatically.
 - **System Doctor & Pre-Flight Conflict Matrix:** Deep audit of 20 system components, APT lock holder detection, and GPU/display topologies.
-- **Atomic Sim Version Switcher:** Seamlessly toggle between Isaac Sim 4.2.0, 4.5.0, 5.1.0, and custom source builds.
+- **Atomic Sim Version Switcher:** Seamlessly toggle between Isaac Sim versions (6.0.1 active workspace, 5.1.0, and custom source builds).
 
 ```bash
 cd isaac-installer

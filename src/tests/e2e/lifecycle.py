@@ -197,8 +197,8 @@ def main(
     assert_in_container()
     assert_aws_creds()
 
-    isaacsim = isaacsim or config.get("default_isaacsim_git_checkpoint", "v6.0.0-dev2")
-    isaaclab = isaaclab or config.get("default_isaaclab_git_checkpoint", "v3.0.0-beta")
+    isaacsim = isaacsim or config.get("default_isaacsim_git_checkpoint", "v6.0.1")
+    isaaclab = isaaclab or config.get("default_isaaclab_git_checkpoint", "v3.0.0-beta2")
 
     deploy_args = [
         "--prefix", prefix,

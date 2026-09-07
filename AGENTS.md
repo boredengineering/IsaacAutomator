@@ -50,6 +50,16 @@ The full procedures are in `.agents/skills/isaac-automator/`; this is the orient
 - **Explicit Push Permission Required:** **NEVER** execute `git push` (or `git push --force`) to remote repositories unless the user explicitly requests a push in their prompt (e.g. "push to github", "git push"). Local edits and local commits (`git commit`) are permitted, but remote pushes must strictly wait for explicit user instruction.
 - **Explicit Permission Required for VS Code / Environment Settings:** **NEVER** modify or overwrite VS Code settings (such as `.vscode/settings.json`, `/root/.vscode-server/data/Machine/settings.json`, User settings, or terminal display/GPU configurations) without explicit user permission in the prompt.
 
+## Active Robotics Stack & Workspace Standards
+
+All agents operating or developing in this repository MUST maintain alignment with the active hardware and software stack:
+- **Active Simulation Engine**: **Isaac Sim 6.0.1** (`Standalone Kit`, default install at `~/IsaacSim`).
+- **Active Robotics Framework**: **Isaac Lab v3** (`v3.0.0-beta2` / `release/3.0.0`, default directory at `~/IsaacLab` or `~/Documents/GitHub/...`).
+- **Active Benchmark Suite**: **IsaacLab-Arena** (`release/0.3.0-prerelease`, modular monorepo with `isaaclab_arena_gr00t` and `isaaclab_arena_g1`).
+- **Active Physical AI Foundation Models**: **Isaac-GR00T** (`dev`, ZeroMQ inference service on port `5561` with `NEW_EMBODIMENT`).
+- **Target Compute Architecture**: **NVIDIA RTX PRO 6000 Blackwell Workstation Edition (`sm_120`)**, CUDA 13.x, `cu128` wheels (`torch==2.10.0+cu128`).
+
+
 ## Session Memory Protocol
 
 - **Resuming Work**: When asked about past sessions, check [`.agents/memory/INDEX.md`](.agents/memory/INDEX.md) and load relevant logs from `.agents/memory/sessions/`.

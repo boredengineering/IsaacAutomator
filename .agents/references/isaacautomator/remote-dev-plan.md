@@ -21,7 +21,7 @@ graph LR
         HostDir["Host Workspaces Directory<br/>(/home/ubuntu/workspaces/)"]
         
         subgraph "Remote GPU DevContainer"
-            DevCont["Isaac Lab & Sim DevContainer<br/>(nvcr.io/nvidia/isaac-sim:4.5+)"]
+            DevCont["Isaac Lab & Sim DevContainer<br/>(nvcr.io/nvidia/isaac-sim:6.0.1)"]
             Mounts["Bind Mounts (/workspaces/)<br/>├── IsaacLab-Arena (editable)<br/>├── IsaacGR00T (editable)<br/>└── custom-robot-envs (editable)"]
             GPU["NVIDIA RTX 6000 Ada (96GB)<br/>• CUDA 12.x / PyTorch 2.4+<br/>• Vulkan & Display :0"]
         end
@@ -167,7 +167,7 @@ Local Laptop (~/dev/):                    Cloud Host (/home/ubuntu/):           
 ```json
 {
   "name": "NVIDIA Isaac Robotics Multi-Repo Workspace",
-  "image": "nvcr.io/nvidia/isaac-sim:4.5.0",
+  "image": "nvcr.io/nvidia/isaac-sim:6.0.1",
   "runArgs": [
     "--gpus=all",
     "--network=host",

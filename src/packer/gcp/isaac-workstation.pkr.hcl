@@ -71,11 +71,11 @@ variable skip_create_image {
 }
 
 variable "isaacsim" {
-  default = "v6.0.0-dev2"
+  default = "v6.0.1"
 }
 
 variable "isaaclab" {
-  default = "v3.0.0-beta"
+  default = "v3.0.0-beta2"
 }
 
 variable "isaaclab_arena" {

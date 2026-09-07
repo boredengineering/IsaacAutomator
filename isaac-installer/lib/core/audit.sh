@@ -284,7 +284,7 @@ audit_all_components() {
     else
         INSTALLS_FOUND=$((INSTALLS_FOUND + 1))
     fi
-    AUDIT_RESULTS+=("NVIDIA Isaac Sim Engine|${sim_cur}|v5.1.0 Standalone|${sim_status}|${sim_risk}")
+    AUDIT_RESULTS+=("NVIDIA Isaac Sim Engine|${sim_cur}|v${ISAACSIM_VERSION:-6.0.1} Standalone|${sim_status}|${sim_risk}")
 
     # 14. Isaac Lab Framework
     local lab_dir
@@ -299,7 +299,7 @@ audit_all_components() {
     else
         INSTALLS_FOUND=$((INSTALLS_FOUND + 1))
     fi
-    AUDIT_RESULTS+=("Isaac Lab Framework|${lab_cur}|Linked & Installed|${lab_status}|${lab_risk}")
+    AUDIT_RESULTS+=("Isaac Lab v3 Framework|${lab_cur}|v3 (Linked & Installed)|${lab_status}|${lab_risk}")
 
     # 15. IsaacLab-Arena Benchmark Suite
     local arena_dir

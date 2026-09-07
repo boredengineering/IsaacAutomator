@@ -72,7 +72,7 @@ docker run --rm --network host -v "$(pwd)":/app \
 Ask the user if not already clear:
 
 1. **Cloud** - AWS, GCP, Azure, or Alibaba Cloud?
-2. **Apps** - Isaac Sim, Isaac Lab, Isaac Lab Arena (any combination), and which versions (git ref) or `no`.
+2. **Apps** - Isaac Sim (active: 6.0.1), Isaac Lab (active: v3 / v3.0.0-beta2), Isaac Lab Arena (any combination), and which versions (git ref) or `no`.
 3. **Region and instance type** - or accept the cheapest viable GPU default.
 4. **Budget/lifetime** - so you stop or destroy it promptly afterward.
 
@@ -139,7 +139,7 @@ image exists.
   --instance-type g5.2xlarge \
   --not-from-image \
   --ingress-cidrs myip \
-  --isaacsim v6.0.0 \
+  --isaacsim v6.0.1 \
   --isaaclab release/3.0.0-beta2 \
   --isaaclab-arena no \
   --existing replace \
@@ -150,7 +150,7 @@ image exists.
 
 ```sh
 ./deploy-gcp --deployment-name gcp-sim --zone us-central1-a --project my-project \
-  --isaac-workstation-gpu-count 1 --isaacsim v6.0.0 --isaaclab no --isaaclab-arena no \
+  --isaac-workstation-gpu-count 1 --isaacsim v6.0.1 --isaaclab no --isaaclab-arena no \
   --ingress-cidrs myip --existing replace --no-upload
 ```
 

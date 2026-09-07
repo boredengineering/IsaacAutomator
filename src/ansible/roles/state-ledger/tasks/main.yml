@@ -80,10 +80,12 @@
         "components": {
           "isaacsim": {
             "installed": {{ isaacsim_stat.stat.exists | default(false) | bool | to_json }},
+            "version": "6.0.1",
             "path": "/home/{{ ansible_user }}/IsaacSim"
           },
           "isaaclab": {
             "installed": {{ (isaaclab_commit.stdout | trim != 'none') | bool | to_json }},
+            "framework_version": "v3",
             "commit": "{{ isaaclab_commit.stdout | trim }}"
           },
           "isaaclab_arena": {

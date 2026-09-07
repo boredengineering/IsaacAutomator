@@ -61,7 +61,7 @@ deploy_isaacsim_conda_bridge() {
 
     if [[ -f "${sim_dir}/setup_python_env.sh" ]]; then
         if [[ ! -f "${sim_dir}/setup_conda_env.sh" || -L "${sim_dir}/setup_conda_env.sh" ]]; then
-            log_info "Deploying robust Isaac Sim 6.0 Conda runtime bridge (${sim_dir}/setup_conda_env.sh)..."
+            log_info "Deploying robust Isaac Sim 6.0.1 Conda runtime bridge (${sim_dir}/setup_conda_env.sh)..."
             rm -f "${sim_dir}/setup_conda_env.sh" 2>/dev/null || true
             cat << 'EOF' | sudo -H -u "${TARGET_USER}" tee "${sim_dir}/setup_conda_env.sh" >/dev/null
 #!/usr/bin/env bash
@@ -119,7 +119,7 @@ check_isaac_sim() {
         if [[ ! -f "${install_dir}/.eula_accepted" ]]; then
             sudo -H -u "${TARGET_USER}" touch "${install_dir}/.eula_accepted" 2>/dev/null || true
         fi
-        # Deploy Isaac Sim 6.0 Conda Runtime Bridge
+        # Deploy Isaac Sim 6.0.1 Conda Runtime Bridge
         deploy_isaacsim_conda_bridge "${install_dir}"
         STAGE_CHECK_MSG="Isaac Sim engine already installed and verified at ${install_dir}"
         return 0

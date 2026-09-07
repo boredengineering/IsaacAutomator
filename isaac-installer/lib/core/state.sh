@@ -462,7 +462,7 @@ for d in drifts:
     sim_dir="$(resolve_isaacsim_dir 2>/dev/null || echo "")"
     if [[ -n "$sim_dir" && -d "$sim_dir" ]]; then
         if [[ -f "${sim_dir}/setup_python_env.sh" && ! -f "${sim_dir}/setup_conda_env.sh" ]]; then
-            DRIFT_ITEMS+=("IsaacSim|SIM_BRIDGE_MISSING|None|${sim_dir}/setup_conda_env.sh|Isaac Sim 6.0 setup_conda_env.sh bridge script missing")
+            DRIFT_ITEMS+=("IsaacSim|SIM_BRIDGE_MISSING|None|${sim_dir}/setup_conda_env.sh|Isaac Sim 6.0.1 setup_conda_env.sh bridge script missing")
         fi
 
         if [[ -n "$user_env_path" && -d "$user_env_path" ]]; then

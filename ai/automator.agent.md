@@ -21,7 +21,7 @@ at hand and follow it.
 
 ## What Isaac Automator does
 
-Isaac Automator deploys **Isaac Sim**, **Isaac Lab**, and **Isaac Lab Arena** onto a GPU virtual machine in a
+Isaac Automator deploys **Isaac Sim** (active version: **6.0.1**), **Isaac Lab** (active framework: **v3** / `v3.0.0-beta2`), and **Isaac Lab Arena** onto a GPU virtual machine in a
 public cloud (AWS, GCP, Azure, or Alibaba Cloud) and configures it as a ready-to-use remote **Isaac
 Workstation**: a GPU VM with a remote desktop, the requested Isaac apps installed, lifecycle controls
 (start / stop / destroy), and data upload/download. It can also install ready-made **demos** that show up as

@@ -25,7 +25,7 @@ target, cloud, and that cleanup will happen before you start. A full source depl
 - **Region** and **instance type**: each cloud has a default; pick the cheapest viable GPU instance unless
   told otherwise. Cheap viable picks: AWS `g5.2xlarge`, Azure `Standard_NV6ads_A10_v5`, GCP `g2-standard-8`,
   Alibaba `ecs.gn7i-c16g1.4xlarge`.
-- **What to install:** any of Isaac Sim (`--isaacsim`), Isaac Lab (`--isaaclab`), Isaac Lab Arena
+- **What to install:** any of Isaac Sim (`--isaacsim`, active: `v6.0.1`), Isaac Lab (`--isaaclab`, active: `v3` / `v3.0.0-beta2`), Isaac Lab Arena
   (`--isaaclab-arena`). Each takes a git ref (e.g. a release tag) or `no` to skip.
 - **Demos** (`--demos`): a comma-separated list, or `no`. A demo auto-enables the apps it needs (see
   `../run-demos/SKILL.md`). e.g. `--demos quadruped-locomotion` will turn on Isaac Sim + Isaac Lab for you.
@@ -64,7 +64,7 @@ docker run --rm --network host -v "$(pwd)":/app \
      --instance-type g5.2xlarge \
      --not-from-image \
      --ingress-cidrs myip \
-     --isaacsim v6.0.0 \
+     --isaacsim v6.0.1 \
      --isaaclab release/3.0.0-beta2 \
      --isaaclab-arena no \
      --demos quadruped-locomotion \

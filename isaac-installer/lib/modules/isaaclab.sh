@@ -44,7 +44,7 @@ install_isaac_lab() {
     mv -Tf "${lab_dir}/_isaac_sim.tmp.$$" "${lab_dir}/_isaac_sim"
     chown -h "${TARGET_USER}:${TARGET_USER}" "${lab_dir}/_isaac_sim"
 
-    # Deploy Isaac Sim 6.0 Conda Runtime Bridge
+    # Deploy Isaac Sim 6.0.1 Conda Runtime Bridge
     deploy_isaacsim_conda_bridge "${sim_dir}"
 
     # 3. Execute Isaac Lab Installer & Topological Extension Setup
