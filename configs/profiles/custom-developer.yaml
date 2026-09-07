@@ -1,0 +1,36 @@
+# ==============================================================================
+# Isaac Automator - Custom Developer Workstation Profile
+# Example custom hybrid profile balancing security, remote state, and cost efficiency.
+# ==============================================================================
+schema_version: "v1alpha1"
+profile_name: "custom-developer"
+description: "Custom hybrid developer profile with remote GCS state locking, auto /32 IP lock, and Secret Manager"
+cloud: "gcp"
+
+security:
+  tier: "custom"
+  network:
+    iap_only: false              # Direct ephemeral public IP (eliminates $32/mo Cloud NAT fee)
+    cloud_nat: false             # No Cloud NAT required ($0.00/mo)
+    ingress_cidrs: ["auto"]      # Auto-locks firewall to caller's public IP (/32)
+  storage:
+    state_backend: "gcs"         # Remote GCS state backend for multi-machine / CI safety
+    state_bucket: "auto"         # Auto-provisioned: isaacautomator-state-<project>-<region>
+    state_locking: true          # Prevent concurrent deployments and state corruption
+    soft_delete_days: 7          # Prevent accidental state deletion
+  cryptography:
+    encryption_type: "google_managed"  # Cloud-native default encryption at rest ($0.00/mo)
+    kms_keyring_name: ""         # Set to a keyring name if using Customer-Managed Keys (CMEK)
+  compute:
+    shielded_vm: true            # Hardware security: Secure Boot, vTPM, and Integrity Monitoring ($0.00/mo)
+    os_login: false              # Standard keypair injection (state/<name>/key.pem)
+    service_account_type: "dedicated"  # Least-privilege IAM service account for the VM
+  secrets:
+    engine: "secret_manager"     # Google Secret Manager for dynamic credential management (<$0.10/mo)
+
+workstation:
+  gpu_model: "g4-standard-48"    # Default instance recommendation (48 vCPU, 1x NVIDIA RTX PRO 6000)
+  demos:
+    - "franka-manipulation"      # Franka robotic arm manipulation demo
+    - "quadruped-locomotion"     # ANYmal quadruped locomotion demo
+  remote_desktop: "standard"     # Streaming stack (noVNC browser desktop + NoMachine 3D viewport)

@@ -1,0 +1,53 @@
+# ==============================================================================
+# Isaac Automator - Studio Enterprise Profile
+# Production multi-node studio architecture co-located with Omniverse Nucleus
+# Enterprise and high-throughput shared USD asset storage.
+# ==============================================================================
+schema_version: "v1alpha1"
+profile_name: "studio-enterprise"
+description: "Studio Enterprise profile co-located with Omniverse Nucleus & high-speed shared USD storage in an isolated private VPC/VNet"
+cloud: "gcp"
+
+security:
+  tier: "enterprise"
+  network:
+    iap_only: true               # Zero public IP (Cloud IAP TCP Forwarding / AWS SSM / Azure Bastion only)
+    cloud_nat: true              # Managed NAT Gateway for private outbound OS/Python updates ($32.40/mo)
+    ingress_cidrs: []            # No direct public ingress; all traffic through perimeter ALB or private tunnel
+    subnet_cidr: "10.10.4.0/24"  # Dedicated private workstation subnet inside the 5-tier studio network
+  storage:
+    state_backend: "gcs"         # Hardened remote state backend (GCS / S3 / Azure Blob)
+    state_bucket: "auto"         # Auto-provisioned: isaacautomator-state-<project>-<region>
+    state_locking: true          # Distributed object locking to prevent concurrent deployment collisions
+    soft_delete_days: 7          # Disaster recovery retention window
+  cryptography:
+    encryption_type: "kms_cmek"  # Customer-Managed Encryption Keys with 90-day automatic rotation
+    kms_keyring_name: "auto"     # Dedicated Cloud KMS / Key Vault / AWS KMS key ring
+  compute:
+    shielded_vm: true            # Hardware security: Secure Boot, vTPM, and Integrity Monitoring ($0.00/mo)
+    os_login: true               # Central IAM identity (Google OS Login / Microsoft Entra ID / AWS SSO) with 2FA
+    service_account_type: "dedicated" # Principle of Least Privilege: dedicated IAM service account per node
+  secrets:
+    engine: "secret_manager"     # Centralized cloud secrets manager for registry tokens and credentials
+
+workstation:
+  gpu_model: "g4-standard-48"    # High-performance workstation compute (48 vCPU, 1x NVIDIA RTX PRO 6000 48GB VRAM)
+  gpu_count: 1
+  demos:
+    - "franka-manipulation"      # Franka robotic arm manipulation demo
+    - "quadruped-locomotion"     # ANYmal quadruped locomotion demo
+  remote_desktop: "dcv,nomachine" # Hardware-accelerated 3D viewport streaming (dual DCV & NoMachine over private network)
+
+# Studio Architecture Integration Parameters
+# Bridges workstation compute with co-located Nucleus and shared USD asset storage tiers
+studio_integration:
+  co_locate_nucleus: true
+  nucleus_host: "nucleus.studio.internal"       # Private DNS / IP of Nucleus Core & LFT cluster (Port 443/3100)
+  shared_storage:
+    provider: "filestore"                       # "filestore" (GCP), "efs" (AWS), or "netapp" (Azure)
+    mount_target: "10.10.5.2:/nucleus_assets"   # Internal storage subnet NFS export
+    mount_point: "/mnt/nucleus"                 # Local mount point for zero-latency USD asset streaming
+    nfs_version: "nfs4"                         # Sub-millisecond direct NFS mount
+  spot_resilience:
+    enabled: true                               # Spot/preemptible node with 30s preemption watchdog
+    continuous_sync_interval: "10m"             # Periodic checkpoint sync to GCS/S3 bucket

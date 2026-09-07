@@ -335,6 +335,75 @@ class Test_DemosOption(unittest.TestCase):
         )
 
 
+class Test_GcpGpuCountResolution(unittest.TestCase):
+    def setUp(self):
+        import importlib.util
+        from importlib.machinery import SourceFileLoader
+        from pathlib import Path
+        import sys
+        root = Path(__file__).resolve().parent.parent.parent
+        gcp_path = root / "deploy-gcp"
+        loader = SourceFileLoader("deploy_gcp", str(gcp_path))
+        spec = importlib.util.spec_from_loader("deploy_gcp", loader)
+        self.mod = importlib.util.module_from_spec(spec)
+        sys.modules["deploy_gcp"] = self.mod
+        spec.loader.exec_module(self.mod)
+
+    def test_gpu_count_inference_and_explicit_override(self):
+        from click.testing import CliRunner
+        runner = CliRunner()
+
+        cases = [
+            ("g4-standard-48", "1", 1),
+            ("g4-standard-48", "auto", 1),
+            ("g4-standard-48", None, 1),
+            ("g4-standard-96", None, 2),
+            ("g4-standard-192", None, 4),
+            ("g4-standard-384", None, 8),
+            ("g2-standard-48", None, 4),
+            ("g2-standard-24", None, 2),
+            ("g2-standard-8", None, 1),
+            ("g2-standard-48", "1", 1),
+            ("a2-highgpu-4g", None, 4),
+            ("a2-highgpu-2g", None, 2),
+            ("n1-standard-8", None, 1),
+        ]
+
+        for itype, cli_gpu, expected in cases:
+            args = [
+                "--deployment-name", "test-gpu",
+                "--project", "dummy-proj",
+                "--zone", "us-central1-b",
+                "--instance-type", itype,
+                "--ingress-cidrs", "0.0.0.0/0",
+                "--existing", "replace",
+                "--no-upload",
+                "--dry-run",
+                "--isaacsim", "no",
+                "--isaaclab", "no",
+                "--isaaclab-arena", "no",
+                "--demos", "no",
+            ]
+            if cli_gpu is not None:
+                args.extend(["--isaac-workstation-gpu-count", cli_gpu])
+
+            captured = {}
+            with mock.patch.object(self.mod.GCPDeployer, "create_tfvars", side_effect=lambda tf: captured.update(tf)), \
+                 mock.patch.object(self.mod.GCPDeployer, "ask_existing_behavior"), \
+                 mock.patch("deploy_gcp.gcp_login"), \
+                 mock.patch.object(self.mod.GCPDeployer, "plan_terraform"), \
+                 mock.patch.object(self.mod.GCPDeployer, "validate_ansible"), \
+                 mock.patch.object(self.mod.GCPDeployer, "save_meta"):
+
+                result = runner.invoke(self.mod.main, args, input="\n")
+                self.assertEqual(result.exit_code, 0, f"Failed: {result.output}")
+                self.assertEqual(
+                    captured.get("isaac_workstation_gpu_count"),
+                    expected,
+                    f"Mismatch for {itype} with cli_gpu={cli_gpu}",
+                )
+
+
 if __name__ == "__main__":
     unittest.main()
 

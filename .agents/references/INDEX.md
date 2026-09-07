@@ -37,4 +37,5 @@ Catalog of high-level project specifications, architecture documents, and goal d
 | [`docs/setup-isaaclab-arena.md`](./docs/setup-isaaclab-arena.md) | Submodule Linking & Isolated Runtime Setup for IsaacLab-Arena | Active Reference |
 | [`docs/env_generation_notes.md`](./docs/env_generation_notes.md) | Agentic Environment Generation Notes, Scene Graphs & Symbolic-Geometric Gap | Active Guide |
 | [`docs/session-continuity-debugging.md`](./docs/session-continuity-debugging.md) | Session Continuity Debugging & Environment Recovery Runbook | Active Reference |
+| [`plans/network-plans.md`](./plans/network-plans.md) | Network Topologies, Flowcharts & Architectural Plan for Omniverse Nucleus & Isaac Workstations | Active Plan |
 

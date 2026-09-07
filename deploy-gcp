@@ -134,12 +134,12 @@ class DeployGCPCommand(DeployCommand):
                 ("--isaac-workstation-gpu-count",),
                 prompt=colorize_prompt(
                     "* Isaac Sim: Number of GPUs. N1 - up to 4x NVIDIA T4; "
-                    + "G2 - up to 8x NVIDIA L4; G4 - up to 8x NVIDIA RTX PRO 60000 GPUs."
+                    + "G2 - up to 8x NVIDIA L4; G4 - up to 8x NVIDIA RTX PRO 6000 GPUs."
                 ),
                 show_default=True,
-                type=click.Choice(["1", "2", "4", "8"]),
-                default=str(config["gcp_default_isaac_workstation_gpu_count"]),
-                help="Number of GPUs to attach to Isaac Sim instance.",
+                type=click.Choice(["auto", "1", "2", "4", "8"]),
+                default=str(config.get("gcp_default_isaac_workstation_gpu_count", "auto")),
+                help="Number of GPUs to attach to Isaac Sim instance (or 'auto' to infer from instance type).",
             ),
         )
 
@@ -221,18 +221,53 @@ class GCPDeployer(Deployer):
                 "g4": "nvidia-rtx-pro-6000",
             }.get(instance_type_prefix, "nvidia-l4")
 
-            # Determine GPU count automatically if multi-GPU machine type
+            # Determine GPU count: honor explicit user choice or infer from instance type
+            ctx = click.get_current_context(silent=True)
+            explicit_user_gpu_count = False
+            if ctx:
+                src = ctx.get_parameter_source("isaac_workstation_gpu_count")
+                if src in (
+                    click.core.ParameterSource.COMMANDLINE,
+                    click.core.ParameterSource.PROMPT,
+                ):
+                    explicit_user_gpu_count = True
+
             user_gpu_count = self.params.get("isaac_workstation_gpu_count")
-            if user_gpu_count and str(user_gpu_count) != "1":
+            if explicit_user_gpu_count and user_gpu_count and str(user_gpu_count) != "auto":
                 gpu_count = int(user_gpu_count)
-            elif "24" in instance_type or "2g" in instance_type:
-                gpu_count = 2
-            elif "48" in instance_type or "4g" in instance_type:
-                gpu_count = 4
-            elif "96" in instance_type or "8g" in instance_type:
-                gpu_count = 8
+            elif user_gpu_count and str(user_gpu_count) not in ("auto", "1"):
+                gpu_count = int(user_gpu_count)
             else:
-                gpu_count = 1
+                # Infer default GPU count from machine type family
+                if instance_type_prefix == "g4":
+                    if "384" in instance_type:
+                        gpu_count = 8
+                    elif "192" in instance_type:
+                        gpu_count = 4
+                    elif "96" in instance_type:
+                        gpu_count = 2
+                    else:
+                        gpu_count = 1
+                elif instance_type_prefix == "g2":
+                    if "96" in instance_type:
+                        gpu_count = 8
+                    elif "48" in instance_type:
+                        gpu_count = 4
+                    elif "24" in instance_type:
+                        gpu_count = 2
+                    else:
+                        gpu_count = 1
+                elif instance_type_prefix == "a2":
+                    if "8g" in instance_type:
+                        gpu_count = 8
+                    elif "4g" in instance_type:
+                        gpu_count = 4
+                    elif "2g" in instance_type:
+                        gpu_count = 2
+                    else:
+                        gpu_count = 1
+                else:
+                    gpu_count = 1
 
             use_spot = self.params.get("spot", False)
             backup_bucket = self.params.get("backup_bucket", "")

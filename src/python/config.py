@@ -67,7 +67,7 @@ c["gcp_default_isaac_workstation_instance_type"] = "g2-standard-8"
 c["alicloud_default_isaac_workstation_instance_type"] = "ecs.gn7i-c16g1.4xlarge"
 
 # --isaac-workstation-gpu-count
-c["gcp_default_isaac_workstation_gpu_count"] = 1
+c["gcp_default_isaac_workstation_gpu_count"] = "auto"
 
 # --region
 c["alicloud_default_region"] = "us-east-1"
@@ -240,6 +240,7 @@ def list_available_profiles(repo_root: str | None = None) -> dict[str, dict[str,
                     "enable_secrets": sec.get("secrets", {}).get("engine") == "secret_manager",
                     "state_bucket": sec.get("storage", {}).get("state_bucket", ""),
                     "ingress_cidrs": sec.get("network", {}).get("ingress_cidrs", ["auto"]),
+                    "raw": data,
                 }
             except Exception:
                 pass
