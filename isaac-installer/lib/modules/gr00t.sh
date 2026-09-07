@@ -39,6 +39,13 @@ sync_gr00t_env() {
     log_step "Synchronizing Isaac-GR00T Python dependencies via UV..."
     log_info "Configuring extended network timeout (300s) and multi-attempt retry for NVIDIA CDN wheels..."
 
+    local sync_flags=""
+    local cap_major="${GPU_COMPUTE_CAP%%.*}"
+    if [[ "${HAS_BLACKWELL:-false}" == true || "$cap_major" -ge 12 ]]; then
+        log_info "Blackwell sm_120 detected: Guarding uv sync against cu126 lockfile rollback..."
+        sync_flags="--no-install-package torch --no-install-package torchvision"
+    fi
+
     local max_retries=3
     local attempt=1
     local success=false
@@ -52,7 +59,7 @@ sync_gr00t_env() {
             export UV_HTTP_TIMEOUT=300
             export UV_CONCURRENT_DOWNLOADS=2
             export UV_INDEX_STRATEGY=unsafe-best-match
-            uv sync
+            uv sync ${sync_flags}
         "; then
             success=true
             break
@@ -67,6 +74,15 @@ sync_gr00t_env() {
     done
 
     if [[ "$success" == true ]]; then
+        # On Blackwell, ensure PyTorch cu128 wheels are installed inside the venv
+        if [[ "${HAS_BLACKWELL:-false}" == true || "$cap_major" -ge 12 ]]; then
+            log_info "Ensuring PyTorch cu128 wheels for Blackwell sm_120 in Isaac-GR00T environment..."
+            run_as_user "
+                cd '${gr00t_dir}'
+                export PATH=\"/usr/local/bin:\$HOME/.local/bin:\$HOME/.cargo/bin:\$PATH\"
+                uv pip install torch==2.10.0+cu128 torchvision==0.25.0+cu128 --index-url https://download.pytorch.org/whl/cu128 2>/dev/null || true
+            "
+        fi
         log_success "Isaac-GR00T virtual environment successfully synchronized."
         return 0
     else
@@ -351,15 +367,19 @@ if sync.get('has_upstream'):
             ;;
 
         server)
-            local port="5555"
+            local port="${GR00T_SERVER_PORT:-5556}"
             local model_path="${GR00T_MODEL_PATH:-nvidia/GR00T-N1.7-3B}"
             local is_mock=false
             local use_docker=false
+            local port_set=false
 
             while [[ $# -gt 0 ]]; do
                 case "$1" in
                     --docker|-d)
                         use_docker=true
+                        if [[ "$port_set" == false ]]; then
+                            port="5561"
+                        fi
                         shift
                         ;;
                     --mock|-m)
@@ -369,6 +389,7 @@ if sync.get('has_upstream'):
                         ;;
                     --port|-p)
                         port="$2"
+                        port_set=true
                         shift 2
                         ;;
                     --model-path)
@@ -381,6 +402,7 @@ if sync.get('has_upstream'):
                     *)
                         if [[ "$1" =~ ^[0-9]+$ ]]; then
                             port="$1"
+                            port_set=true
                         else
                             model_path="$1"
                         fi
@@ -469,7 +491,7 @@ if sync.get('has_upstream'):
             ;;
 
         rollout|eval|eval-client)
-            local port="5555"
+            local port="${GR00T_SERVER_PORT:-5556}"
             local host="127.0.0.1"
             local episodes="1"
             local max_steps="720"
@@ -533,7 +555,7 @@ if sync.get('has_upstream'):
             ;;
 
         eval-closed-loop|closed-loop)
-            local port="${1:-5555}"
+            local port="${1:-${GR00T_SERVER_PORT:-5556}}"
             local host="${2:-127.0.0.1}"
             log_header "Testing Isaac-GR00T ZeroMQ Client-Server Closed-Loop Bridge"
             run_as_user "
@@ -649,7 +671,7 @@ Model Weights & Authentication:
   download-weights --mock              Create structural mock weights fixture for offline/CI tests
 
 Serving & Policy Inference:
-  server [port] [options]              Launch ZeroMQ REP policy server daemon (Default: 5555)
+  server [port] [options]              Launch ZeroMQ REP policy server daemon (Default: 5556, or 5561 for container)
   infer [options]                      Run open-loop inference on DROID demonstration trajectories
   eval-closed-loop [options]           Run closed-loop evaluation in IsaacLab-Arena
 
@@ -660,8 +682,8 @@ Git & Dual-Remote Management:
   remotes                              Show origin/upstream URLs and push-protection status
 
 Server & Inference Options:
-  --docker                             Run server in NVIDIA container via run_gr00t_server.sh
-  --port <number>                      ZeroMQ server port (Default: 5555)
+  --docker                             Run server in NVIDIA container via run_gr00t_server.sh (Default: port 5561)
+  --port <number>                      ZeroMQ server port (Default: 5556)
   --device <cuda:0|cpu>                Inference device (Default: cuda:0)
   --embodiment-tag <tag>               Robot tag: OXE_DROID_RELATIVE_EEF_RELATIVE_JOINT | REAL_G1 | etc.
   --model-path <id/path>               Hugging Face ID or local path (Default: nvidia/GR00T-N1.7-3B)
@@ -673,8 +695,8 @@ Verification:
 Examples:
   ./bin/isaac-installer gr00t sync-env
   ./bin/isaac-installer gr00t download-weights --mock
-  ./bin/isaac-installer gr00t server 5555
-  ./bin/isaac-installer gr00t server 5555 --docker
+  ./bin/isaac-installer gr00t server 5556
+  ./bin/isaac-installer gr00t server 5561 --docker
   ./bin/isaac-installer gr00t infer --dataset-path demo_data/droid_sample
 HELP
             ;;

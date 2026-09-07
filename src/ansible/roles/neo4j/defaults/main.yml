@@ -1,0 +1,7 @@
+---
+enable_neo4j: true
+neo4j_image: "neo4j:5.26-community"
+neo4j_http_port: 7475
+neo4j_bolt_port: 7688
+neo4j_data_dir: "/home/{{ ansible_user }}/data/neo4j"
+neo4j_password: "isaaclab_arena_2026"

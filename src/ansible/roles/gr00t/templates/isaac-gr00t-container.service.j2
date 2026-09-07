@@ -1,0 +1,28 @@
+[Unit]
+Description=NVIDIA Isaac-GR00T Containerized ZeroMQ Policy Server (Port {{ gr00t_container_port }})
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+TimeoutStartSec=0
+Restart=always
+ExecStartPre=-/usr/bin/docker stop gr00t-server
+ExecStartPre=-/usr/bin/docker rm gr00t-server
+ExecStart=/usr/bin/docker run --name gr00t-server \
+    --rm \
+    --gpus all \
+    --ipc=host \
+    --network host \
+    -v /home/{{ ansible_user }}/models:/models \
+    -v /home/{{ ansible_user }}/datasets:/datasets \
+    {{ gr00t_container_image }} \
+    python gr00t/eval/run_gr00t_server.py \
+      --model-path {{ gr00t_model_path }} \
+      --embodiment-tag {{ gr00t_embodiment_tag }} \
+      --port {{ gr00t_container_port }} \
+      --device {{ gr00t_device }}
+ExecStop=/usr/bin/docker stop gr00t-server
+
+[Install]
+WantedBy=multi-user.target

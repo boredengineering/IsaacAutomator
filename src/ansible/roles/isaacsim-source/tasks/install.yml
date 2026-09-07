@@ -109,15 +109,55 @@
     owner: "{{ ansible_user }}"
   when: isaacsim_build_needed
 
-- name: Create setup_conda_env.sh compatibility symlink
-  file:
-    src: "/home/{{ ansible_user }}/IsaacSim/setup_python_env.sh"
+- name: Deploy sanitized setup_conda_env.sh wrapper
+  copy:
     dest: "/home/{{ ansible_user }}/IsaacSim/setup_conda_env.sh"
-    state: link
-    force: yes
+    content: |
+      #!/usr/bin/env bash
+      SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+      if [ -n "$ZSH_VERSION" ]; then
+          SCRIPT_DIR="$( cd "$( dirname "$0" )" && pwd )"
+      fi
+      MY_DIR="$(realpath -s "$SCRIPT_DIR")"
+
+      export CARB_APP_PATH="${SCRIPT_DIR}/kit"
+      export EXP_PATH="${MY_DIR}/apps"
+      export ISAAC_PATH="${MY_DIR}"
+
+      CURRENT_DIR="$(pwd)"
+      cd "${SCRIPT_DIR}"
+      . ./setup_python_env.sh
+      cd "${CURRENT_DIR}"
+
+      # Strip Kit Python standard libraries to preserve Conda Python runtime purity
+      export PYTHONPATH=$(echo "$PYTHONPATH" | tr ':' '\n' | grep -v "${SCRIPT_DIR}/kit/python/lib/python3.12" | grep -v "${SCRIPT_DIR}/kit/python/lib/python3.11" | tr '\n' ':' | sed 's/:$//')
     owner: "{{ ansible_user }}"
     group: "{{ ansible_user }}"
+    mode: "0755"
   when: isaacsim_build_needed
+  ignore_errors: true
+
+- name: Check Conda site-packages directory
+  shell: find /home/{{ ansible_user }}/miniconda3/envs/isaaclab/lib -maxdepth 2 -type d -name "site-packages" 2>/dev/null | head -n 1
+  register: conda_sp_dir
+  changed_when: false
+  failed_when: false
+
+- name: Deploy standalone Isaac Sim .pth link in Conda site-packages
+  copy:
+    dest: "{{ conda_sp_dir.stdout }}/isaacsim_standalone.pth"
+    content: |
+      /home/{{ ansible_user }}/IsaacSim/python_packages
+      /home/{{ ansible_user }}/IsaacSim/exts/isaacsim.simulation_app
+      /home/{{ ansible_user }}/IsaacSim/kit/kernel/py
+      /home/{{ ansible_user }}/IsaacSim/kit/plugins/bindings-python
+      /home/{{ ansible_user }}/IsaacSim/exts/omni.isaac.core_archive/pip_prebundle
+      /home/{{ ansible_user }}/IsaacSim/exts/omni.pip.compute/pip_prebundle
+      /home/{{ ansible_user }}/IsaacSim/exts/omni.pip.cloud/pip_prebundle
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0644"
+  when: conda_sp_dir.stdout is defined and conda_sp_dir.stdout != ""
   ignore_errors: true
 
 # Isaac Sim's post_install.sh runs install_icon.py, which only writes

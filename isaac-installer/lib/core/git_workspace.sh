@@ -77,6 +77,15 @@ find_existing_repo() {
                 echo "${base}/${repo_name}"
                 return 0
             fi
+            # Case-insensitive match for repository directory
+            if [[ -d "$base" ]]; then
+                local match
+                match="$(find "$base" -maxdepth 1 -mindepth 1 -type d -iname "$repo_name" 2>/dev/null | head -n 1 || true)"
+                if [[ -n "$match" && -d "${match}/.git" ]]; then
+                    echo "$match"
+                    return 0
+                fi
+            fi
         done
     done
 
@@ -401,6 +410,11 @@ setup_git_repo_with_fork() {
     local target_ref="${tag:-$branch}"
     local is_tag=false
     if [[ -n "$tag" ]]; then is_tag=true; fi
+
+    # Fresh-machine guard: ensure submodule SSH URLs fall back to HTTPS if SSH key is missing
+    if ! ssh -o BatchMode=yes -o ConnectTimeout=3 -T git@github.com 2>&1 | grep -q "successfully authenticated"; then
+        sudo -H -u "${TARGET_USER}" git config --global url."https://github.com/".insteadOf "git@github.com:" 2>/dev/null || true
+    fi
 
     if [[ ! -d "${dest_dir}/.git" ]]; then
         log_info "Cloning ${fork_or_main_url} (${target_ref}) -> ${dest_dir}..."

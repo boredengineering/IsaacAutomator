@@ -52,6 +52,16 @@
   when: enable_uv
   changed_when: false
 
+- name: Determine PyTorch wheel channel and spec
+  set_fact:
+    torch_wheel_channel: "{{ 'https://download.pytorch.org/whl/cu128' if (gpu_compute_cap is defined and (gpu_compute_cap | float >= 12.0)) else 'https://download.pytorch.org/whl/cu124' }}"
+    torch_version_spec: "{{ 'torch==2.10.0+cu128 torchvision==0.25.0+cu128' if (gpu_compute_cap is defined and (gpu_compute_cap | float >= 12.0)) else 'torch==2.5.1+cu124 torchvision==0.20.1+cu124' }}"
+
+- name: Install hardware-optimized PyTorch wheels
+  shell: "{{ miniconda_install_dir }}/envs/{{ conda_env_name }}/bin/python -m pip install {{ torch_version_spec }} --index-url {{ torch_wheel_channel }}"
+  become_user: "{{ ansible_user }}"
+  changed_when: false
+
 - name: Ensure activation and deactivation hook directories exist
   file:
     path: "{{ miniconda_install_dir }}/envs/{{ conda_env_name }}/etc/conda/{{ item }}"

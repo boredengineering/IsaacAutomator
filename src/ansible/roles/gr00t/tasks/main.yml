@@ -114,12 +114,20 @@
         group: "{{ ansible_user }}"
         mode: "0755"
 
-    - name: Deploy Isaac-GR00T systemd service
+    - name: Deploy Isaac-GR00T native systemd service
       template:
         src: isaac-gr00t.service.j2
         dest: /etc/systemd/system/isaac-gr00t.service
         mode: "0644"
-      when: gr00t_service_enabled | bool
+      when: gr00t_service_enabled | bool and (gr00t_serving_mode | default('native')) == 'native'
+      notify: reload_systemd
+
+    - name: Deploy Isaac-GR00T containerized systemd service
+      template:
+        src: isaac-gr00t-container.service.j2
+        dest: /etc/systemd/system/isaac-gr00t-container.service
+        mode: "0644"
+      when: gr00t_service_enabled | bool and (gr00t_serving_mode | default('native')) == 'container'
       notify: reload_systemd
 
     - name: Check if Desktop directory exists

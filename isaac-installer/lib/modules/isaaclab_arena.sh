@@ -49,7 +49,7 @@ install_isaaclab_arena() {
     lab_dir="$(resolve_isaaclab_dir)"
     local git_repo="${ARENA_REPO:-https://github.com/isaac-sim/IsaacLab-Arena.git}"
     local official_upstream="${ARENA_UPSTREAM:-https://github.com/isaac-sim/IsaacLab-Arena.git}"
-    local git_branch="${ARENA_BRANCH:-release/0.1.1}"
+    local git_branch="${ARENA_BRANCH:-release/0.3.0-prerelease}"
     local git_tag="${ARENA_TAG:-}"
 
     # 1. Setup repository with Fork + Upstream support & Submodules
@@ -63,10 +63,27 @@ install_isaaclab_arena() {
             ./isaaclab.sh -p -m pip install -e '${arena_dir}' 2>/dev/null || true
             if command -v isaaclab-env &>/dev/null; then
                 isaaclab-env pip install -e '${arena_dir}' 2>/dev/null || true
+                log_info 'Installing Whole-Body Control (WBC) and kinematics solvers...'
+                isaaclab-env pip install cmeel pinocchio pin-pink qpsolvers daqp osqp mujoco 2>/dev/null || true
             elif [[ -n \"\${CONDA_PREFIX:-}\" && -x \"\${CONDA_PREFIX}/bin/pip\" ]]; then
                 \"\${CONDA_PREFIX}/bin/pip\" install -e '${arena_dir}' 2>/dev/null || true
+                \"\${CONDA_PREFIX}/bin/pip\" install cmeel pinocchio pin-pink qpsolvers daqp osqp mujoco 2>/dev/null || true
             fi
         "
+    fi
+
+    # 2b. Deploy declarative .env configuration template if missing
+    if [[ ! -f "${arena_dir}/.env" ]]; then
+        log_info "Deploying declarative .env configuration template in ${arena_dir}/.env..."
+        cat << 'ENV_EOF' | sudo -H -u "${TARGET_USER}" tee "${arena_dir}/.env" >/dev/null
+# IsaacLab-Arena Active Environment Configuration
+OPENROUTER_BASE_URL="https://openrouter.ai/api/v1"
+OPENROUTER_API_KEY=""
+HF_TOKEN=""
+NEO4J_URI="bolt://localhost:7688"
+NEO4J_USER="neo4j"
+NEO4J_PASSWORD="isaaclab_arena_2026"
+ENV_EOF
     fi
 
     # 3. Register in GitHub Desktop
@@ -96,9 +113,11 @@ test_isaaclab_arena() {
     fi
 
     # Test 1: Python Extension Registration & Module Import
-    log_step "1. Validating Arena Python Extensions & isaaclab_arena Module..."
+    log_step "1. Validating Arena Python Extensions & Modular Packages (arena, gr00t, g1)..."
     if run_as_user "cd '${lab_dir}' && (./isaaclab.sh -p -c 'import isaaclab_arena' 2>/dev/null || /usr/local/bin/isaaclab-env python -c 'import isaaclab_arena' 2>/dev/null)"; then
-        log_success "Arena Python extensions and isaaclab_arena package registered successfully."
+        # Check modular subpackages if present
+        run_as_user "/usr/local/bin/isaaclab-env python -c 'import isaaclab_arena_gr00t; import isaaclab_arena_g1' 2>/dev/null" || true
+        log_success "Arena Python extensions and isaaclab_arena modular packages registered successfully."
     else
         log_warn "Arena extension import test encountered an issue."
     fi
@@ -455,6 +474,43 @@ SUBHELP
                     log_success "Submodule pin updated in git index."
                     ;;
 
+                heal|recover)
+                    log_info "Healing Arena and nested submodule topology (Disaster Recovery)..."
+                    run_as_user "
+                        cd '${arena_dir}'
+                        # 1. Fallback SSH to HTTPS if needed
+                        if ! ssh -o BatchMode=yes -o ConnectTimeout=3 -T git@github.com 2>&1 | grep -q 'successfully authenticated'; then
+                            git config --global url.'https://github.com/'.insteadOf 'git@github.com:' 2>/dev/null || true
+                        fi
+                        # 2. Sync and update submodules
+                        git submodule sync --recursive
+                        git submodule update --init --recursive
+                        
+                        # 3. Heal Isaac-GR00T submodule and nested submodules
+                        if [[ -d 'submodules/Isaac-GR00T/.git' || -f 'submodules/Isaac-GR00T/.git' ]]; then
+                            echo 'Checking submodules/Isaac-GR00T branch alignment...'
+                            cd 'submodules/Isaac-GR00T'
+                            git remote set-url origin https://github.com/boredengineering/Isaac-GR00T.git 2>/dev/null || true
+                            git fetch origin dev/arena_v0.3.0-compat 2>/dev/null || true
+                            git checkout dev/arena_v0.3.0-compat 2>/dev/null || true
+                            git submodule update --init --recursive
+                            cd '${arena_dir}'
+                        fi
+
+                        # 4. Heal IsaacLab submodule
+                        if [[ -d 'submodules/IsaacLab/.git' || -f 'submodules/IsaacLab/.git' ]]; then
+                            echo 'Checking submodules/IsaacLab branch alignment...'
+                            cd 'submodules/IsaacLab'
+                            git remote set-url origin https://github.com/boredengineering/IsaacLab.git 2>/dev/null || true
+                            git fetch origin dev/arena_v0.3.0-compat 2>/dev/null || true
+                            git checkout dev/arena_v0.3.0-compat 2>/dev/null || true
+                            git submodule update --init --recursive
+                            cd '${arena_dir}'
+                        fi
+                    "
+                    log_success "Submodule hierarchy healed and aligned with dev/arena_v0.3.0-compat."
+                    ;;
+
                 help|--help|-h|*)
                     cat << 'SUBHELP'
 IsaacLab-Arena Submodule & Standalone Workspace Bridging
@@ -464,6 +520,7 @@ Usage:
 
 Commands:
   status                               Audit alignment between submodules and standalone repos
+  heal                                 Automated disaster recovery (align branches & 6 nested submodules)
   editable-bridge                      Register standalone repos in Python site-packages (0% Git dirt)
   link-standalone                      Replace submodules with directory symlinks to standalone repos
   restore-pinned                       Restore exact NVIDIA upstream pinned detached-HEAD commits
@@ -471,6 +528,7 @@ Commands:
 
 Examples:
   ./bin/isaac-installer arena submodules status
+  ./bin/isaac-installer arena submodules heal
   ./bin/isaac-installer arena submodules editable-bridge
   ./bin/isaac-installer arena submodules restore-pinned
 SUBHELP
@@ -481,7 +539,7 @@ SUBHELP
         play)
             local task_name="cube_goal_pose"
             local policy_type="zero_action"
-            local port="5555"
+            local port="${GR00T_SERVER_PORT:-5556}"
             local use_docker=false
 
             while [[ $# -gt 0 ]]; do
@@ -530,7 +588,7 @@ SUBHELP
             local steps="50"
             local num_envs="16"
             local policy_type="zero_action"
-            local port="5555"
+            local port="${GR00T_SERVER_PORT:-5556}"
             local use_docker=false
 
             while [[ $# -gt 0 ]]; do
@@ -544,6 +602,12 @@ SUBHELP
                     *)          task_name="$1"; shift ;;
                 esac
             done
+
+            # Pinocchio Whole-Body Control single-threaded concurrency guard
+            if [[ "${task_name}" =~ wbc|pink|g1 && "${num_envs}" -gt 1 ]]; then
+                log_warn "Pinocchio WBC Pink controller requires single-threaded execution. Setting num_envs=1 (was ${num_envs})."
+                num_envs="1"
+            fi
 
             if [[ "$use_docker" == "true" ]]; then
                 ensure_docker_submodules "${arena_dir}"
@@ -643,6 +707,14 @@ SUBHELP
                         ;;
                 esac
             done
+
+            # Pinocchio WBC Single-Threaded Concurrency Guard
+            if [[ "${task_name}" =~ g1|wbc|pink || "${config_yaml}" =~ g1|pink ]]; then
+                if [[ "${num_envs}" -gt 1 ]]; then
+                    log_warn "Unitree G1 Pinocchio WBC requires single-threaded execution. Setting num_envs=1 (was ${num_envs})."
+                    num_envs="1"
+                fi
+            fi
 
             if [[ "$use_docker" == "true" ]]; then
                 ensure_docker_submodules "${arena_dir}"
@@ -878,6 +950,53 @@ for cat, envs in categories.items():
             "
             ;;
 
+        neo4j)
+            local neo4j_action="${1:-status}"
+            local http_port="7475"
+            local bolt_port="7688"
+            local data_dir="${TARGET_HOME}/data/neo4j"
+            local container_name="neo4j-arena"
+
+            case "$neo4j_action" in
+                start)
+                    log_header "Starting Neo4j Graph-RAG Experience Memory (${container_name})"
+                    mkdir -p "${data_dir}"
+                    if docker ps -a --format '{{.Names}}' | grep -Eq "^${container_name}\$"; then
+                        docker rm -f "${container_name}" >/dev/null 2>&1 || true
+                    fi
+                    docker run -d \
+                        --name "${container_name}" \
+                        --restart unless-stopped \
+                        -p "${http_port}:7474" \
+                        -p "${bolt_port}:7687" \
+                        -v "${data_dir}:/data" \
+                        -e NEO4J_AUTH=neo4j/isaaclab_arena_2026 \
+                        -e NEO4J_PLUGINS='["apoc"]' \
+                        neo4j:5.26-community
+                    log_success "Neo4j running on HTTP http://localhost:${http_port} and Bolt bolt://localhost:${bolt_port}"
+                    ;;
+                stop)
+                    log_header "Stopping Neo4j Graph-RAG Container"
+                    docker stop "${container_name}" 2>/dev/null || true
+                    docker rm "${container_name}" 2>/dev/null || true
+                    log_success "Neo4j container stopped."
+                    ;;
+                status)
+                    log_header "Neo4j Graph-RAG Status"
+                    if docker ps --format '{{.Names}} ({{.Status}})' | grep -Eq "^${container_name}"; then
+                        log_success "Neo4j container is running: $(docker ps --filter "name=${container_name}" --format '{{.Status}}')"
+                        echo "  HTTP Browser: http://localhost:${http_port}"
+                        echo "  Bolt URI:     bolt://localhost:${bolt_port}"
+                    else
+                        log_warn "Neo4j container is not running. Start with: ./bin/isaac-installer arena neo4j start"
+                    fi
+                    ;;
+                *)
+                    echo "Usage: ./bin/isaac-installer arena neo4j [start|stop|status]"
+                    ;;
+            esac
+            ;;
+
         test)
             test_isaaclab_arena
             ;;
@@ -891,6 +1010,7 @@ Usage:
 
 Submodule & Workspace Bridging:
   submodules status                    Audit alignment between submodules and standalone repos
+  submodules heal                      Disaster recovery (re-align branches & nested submodules)
   submodules editable-bridge           Register standalone repos in Python site-packages (0% Git dirt)
   submodules link-standalone           Replace submodules with directory symlinks to standalone repos
   submodules restore-pinned            Restore exact NVIDIA upstream pinned detached-HEAD commits
@@ -904,17 +1024,20 @@ Git & Version Control:
   fork <owner/repo>                    Re-home origin remote to a personal fork
   remotes                              Show origin/upstream URLs and push-protection status
 
+Experience Memory & Graph-RAG:
+  neo4j [start|stop|status]            Manage Neo4j 5.26 container (HTTP 7475, Bolt 7688)
+
 Policy Execution & Evaluation:
   play <task> [options]                Interactive live 3D visual rollout in Omniverse Kit
   run <task> [options]                 Headless batch parallel tensor rollout (e.g. 16 envs)
-  eval-gr00t <task> [port]             Run closed-loop evaluation against Isaac-GR00T server (Port 5555)
+  eval-gr00t <task> [port]             Run closed-loop evaluation against Isaac-GR00T server (Port 5556)
   docker [options] [cmd...]            Direct pass-through to NVIDIA run_docker.sh automation wrapper
   extract-container-manifest           Extract pip freeze, env vars, and WBC paths from container for native parity
 
 Rollout Options:
   --docker                             Run simulation inside NVIDIA container via run_docker.sh
   --policy <type>                      Policy type: zero_action | random | gr00t (Default: zero_action)
-  --port <number>                      GR00T ZeroMQ server port (Default: 5555)
+  --port <number>                      GR00T ZeroMQ server port (Default: 5556)
   --steps <number>                     Number of simulation steps to run (Default: 300)
   --num_envs <number>                  Number of parallel simulation environments (Default: 16)
   --viz <kit|headless>                 Rendering mode: kit (interactive GUI) or headless
@@ -923,11 +1046,12 @@ Verification:
   test                                 Run Arena task registration and tensor rollout smoke test
 
 Examples:
+  ./bin/isaac-installer arena submodules heal
   ./bin/isaac-installer arena submodules editable-bridge
-  ./bin/isaac-installer arena play pick_and_place_maple_table --docker --policy gr00t --port 5555
+  ./bin/isaac-installer arena play pick_and_place_maple_table --docker --policy gr00t --port 5556
   ./bin/isaac-installer arena run cube_goal_pose --docker --steps 300
-  ./bin/isaac-installer arena eval-gr00t cube_goal_pose 5555 --docker
-  ./bin/isaac-installer arena extract-container-manifest
+  ./bin/isaac-installer arena eval-gr00t cube_goal_pose 5556 --docker
+  ./bin/isaac-installer arena neo4j start
 HELP
             ;;
     esac

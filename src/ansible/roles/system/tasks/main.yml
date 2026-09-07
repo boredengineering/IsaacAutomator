@@ -73,6 +73,18 @@
     apt-get install -y gh
   when: gh_check.rc != 0
 
+- name: Check if Node.js is installed
+  command: which node
+  register: node_check
+  failed_when: false
+  changed_when: false
+
+- name: Install Node.js LTS
+  shell: |
+    curl -fsSL https://deb.nodesource.com/setup_lts.x | bash -
+    apt-get install -y nodejs
+  when: node_check.rc != 0
+
 - name: Add user {{ ansible_user }} to sudo group
   user: name={{ ansible_user }}
     groups=sudo
@@ -111,3 +123,7 @@
 # docker
 - import_tasks: docker.yml
   tags: __system_docker
+
+# host directories & storage hierarchy
+- import_tasks: directories.yml
+  tags: __system_directories

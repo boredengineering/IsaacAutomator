@@ -50,7 +50,7 @@ repositories:
     model_path: "nvidia/GR00T-N1.7-3B"
     vlm_backbone: "nvidia/Cosmos-Reason2-2B"
     server_host: "127.0.0.1"
-    server_port: 5555
+    server_port: 5556
     isolated_env: true               # Dedicated 'gr00t' Python 3.12 / torchcodec env
 
 simulation:

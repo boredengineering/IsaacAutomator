@@ -30,3 +30,6 @@ gr00t_cache_dir: "/home/{{ ansible_user }}/.cache/isaac-gr00t"
 gr00t_service_enabled: true
 gr00t_device: "cuda:0"
 gr00t_embodiment_tag: "OXE_DROID_RELATIVE_EEF_RELATIVE_JOINT"
+gr00t_serving_mode: "native"
+gr00t_container_image: "gr00t-dev:latest"
+gr00t_container_port: 5561

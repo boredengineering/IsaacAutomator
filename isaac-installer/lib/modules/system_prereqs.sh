@@ -62,9 +62,57 @@ install_system_prereqs() {
     log_info "Initializing Git Large File Storage (Git LFS)..."
     sudo -H -u "${TARGET_USER}" git lfs install 2>/dev/null || true
 
+    # Install Node.js LTS for agent tooling and skills if missing
+    if ! command -v node &>/dev/null; then
+        log_info "Installing Node.js LTS for agent tooling and skills..."
+        curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash - 2>/dev/null || true
+        pkg_install nodejs || true
+    fi
+
+    # Pre-emptively scaffold host workspace and dataset directories
+    scaffold_host_workspaces
+
     if command -v vulkaninfo &>/dev/null; then
         log_success "Vulkan diagnostic tool (vulkaninfo) is available."
     fi
 
-    log_success "System prerequisites and graphics toolchains configured."
+    log_success "System prerequisites, graphics toolchains, and host directories configured."
+}
+
+scaffold_host_workspaces() {
+    log_info "Pre-emptively scaffolding host storage directories to prevent Docker root permission traps..."
+    local user_home="${TARGET_HOME}"
+    local user="${TARGET_USER}"
+
+    local dirs=(
+        "${user_home}/datasets/isaaclab_arena/locomanipulation_tutorial"
+        "${user_home}/datasets/isaaclab_arena/sequential_static_manipulation_tutorial"
+        "${user_home}/datasets/isaaclab_arena/static_apple_tutorial"
+        "${user_home}/models/isaaclab_arena/locomanipulation_tutorial"
+        "${user_home}/models/isaaclab_arena/sequential_static_manipulation_tutorial"
+        "${user_home}/models/isaaclab_arena/dexsuite_lift"
+        "${user_home}/models/isaaclab_arena/reinforcement_learning"
+        "${user_home}/models/isaaclab_arena/static_apple_tutorial"
+        "${user_home}/eval/isaaclab_arena/locomanipulation_tutorial"
+        "${user_home}/eval/isaaclab_arena/camera_sensitivity"
+        "${user_home}/data/neo4j"
+        "${user_home}/.cache/huggingface"
+        "${user_home}/.aws"
+        "${user_home}/.config/gcloud"
+        "${user_home}/.azure"
+        "${user_home}/.config/gh"
+        "${user_home}/.config/osmo"
+    )
+
+    for d in "${dirs[@]}"; do
+        if [[ ! -d "$d" ]]; then
+            sudo -H -u "${user}" mkdir -p "$d" 2>/dev/null || sudo mkdir -p "$d"
+        fi
+        sudo chown -R "${user}:${user}" "$d" 2>/dev/null || true
+    done
+
+    # Ensure user is in docker group if it exists
+    if getent group docker >/dev/null; then
+        sudo usermod -aG docker "${user}" 2>/dev/null || true
+    fi
 }

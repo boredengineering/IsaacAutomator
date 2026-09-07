@@ -112,6 +112,7 @@ install_dev_tools() {
         sudo usermod -aG docker "${TARGET_USER}"
         log_success "Docker CE installed and user '${TARGET_USER}' added to docker group."
     else
+        sudo usermod -aG docker "${TARGET_USER}" 2>/dev/null || true
         log_success "Docker CE is already installed ($(docker --version 2>&1 | awk '{print $3}' | sed 's/,//'))."
     fi
 

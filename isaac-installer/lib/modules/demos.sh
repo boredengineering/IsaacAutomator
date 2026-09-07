@@ -115,11 +115,11 @@ GR00T_DIR="$(find "$HOME/Documents/GitHub" "$HOME" -maxdepth 4 -name "Isaac-GR00
 if [[ -d "$GR00T_DIR" ]]; then
     cd "$GR00T_DIR"
     export PATH="/usr/local/bin:$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
-    echo "Starting NVIDIA Isaac-GR00T ZeroMQ Policy Server on Port 5555..."
+    echo "Starting NVIDIA Isaac-GR00T ZeroMQ Policy Server on Port 5556..."
     exec uv run python gr00t/eval/run_gr00t_server.py \
         --model-path nvidia/GR00T-N1.7-3B \
         --embodiment-tag OXE_DROID_RELATIVE_EEF_RELATIVE_JOINT \
-        --port 5555 \
+        --port 5556 \
         --device cuda:0
 else
     echo "Isaac-GR00T directory not found at $GR00T_DIR"
@@ -141,7 +141,7 @@ if [[ -d "$ARENA_DIR" && -d "$LAB_DIR" ]]; then
         --viz kit \
         --policy_type gr00t \
         --policy_host 127.0.0.1 \
-        --policy_port 5555 \
+        --policy_port 5556 \
         --num_steps 300 \
         cube_goal_pose
 else
@@ -206,7 +206,7 @@ DESK4
 Version=1.0
 Type=Application
 Name=Isaac-GR00T Policy Server
-Comment=Launch NVIDIA Isaac-GR00T ZeroMQ VLA Policy Server (Port 5555)
+Comment=Launch NVIDIA Isaac-GR00T ZeroMQ VLA Policy Server (Port 5556)
 Exec=gnome-terminal -- /bin/bash -c "DISPLAY=:0 ${demos_dir}/gr00t-policy-server.sh; exec bash"
 Icon=utilities-terminal
 Terminal=false

@@ -1,0 +1,23 @@
+[Unit]
+Description=Neo4j Experience Memory for IsaacLab-Arena (Graph-RAG)
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+TimeoutStartSec=0
+Restart=always
+ExecStartPre=-/usr/bin/docker stop neo4j-arena
+ExecStartPre=-/usr/bin/docker rm neo4j-arena
+ExecStart=/usr/bin/docker run --name neo4j-arena \
+    --rm \
+    -p {{ neo4j_http_port }}:7474 \
+    -p {{ neo4j_bolt_port }}:7687 \
+    -v {{ neo4j_data_dir }}:/data \
+    -e NEO4J_AUTH=neo4j/{{ neo4j_password }} \
+    -e NEO4J_PLUGINS='["apoc"]' \
+    {{ neo4j_image }}
+ExecStop=/usr/bin/docker stop neo4j-arena
+
+[Install]
+WantedBy=multi-user.target

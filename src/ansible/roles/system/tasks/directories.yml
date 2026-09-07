@@ -1,0 +1,26 @@
+---
+- name: Create host storage and persistent directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0755"
+  loop:
+    - "/home/{{ ansible_user }}/datasets/isaaclab_arena/locomanipulation_tutorial"
+    - "/home/{{ ansible_user }}/datasets/isaaclab_arena/sequential_static_manipulation_tutorial"
+    - "/home/{{ ansible_user }}/datasets/isaaclab_arena/static_apple_tutorial"
+    - "/home/{{ ansible_user }}/models/isaaclab_arena/locomanipulation_tutorial"
+    - "/home/{{ ansible_user }}/models/isaaclab_arena/sequential_static_manipulation_tutorial"
+    - "/home/{{ ansible_user }}/models/isaaclab_arena/dexsuite_lift"
+    - "/home/{{ ansible_user }}/models/isaaclab_arena/reinforcement_learning"
+    - "/home/{{ ansible_user }}/models/isaaclab_arena/static_apple_tutorial"
+    - "/home/{{ ansible_user }}/eval/isaaclab_arena/locomanipulation_tutorial"
+    - "/home/{{ ansible_user }}/eval/isaaclab_arena/camera_sensitivity"
+    - "/home/{{ ansible_user }}/data/neo4j"
+    - "/home/{{ ansible_user }}/.cache/huggingface"
+    - "/home/{{ ansible_user }}/.aws"
+    - "/home/{{ ansible_user }}/.config/gcloud"
+    - "/home/{{ ansible_user }}/.azure"
+    - "/home/{{ ansible_user }}/.config/gh"
+    - "/home/{{ ansible_user }}/.config/osmo"

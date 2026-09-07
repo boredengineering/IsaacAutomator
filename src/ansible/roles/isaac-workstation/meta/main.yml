@@ -30,6 +30,7 @@ dependencies:
   - { role: isaacsim-source, tags: ['__isaacsim_source'] }
   - { role: isaaclab-source, tags: ['__isaaclab_source'] }
   - { role: isaaclab-arena-source, tags: ['__isaaclab_arena_source'] }
+  - { role: neo4j, tags: ['__neo4j'] }
   - { role: gr00t, tags: ['__gr00t'] }
   - { role: lerobot, tags: ['__lerobot'] }
   - { role: demos, tags: ['__demos'] }

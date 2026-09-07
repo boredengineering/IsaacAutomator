@@ -27,7 +27,7 @@ if [[ -d "$ARENA_DIR" && -d "$LAB_DIR" ]]; then
         --viz kit \
         --policy_type gr00t \
         --policy_host 127.0.0.1 \
-        --policy_port 5555 \
+        --policy_port {{ gr00t_port | default(5556) }} \
         --num_steps 300 \
         cube_goal_pose
 else

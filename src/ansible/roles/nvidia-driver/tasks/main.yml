@@ -77,3 +77,13 @@
   tags:
     - on_stop_start
     - skip_in_image
+
+- name: Query GPU compute capability
+  shell: nvidia-smi --query-gpu=compute_cap --format=csv,noheader 2>/dev/null | head -n 1 | xargs || echo "0.0"
+  register: gpu_compute_cap_raw
+  changed_when: false
+  failed_when: false
+
+- name: Set gpu_compute_cap fact
+  set_fact:
+    gpu_compute_cap: "{{ gpu_compute_cap_raw.stdout | default('0.0') | trim }}"

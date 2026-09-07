@@ -1,0 +1,25 @@
+---
+- name: Ensure Neo4j data directory exists
+  file:
+    path: "{{ neo4j_data_dir }}"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0755"
+  when: enable_neo4j | bool
+
+- name: Deploy Neo4j containerized systemd service
+  template:
+    src: neo4j-arena.service.j2
+    dest: /etc/systemd/system/neo4j-arena.service
+    mode: "0644"
+  when: enable_neo4j | bool
+  notify: reload_systemd
+
+- name: Enable and start Neo4j service
+  systemd:
+    name: neo4j-arena
+    enabled: yes
+    state: started
+  when: enable_neo4j | bool
+  ignore_errors: true

@@ -176,6 +176,19 @@ install_python_env() {
         run_as_user "'${conda_bin}' config --append envs_dirs '${conda_root}/envs' 2>/dev/null || true"
     fi
 
+    # 4b. Ensure PyTorch matching hardware architecture is installed (Blackwell cu128 vs Ada/Hopper)
+    local torch_channel="${TORCH_WHEEL_CHANNEL:-https://download.pytorch.org/whl/cu124}"
+    local torch_spec="${TORCH_VERSION_SPEC:-torch==2.5.1+cu124 torchvision==0.20.1+cu124}"
+    if [[ "${HAS_BLACKWELL:-false}" == true || "${GPU_COMPUTE_CAP%%.*}" -ge 12 ]]; then
+        torch_channel="https://download.pytorch.org/whl/cu128"
+        torch_spec="torch==2.10.0+cu128 torchvision==0.25.0+cu128"
+    fi
+    log_info "Ensuring PyTorch matching GPU architecture is installed (${torch_spec})..."
+    run_as_user "
+        '${env_path}/bin/python' -m pip install --upgrade pip uv 2>/dev/null || true
+        '${env_path}/bin/python' -m pip install ${torch_spec} --index-url '${torch_channel}' 2>/dev/null || true
+    " || true
+
     # 5. Configure Scoped Activation Hooks (Guarantees Zero Global Shell Contamination)
     log_info "Configuring scoped Conda activation hooks in ${env_path}/etc/conda/..."
     run_as_user "mkdir -p '${env_path}/etc/conda/activate.d' '${env_path}/etc/conda/deactivate.d'"
@@ -239,17 +252,17 @@ HOOK_DEACT
 
     # 6. Deploy Zero-Activation CLI Shim (/usr/local/bin/isaaclab-env)
     log_info "Deploying zero-activation CLI shim: /usr/local/bin/isaaclab-env..."
-    cat << 'SHIM' | run_as_root "tee /usr/local/bin/isaaclab-env >/dev/null"
+    cat << SHIM | run_as_root "tee /usr/local/bin/isaaclab-env >/dev/null"
 #!/usr/bin/env bash
 # ==============================================================================
 # isaaclab-env - Scoped Runner for Headless Scripts, CI/CD, and Terminal Executions
 # ==============================================================================
 set -e
 
-SIM_PATH="${ISAACSIM_DIR:-$HOME/IsaacSim}"
-export EXP_PATH="${SIM_PATH}/apps"
-export ISAAC_PATH="${SIM_PATH}"
-export CARB_APP_PATH="${SIM_PATH}/kit"
+SIM_PATH="\${ISAACSIM_DIR:-\$HOME/IsaacSim}"
+export EXP_PATH="\${SIM_PATH}/apps"
+export ISAAC_PATH="\${SIM_PATH}"
+export CARB_APP_PATH="\${SIM_PATH}/kit"
 
 if [ -f /usr/share/vulkan/icd.d/nvidia_icd.json ]; then
     export VK_ICD_FILENAMES="/usr/share/vulkan/icd.d/nvidia_icd.json"
@@ -263,7 +276,18 @@ else
     unset VK_ICD_FILENAMES
 fi
 
+# Dynamic Conda Python Resolution (Bakes installed path with candidate search fallback)
 CONDA_PY="${env_path}/bin/python"
+if [[ ! -x "\${CONDA_PY}" ]]; then
+    for cand in "\$HOME/miniconda3/envs/isaaclab" "\$HOME/.conda/envs/isaaclab" "\$HOME/miniforge3/envs/isaaclab" "/opt/conda/envs/isaaclab"; do
+        if [[ -x "\${cand}/bin/python" ]]; then
+            CONDA_PY="\${cand}/bin/python"
+            break
+        fi
+    done
+fi
+
+ENV_BIN="\$(dirname "\${CONDA_PY}")"
 
 if [[ \$# -eq 0 ]]; then
     echo "Usage: isaaclab-env <command> [args...]"
@@ -274,14 +298,14 @@ fi
 if [[ "\$1" == "python" || "\$1" == "python3" ]]; then
     shift
     if [[ -x "\${CONDA_PY}" ]]; then
-        export PATH="${env_path}/bin:\$PATH"
+        export PATH="\${ENV_BIN}:\$PATH"
         exec "\${CONDA_PY}" "\$@"
     else
         exec python3 "\$@"
     fi
 else
     if [[ -x "\${CONDA_PY}" ]]; then
-        export PATH="${env_path}/bin:\$PATH"
+        export PATH="\${ENV_BIN}:\$PATH"
     fi
     exec "\$@"
 fi

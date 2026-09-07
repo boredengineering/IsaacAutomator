@@ -109,7 +109,7 @@ free_port() {
 }
 
 find_free_port() {
-    local port="${1:-5555}"
+    local port="${1:-5556}"
     local max_attempts="${2:-20}"
     local attempts=0
     while [[ $attempts -lt $max_attempts ]]; do
@@ -129,22 +129,24 @@ kill_all_policy_servers() {
     pkill -f "run_gr00t_server.py" 2>/dev/null || true
     pkill -f "policy_runner.py" 2>/dev/null || true
     
-    for p in $(seq 5555 5560); do
+    for p in $(seq 5556 5565); do
         if is_port_in_use "$p"; then
             free_port "$p"
         fi
     done
-    log_success "All ZeroMQ policy servers terminated and ports 5555-5560 are verified free."
+    log_success "All ZeroMQ policy servers terminated and ports 5556-5565 are verified free."
 }
 
 print_robotics_port_dashboard() {
     log_header "Robotics IPC, ZeroMQ & Cloud Workstation Port Manager"
 
     local ports_to_check=(
-        "5555|ZeroMQ GR00T Policy Server (Primary)|VLA Action Streaming"
-        "5556|ZeroMQ GR00T Telemetry / Feedback|Secondary Teleop Channel"
+        "5556|ZeroMQ GR00T Policy Server (Host Standalone)|VLA Action Streaming"
+        "5561|ZeroMQ GR00T Policy Server (Container Daemon)|VLA Container Service"
         "5557|ZeroMQ Arena Multi-Agent Worker 1|Distributed Subprocess"
         "5558|ZeroMQ Arena Multi-Agent Worker 2|Distributed Subprocess"
+        "7475|Neo4j Arena Graph Browser (HTTP)|Experience Memory UI"
+        "7688|Neo4j Arena Graph Database (Bolt)|Experience Memory Protocol"
         "8080|Isaac Sim WebRTC Streaming|Live Omniverse Video Web Portal"
         "8211|Omniverse Kit USD Live Sync|Multi-Client Scene Collaboration"
         "6006|TensorBoard RL Monitoring|Loss & Episode Return Tracking"
@@ -246,7 +248,7 @@ cmd_net() {
             kill_all_policy_servers
             ;;
         find-free|next-port)
-            local start="${1:-5555}"
+            local start="${1:-5556}"
             local free_p
             free_p=$(find_free_port "$start")
             if [[ -n "$free_p" ]]; then

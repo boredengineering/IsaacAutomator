@@ -242,10 +242,28 @@ detect_gpu() {
         fi
     fi
 
-    if [[ "$HAS_BLACKWELL" == true ]]; then
+    GPU_COMPUTE_CAP="0.0"
+    if command -v nvidia-smi &>/dev/null; then
+        local cap_out
+        cap_out="$(nvidia-smi --query-gpu=compute_cap --format=csv,noheader 2>/dev/null | head -n 1 | xargs || true)"
+        if [[ -n "$cap_out" ]]; then
+            GPU_COMPUTE_CAP="$cap_out"
+        fi
+    fi
+
+    # Determine Blackwell sm_120 or compute cap >= 12.0
+    local cap_major="${GPU_COMPUTE_CAP%%.*}"
+    if [[ "$HAS_BLACKWELL" == true || "$cap_major" -ge 12 ]]; then
+        HAS_BLACKWELL=true
         RECOMMENDED_DRIVER="570"
+        TORCH_WHEEL_CHANNEL="https://download.pytorch.org/whl/cu128"
+        TORCH_VERSION_SPEC="torch==2.10.0+cu128 torchvision==0.25.0+cu128"
+        TORCH_CUDA_ARCH_LIST="12.0+PTX"
     else
         RECOMMENDED_DRIVER="535"
+        TORCH_WHEEL_CHANNEL="https://download.pytorch.org/whl/cu124"
+        TORCH_VERSION_SPEC="torch==2.5.1+cu124 torchvision==0.20.1+cu124"
+        TORCH_CUDA_ARCH_LIST="8.9;9.0"
     fi
 }
 
