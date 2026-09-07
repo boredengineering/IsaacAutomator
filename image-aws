@@ -233,6 +233,7 @@ def build_ami(params, config):
     )
 
     # build packer command
+    demos = params.get("demos", "no")
     packer_vars = [
         f'-var=aws_region="{region}"',
         f'-var=instance_type="{instance_type}"',
@@ -241,8 +242,14 @@ def build_ami(params, config):
         f'-var=isaacsim="{isaacsim}"',
         f'-var=isaaclab="{isaaclab}"',
         f'-var=isaaclab_arena="{isaaclab_arena}"',
+        f'-var=demos="{demos}"',
         f"-var=in_china=false",
     ]
+
+    if "install_gr00t" in params:
+        packer_vars.append(f"-var=install_gr00t={'true' if params['install_gr00t'] else 'false'}")
+    if "enable_neo4j" in params:
+        packer_vars.append(f"-var=enable_neo4j={'true' if params['enable_neo4j'] else 'false'}")
 
     if image_name:
         full_image_name = f"isaacautomator.isaacworkstation.{image_name}"

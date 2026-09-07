@@ -1,0 +1,5 @@
+---
+- name: Reload systemd daemon
+  systemd:
+    daemon_reload: true
+  listen: reload_systemd

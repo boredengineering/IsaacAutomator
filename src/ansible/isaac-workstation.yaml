@@ -41,3 +41,4 @@
       - include_tasks: roles/remote-desktop/handlers/main.yml
       - include_tasks: roles/system/handlers/main.yml
       - include_tasks: roles/gr00t/handlers/main.yml
+      - include_tasks: roles/neo4j/handlers/main.yml

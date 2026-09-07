@@ -293,6 +293,7 @@ def build_gcp_image(params, config):
     def _v(name, value):
         return f"-var={name}={shlex.quote(str(value))}"
 
+    demos = params.get("demos", "no")
     packer_vars = [
         _v("gcp_project", project),
         _v("gcp_zone", zone),
@@ -304,8 +305,14 @@ def build_gcp_image(params, config):
         _v("isaacsim", isaacsim),
         _v("isaaclab", isaaclab),
         _v("isaaclab_arena", isaaclab_arena),
+        _v("demos", demos),
         "-var=in_china=false",
     ]
+
+    if "install_gr00t" in params:
+        packer_vars.append(f"-var=install_gr00t={'true' if params['install_gr00t'] else 'false'}")
+    if "enable_neo4j" in params:
+        packer_vars.append(f"-var=enable_neo4j={'true' if params['enable_neo4j'] else 'false'}")
 
     if image_name:
         packer_vars.append(_v("image_name", full_image_name))

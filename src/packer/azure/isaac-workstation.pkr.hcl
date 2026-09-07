@@ -76,6 +76,18 @@ variable "isaaclab_arena" {
   default = "release/0.3.0-prerelease"
 }
 
+variable "demos" {
+  default = "no"
+}
+
+variable "install_gr00t" {
+  default = false
+}
+
+variable "enable_neo4j" {
+  default = true
+}
+
 variable "vnc_password" {
   default = ""
 }
@@ -133,7 +145,7 @@ build {
     ]
     extra_arguments = [
       "--skip-tags", "${var.skip_tags}",
-      "--extra-vars", "cloud='azure' deployment_name='azure_image' isaacsim_git_checkpoint='${var.isaacsim}' isaaclab_git_checkpoint='${var.isaaclab}' isaaclab_arena_git_checkpoint='${var.isaaclab_arena}' vnc_password='${var.vnc_password}' system_user_password='${var.system_user_password}' in_china=${var.in_china} uploads_dir='/home/ubuntu/uploads' results_dir='/home/ubuntu/results' workspace_dir='/home/ubuntu/workspace'"
+      "--extra-vars", "cloud='azure' deployment_name='azure_image' isaacsim_git_checkpoint='${var.isaacsim}' isaaclab_git_checkpoint='${var.isaaclab}' isaaclab_arena_git_checkpoint='${var.isaaclab_arena}' demos='${var.demos}' install_gr00t=${var.install_gr00t} enable_neo4j=${var.enable_neo4j} vnc_password='${var.vnc_password}' system_user_password='${var.system_user_password}' in_china=${var.in_china} uploads_dir='/home/ubuntu/uploads' results_dir='/home/ubuntu/results' workspace_dir='/home/ubuntu/workspace'"
     ]
   }
 
