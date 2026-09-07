@@ -23,7 +23,7 @@ This plan specifies the architecture to update both **`isaac-installer`** and **
 
 ---
 
-## 2. Host Reality vs. Installer Assumptions: The 9 Core Discrepancies
+## 2. Host Reality vs. Installer Assumptions: The 12 Core Discrepancies
 
 The table below contrasts what the automated tools currently assume versus what the host workstation actually requires:
 
