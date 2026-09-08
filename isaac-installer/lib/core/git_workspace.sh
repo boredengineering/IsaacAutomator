@@ -112,45 +112,52 @@ resolve_repo_dest_path() {
 
     # 3. Determine layout strategy ("auto" | "org" | "flat")
     local layout="${WORKSPACE_LAYOUT:-${CFG_WORKSPACE_LAYOUT:-auto}}"
-    local owner
-    owner="$(extract_repo_owner "$repo_slug")"
-
-    if [[ -z "$owner" ]]; then
-        owner="${WORKSPACE_DEFAULT_OWNER:-${CFG_WORKSPACE_DEFAULT_OWNER:-}}"
-    fi
-    if [[ -z "$owner" ]]; then
-        owner="$(sudo -H -u "${TARGET_USER}" gh api user -q .login 2>/dev/null || sudo -H -u "${TARGET_USER}" git config --get user.name 2>/dev/null || echo "")"
+    if [[ "$layout" == "flat" ]]; then
+        echo "${ws_root}/${repo_name}"
+        return 0
     fi
 
-    # Case-insensitive match against existing owner folders on disk (prevents BoredEngineer vs boredengineering duplicates)
-    if [[ -n "$owner" && -d "${ws_root}" ]]; then
-        local existing_owner_dir
-        existing_owner_dir="$(find "${ws_root}" -maxdepth 1 -mindepth 1 -type d -iname "${owner}" 2>/dev/null | head -n 1 || true)"
-        if [[ -n "$existing_owner_dir" && -d "$existing_owner_dir" ]]; then
-            owner="$(basename "$existing_owner_dir")"
+    # Determine owner with strict priority:
+    # 1. Configured default owner (from active YAML profile)
+    local owner="${WORKSPACE_DEFAULT_OWNER:-${CFG_WORKSPACE_DEFAULT_OWNER:-}}"
+    if [[ "$owner" == *"<"* || "$owner" == *">"* ]]; then
+        owner=""
+    fi
+
+    # 2. If unset, extract from personal fork repo slug (ignoring upstream orgs)
+    if [[ -z "$owner" ]]; then
+        local slug_extracted
+        slug_extracted="$(extract_repo_owner "$repo_slug")"
+        if [[ "$slug_extracted" != "isaac-sim" && "$slug_extracted" != "NVIDIA" && "$slug_extracted" != "huggingface" ]]; then
+            owner="$slug_extracted"
         fi
     fi
 
-    case "$layout" in
-        org)
-            if [[ -n "$owner" ]]; then
-                echo "${ws_root}/${owner}/${repo_name}"
-                return 0
-            fi
-            ;;
-        flat)
-            echo "${ws_root}/${repo_name}"
-            return 0
-            ;;
-        auto|*)
-            if [[ -n "$owner" ]]; then
-                echo "${ws_root}/${owner}/${repo_name}"
-                return 0
-            fi
-            ;;
-    esac
+    # 3. Case-insensitive match against existing owner folders on disk (strictly reuses BoredEngineer vs boredengineering)
+    if [[ -d "${ws_root}" ]]; then
+        local candidate_names=()
+        if [[ -n "$owner" ]]; then candidate_names+=("$owner"); fi
+        local slug_owner
+        slug_owner="$(extract_repo_owner "$repo_slug")"
+        if [[ -n "$slug_owner" && "$slug_owner" != "$owner" ]]; then candidate_names+=("$slug_owner"); fi
 
-    # Fallback to flat
+        for cand in "${candidate_names[@]}"; do
+            local matched_dir
+            matched_dir="$(find "${ws_root}" -maxdepth 1 -mindepth 1 -type d -iname "${cand}" 2>/dev/null | head -n 1 || true)"
+            if [[ -n "$matched_dir" && -d "$matched_dir" ]]; then
+                owner="$(basename "$matched_dir")"
+                break
+            fi
+        done
+    fi
+
+    # 4. In "org" or "auto", use resolved owner if available
+    if [[ -n "$owner" ]]; then
+        echo "${ws_root}/${owner}/${repo_name}"
+        return 0
+    fi
+
+    # 5. Default fallback to clean flat layout (prevents creating rogue folders named after system usernames)
     echo "${ws_root}/${repo_name}"
 }
 

@@ -24,9 +24,18 @@ install_demos_and_shortcuts() {
     detect_target_user
     log_step "Installing Desktop Shortcuts and Physical AI Demo Launchers (Optional)..."
 
-    local lab_dir="${ISAACLAB_DIR:-${TARGET_HOME}/IsaacLab}"
-    local arena_dir="${ARENA_DIR:-${TARGET_HOME}/Documents/GitHub/BoredEngineer/IsaacLab-Arena}"
-    local gr00t_dir="${GR00T_DIR:-${TARGET_HOME}/Documents/GitHub/boredengineering/Isaac-GR00T}"
+    local lab_dir="${ISAACLAB_DIR:-}"
+    if [[ -z "$lab_dir" ]]; then
+        lab_dir="$(resolve_active_repo_dir "IsaacLab" 2>/dev/null || echo "${TARGET_HOME}/IsaacLab")"
+    fi
+    local arena_dir="${ARENA_DIR:-}"
+    if [[ -z "$arena_dir" ]]; then
+        arena_dir="$(resolve_active_repo_dir "IsaacLab-Arena" 2>/dev/null || echo "${TARGET_HOME}/Documents/GitHub/IsaacLab-Arena")"
+    fi
+    local gr00t_dir="${GR00T_DIR:-}"
+    if [[ -z "$gr00t_dir" ]]; then
+        gr00t_dir="$(resolve_active_repo_dir "Isaac-GR00T" 2>/dev/null || echo "${TARGET_HOME}/Documents/GitHub/Isaac-GR00T")"
+    fi
     local demos_dir="${TARGET_HOME}/.local/share/isaac-demos"
     local desktop_dir="${TARGET_HOME}/Desktop"
 

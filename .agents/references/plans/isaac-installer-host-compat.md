@@ -23,7 +23,7 @@ This plan specifies the architecture to update both **`isaac-installer`** and **
 
 ---
 
-## 2. Host Reality vs. Installer Assumptions: The 14 Core Discrepancies
+## 2. Host Reality vs. Installer Assumptions: The 16 Core Discrepancies
 
 The table below contrasts what the automated tools currently assume versus what the host workstation actually requires:
 
@@ -43,6 +43,8 @@ The table below contrasts what the automated tools currently assume versus what 
 | **12** | **Graph-RAG Knowledge Memory (Neo4j)** | Ignores agentic environment memory; no Neo4j provisioning. | `neo4j-arena` (Neo4j 5.26) on ports **`7475/7688`** storing RDF-star / LPG experience graphs (650+ episodes). | Evaluation loop cannot retrieve prior failure modes; repeated GPU waste. |
 | **13** | **Missing Persistent State Ledger & Post-Install Commit** | Assumes procedural "fire-and-forget" script execution; logs success without committing ground-truth state. | Software has state amnesia; `~/.isaac-installer/state.json` left at `{"current_stage": "init"}` because `sync_state_ledger` was omitted upon `install`. No `local-state.json` or queryable state CLI (`isaac-installer state`). | Operators and AI agents must parse markdown session logs (`.agents/memory/sessions/`) to deduce active profile and packages. Automated drift detection cannot run without an authoritative ground truth. |
 | **14** | **Declarative Profile & Ansible Orchestration Decoupling** | Assumes profiles in `isaac-installer/config/` (`default-profile`, `full-ecosystem`, `minimal-headless`) are solely for local bash scripts, and profiles in `configs/profiles/` are solely for Terraform cloud tiers. | Workstations require a unified 2-tier contract (Robotics Stack + Infrastructure Tier). In Automator, `inventory.template` and `deployer.py` never passed profile variables (`install_gr00t`, `install_lerobot`, `enable_neo4j`, `enable_ftdi_latency_rule`, repos/tags) to Ansible or Packer. | Deploying cloud workstations or baking Packer golden images falls back to static defaults, ignoring the requested workstation profile specification. |
+| **15** | **Hardcoded User Identity in Profiles & Missing Generic Example** | Profiles (`default-profile.yaml`, `full-ecosystem.yaml`) hardcode user namespace (`BoredEngineer` / `boredengineering`) across repositories and owners. | Other developers cloning the repository cannot run the installer without cloning someone else's personal forks or triggering push permission errors. Missing a clean, generic `example-profile.yaml` with parameterizable placeholders (`<github_username>`, `<org_name>`). | Prevents multi-user portability and requires manual editing of tracked repository profiles. |
+| **16** | **Workspace Owner Resolution & Casing/Folder Mismatch Trap** | `resolve_repo_dest_path()` prioritized `extract_repo_owner("$repo_slug")` over `WORKSPACE_DEFAULT_OWNER`, and fell back to `gh api user .login` or `git config user.name`. | When the profile specified `default_owner: "BoredEngineer"` (PascalCase) but repo URLs used `boredengineering/...` (lowercase) or `gh api user` returned a system/git username, the code created a separate folder (`boredengineering/` or `<username>/`), forcing the user to manually create/fix another directory to match existing checkouts. | Duplicate directory trees (`BoredEngineer` vs `boredengineering` vs `<username>`), broken symlinks, and false-positive drift warnings (`PATH_MISLOCATED`). |
 
 ---
 
@@ -339,6 +341,40 @@ flowchart TD
 
 ---
 
+### Phase 14: Generic Example Profile Template & Multi-User Decoupling
+* **Objectives**: Decouple user identity from tracked repository profiles by establishing a clean, parameterized `example-profile.yaml` that any developer can easily customize.
+* **Tasks**:
+  1. **Author Generic `example-profile.yaml`**:
+     * Create `isaac-installer/config/example-profile.yaml` (and mirror in `configs/profiles/example-profile.yaml`).
+     * Use explicit, self-documenting placeholders:
+       * `workspace.root`: `"~/Documents/GitHub"`
+       * `workspace.layout`: `"auto"` (`"auto"` | `"org"` | `"flat"`)
+       * `workspace.default_owner`: `"<your_github_username>"`
+       * `repositories.isaaclab.repo`: `"<your_github_username>/IsaacLab"`
+       * `repositories.arena.repo`: `"<your_github_username>/IsaacLab-Arena"`
+     * Include clear comments explaining how personal forks vs upstream repositories are managed.
+  2. **Automated User Onboarding (`isaac-installer profile init`)**:
+     * Add an interactive / headless profile generator:
+       `isaac-installer profile init [--username <user>] [--org <org>] [--layout org|flat]`
+       Copies `example-profile.yaml` to `custom-profile.yaml` and replaces placeholders dynamically with the user's detected GitHub login.
+
+---
+
+### Phase 15: Deterministic Workspace Directory Resolution & Case-Preserving Alignment
+* **Objectives**: Eliminate duplicate folder creation (e.g. `BoredEngineer/` vs `boredengineering/` vs system username) by enforcing strict precedence in `resolve_repo_dest_path()`.
+* **Tasks**:
+  1. **Fix Owner Resolution Precedence in `lib/core/git_workspace.sh`**:
+     * Reverse flawed fallback order:
+       * Priority 1: `WORKSPACE_DEFAULT_OWNER` (if specified in the active YAML profile, e.g. `"BoredEngineer"`).
+       * Priority 2: Case-insensitive scan of existing directories in `ws_root`. If `BoredEngineer/` exists, bind strictly to it rather than creating `boredengineering/`.
+       * Priority 3: Extract owner from personal fork repo slug only if `WORKSPACE_DEFAULT_OWNER` is unset.
+       * Priority 4: Fallback to GitHub CLI login or git config.
+     * Never blindly create folders named after system usernames or lowercase git slugs when an authoritative owner is declared.
+  2. **Eliminate Duplicate Directory Traps in `isaac-installer` & Ansible**:
+     * Ensure both `isaac-installer` and Ansible `roles/isaaclab-source` use the identical resolved path, preventing split checkouts.
+
+---
+
 ## 5. Technical Verification & Acceptance Criteria
 
 | Subsystem | Verification Command | Expected Successful Output |
@@ -359,6 +395,8 @@ flowchart TD
 | **Persistent State Files** | `test -f ~/.isaac-state.json && test -f state/local-state.json` | Both files exist and contain identical synchronized JSON state. |
 | **Profile Discovery** | `python3 -c "from src.python.config import list_available_profiles; p = list_available_profiles(); assert 'default-workstation' in p and 'full-ecosystem' in p; print('Profiles OK')"` | Outputs `Profiles OK`. |
 | **Packer Profile Bake** | `./image-gcp --profile full-ecosystem --dry-run` | Passes dry run with `-var install_gr00t=true` and `-var enable_neo4j=true`. |
+| **Generic Example Profile**| `test -f isaac-installer/config/example-profile.yaml && test -f configs/profiles/example-profile.yaml` | Example profiles exist without hardcoded user credentials. |
+| **Deterministic Workspace**| `./bin/isaac-installer plan --profile config/default-profile.yaml` | Resolves target path to existing `BoredEngineer/IsaacLab` without generating duplicate lowercase or username folders. |
 
 ---
 

@@ -13,7 +13,6 @@ class WorkstationBackend:
         home = Path.home()
         candidates = [
             home / "Documents/GitHub" / repo_name,
-            home / "Documents/GitHub/BoredEngineer" / repo_name,
             home / "workspace" / repo_name,
             home / "projects" / repo_name,
             home / "dev" / repo_name,
@@ -23,6 +22,11 @@ class WorkstationBackend:
             Path.cwd() / repo_name,
             Path.cwd().parent / repo_name,
         ]
+        gh_dir = home / "Documents/GitHub"
+        if gh_dir.exists():
+            for sub in gh_dir.iterdir():
+                if sub.is_dir():
+                    candidates.append(sub / repo_name)
         for c in candidates:
             if c.exists() and (c / ".git").exists():
                 return c

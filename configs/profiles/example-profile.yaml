@@ -1,0 +1,76 @@
+# ==============================================================================
+# Isaac Automator - Declarative Example Workstation Profile (example-profile.yaml)
+# ==============================================================================
+# Demonstrates a complete 2-tier specification:
+# Tier A: Cloud Infrastructure, Networking & Security (Simple, Team, or Enterprise)
+# Tier B: Robotics Stack & Workstation Configuration (Sim, Lab, Arena, Teleop)
+# ==============================================================================
+
+schema_version: "v1alpha1"
+profile_name: "example-profile"
+description: "Universal declarative example profile combining cloud infrastructure and robotics stack"
+cloud: "gcp"
+
+# ------------------------------------------------------------------------------
+# 1. Cloud Infrastructure & Security Configuration
+# ------------------------------------------------------------------------------
+security:
+  tier: "simple"                         # "simple" ($0/mo) | "team" (<$0.10/mo) | "enterprise" (~$35+/mo) | "custom"
+  network:
+    iap_only: false                      # true: Zero Public IP (Cloud IAP tunnel only); false: Ephemeral Public IP
+    cloud_nat: false                     # Managed NAT Gateway (required if iap_only is true)
+    ingress_cidrs: ["auto"]              # Auto-locks firewall to caller public IP (/32)
+  storage:
+    state_backend: "local"               # "local" (./state/<name>/) or "gcs" (remote object store)
+    state_bucket: ""                     # Set bucket name or "auto" when using remote state
+    state_locking: false                 # Distributed object locking
+    soft_delete_days: 7
+  cryptography:
+    encryption_type: "google_managed"    # "google_managed" ($0/mo) or "kms_cmek"
+    kms_keyring_name: ""
+  compute:
+    shielded_vm: true                    # Secure Boot, vTPM, Integrity Monitoring ($0.00/mo)
+    os_login: false                      # Central IAM OS Login with 2FA
+    service_account_type: "default"      # "default" or "dedicated"
+  secrets:
+    engine: "env_vars"                   # "env_vars" (local env) or "secret_manager" (Google Secret Manager)
+
+# ------------------------------------------------------------------------------
+# 2. Robotics Stack & Workstation Configuration
+# ------------------------------------------------------------------------------
+workstation:
+  gpu_model: "g2-standard-8"             # Recommended cloud GPU instance (1x NVIDIA L4 24GB)
+  base_profile: "example-workstation"    # Inherits base packages from isaac-installer/config/example-profile.yaml
+  remote_desktop: "standard"             # "standard" (noVNC + NoMachine) | "dcv" | "sunshine" | "none"
+  demos:
+    - "franka-manipulation"
+    - "quadruped-locomotion"
+
+  workspace:
+    root: "~/Documents/GitHub"
+    layout: "auto"                       # "auto" | "org" | "flat"
+    default_owner: "<your_github_username>"
+
+  repositories:
+    isaaclab:
+      enabled: true
+      repo: "<your_github_username>/IsaacLab"
+      upstream: "https://github.com/isaac-sim/IsaacLab.git"
+      tag: "v3.0.0-beta2"
+    arena:
+      enabled: true
+      repo: "<your_github_username>/IsaacLab-Arena"
+      upstream: "https://github.com/isaac-sim/IsaacLab-Arena.git"
+      branch: "release/0.3.0-prerelease"
+    lerobot:
+      enabled: false
+      repo: "<your_github_username>/lerobot"
+      upstream: "https://github.com/huggingface/lerobot.git"
+    gr00t:
+      enabled: false
+      repo: "<your_github_username>/Isaac-GR00T"
+      upstream: "https://github.com/NVIDIA/Isaac-GR00T.git"
+
+  teleoperation:
+    ftdi_1ms_latency_rule: true
+    spacemouse_daemon: false

@@ -303,7 +303,7 @@ audit_all_components() {
 
     # 15. IsaacLab-Arena Benchmark Suite
     local arena_dir
-    arena_dir="$(resolve_arena_dir 2>/dev/null || echo "${TARGET_HOME}/Documents/GitHub/BoredEngineer/IsaacLab-Arena")"
+    arena_dir="$(resolve_arena_dir 2>/dev/null || resolve_active_repo_dir "IsaacLab-Arena" 2>/dev/null || echo "${TARGET_HOME}/Documents/GitHub/IsaacLab-Arena")"
     local arena_cur="Missing"
     local arena_status="MISSING"
     local arena_risk="None"

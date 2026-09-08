@@ -1,0 +1,94 @@
+# ==============================================================================
+# Isaac Automator - Generic Workstation Example Profile (example-profile.yaml)
+# ==============================================================================
+# Instructions:
+# 1. Copy this file to create your personalized profile:
+#    cp config/example-profile.yaml config/my-workstation.yaml
+# 2. Replace "<your_github_username>" with your GitHub username or organization.
+# 3. If you have personal forks of IsaacLab or Arena, point "repo" to your fork.
+#    If you do not have forks, set "repo" to the upstream repository URL.
+# ==============================================================================
+
+version: "1.0"
+profile_name: "example-workstation"
+description: "Template robotics development workstation profile (customizable for any developer)"
+
+hardware:
+  force_gpu_index: 0
+  enforce_x11: true
+  auto_blacklist_nouveau: true
+  enable_nvme_storage_tools: true
+
+workspace:
+  root: "~/Documents/GitHub"
+  layout: "auto"                         # "auto" | "org" | "flat"
+  default_owner: "<your_github_username>" # GitHub user or organization namespace folder
+  auto_register_github_desktop: true
+  auto_create_fork: true                 # Auto-creates GitHub fork via gh CLI if authenticated
+
+repositories:
+  isaaclab:
+    enabled: true
+    # Personal fork (e.g. <your_github_username>/IsaacLab) or direct upstream URL
+    repo: "<your_github_username>/IsaacLab"
+    upstream: "https://github.com/isaac-sim/IsaacLab.git"
+    branch: ""
+    tag: "v3.0.0-beta2"                  # Pinned stable release for Isaac Sim 6.0.1
+  arena:
+    enabled: true
+    # Personal fork (e.g. <your_github_username>/IsaacLab-Arena) or direct upstream URL
+    repo: "<your_github_username>/IsaacLab-Arena"
+    upstream: "https://github.com/isaac-sim/IsaacLab-Arena.git"
+    branch: "release/0.3.0-prerelease"
+    tag: ""
+  lerobot:
+    enabled: false                       # Enable for physical AI teleoperation and dataset visualization
+    repo: "<your_github_username>/lerobot"
+    upstream: "https://github.com/huggingface/lerobot.git"
+    branch: "main"
+    tag: "v0.4.3"
+    isolated_env: true                   # Isolated environment prevents package collisions
+  gr00t:
+    enabled: false                       # Enable for NVIDIA Isaac-GR00T foundation model evaluation
+    repo: "<your_github_username>/Isaac-GR00T"
+    upstream: "https://github.com/NVIDIA/Isaac-GR00T.git"
+    branch: "main"
+    tag: ""
+    model_path: "nvidia/GR00T-N1.7-3B"
+    vlm_backbone: "nvidia/Cosmos-Reason2-2B"
+    server_host: "127.0.0.1"
+    server_port: 5556
+    isolated_env: true
+
+simulation:
+  isaacsim:
+    enabled: true
+    version: "6.0.1"                     # Standalone Isaac Sim 6.0.1
+    install_dir: "~/IsaacSim"
+    source_type: "standalone"            # "standalone" | "custom_build"
+    accept_eula: true
+
+devtools:
+  docker: true
+  nvidia_container_toolkit: true
+  vscode: true
+  github_desktop: true
+  chromium: true
+  discord: false
+  cloud_clis:
+    aws: false
+    gcloud: false
+    gh: true                             # Required for fork automation & dual remotes
+
+teleoperation:
+  ftdi_1ms_latency_rule: true            # Sets 1ms USB serial buffer latency (ttyUSB*, ttyACM*)
+  spacemouse_daemon: false               # 3Dconnexion SpaceMouse (spacenavd)
+  manus_vr_gloves: false                 # Manus VR haptic data gloves
+  realsense_cameras: false               # Intel RealSense depth camera SDK
+  xr_cloudxr: false                      # NVIDIA CloudXR
+
+streaming:
+  provider: "none"                       # "none" | "nomachine" | "sunshine"
+
+demos:
+  desktop_shortcuts: true                # Generate desktop shortcuts for Franka, Quadruped, and Arena
