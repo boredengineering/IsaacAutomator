@@ -235,6 +235,9 @@ def list_available_profiles(repo_root: str | None = None) -> dict[str, dict[str,
             try:
                 with open(path, "r", encoding="utf-8") as f:
                     data = yaml.safe_load(f) or {}
+                # Observed workstation inventories are not security profiles.
+                if data.get("kind") == "workstation-baseline":
+                    continue
                 prof_name = data.get("profile_name", stem)
                 sec = data.get("security", {})
                 profiles[prof_name] = {
@@ -274,6 +277,8 @@ def load_profile_spec(identifier: str, repo_root: str | None = None) -> dict[str
         try:
             with open(direct_path, "r", encoding="utf-8") as f:
                 data = yaml.safe_load(f) or {}
+            if data.get("kind") == "workstation-baseline":
+                return None
             sec = data.get("security", {})
             return {
                 "name": data.get("profile_name", direct_path.stem),

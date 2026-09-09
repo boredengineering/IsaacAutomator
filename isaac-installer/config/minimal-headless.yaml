@@ -18,6 +18,7 @@ hardware:
 workspace:
   root: "~/workspace"
   layout: "flat"
+  auto_create_fork: false
   auto_register_github_desktop: false
 
 repositories:

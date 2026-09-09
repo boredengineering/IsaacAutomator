@@ -4,6 +4,8 @@
 # Demonstrates a complete 2-tier specification:
 # Tier A: Cloud Infrastructure, Networking & Security (Simple, Team, or Enterprise)
 # Tier B: Robotics Stack & Workstation Configuration (Sim, Lab, Arena, Teleop)
+# Copy personal versions to configs/private/ (Git- and Docker-ignored).
+# Workstation stack fields describe intent; full Ansible handoff is not implemented.
 # ==============================================================================
 
 schema_version: "v1alpha1"
@@ -40,7 +42,7 @@ security:
 # ------------------------------------------------------------------------------
 workstation:
   gpu_model: "g2-standard-8"             # Recommended cloud GPU instance (1x NVIDIA L4 24GB)
-  base_profile: "example-workstation"    # Inherits base packages from isaac-installer/config/example-profile.yaml
+  base_profile: "example-workstation"    # Intended base; inheritance is not yet implemented
   remote_desktop: "standard"             # "standard" (noVNC + NoMachine) | "dcv" | "sunshine" | "none"
   demos:
     - "franka-manipulation"

@@ -126,9 +126,11 @@ def flatten_dict(d, prefix='CFG_'):
     return items
 
 cfg = parse_yaml_file('${CONFIG_FILE}')
+if cfg.get('kind') == 'workstation-baseline':
+    sys.exit('Workstation baseline is an inventory, not an executable installer profile.')
 for k, v in flatten_dict(cfg):
     print(f'export {k}=\"{v}\"')
-" 2>/dev/null || true)
+") || return 1
 
     if [[ -n "$env_exports" ]]; then
         eval "$env_exports"

@@ -33,6 +33,11 @@ A modular, zero-infrastructure, bare-metal robotics and Physical AI workstation 
 
 ## Usage & Profiles
 
+Public presets use official upstream repositories, not a developer's personal
+forks. Store customized profiles in `../configs/private/` (excluded from Git and
+Docker builds). See [private profiles and cloud/local parity](../configs/PRIVATE_PROFILES.md)
+for the distinction between executable profiles and observed workstation baselines.
+
 ### 1. Inspect Active YAML Configuration
 ```bash
 ./bin/isaac-installer config

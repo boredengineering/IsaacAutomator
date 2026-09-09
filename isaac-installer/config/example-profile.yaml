@@ -3,10 +3,12 @@
 # ==============================================================================
 # Instructions:
 # 1. Copy this file to create your personalized profile:
-#    cp config/example-profile.yaml config/my-workstation.yaml
+#    mkdir -p ../configs/private
+#    cp config/example-profile.yaml ../configs/private/my-workstation.yaml
 # 2. Replace "<your_github_username>" with your GitHub username or organization.
 # 3. If you have personal forks of IsaacLab or Arena, point "repo" to your fork.
 #    If you do not have forks, set "repo" to the upstream repository URL.
+# 4. ../configs/private/ is excluded from Git and Docker builds. Never force-add it.
 # ==============================================================================
 
 version: "1.0"

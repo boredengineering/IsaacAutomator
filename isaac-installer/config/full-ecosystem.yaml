@@ -16,34 +16,34 @@ hardware:
 
 workspace:
   root: "~/Documents/GitHub"
-  layout: "auto"                     # "auto" | "org" | "flat"
-  default_owner: "BoredEngineer"
+  layout: "flat"                     # Public preset; customize layout in a private profile
+  default_owner: ""
   auto_register_github_desktop: true
-  auto_create_fork: true
+  auto_create_fork: false
 
 repositories:
   isaaclab:
     enabled: true
-    repo: "boredengineering/IsaacLab"
+    repo: "https://github.com/isaac-sim/IsaacLab.git"
     upstream: "https://github.com/isaac-sim/IsaacLab.git"
     branch: ""
     tag: "v3.0.0-beta2"
   arena:
     enabled: true
-    repo: "boredengineering/IsaacLab-Arena"
+    repo: "https://github.com/isaac-sim/IsaacLab-Arena.git"
     upstream: "https://github.com/isaac-sim/IsaacLab-Arena.git"
     branch: "release/0.3.0-prerelease"
     tag: ""
   lerobot:
     enabled: true
-    repo: "boredengineering/lerobot"
+    repo: "https://github.com/huggingface/lerobot.git"
     upstream: "https://github.com/huggingface/lerobot.git"
     branch: "main"
     tag: "v0.4.3"
     isolated_env: true               # Dedicated 'lerobot' conda env to prevent GR00T/numpy conflicts
   gr00t:
     enabled: true
-    repo: "boredengineering/Isaac-GR00T"
+    repo: "https://github.com/NVIDIA/Isaac-GR00T.git"
     upstream: "https://github.com/NVIDIA/Isaac-GR00T.git"
     branch: "main"
     tag: ""

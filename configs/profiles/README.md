@@ -2,6 +2,12 @@
 
 Declarative profiles allow you to configure cloud infrastructure, networking, security tiers, remote Terraform state backends, and workstation applications in a reproducible, version-controlled YAML file.
 
+Keep personal profiles in `configs/private/`, which is excluded from Git and
+Docker builds, and select them by explicit path. The current cloud loader does
+not transport the complete robotics stack to Ansible; a workstation inventory
+is not a deployable security profile. See [private profiles and parity](../PRIVATE_PROFILES.md)
+before treating the local and cloud profile schemas as interchangeable.
+
 Instead of passing dozens of command-line flags on every deployment, you can specify a profile with `--profile <name_or_path>`:
 
 ```bash
