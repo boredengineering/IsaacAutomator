@@ -174,6 +174,9 @@ c["remote_desktop_providers"] = {
 from pathlib import Path
 import yaml
 
+from src.python.registry_profile import RegistryProfileError, normalize_registries
+from src.python.huggingface_profile import normalize_huggingface
+
 BUILTIN_PROFILES: dict[str, dict[str, Any]] = {
     "simple": {
         "name": "simple",
@@ -253,7 +256,11 @@ def list_available_profiles(repo_root: str | None = None) -> dict[str, dict[str,
                     "state_bucket": sec.get("storage", {}).get("state_bucket", ""),
                     "ingress_cidrs": sec.get("network", {}).get("ingress_cidrs", ["auto"]),
                     "raw": data,
+                    **normalize_registries(data),
+                    **normalize_huggingface(data),
                 }
+            except RegistryProfileError:
+                raise
             except Exception:
                 pass
 
@@ -293,7 +300,11 @@ def load_profile_spec(identifier: str, repo_root: str | None = None) -> dict[str
                 "state_bucket": sec.get("storage", {}).get("state_bucket", ""),
                 "ingress_cidrs": sec.get("network", {}).get("ingress_cidrs", ["auto"]),
                 "raw": data,
+                **normalize_registries(data),
+                **normalize_huggingface(data),
             }
+        except RegistryProfileError:
+            raise
         except Exception:
             return None
 

@@ -1,6 +1,27 @@
 # Dynamic Multi-Cloud Security Tiering & Hardened Storage Architecture
 **Comprehensive Architecture Guide, Declarative Profile Spec & Operator Instructions**
 
+## Optional Artifact Registry extension (2026-09-09)
+
+The [Artifact Registry guide](artifact-registry-guide.md) defines a separate
+top-level `artifact_registry` profile block. It is opt-in for GCP, not automatically
+enabled by the enterprise tier. Terraform provisions shared repository infrastructure
+in separate state; workstation Terraform grants repository-scoped reader access to
+its attached dedicated service account. Ansible configures metadata-based Docker
+authentication and pulls digest-pinned images. This does not require registry tokens
+in Secret Manager and does not create a VPC Service Controls perimeter. Repository
+CMEK is selected separately in the shared stack; workstation disk CMEK does not
+implicitly encrypt the repository. See the [execution ledger](../plans/artifact-registry-plan.md)
+for verified behavior and remaining live checks.
+
+The follow-on [optional distribution guide](optional-distribution-guide.md)
+adds a provider-neutral `container_registry` block selecting GCP Artifact Registry,
+AWS ECR, or Docker Hub, plus independent `huggingface` model/dataset snapshots.
+All are disabled by default and independent of security tier. Existing legacy
+GCP profiles remain supported; do not specify both registry blocks. Cloud IAM
+is used for GCP/ECR; Docker Hub credentials and HF target token files are separate
+operator-provisioned inputs, never inline profile secrets.
+
 ---
 
 ## 1. Architectural Philosophy: Zero Forced Overhead

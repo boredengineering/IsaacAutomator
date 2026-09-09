@@ -22,6 +22,9 @@ galaxy_info:
   standalone: false
 dependencies:
   - { role: system, tags: ['__system'] }
+  - { role: container-registry, tags: ['__container_registry'] }
+  - { role: artifact-registry, tags: ['__artifact_registry'] }
+  - { role: huggingface-artifacts, tags: ['__huggingface_artifacts'] }
   - { role: auth, tags: ['__auth'] }
   - { role: nvidia-driver, tags: ['__nvidia_driver'] }
   - { role: remote-desktop, tags: ['__remote_desktop'] }

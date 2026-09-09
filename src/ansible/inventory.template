@@ -20,6 +20,13 @@ results_dir="{config[default_remote_results_dir]}"
 workspace_dir="{config[default_remote_workspace_dir]}"
 gcs_backup_bucket="{gcs_backup_bucket}"
 gcs_auto_restore={gcs_auto_restore}
+enable_artifact_registry={enable_artifact_registry}
+artifact_registry_project={artifact_registry_project}
+artifact_registry_location={artifact_registry_location}
+artifact_registry_repository={artifact_registry_repository}
+artifact_registry_images_json={artifact_registry_images_json}
+container_registry_json={container_registry_json}
+huggingface_json={huggingface_json}
 generic_driver_apt_package="{config[generic_driver_apt_package]}"
 ansible_ssh_private_key_file="{config[state_dir]}/{deployment_name}/key.pem"
 

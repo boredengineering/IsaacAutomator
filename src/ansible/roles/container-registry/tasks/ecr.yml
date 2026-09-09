@@ -1,0 +1,30 @@
+---
+- name: Install the official distro ECR credential helper
+  ansible.builtin.apt:
+    name: amazon-ecr-credential-helper
+    state: present
+    update_cache: true
+
+- name: Create public nonsecret helper configuration directory
+  ansible.builtin.file:
+    path: /etc/isaac-automator
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Install scoped metadata-only ECR credential wrapper
+  ansible.builtin.copy:
+    src: docker-credential-isaac-ecr.py
+    dest: /usr/local/bin/docker-credential-isaac-ecr
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Allow only the configured ECR host and region
+  ansible.builtin.copy:
+    content: "{{ {'registry': container_registry_validated.registry, 'region': container_registry_validated.region} | to_nice_json }}\n"
+    dest: /etc/isaac-automator/ecr.json
+    owner: root
+    group: root
+    mode: '0644'

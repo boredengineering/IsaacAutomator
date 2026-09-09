@@ -1,0 +1,9 @@
+---
+- name: Validate Hugging Face settings before changing the host
+  ansible.builtin.set_fact:
+    huggingface_validated: "{{ huggingface_json | huggingface_settings }}"
+  no_log: true
+
+- name: Download optional pinned Hugging Face artifacts
+  ansible.builtin.include_tasks: download.yml
+  when: huggingface_validated.enabled

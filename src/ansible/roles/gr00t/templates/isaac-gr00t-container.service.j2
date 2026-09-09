@@ -7,6 +7,10 @@ Requires=docker.service
 Type=simple
 TimeoutStartSec=0
 Restart=always
+{% if gr00t_registry_selected | default(false) %}
+Environment="DOCKER_CONFIG={{ container_registry_root_docker_config if gr00t_generic_registry_selected | default(false) else artifact_registry_root_docker_config }}"
+Environment="PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+{% endif %}
 ExecStartPre=-/usr/bin/docker stop gr00t-server
 ExecStartPre=-/usr/bin/docker rm gr00t-server
 ExecStart=/usr/bin/docker run --name gr00t-server \
@@ -16,7 +20,7 @@ ExecStart=/usr/bin/docker run --name gr00t-server \
     --network host \
     -v /home/{{ ansible_user }}/models:/models \
     -v /home/{{ ansible_user }}/datasets:/datasets \
-    {{ gr00t_container_image }} \
+    {{ container_registry_validated.images.gr00t if gr00t_generic_registry_selected | default(false) else (artifact_registry_validated.images.gr00t if gr00t_registry_selected | default(false) else gr00t_container_image) }} \
     python gr00t/eval/run_gr00t_server.py \
       --model-path {{ gr00t_model_path }} \
       --embodiment-tag {{ gr00t_embodiment_tag }} \

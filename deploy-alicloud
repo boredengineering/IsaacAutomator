@@ -207,6 +207,8 @@ class AlicloudDeployer(Deployer):
     Deploys stuff to Alibaba Cloud
     """
 
+    cloud = "alicloud"
+
     def __init__(self, params, config):
         super().__init__(params, config)
 

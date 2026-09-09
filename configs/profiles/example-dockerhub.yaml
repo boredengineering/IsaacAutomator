@@ -1,0 +1,15 @@
+# Generic example; no registry infrastructure is provisioned by this selection.
+# Copy to configs/private/ for private namespaces and approved image digests.
+profile_name: example-dockerhub
+cloud: aws  # Also usable with gcp, azure, or alicloud deployment profiles.
+security:
+  tier: simple
+container_registry:
+  enabled: false
+  provider: dockerhub
+  namespace: exampleorg
+  auth: anonymous  # Or existing: separately provision target root Docker credentials.
+  images: {}
+  # gr00t: "docker.io/exampleorg/gr00t@sha256:<64-lowercase-hex>"
+huggingface:
+  enabled: false

@@ -214,6 +214,8 @@ class AWSDeployer(Deployer):
     Deploys stuff to Azure
     """
 
+    cloud = "aws"
+
     def __init__(self, params, config):
         super().__init__(params, config)
 

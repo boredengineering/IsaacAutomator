@@ -1,0 +1,17 @@
+# Generic example; copy to configs/private/ before using real identifiers.
+# This selects consumption, not creation. Provision the shared repository separately.
+profile_name: example-aws-ecr
+cloud: aws
+security:
+  tier: simple
+container_registry:
+  enabled: false
+  provider: aws_ecr
+  account_id: "123456789012"  # Placeholder, not a deployment account.
+  region: us-east-1
+  repository: robotics/gr00t
+  images: {}
+  # gr00t: "123456789012.dkr.ecr.us-east-1.amazonaws.com/robotics/gr00t@sha256:<64-lowercase-hex>"
+# Independently optional: see example-huggingface.yaml.
+huggingface:
+  enabled: false

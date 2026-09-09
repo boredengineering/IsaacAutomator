@@ -1,5 +1,19 @@
 # Architectural Plan: Harmonizing Isaac Installer & Ansible with the Host Architecture
 
+## Artifact Registry integration update (2026-09-09)
+
+The [registry implementation ledger](artifact-registry-plan.md) and
+[operator guide](../docs/artifact-registry-guide.md) track optional digest-pinned
+GCP container distribution. This addresses image availability/authentication,
+not the entire two-tier robotics profile handoff described below. Shared registry
+Terraform state is separate from disposable workstation state. Personal image
+digests and project settings remain in ignored `configs/private/` profiles.
+Other workload images are pre-pulled only; GR00T has an explicit container consumer.
+Packer profile propagation, model/dataset migration, mounted-source parity and
+GPU/runtime equivalence are not established by registry support. Consult the
+ledger for actual verification results; historical host observations below are
+not current deployment-readiness evidence.
+
 **Document ID**: `isaac-installer-host-compat.md`  
 **Target Subsystems**: `isaac-installer` (Bare-Metal Bash Provisioner) & `IsaacAutomator` (`src/ansible/` Cloud Engine)  
 **Host Target**: Physical Ubuntu 22.04 LTS Workstation, NVIDIA RTX PRO 6000 Blackwell (`sm_120`), Driver 595.84, CUDA 13.2/13.3  

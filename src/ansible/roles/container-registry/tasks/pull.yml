@@ -1,0 +1,40 @@
+---
+- name: Inspect approved image digests already present
+  ansible.builtin.command:
+    argv:
+      - "{{ container_registry_docker_binary }}"
+      - image
+      - inspect
+      - --format
+      - "{{ '{{json .RepoDigests}}' }}"
+      - "{{ item }}"
+  environment:
+    DOCKER_CONFIG: "{{ container_registry_root_docker_config }}"
+    PATH: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+  loop: "{{ container_registry_validated.images.values() | unique | list }}"
+  register: container_registry_inspected
+  changed_when: false
+  failed_when: container_registry_inspected.rc not in [0, 1]
+  check_mode: false
+
+- name: Pull missing approved image digests without executing images
+  ansible.builtin.command:
+    argv:
+      - "{{ container_registry_docker_binary }}"
+      - pull
+      - "{{ item.item }}"
+  environment:
+    DOCKER_CONFIG: "{{ container_registry_root_docker_config }}"
+    PATH: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+  loop: "{{ container_registry_inspected.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+  # Engine reports Docker Hub RepoDigests in familiar form, omitting docker.io/
+  # and (only for official images) library/. Keep the whole repo + digest exact.
+  when: >-
+    item.rc != 0 or
+    (item.item not in (item.stdout | from_json | default([], true)) and
+     (item.item | regex_replace('^docker\\.io/(library/)?', ''))
+       not in (item.stdout | from_json | default([], true)))
+  changed_when: true
+  no_log: true

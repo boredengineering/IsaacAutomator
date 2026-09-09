@@ -41,7 +41,19 @@ resource "aws_instance" "instance" {
   key_name               = var.keypair_id
   vpc_security_group_ids = [aws_security_group.sg.id]
   subnet_id              = aws_subnet.subnet.id
-  iam_instance_profile   = var.iam_instance_profile
+  iam_instance_profile   = var.enable_ecr ? aws_iam_instance_profile.ecr_reader[0].name : var.iam_instance_profile
+
+  # Leave existing metadata behavior untouched unless ECR is explicitly enabled.
+  dynamic "metadata_options" {
+    for_each = var.enable_ecr ? [1] : []
+    content {
+      http_endpoint               = "enabled"
+      http_tokens                 = "required"
+      http_put_response_hop_limit = 1
+    }
+  }
+
+  depends_on = [aws_iam_role_policy.ecr_reader]
 
   root_block_device {
     volume_type           = "gp3"

@@ -1,6 +1,18 @@
 # Google Cloud Platform (GCP) Security Architecture & Hardening Specification
 **Isaac Automator: Cloud Workstation Security, Cryptography, Secrets, and State Management**
 
+## Registry scope update (2026-09-09)
+
+Optional private container distribution is tracked in
+[artifact-registry-plan.md](../plans/artifact-registry-plan.md) and
+[artifact-registry-guide.md](../docs/artifact-registry-guide.md). Keep repository
+ownership in separate shared Terraform state, grant reader access at repository
+scope to the actual VM identity, and separate publishing privileges. Metadata-issued
+short-lived Docker credentials are not stored in profiles, Terraform variables or
+image layers. Registry IAM privacy is not a network perimeter; Private Google Access,
+DNS/routing and any VPC Service Controls policies require independent validation.
+This addition is not evidence that every historical security target below is implemented.
+
 ---
 
 ## 1. Executive Summary & Current Threat Surface Audit

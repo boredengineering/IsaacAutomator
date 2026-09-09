@@ -1,0 +1,8 @@
+---
+# Opt-in only; Packer and existing/non-GCP deployments need no new variables.
+enable_artifact_registry: false
+artifact_registry_project: ""
+artifact_registry_location: ""
+artifact_registry_repository: ""
+artifact_registry_images_json: "{}"
+artifact_registry_docker_binary: /usr/bin/docker

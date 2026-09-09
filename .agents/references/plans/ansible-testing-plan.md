@@ -1,5 +1,36 @@
 # Master Plan: Comprehensive Testing Framework for Cloud Ansible Engine
 
+## Artifact Registry verification addition (2026-09-09)
+
+Registry work is tracked in [artifact-registry-plan.md](artifact-registry-plan.md).
+The offline suites `src/tests/artifact_registry.test.py`,
+`src/tests/artifact_registry_ansible.test.py`, and
+`src/tests/artifact_registry_terraform.test.py` cover profile handoff, keyless Docker
+configuration and Terraform contracts. Run them through `PYTHONPATH=. sh
+src/tests/run_all.sh`; run Terraform provider validation/mocked tests and Ansible
+syntax checks separately as documented in the registry guide. No passing offline
+suite establishes live IAM propagation, successful registry pulls, GPU compatibility
+or end-to-end GR00T health. Never run the normal deployment CLI merely as an offline
+test: even its dry-run path can authenticate, write state and contact cloud APIs.
+
+Review-driven coverage also includes failed-init metadata preservation, same-cloud
+repair without the original YAML, cross-cloud saved-state rejection, adversarial
+Docker-directory swaps after dropping privilege, actual Ansible module wrapper
+merges for temporary non-root homes, enabled GCP/from-image inventory, both GR00T
+mode transitions and digest-change restart handlers. HTTP transport tests use
+loopback-only metadata/proxy/redirect fixtures, never the real metadata service.
+
+Follow-on provider coverage is tracked in
+[optional-distribution-plan.md](optional-distribution-plan.md):
+`distribution_profile.test.py`, `container_registry_ansible.test.py`,
+`ecr_terraform.test.py`, and `huggingface_artifacts.test.py` add disabled-by-default
+YAML selection, saved canonical settings, ECR IAM-only credentials, Docker Hub
+auth/cache behavior and pinned model/dataset staging. `src/terraform/test_ecr.py`
+validates source-only temporary stacks with mocked plan operations and backend
+initialization disabled. Hugging Face tests use fake Hub clients and temporary
+user homes, not real model downloads. See the follow-on ledger for current totals,
+review fixes, tagged-rerun requirements and live-acceptance limitations.
+
 - [Executive Summary & Session Context](#executive-summary--session-context)
 - [1. Testing Architecture & Multi-Tier Strategy](#1-testing-architecture--multi-tier-strategy)
 - [2. Tier-by-Tier Implementation Specifications](#2-tier-by-tier-implementation-specifications)

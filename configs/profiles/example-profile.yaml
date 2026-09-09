@@ -40,6 +40,24 @@ security:
 # ------------------------------------------------------------------------------
 # 2. Robotics Stack & Workstation Configuration
 # ------------------------------------------------------------------------------
+# Optional registry consumption (executable, independent of workstation fields).
+# Create the shared repository separately using src/terraform/registry/gcp, or use
+# an existing Docker repository. Copy personal settings to configs/private/.
+# See .agents/references/docs/optional-distribution-guide.md for all choices.
+# Legacy artifact_registry profiles remain supported; do not specify both blocks.
+container_registry:
+  enabled: false
+  provider: gcp_artifact_registry
+  project: ""
+  location: "us-central1"
+  repository: "robotics"
+  images: {}  # workload -> LOCATION-docker.pkg.dev/PROJECT/REPO/IMAGE@sha256:DIGEST
+  # The gr00t key selects its container service; other keys are pre-pulled only.
+
+# Independent model/dataset downloads; see example-huggingface.yaml.
+huggingface:
+  enabled: false
+
 workstation:
   gpu_model: "g2-standard-8"             # Recommended cloud GPU instance (1x NVIDIA L4 24GB)
   base_profile: "example-workstation"    # Intended base; inheritance is not yet implemented

@@ -15,137 +15,85 @@
 # endregion
 
 ---
-- name: Check if GR00T installation is requested
-  set_fact:
-    should_install_gr00t: "{{ install_gr00t | default(false) | bool }}"
+- name: Check whether a validated registry image selects GR00T
+  ansible.builtin.set_fact:
+    gr00t_registry_selected: >-
+      {{ ((artifact_registry_validated | default({})).get('enabled', false)
+          and 'gr00t' in (artifact_registry_validated | default({})).get('images', {}))
+         or ((container_registry_validated | default({})).get('enabled', false)
+             and (container_registry_validated | default({})).get('provider') in ['aws_ecr', 'dockerhub']
+             and 'gr00t' in (container_registry_validated | default({})).get('images', {})) }}
+    gr00t_generic_registry_selected: >-
+      {{ (container_registry_validated | default({})).get('enabled', false)
+         and (container_registry_validated | default({})).get('provider') in ['aws_ecr', 'dockerhub']
+         and 'gr00t' in (container_registry_validated | default({})).get('images', {}) }}
 
-- name: Install NVIDIA Isaac-GR00T Foundation Model Stack
-  when: should_install_gr00t
+- name: Resolve GR00T installation and serving mode
+  ansible.builtin.set_fact:
+    should_install_gr00t: "{{ gr00t_registry_selected or (install_gr00t | default(false) | bool) }}"
+    gr00t_effective_serving_mode: "{{ 'container' if gr00t_registry_selected else gr00t_serving_mode }}"
+
+- name: Require generic registry prerequisites before any GR00T service changes
+  ansible.builtin.assert:
+    that:
+      - container_registry_root_docker_config is defined
+      - container_registry_root_docker_config is string
+      - container_registry_root_docker_config | length > 0
+    fail_msg: >-
+      GR00T requires container-registry authentication and image preparation in this invocation.
+      Run the full play or use --tags __container_registry,__gr00t so registry prerequisites
+      complete before any service changes; --tags __gr00t alone is not sufficient.
+    quiet: true
+  when: gr00t_generic_registry_selected
+
+- name: Retire the container service before explicit native provisioning
+  when: should_install_gr00t and gr00t_effective_serving_mode == 'native'
   block:
-    - name: Install system dependencies for Isaac-GR00T
-      apt:
-        name:
-          - git-lfs
-          - ffmpeg
-          - pkg-config
-        state: present
+    - name: Discover an existing container GR00T service
+      ansible.builtin.service_facts:
 
-    - name: Ensure git-lfs is initialized for user
-      shell: git lfs install --skip-repo 2>/dev/null || true
-      become_user: "{{ ansible_user }}"
-      changed_when: false
+    - name: Stop and disable the container service before native mode
+      ansible.builtin.systemd:
+        name: isaac-gr00t-container
+        enabled: false
+        state: stopped
+      when: "'isaac-gr00t-container.service' in ansible_facts.services"
 
-    - name: Create parent directories for Isaac-GR00T
-      file:
-        path: "{{ gr00t_dir | dirname }}"
-        state: directory
-        owner: "{{ ansible_user }}"
-        group: "{{ ansible_user }}"
-        mode: "0755"
+- name: Provision the native GR00T source and environment only in native mode
+  ansible.builtin.include_tasks: native.yml
+  when: should_install_gr00t and gr00t_effective_serving_mode == 'native'
 
-    - name: Check if Isaac-GR00T repository exists
-      stat:
-        path: "{{ gr00t_dir }}/.git"
-      register: gr00t_repo_stat
+- name: Deploy Isaac-GR00T native systemd service
+  ansible.builtin.template:
+    src: isaac-gr00t.service.j2
+    dest: /etc/systemd/system/isaac-gr00t.service
+    mode: "0644"
+  when: should_install_gr00t and (gr00t_service_enabled | bool) and gr00t_effective_serving_mode == 'native'
+  notify: reload_systemd
 
-    - name: Clone Isaac-GR00T repository
-      git:
-        repo: "{{ gr00t_git_repo }}"
-        dest: "{{ gr00t_dir }}"
-        version: "{{ gr00t_git_checkpoint }}"
-        force: true
-      become_user: "{{ ansible_user }}"
-      when: not gr00t_repo_stat.stat.exists
+- name: Configure the GR00T container service
+  when: should_install_gr00t and (gr00t_registry_selected or (gr00t_service_enabled | bool)) and gr00t_effective_serving_mode == 'container'
+  block:
+    - name: Discover an existing native GR00T service
+      ansible.builtin.service_facts:
 
-    - name: Configure upstream remote for Isaac-GR00T
-      git_config:
-        name: remote.upstream.url
-        value: "{{ gr00t_upstream_repo }}"
-        repo: "{{ gr00t_dir }}"
-        scope: local
-      become_user: "{{ ansible_user }}"
-      when: gr00t_git_repo != gr00t_upstream_repo
-
-    - name: Set branch pushRemote to origin
-      git_config:
-        name: "branch.{{ gr00t_git_checkpoint }}.pushRemote"
-        value: "origin"
-        repo: "{{ gr00t_dir }}"
-        scope: local
-      become_user: "{{ ansible_user }}"
-      ignore_errors: true
-
-    - name: Update submodules and pull LFS objects
-      shell: |
-        git submodule update --init --recursive 2>/dev/null || true
-        git lfs pull 2>/dev/null || true
-      args:
-        chdir: "{{ gr00t_dir }}"
-      become_user: "{{ ansible_user }}"
-      changed_when: false
-
-    - name: Check if isaaclab-env is available
-      stat:
-        path: /usr/local/bin/isaaclab-env
-      register: isaaclab_env_bin
-
-    - name: Install Isaac-GR00T dependencies into isaaclab environment
-      shell: /usr/local/bin/isaaclab-env pip install -e . 2>&1 | tee /tmp/gr00t-install.log
-      args:
-        chdir: "{{ gr00t_dir }}"
-      become_user: "{{ ansible_user }}"
-      when: isaaclab_env_bin.stat.exists
-      async: 1800
-      poll: 15
-
-    - name: Ensure cache directory exists for model weights
-      file:
-        path: "{{ gr00t_cache_dir }}"
-        state: directory
-        owner: "{{ ansible_user }}"
-        group: "{{ ansible_user }}"
-        mode: "0755"
-
-    - name: Deploy Isaac-GR00T policy server launcher script
-      template:
-        src: gr00t-policy-server.sh.j2
-        dest: "{{ gr00t_dir }}/gr00t-policy-server.sh"
-        owner: "{{ ansible_user }}"
-        group: "{{ ansible_user }}"
-        mode: "0755"
-
-    - name: Deploy Isaac-GR00T native systemd service
-      template:
-        src: isaac-gr00t.service.j2
-        dest: /etc/systemd/system/isaac-gr00t.service
-        mode: "0644"
-      when: gr00t_service_enabled | bool and (gr00t_serving_mode | default('native')) == 'native'
-      notify: reload_systemd
+    - name: Stop and disable the native service before container mode
+      ansible.builtin.systemd:
+        name: isaac-gr00t
+        enabled: false
+        state: stopped
+      when: "'isaac-gr00t.service' in ansible_facts.services"
 
     - name: Deploy Isaac-GR00T containerized systemd service
-      template:
+      ansible.builtin.template:
         src: isaac-gr00t-container.service.j2
         dest: /etc/systemd/system/isaac-gr00t-container.service
         mode: "0644"
-      when: gr00t_service_enabled | bool and (gr00t_serving_mode | default('native')) == 'container'
-      notify: reload_systemd
+      notify: restart_gr00t_container
 
-    - name: Check if Desktop directory exists
-      stat:
-        path: "/home/{{ ansible_user }}/Desktop"
-      register: desktop_dir_stat
-
-    - name: Deploy Isaac-GR00T Desktop shortcut
-      template:
-        src: Isaac-GR00T-Server.desktop.j2
-        dest: "/home/{{ ansible_user }}/Desktop/Isaac-GR00T-Server.desktop"
-        owner: "{{ ansible_user }}"
-        group: "{{ ansible_user }}"
-        mode: "0755"
-      when: desktop_dir_stat.stat.exists
-
-    - name: Trust Isaac-GR00T Desktop shortcut
-      shell: gio set "/home/{{ ansible_user }}/Desktop/Isaac-GR00T-Server.desktop" metadata::trusted true
-      become_user: "{{ ansible_user }}"
-      ignore_errors: true
-      when: desktop_dir_stat.stat.exists
+    - name: Enable and start the GR00T container service
+      ansible.builtin.systemd:
+        name: isaac-gr00t-container
+        enabled: true
+        state: started
+        daemon_reload: true

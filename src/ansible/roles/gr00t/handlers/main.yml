@@ -19,3 +19,11 @@
   systemd:
     daemon_reload: true
   listen: reload_systemd
+
+- name: Restart the GR00T container after unit or digest changes
+  ansible.builtin.systemd:
+    name: isaac-gr00t-container
+    daemon_reload: true
+    enabled: true
+    state: restarted
+  listen: restart_gr00t_container

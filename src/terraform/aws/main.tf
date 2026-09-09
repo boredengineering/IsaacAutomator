@@ -50,6 +50,10 @@ module "isaac_workstation" {
   prebuilt_ami_name = "${var.prefix}.isaacworkstation.*"
 
   iam_instance_profile = null
+  enable_ecr           = var.enable_ecr
+  ecr_account_id       = var.ecr_account_id
+  ecr_region           = var.ecr_region
+  ecr_repository       = var.ecr_repository
 
   vpc = {
     id         = module.vpc.vpc.id

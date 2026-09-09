@@ -28,28 +28,34 @@ resource "google_project_service" "compute_engine" {
 }
 
 module "isaac_workstation" {
-  source             = "./ovkit"
-  count              = var.isaac_workstation_enabled ? 1 : 0
-  isaac_enabled      = true
-  prefix             = "${var.prefix}-${var.deployment_name}-isaac-workstation"
-  deployment_name    = var.deployment_name
-  public_key_openssh = tls_private_key.ssh_key.public_key_openssh
-  instance_type      = var.isaac_workstation_instance_type
-  gpu_count          = var.isaac_workstation_gpu_count
-  gpu_type           = var.isaac_workstation_gpu_type
-  ssh_port           = var.ssh_port
-  ingress_cidrs      = var.ingress_cidrs
-  boot_disk_type     = var.boot_disk_type
-  os_username        = var.os_username
-  region             = local.region
-  from_image         = var.from_image
-  image_project             = var.project
-  use_flex_start            = var.use_flex_start
-  use_spot                  = var.use_spot
-  project                   = var.project
-  enable_cmek               = var.enable_cmek
-  enable_iap_only           = var.enable_iap_only
-  enable_oslogin            = var.enable_oslogin
-  kms_compute_disk_key_link = var.enable_cmek && length(google_kms_crypto_key.compute_disk_key) > 0 ? google_kms_crypto_key.compute_disk_key[0].id : ""
+  source                       = "./ovkit"
+  count                        = var.isaac_workstation_enabled ? 1 : 0
+  isaac_enabled                = true
+  prefix                       = "${var.prefix}-${var.deployment_name}-isaac-workstation"
+  deployment_name              = var.deployment_name
+  public_key_openssh           = tls_private_key.ssh_key.public_key_openssh
+  instance_type                = var.isaac_workstation_instance_type
+  gpu_count                    = var.isaac_workstation_gpu_count
+  gpu_type                     = var.isaac_workstation_gpu_type
+  ssh_port                     = var.ssh_port
+  ingress_cidrs                = var.ingress_cidrs
+  boot_disk_type               = var.boot_disk_type
+  os_username                  = var.os_username
+  region                       = local.region
+  from_image                   = var.from_image
+  image_project                = var.project
+  use_flex_start               = var.use_flex_start
+  use_spot                     = var.use_spot
+  project                      = var.project
+  enable_cmek                  = var.enable_cmek
+  enable_iap_only              = var.enable_iap_only
+  enable_oslogin               = var.enable_oslogin
+  security_profile             = var.security_profile
+  enable_artifact_registry     = var.enable_artifact_registry
+  artifact_registry_project    = var.artifact_registry_project
+  artifact_registry_location   = var.artifact_registry_location
+  artifact_registry_repository = var.artifact_registry_repository
+  kms_compute_disk_key_link    = var.enable_cmek && length(google_kms_crypto_key.compute_disk_key) > 0 ? google_kms_crypto_key.compute_disk_key[0].id : ""
+  depends_on                   = [google_project_service.compute_engine, google_project_service.artifact_registry]
 }
 

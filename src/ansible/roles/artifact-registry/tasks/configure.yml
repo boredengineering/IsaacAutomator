@@ -1,0 +1,65 @@
+---
+- name: Require the resolved SSH user
+  ansible.builtin.assert:
+    that:
+      - ansible_user is defined
+      - ansible_user | length > 0
+    quiet: true
+
+- name: Resolve root and SSH account homes and IDs
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ item }}"
+    split: ':'
+  loop: "{{ ['root', ansible_user] | unique }}"
+  register: artifact_registry_accounts
+
+- name: Create public nonsecret helper configuration directory
+  ansible.builtin.file:
+    path: /etc/isaac-automator
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Install fixed-endpoint metadata Docker credential helper
+  ansible.builtin.copy:
+    src: docker-credential-isaac-artifact-registry.py
+    dest: /usr/local/bin/docker-credential-isaac-artifact-registry
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Allow only the configured Artifact Registry host
+  ansible.builtin.copy:
+    content: "{{ {'registry': artifact_registry_validated.registry} | to_nice_json }}\n"
+    dest: /etc/isaac-automator/artifact-registry.json
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Merge private Docker configuration for root and the SSH user
+  artifact_registry_docker_config:
+    home: "{{ item.ansible_facts.getent_passwd[item.item][4] }}"
+    uid: "{{ item.ansible_facts.getent_passwd[item.item][1] }}"
+    gid: "{{ item.ansible_facts.getent_passwd[item.item][2] }}"
+    registry: "{{ artifact_registry_validated.registry }}"
+  loop: "{{ artifact_registry_accounts.results }}"
+  # Existing Docker config may contain credentials; never return it or diff it.
+  no_log: true
+  diff: false
+
+- name: Resolve root Docker configuration path for image pulls
+  ansible.builtin.set_fact:
+    artifact_registry_root_docker_config: "{{ artifact_registry_accounts.results[0].ansible_facts.getent_passwd.root[4] }}/.docker"
+
+- name: Pre-pull approved immutable images
+  ansible.builtin.include_tasks: pull.yml
+
+- name: Select the registry GR00T container service
+  ansible.builtin.set_fact:
+    install_gr00t: true
+    gr00t_serving_mode: container
+    gr00t_service_enabled: true
+    gr00t_container_image: "{{ artifact_registry_validated.images.gr00t }}"
+  when: "'gr00t' in artifact_registry_validated.images"

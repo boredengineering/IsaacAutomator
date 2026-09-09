@@ -16,13 +16,14 @@ data "google_compute_image" "prebuilt" {
 # Dedicated Workstation Service Account (Principle of Least Privilege)
 # Only provisioned when security_profile is enterprise or when dedicated SA is required
 resource "google_service_account" "workstation_sa" {
-  count        = var.security_profile == "enterprise" ? 1 : 0
+  count        = var.security_profile == "enterprise" || var.enable_artifact_registry ? 1 : 0
   account_id   = "${substr(replace(var.prefix, "_", "-"), 0, 26)}-sa"
   display_name = "Isaac Workstation Instance Service Account"
   project      = var.project != "" ? var.project : null
 }
 
 resource "google_compute_instance" "default" {
+  depends_on     = [google_artifact_registry_repository_iam_member.reader]
   name           = "${var.prefix}-vm"
   machine_type   = var.instance_type
   enable_display = false
@@ -86,7 +87,7 @@ resource "google_compute_instance" "default" {
 
   metadata = merge(
     {
-      enable-oslogin            = var.enable_oslogin ? "TRUE" : "FALSE"
+      enable-oslogin           = var.enable_oslogin ? "TRUE" : "FALSE"
       block-project-ssh-keys   = var.enable_oslogin ? "TRUE" : "FALSE"
       disable-legacy-endpoints = "TRUE"
     },
@@ -117,7 +118,7 @@ resource "google_compute_instance" "default" {
   }
 
   service_account {
-    email  = length(google_service_account.workstation_sa) > 0 ? google_service_account.workstation_sa[0].email : null
+    email = length(google_service_account.workstation_sa) > 0 ? google_service_account.workstation_sa[0].email : null
     scopes = length(google_service_account.workstation_sa) > 0 ? ["cloud-platform"] : [
       "https://www.googleapis.com/auth/devstorage.read_write",
       "https://www.googleapis.com/auth/logging.write",

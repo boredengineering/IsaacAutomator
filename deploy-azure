@@ -161,6 +161,8 @@ class AzureDeployer(Deployer):
     Deploys stuff to Azure
     """
 
+    cloud = "azure"
+
     def __init__(self, params, config):
         super().__init__(params, config)
 

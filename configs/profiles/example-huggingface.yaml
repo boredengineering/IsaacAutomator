@@ -1,0 +1,18 @@
+# Generic example: models/datasets, NOT a Docker/OCI registry.
+# May coexist with container_registry or the legacy artifact_registry block.
+profile_name: example-huggingface
+cloud: gcp
+security:
+  tier: simple
+huggingface:
+  enabled: false
+  repositories: []
+  # - name: policy
+  #   repo_id: exampleorg/policy
+  #   repo_type: model  # model or dataset
+  #   revision: "<40-lowercase-hex-commit>"
+  # token_file: /home/ubuntu/.config/isaac-automator/hf-token
+  # token_file is an existing file on the TARGET, readable by its SSH user.
+  # Do not place tokens themselves in YAML. Absence means anonymous downloads.
+# Files are staged under the SSH user's managed cache. Service mounts and model
+# selection are separate: this does not execute Hub code or start a workload.

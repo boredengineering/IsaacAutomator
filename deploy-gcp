@@ -199,6 +199,8 @@ class GCPDeployer(Deployer):
     Deploys stuff to GCP
     """
 
+    cloud = "gcp"
+
     def __init__(self, params, config):
         super().__init__(params, config)
 
@@ -299,6 +301,10 @@ class GCPDeployer(Deployer):
                 backup_bucket = f"{self.params['project']}-{self.params['deployment_name']}-backups"
                 self.params["backup_bucket"] = backup_bucket
                 self.params["auto_restore"] = True
+
+            # Persist resolved scheduling/backup settings before external work
+            # (including dry-run); finalization must never save deployment state.
+            self.save_meta()
 
             self.create_tfvars(
                 {

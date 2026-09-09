@@ -1,0 +1,33 @@
+---
+- name: Validate optional container registry before changing the host
+  ansible.builtin.set_fact:
+    container_registry_validated: "{{ container_registry_json | container_registry_settings(cloud | default('')) }}"
+  tags: [always]
+
+- name: Reject simultaneous generic and legacy registry consumption
+  ansible.builtin.assert:
+    that:
+      - not (container_registry_validated.enabled and container_registry_validated.provider != 'gcp_artifact_registry' and (enable_artifact_registry | default(false) | bool))
+    fail_msg: Non-GCP container_registry cannot coexist with enabled legacy artifact_registry
+    quiet: true
+  tags: [always]
+
+- name: Require canonical GCP settings to agree with legacy transport
+  ansible.builtin.assert:
+    that:
+      - enable_artifact_registry | default(false) | bool
+      - artifact_registry_project | default('') == container_registry_validated.project
+      - artifact_registry_location | default('') == container_registry_validated.location
+      - artifact_registry_repository | default('') == container_registry_validated.repository
+      - >-
+        ((artifact_registry_images_json | default('{}') | from_json)
+         if (artifact_registry_images_json | default('{}')) is string
+         else artifact_registry_images_json) == container_registry_validated.images
+    fail_msg: Canonical GCP container_registry must agree with all legacy Artifact Registry transport fields
+    quiet: true
+  when: container_registry_validated.enabled and container_registry_validated.provider == 'gcp_artifact_registry'
+  tags: [always]
+
+- name: Configure only AWS ECR or Docker Hub consumption
+  ansible.builtin.include_tasks: configure.yml
+  when: container_registry_validated.enabled and container_registry_validated.provider in ['aws_ecr', 'dockerhub']

@@ -1,0 +1,3 @@
+# Verified public release: https://pypi.org/project/huggingface-hub/0.34.4/
+# API: https://huggingface.co/docs/huggingface_hub/v0.34.4/en/package_reference/file_download
+huggingface-hub==0.34.4

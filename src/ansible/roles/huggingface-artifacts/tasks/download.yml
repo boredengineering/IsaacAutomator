@@ -1,0 +1,111 @@
+---
+- name: Require an explicitly resolved non-root SSH account
+  ansible.builtin.assert:
+    that:
+      - ansible_user is defined
+      - ansible_user is string
+      - ansible_user | length > 0
+      - ansible_user != 'root'
+    fail_msg: Hugging Face artifacts require a non-root SSH account
+
+- name: Resolve the SSH account home and UID from the target passwd database
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ ansible_user }}"
+  register: huggingface_account
+
+- name: Validate the resolved SSH account
+  ansible.builtin.assert:
+    that:
+      - huggingface_account.ansible_facts.getent_passwd[ansible_user][1] | int > 0
+      - huggingface_account.ansible_facts.getent_passwd[ansible_user][4] is match('^/[^\r\n]+$')
+      - huggingface_account.ansible_facts.getent_passwd[ansible_user][4] != '/root'
+    fail_msg: Hugging Face artifacts require a non-root account with an absolute home
+
+- name: Set managed user paths without consulting the elevated HOME
+  ansible.builtin.set_fact:
+    huggingface_home: "{{ huggingface_account.ansible_facts.getent_passwd[ansible_user][4] }}"
+    huggingface_tools: "{{ huggingface_account.ansible_facts.getent_passwd[ansible_user][4] }}/.local/share/isaac-automator/huggingface"
+
+- name: Install the system Python prerequisites
+  become: true
+  become_user: root
+  ansible.builtin.apt:
+    name: [python3-venv, python3-packaging]
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Prepare and run the isolated downloader as the SSH account
+  become: true
+  become_user: "{{ ansible_user }}"
+  environment:
+    HOME: "{{ huggingface_home }}"
+    PYTHONNOUSERSITE: '1'
+    PYTHONPATH: ''
+    PIP_CONFIG_FILE: /dev/null
+    PIP_DISABLE_PIP_VERSION_CHECK: '1'
+  block:
+    - name: Inspect managed path components before writing
+      ansible.builtin.stat:
+        path: "{{ item }}"
+        follow: false
+      loop:
+        - "{{ huggingface_home }}"
+        - "{{ huggingface_home }}/.local"
+        - "{{ huggingface_home }}/.local/share"
+        - "{{ huggingface_home }}/.local/share/isaac-automator"
+        - "{{ huggingface_tools }}"
+        - "{{ huggingface_tools }}/venv"
+        - "{{ huggingface_home }}/.cache"
+        - "{{ huggingface_home }}/.cache/isaac-automator"
+        - "{{ huggingface_home }}/.cache/isaac-automator/huggingface"
+      register: huggingface_paths
+
+    - name: Refuse symlinked or non-directory managed paths
+      ansible.builtin.assert:
+        that:
+          - not (item.stat.islnk | default(false))
+          - not item.stat.exists or (item.stat.isdir | default(false))
+        fail_msg: Managed Hugging Face paths must be ordinary directories
+      loop: "{{ huggingface_paths.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    - name: Create the private downloader tools directory
+      ansible.builtin.file:
+        path: "{{ huggingface_tools }}"
+        state: directory
+        mode: '0700'
+
+    - name: Install the reviewed runner and dependency declaration
+      ansible.builtin.copy:
+        src: "{{ item }}"
+        dest: "{{ huggingface_tools }}/{{ item }}"
+        mode: '0600'
+      loop:
+        - download_huggingface.py
+        - huggingface_contract.py
+        - requirements.txt
+
+    # apt supplies packaging for this module interpreter, not just the new venv.
+    - name: Install the exact Hub client in a private virtual environment
+      vars:
+        ansible_python_interpreter: /usr/bin/python3
+      ansible.builtin.pip:
+        requirements: "{{ huggingface_tools }}/requirements.txt"
+        virtualenv: "{{ huggingface_tools }}/venv"
+        virtualenv_command: /usr/bin/python3 -m venv
+        virtualenv_site_packages: false
+        extra_args: --disable-pip-version-check
+
+    - name: Download pinned snapshots without exposing runtime credentials
+      ansible.builtin.command:
+        argv:
+          - "{{ huggingface_tools }}/venv/bin/python"
+          - "{{ huggingface_tools }}/download_huggingface.py"
+        stdin: "{{ huggingface_validated | to_json }}"
+      register: huggingface_download
+      changed_when: (huggingface_download.stdout | from_json).changed
+      no_log: true
+      when: not ansible_check_mode

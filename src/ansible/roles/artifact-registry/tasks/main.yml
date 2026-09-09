@@ -1,0 +1,12 @@
+---
+- name: Validate Artifact Registry settings before changing the host
+  ansible.builtin.set_fact:
+    artifact_registry_validated: >-
+      {{ enable_artifact_registry | artifact_registry_settings(
+           cloud | default(''), artifact_registry_project,
+           artifact_registry_location, artifact_registry_repository,
+           artifact_registry_images_json) }}
+
+- name: Configure keyless Artifact Registry consumption
+  ansible.builtin.include_tasks: configure.yml
+  when: artifact_registry_validated.enabled

@@ -1,5 +1,18 @@
 # Architectural Plan: Cloud Golden Image Baking for Fast Robotics Workstation Deployment
 
+## Container registry boundary (2026-09-09)
+
+See [Artifact Registry plan](artifact-registry-plan.md) and
+[guide](../docs/artifact-registry-guide.md). Artifact Registry stores OCI/Docker
+images; it does not replace Packer's GCE/AWS/Azure machine-image storage. Registry
+creation is a separate, protected Terraform stack, never part of ephemeral Packer
+or workstation teardown. The new Ansible registry role is disabled by default.
+The workstation CLI profile handoff does not automatically extend to `image-*`
+commands: Packer registry identity, variables, digest prefetch and post-boot pulls
+need explicit integration/validation. Never bake service-account keys or
+short-lived access tokens into a golden image. Read the new ledger before assuming
+the historical readiness and parity claims below have been revalidated.
+
 **Document ID**: `cloud-image-baking-plan.md`  
 **Target Subsystems**: HashiCorp Packer (`src/packer/gcp/`, `src/packer/aws/`, `src/packer/azure/`), Native Ansible Engine (`src/ansible/`), Google Compute Engine (GCE), AWS EC2, Azure ARM  
 **Primary Target Architecture**: Google Cloud Platform (GCP) `us-central1`, `g2-standard-8` (1x NVIDIA L4 24GB, Ada `sm_89`)  

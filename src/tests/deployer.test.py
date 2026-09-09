@@ -34,8 +34,8 @@ _BASE_PARAMS = {
 def _make_deployer(state_dir, extra=None):
     """
     Build a Deployer with a minimal valid param set, optionally overridden.
-    Callers MUST pass an isolated state_dir so the Deployer's __del__
-    hook (save_meta) does not mutate checked-in fixtures.
+    Callers MUST pass an isolated state_dir so explicit metadata saves
+    at workflow boundaries do not mutate checked-in fixtures.
     """
     config = c.copy()
     config["state_dir"] = state_dir

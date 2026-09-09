@@ -1,0 +1,39 @@
+---
+- name: Require the resolved SSH user for ECR helper setup
+  ansible.builtin.assert:
+    that:
+      - ansible_user is defined
+      - ansible_user | length > 0
+    quiet: true
+  when: container_registry_validated.provider == 'aws_ecr'
+
+- name: Resolve root and any SSH account homes and IDs
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ item }}"
+    split: ':'
+  loop: "{{ (['root', ansible_user] | unique) if container_registry_validated.provider == 'aws_ecr' else ['root'] }}"
+  register: container_registry_accounts
+
+- name: Install ECR metadata authentication
+  ansible.builtin.include_tasks: ecr.yml
+  when: container_registry_validated.provider == 'aws_ecr'
+
+- name: Configure private Docker registry access without exposing credentials
+  container_registry_docker_config:
+    home: "{{ item.ansible_facts.getent_passwd[item.item][4] }}"
+    uid: "{{ item.ansible_facts.getent_passwd[item.item][1] }}"
+    gid: "{{ item.ansible_facts.getent_passwd[item.item][2] }}"
+    registry: "{{ container_registry_validated.registry }}"
+    mode: "{{ 'ecr' if container_registry_validated.provider == 'aws_ecr' else container_registry_validated.auth }}"
+  loop: "{{ container_registry_accounts.results }}"
+  no_log: true
+  diff: false
+
+- name: Resolve root Docker configuration for pulls and systemd
+  ansible.builtin.set_fact:
+    container_registry_root_docker_config: >-
+      {{ container_registry_accounts.results[0].ansible_facts.getent_passwd.root[4] }}/{{ '.docker-isaac-anonymous' if container_registry_validated.provider == 'dockerhub' and container_registry_validated.auth == 'anonymous' else '.docker' }}
+
+- name: Cache approved immutable images without executing workloads
+  ansible.builtin.include_tasks: pull.yml

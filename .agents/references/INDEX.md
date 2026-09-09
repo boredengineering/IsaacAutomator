@@ -41,4 +41,10 @@ Catalog of high-level project specifications, architecture documents, and goal d
 | [`plans/isaac-installer-ansible-compat.md`](./plans/isaac-installer-ansible-compat.md) | Native Cloud Ansible Replication Plan: Bringing Isaac Installer Capabilities into Ansible | Active Plan |
 | [`plans/ansible-testing-plan.md`](./plans/ansible-testing-plan.md) | Master Testing Plan for Cloud Ansible Engine: 7-Tier Strategy, Local Docker Simulation & Validation | Active Plan |
 | [`plans/cloud-image-baking-plan.md`](./plans/cloud-image-baking-plan.md) | Architectural Plan: Cloud Golden Image Baking for Fast Robotics Workstation Deployment (Packer & 14-Role Ansible) | Active Plan |
+| [`plans/artifact-registry-plan.md`](./plans/artifact-registry-plan.md) | GCP shared registry lifecycle, profile contract, keyless Ansible consumption, execution ledger | Implementation ledger |
+| [`docs/artifact-registry-guide.md`](./docs/artifact-registry-guide.md) | Registry ownership, private profile schema, build/publish boundaries, verification and agent handoff | Active guide; live acceptance pending |
+| [`plans/optional-distribution-plan.md`](./plans/optional-distribution-plan.md) | Optional GCP/AWS/Docker Hub image selection and independent Hugging Face artifact implementation ledger | Implementation ledger |
+| [`docs/optional-distribution-guide.md`](./docs/optional-distribution-guide.md) | YAML choices, ECR lifecycle/IAM, Docker Hub auth, pinned Hub snapshots and live acceptance boundaries | Active guide; live acceptance pending |
+| [`../memory/sessions/20260909_033041_8c8e9952.md`](../memory/sessions/20260909_033041_8c8e9952.md) | Optional distribution checkpoint: 195 workspace tests and 61 mocked plans; no live deployment/publication | Reviewed implementation |
+| [`plans/isaac-installer-host-compat.md`](./plans/isaac-installer-host-compat.md) | Host/cloud stack parity, composable profiles, and remaining orchestration gaps | Active Plan |
 

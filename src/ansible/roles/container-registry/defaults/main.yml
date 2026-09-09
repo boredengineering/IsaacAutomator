@@ -1,0 +1,3 @@
+---
+container_registry_json: '{}'
+container_registry_docker_binary: /usr/bin/docker

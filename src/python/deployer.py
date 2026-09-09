@@ -38,7 +38,12 @@ from src.python.utils import (
 
 
 class Deployer:
+    cloud = None
+
     def __init__(self, params, config):
+        self._persistence_ready = False
+        # A concrete deployer identity must never come from restored metadata.
+        self.cloud = self.cloud or params.get("cloud")
         self.tf_outputs = {}
         self.params = params
         self.config = config
@@ -80,6 +85,8 @@ class Deployer:
         # print complete command line
         if self.params["debug"]:
             click.echo(colorize_info("* Command:\n" + self.recreate_command_line()))
+
+        self._persistence_ready = True
 
     def resolve_demos(self):
         """
@@ -201,7 +208,12 @@ class Deployer:
 
         from src.python.config import list_available_profiles, load_profile_spec
 
-        spec = load_profile_spec(str(profile_name), repo_root=self.config.get("app_dir"))
+        from src.python.registry_profile import RegistryProfileError
+
+        try:
+            spec = load_profile_spec(str(profile_name), repo_root=self.config.get("app_dir"))
+        except RegistryProfileError as exc:
+            raise click.ClickException(str(exc)) from exc
 
         if not spec:
             available = list(list_available_profiles(self.config.get("app_dir")).keys())
@@ -219,6 +231,14 @@ class Deployer:
         self.params["profile"] = profile_name
         self.params["profile_spec"] = spec
 
+        from src.python.registry_profile import normalize_registries
+        from src.python.huggingface_profile import normalize_huggingface
+
+        registry = {**normalize_registries(spec.get("raw", {})),
+                    **normalize_huggingface(spec.get("raw", {}))}
+        self.validate_registry_params(dict(self.params, **registry))
+        self.params.update(registry)
+
         # Apply profile toggles to params if not explicitly overridden on CLI
         if "enable_cmek" not in self.params:
             self.params["enable_cmek"] = spec.get("enable_cmek", False)
@@ -234,14 +254,38 @@ class Deployer:
         if self.params.get("debug"):
             click.echo(colorize_info(f"* Selected security profile: '{profile_name}' (Tier: {tier})"))
 
-    def __del__(self):
-        # update meta info
-        self.save_meta()
+    def validate_registry_params(self, params, cloud=None):
+        from src.python.huggingface_profile import normalize_huggingface
+        from src.python.registry_profile import (
+            RegistryProfileError,
+            normalize_saved_registries,
+        )
+
+        if cloud is None:
+            cloud = self.cloud or params.get("cloud") or params.get(
+                "profile_spec", {}
+            ).get("raw", {}).get("cloud")
+        try:
+            registry = normalize_saved_registries(params, cloud)
+            if params.get("cloud") is not None:
+                normalize_saved_registries(params, params["cloud"])
+            registry.update(normalize_huggingface(params))
+            return registry
+        except RegistryProfileError as exc:
+            self._persistence_ready = False
+            raise click.ClickException(str(exc)) from exc
 
     def save_meta(self):
         """
-        Save command parameters in json file, just in case
+        Save validated command parameters at explicit workflow boundaries.
+
+        Never save during object finalization: a most-derived constructor may
+        fail after base initialization succeeds, and must not overwrite state.
         """
+
+        if not getattr(self, "_persistence_ready", False):
+            return
+        self.params.update(self.validate_registry_params(self.params))
 
         meta_file = (
             f"{self.config['state_dir']}/{self.params['deployment_name']}/meta.json"
@@ -322,8 +366,12 @@ class Deployer:
             or self.existing_behavior == "run_ansible"
         ):
             # restore params from meta file
+            self._persistence_ready = False
             r = self.read_meta()
+            registry = self.validate_registry_params(r["params"])
             self.params = r["params"]
+            self.params.update(registry)
+            self._persistence_ready = True
 
             click.echo(
                 colorize_info(
@@ -348,7 +396,7 @@ class Deployer:
             # update meta info if deployment was destroyed
             self.save_meta()
 
-    def create_tfvars(self, tfvars: dict = {}):
+    def create_tfvars(self, tfvars: dict | None = None):
         """
         - Check if deployment with this deployment_name exists and deal with it
         - Create/update tfvars file
@@ -360,6 +408,9 @@ class Deployer:
             - run_ansible: keep tfvars/tfstate, don't ask for user input, skip terraform steps
         """
 
+        self.params.update(self.validate_registry_params(self.params))
+        if tfvars is None:
+            tfvars = {}
         debug = self.params["debug"]
 
         # convert CIDRs from special values
@@ -452,6 +503,21 @@ class Deployer:
             }
         )
 
+        if self.params.get("enable_artifact_registry"):
+            for key in (
+                "enable_artifact_registry",
+                "artifact_registry_project",
+                "artifact_registry_location",
+                "artifact_registry_repository",
+            ):
+                tfvars[key] = self.params[key]
+
+        registry = self.params.get("container_registry", {})
+        if registry.get("enabled") and registry.get("provider") == "aws_ecr":
+            tfvars["enable_ecr"] = True
+            for key in ("account_id", "region", "repository"):
+                tfvars[f"ecr_{key}"] = registry[key]
+
         debug = self.params["debug"]
         deployment_name = self.params["deployment_name"]
 
@@ -525,6 +591,7 @@ class Deployer:
         Write to file if write=True
         """
 
+        self.params.update(self.validate_registry_params(self.params))
         debug = self.params["debug"]
         deployment_name = self.params["deployment_name"]
 
@@ -537,6 +604,19 @@ class Deployer:
         ansible_vars.setdefault("gcs_backup_bucket", self.params.get("backup_bucket", "") or "")
         ansible_vars.setdefault("gcs_auto_restore", self.params.get("auto_restore", False))
 
+        ansible_vars.setdefault("enable_artifact_registry", False)
+        for key in ("project", "location", "repository"):
+            ansible_vars.setdefault(f"artifact_registry_{key}", "")
+        ansible_vars["artifact_registry_images_json"] = json.dumps(
+            self.params.get("artifact_registry_images", {}), sort_keys=True
+        )
+        ansible_vars["container_registry_json"] = json.dumps(
+            self.params.get("container_registry", {"enabled": False}), sort_keys=True
+        )
+        ansible_vars["huggingface_json"] = json.dumps(
+            self.params.get("huggingface", {"enabled": False}), sort_keys=True
+        )
+
         # get missing values from terraform
         for k in [
             "isaac_workstation_ip",
@@ -544,6 +624,9 @@ class Deployer:
         ]:
             if k not in self.params or ansible_vars[k] is None:
                 ansible_vars[k] = self.tf_output(k)
+
+        # Validate the actual cloud handed to Ansible, not only class identity.
+        self.validate_registry_params(self.params, cloud=ansible_vars["cloud"])
 
         # convert booleans to ansible format
         ansible_booleans = {True: "true", False: "false"}
