@@ -14,11 +14,14 @@ TIMEOUT = 2
 MAX_RESPONSE = 65536
 
 
-def transaction(statement, parameters=None):
+def transaction(statement, parameters=None, *, timeout=None):
     """Trusted-developer helper: return Neo4j's decoded transactional JSON."""
     connection = None
     deadline = None
     try:
+        timeout = TIMEOUT if timeout is None else timeout
+        if type(timeout) not in (int, float) or not 0 < timeout <= 30:
+            raise ValueError
         auth = read_auth(AUTH_PATH).replace('/', ':', 1)
         headers = {
             'Authorization': 'Basic ' + base64.b64encode(auth.encode('ascii')).decode('ascii'),
@@ -27,7 +30,7 @@ def transaction(statement, parameters=None):
         body = json.dumps({'statements': [{'statement': statement, 'parameters': parameters or {}}]})
         # HTTPConnection is direct: no proxy environment lookup, URL parsing,
         # redirect following or retries that could forward the Basic credential.
-        connection = http.client.HTTPConnection('127.0.0.1', PORT, timeout=TIMEOUT)
+        connection = http.client.HTTPConnection('127.0.0.1', PORT, timeout=timeout)
         connection.connect()
         transport = connection.sock
         # Socket timeouts alone can be extended indefinitely by slow-drip
@@ -37,7 +40,7 @@ def transaction(statement, parameters=None):
                 transport.shutdown(socket.SHUT_RDWR)
             except OSError:
                 pass
-        deadline = threading.Timer(TIMEOUT, expire)
+        deadline = threading.Timer(timeout, expire)
         deadline.daemon = True
         deadline.start()
         connection.request('POST', '/db/neo4j/tx/commit', body=body, headers=headers)

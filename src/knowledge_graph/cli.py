@@ -14,11 +14,16 @@ ROOT = Path(__file__).resolve().parents[2]
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Optional, offline infrastructure evidence graph")
     commands = parser.add_subparsers(dest="operation", required=True)
-    for name in ["index", "status", "validate", "explain-field", "find", "trace", "evidence", "impact"]:
+    for name in ["index", "status", "validate", "explain-field", "find", "trace", "evidence", "impact",
+                 "neo4j-load", "neo4j-clear"]:
         command = commands.add_parser(name)
         command.add_argument("--repo", type=Path, default=Path.cwd())
         command.add_argument("--cache", type=Path)
         command.add_argument("--policy", type=Path)
+        if name in {'neo4j-load', 'neo4j-clear'}:
+            command.add_argument('--project', default='isaacautomator-dev')
+        if name == 'neo4j-clear':
+            command.add_argument('--generation', required=True)
         if name in {"explain-field", "find", "trace", "evidence", "impact"}:
             command.add_argument("value")
             command.add_argument("--limit", type=int, default=25)
@@ -29,10 +34,14 @@ def main(argv=None):
     cache = args.cache or Path.home() / ".cache/isaacautomator-graph/data" / repo_key
     policy_path = args.policy or repo / "configs/knowledge-graph/public.yaml"
     try:
+        scope = hashlib.sha256(str(repo).encode()).hexdigest()
+        if args.operation == 'neo4j-clear':
+            from .neo4j_client import SCHEMA, transfer
+            _emit(transfer({'schema': SCHEMA, 'scope': scope, 'generation': args.generation}, args.project, 'clear'))
+            return 0
         if Path(os.path.abspath(cache)).is_relative_to(repo):
             raise ValueError("graph cache must be outside the repository")
-        if args.operation != "index":
-            generation, artifacts = publication.load(cache)
+
         from .ingest import implementation_digest, run_worker
         from .snapshot import capture_snapshot, check_freshness
         from .source_policy import load_policy
@@ -62,12 +71,49 @@ def main(argv=None):
                    "entities": len(result["entities"]), "verification": "static_only",
                    "coverage": dict(Counter(item["status"] for item in result["coverage"]))})
             return 0
+        generation, artifacts = publication.load(cache)
         metadata = json.loads(artifacts["manifest.json"])
         snapshot = metadata["snapshot"]
         fresh = check_freshness(repo, load_policy(policy_path), snapshot)
         if not fresh["current"] or metadata["implementation_digest"] != implementation:
             _emit({"status": "stale", "message": "Sources, policy or extractor changed; rebuild before querying."})
             return 3
+        if args.operation == 'neo4j-load':
+            from .neo4j_client import SCHEMA, transfer
+
+            def current():
+                try:
+                    return (check_freshness(repo, load_policy(policy_path), snapshot)['current']
+                            and implementation == implementation_digest())
+                except (OSError, ValueError, KeyError):
+                    return False
+
+            result = run_worker({'operation': 'neo4j-export', 'dataset': artifacts['dataset.trig'],
+                                 'scope': scope, 'generation': generation, 'snapshot_id': snapshot['snapshot_id']})
+            if not current():
+                _emit({'status': 'stale', 'message': 'Sources or policy changed; no projection sent.'})
+                return 3
+            cleanup = {'schema': SCHEMA, 'scope': scope, 'generation': generation}
+            receipt = None
+            try:
+                receipt = transfer(result['payload'], args.project)
+            except ValueError:
+                pass  # A lost reply does not establish whether the transaction committed.
+            if not current():
+                try:
+                    transfer(cleanup, args.project, 'clear')
+                    outcome = 'cleared'
+                except ValueError:
+                    outcome = 'unconfirmed; use neo4j-clear with this generation'
+                _emit({'status': 'stale', 'scope': scope, 'generation': generation, 'cleanup': outcome})
+                return 3
+            if receipt is None:
+                _emit({'status': 'unavailable', 'scope': scope, 'generation': generation,
+                       'message': 'Import outcome unconfirmed. Check service, then retry or use neo4j-clear.'})
+                return 2
+            receipt['freshness'] = 'checked_at_import_only'
+            _emit(receipt)
+            return 0
         if args.operation == "validate":
             result = run_worker({"operation": "validate", "dataset": artifacts["dataset.trig"]})
             if not check_freshness(repo, load_policy(policy_path), snapshot)["current"]:

@@ -235,7 +235,7 @@ class ImageTests(unittest.TestCase):
         self.assertIn('install -d -o 7474 -g 7474 -m 0700 /automator-secrets', dockerfile)
         self.assertEqual((IMAGE / '.dockerignore').read_text().splitlines(),
                          ['*', '!Dockerfile', '!.dockerignore', '!bootstrap.py', '!healthcheck.py',
-                          '!Dockerfile.gateway', '!haproxy.cfg'])
+                          '!Dockerfile.gateway', '!haproxy.cfg', '!import_projection.py'])
 
 
 class HealthTests(unittest.TestCase):

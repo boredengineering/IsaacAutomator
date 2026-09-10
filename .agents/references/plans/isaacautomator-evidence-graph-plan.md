@@ -10,6 +10,14 @@
 
 ## Approved milestone: dedicated development Neo4j (2026-09-10)
 
+**Follow-up delivered:** Explicit developer projection import and the advisory
+agent skill are now implemented and verified. See the
+[usage guide](../docs/evidence-graph-agent-guide.md) and
+[skill implementation plan](evidence-graph-agent-skill-plan.md).
+Live readback conserved 226 claims, 190 entity/literal nodes and 177 supported
+edges. This advances the projection milestone only: Neo4j agent mediation,
+continuous privacy revocation and full Graph-RAG evaluation remain gated.
+
 Deliver a separate **IsaacAutomator** Neo4j service, not the existing
 `neo4j-arena` workstation container. Add a narrow-context custom Dockerfile under
 `.devcontainer/neo4j/` and a Compose devcontainer definition. Preserve the existing
@@ -88,6 +96,26 @@ Version/edition references checked for this milestone:
 - https://raw.githubusercontent.com/neo4j/docs-operations/5.x/modules/ROOT/pages/authentication-authorization/index.adoc
 
 ## 1. Scope and success criteria
+
+### Approved follow-up: load existing evidence for visual exploration
+
+The user explicitly selected loading the existing evidence into the dedicated
+Neo4j development database. Implement an explicit `knowledge-graph neo4j-load`
+operation, not automatic indexing or arbitrary Cypher retrieval. Export the
+validated canonical dataset in the confined worker; preserve typed terms, every
+claim occurrence, conditions and complete provenance. Recheck current source
+policy before and after transfer. Parameterized fixed queries atomically replace
+only importer-owned records for this repository scope; retain unrelated data.
+Generation-guarded cleanup handles detected policy changes during import.
+
+Store an explicit historical snapshot marker, not an indefinitely current claim.
+Document that later policy/source changes require reload or explicit removal;
+this trusted developer database does not enforce continuous privacy revocation.
+Do not send credentials into the host CLI or expose an unrestricted agent reader.
+Verify actual Neo4j claim IDs/hashes, term counts and parallel relationships against
+the export, repeat-load idempotence, unrelated-data preservation and visual Cypher
+examples. Keep the canonical RDF independent. Full Graph-RAG evaluation and the
+separate bounded retrieval/security gates remain pending.
 
 The graph describes software and infrastructure relationships; it is neither an orchestration engine nor a replacement for complete profiles, tests, or live verification.
 

@@ -5,3 +5,4 @@
 !healthcheck.py
 !Dockerfile.gateway
 !haproxy.cfg
+!import_projection.py

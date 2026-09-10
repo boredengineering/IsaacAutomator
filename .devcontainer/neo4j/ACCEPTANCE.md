@@ -1,7 +1,8 @@
 # Dedicated development Neo4j acceptance
 
-Verified locally on 2026-09-10. This records the development-service milestone,
-not evidence ingestion, production hardening or full graph-plan completion.
+Verified locally on 2026-09-10. The original service milestone is recorded below;
+the later explicit projection and advisory-skill milestone is appended at the end.
+Neither establishes production hardening or full graph-plan completion.
 
 ## Delivered
 
@@ -82,3 +83,54 @@ reader/writer role isolation. It is not an agent-safe database endpoint. Evidenc
 publication, privacy/freshness revocation and bounded retrieval mediation remain
 separate plan gates. Backup/restore, secret rotation and image-upgrade recovery
 were documented but not exercised; current data/auth volumes must remain paired.
+
+## Follow-up: explicit projection and advisory skill (2026-09-10)
+
+This follow-up supersedes the earlier service-only statement that no claims were
+uploaded. The custom database image was rebuilt/recreated without rebuilding the
+editor container, then `./knowledge-graph neo4j-load` succeeded against the actual
+`isaacautomator-dev` service.
+
+- Canonical input: 24 sources, 127 entities and 226 independently attributed claims.
+- Neo4j: **190 entity/literal nodes, 226 claim nodes and 177 supported EVIDENCE edges**.
+- Generation: `e8e3fbc5ece1cfd80f131c42c7a83f7b6e65ca912cd52654ee9d534abf3fef2f`.
+- Snapshot: `urn:ia:snapshot:6e71661eb78d2a3f166c31429cc5e1f2b11bd47352e91f7475b2c18d5e2b2b20`.
+- Actual paginated database readback compared every term/entity property, every
+  full Claim record and hash, and every subject/object endpoint with the validated
+  canonical export. Supported edge IDs, hashes and endpoints also matched.
+- A repeated load did not duplicate data. A uniquely marked unrelated test node
+  survived replacement and was then removed; cleanup was verified. An attempted
+  clear with a deliberately different generation reported `matched: false`,
+  deleted zero nodes and preserved the active projection.
+- Full optional graph suite: **120 tests passed**, including **3 new skill contract
+  tests** for frontmatter, links/discovery and real CLI argument parsing. Ruff,
+  Compose config, wrapper shell syntax and `git diff --check` passed. RDFLib
+  deprecation warnings remain. The prior 195-test deployment result above was
+  not rerun for this optional documentation/import follow-up.
+- Actual CLI validation conformed; `container_registry` returned source-backed
+  desired/static evidence, while `__missing_graph_field__` returned an empty
+  unknown result. Truncation and incomplete consumer paths remained explicit.
+- Independent import review found no blockers in this developer snapshot scope
+  and ran 20 focused importer/export/CLI tests. It did not run live Docker tests;
+  the parent performed the database readback described above.
+- A separate advisory-agent demonstration loaded the brief/skill/guide, ran
+  status and the known/missing-field queries, and returned attributed claims,
+  unresolved conditions, truncation and an honest unknown. It found no concrete
+  documentation or authority contradictions. This is one demonstration, not a
+  general model-quality benchmark.
+
+The [guide](../../.agents/references/docs/evidence-graph-agent-guide.md),
+[skill plan](../../.agents/references/plans/evidence-graph-agent-skill-plan.md),
+[skill](../../.agents/skills/isaac-automator/evidence-graph/SKILL.md) and
+[agent brief](../../ai/evidence-graph.agent.md) document the implemented workflow.
+The protected AGENTS.md discovery edit was not applied because its approval
+timed out; ordinary README links and explicit file loading provide discovery.
+
+Remaining boundaries: Neo4j is an import-time-checked snapshot, not a continuously
+fresh/revoked agent backend. Read-only agent mediation, generalized LLM answer
+evaluation, concurrent-import stress/rollback testing and cross-scope integration
+tests remain outside this acceptance. Owned projection nodes and their incident
+relationships are disposable. An import with no receipt has an unknown commit
+outcome; a guarded clear does not prove cancellation of outstanding work. No
+credentials were emitted, no cloud resources provisioned, and no global agent
+configuration, commits or pushes were performed.

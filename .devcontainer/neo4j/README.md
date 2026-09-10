@@ -96,11 +96,14 @@ No Enterprise license acceptance, MCP registration or fake restricted reader is
 introduced. Direct administrator database access is powerful and not bounded by
 the offline graph CLI's query policy.
 
-The canonical RDF/NetworkX evidence graph remains independent. Creating this
-service does **not** ingest its existing claims. Freshness-aware publication of a
-rebuildable Neo4j projection and a separately authorized read-only retrieval
-boundary remain explicit roadmap gates. Do not treat manually inserted data as
-canonical, current, reviewed or verified deployment evidence.
+The canonical RDF/NetworkX evidence graph remains independent. Starting this
+service does **not** ingest claims automatically. Explicit `./knowledge-graph
+neo4j-load` now publishes a validated, scoped developer visualization copy.
+See the [graph and agent guide](../../.agents/references/docs/evidence-graph-agent-guide.md)
+for import, Browser examples, generation-guarded removal and the advisory skill.
+Neo4j is snapshot-only: continuous revocation and a restricted agent retrieval
+boundary remain roadmap gates. Do not treat manually inserted data as canonical,
+current, reviewed or verified deployment evidence.
 
 ## Lifecycle, backup and removal
 

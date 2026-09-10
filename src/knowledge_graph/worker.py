@@ -18,6 +18,7 @@ def main():
         from .projection import project
         from .sandbox import restrict_process
         from .validation import validate_dataset
+        from .neo4j_projection import build_payload
 
         resource.setrlimit(resource.RLIMIT_CPU, (40, 40))
         resource.setrlimit(resource.RLIMIT_AS, (1024 * 1024 * 1024,) * 2)
@@ -31,14 +32,18 @@ def main():
         if len(raw) > 32 * 1024 * 1024:
             raise ValueError("input limit")
         request = json.loads(raw)
-        if request.get("operation") == "validate":
+        if request.get("operation") in {"validate", "neo4j-export"}:
             dataset = Dataset()
             dataset.parse(data=request["dataset"], format="trig")
             stage = "validate"
             report = validate_dataset(dataset)
             if not report["conforms"]:
                 raise ValueError("invalid dataset")
-            print(json.dumps({"status": "ok", "validation": report}))
+            response = {"status": "ok", "validation": report}
+            if request['operation'] == 'neo4j-export':
+                response['payload'] = build_payload(dataset, request['scope'], request['generation'],
+                                                    request['snapshot_id'])
+            print(json.dumps(response))
             return 0
         if request.get("operation") != "build":
             raise ValueError("invalid operation")

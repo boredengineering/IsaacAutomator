@@ -130,6 +130,7 @@ Master index of session memory checkpoints for Isaac Automator.
 | 2026-09-09 03:30 | `8c8e9952` | Optional AWS ECR, Docker Hub and Hugging Face | YAML-selected image providers and independent pinned model/dataset staging; reviews approved, 195 workspace tests and 61 mocked plans pass; disabled paths unchanged, no live resources/pulls or commits | [`20260909_033041_8c8e9952.md`](./sessions/20260909_033041_8c8e9952.md) |
 | 2026-09-10 01:25 | `31931101` | Offline structural evidence graph MVP | Optional sandboxed CLI, RDF/PROV/SHACL and derived multigraph; 75 graph and 195 existing tests pass; public pilot 226 claims, complete profile transport still pending; no deployment or commit | [`20260910_012520_31931101.md`](./sessions/20260910_012520_31931101.md) |
 | 2026-09-10 02:18 | `400f102d` | Dedicated Neo4j devcontainer service | Pinned custom Neo4j and localhost gateway, private auth/data volumes, Compose wiring; real persistence/auth smoke, 97 graph and 195 existing tests pass; editor rebuild and evidence ingestion remain separate | [`20260910_021803_400f102d.md`](./sessions/20260910_021803_400f102d.md) |
+| 2026-09-10 03:35 | `21088c82` | Neo4j evidence projection and advisory skill | Verified claim/term readback, guide and implemented skill plan, bounded advisory brief; 120 tests pass; protected AGENTS.md unchanged; no unrestricted agent database access | [`20260910_033557_21088c82.md`](./sessions/20260910_033557_21088c82.md) |
 
 
 

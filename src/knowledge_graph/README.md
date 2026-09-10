@@ -1,5 +1,10 @@
 # Optional Isaac Automator evidence graph
 
+For creation, Neo4j visualization and advisory agent usage, read the
+[graph and agent guide](../../.agents/references/docs/evidence-graph-agent-guide.md).
+The [agent brief](../../ai/evidence-graph.agent.md) uses bounded CLI retrieval,
+not privileged database access.
+
 This is the first **offline structural MVP**, not the entire [implementation
 roadmap](../../.agents/references/plans/isaacautomator-evidence-graph-plan.md).
 It indexes explicitly selected public source files, represents independently
@@ -113,7 +118,9 @@ must not be reported as "unused", "unsupported", or "safe to remove".
 Dynamic and missing relationships remain unresolved. Task definitions are not
 executions; declarations are not running cloud resources; structural support is
 not a passing test. Native RDF 1.2/RDF-star, test-run/live-observation import,
-document/history ingestion, semantic retrieval, MCP and Neo4j remain deferred.
+document/history ingestion, semantic retrieval, MCP and a restricted Neo4j agent
+reader remain deferred. An explicit developer-only Neo4j snapshot import is now
+available through `neo4j-load`; it does not replace the current CLI retrieval path.
 
 ## Isolation and resource limits
 
