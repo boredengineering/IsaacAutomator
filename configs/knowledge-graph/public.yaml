@@ -1,0 +1,40 @@
+# Explicit public structural pilot. No recursive source discovery.
+# Selection is not automatic admission: protected or sensitive files are withheld.
+# This deliberately includes candidates that may be quarantined; coverage records
+# count the gaps without retaining their content, identifiers, or digests.
+schema_version: automator-source-policy/v1
+repo_id: isaacautomator
+files:
+  - configs/profiles/example-profile.yaml
+  - configs/profiles/example-aws-ecr.yaml
+  - configs/profiles/example-dockerhub.yaml
+  - src/python/config.py
+  - src/python/deploy_command.py
+  - src/python/deployer.py
+  - src/python/registry_profile.py
+  - src/ansible/inventory.template
+  - src/ansible/roles/container-registry/tasks/main.yml
+  - src/ansible/roles/container-registry/defaults/main.yml
+  - src/ansible/roles/artifact-registry/tasks/main.yml
+  - src/ansible/roles/artifact-registry/defaults/main.yml
+  - src/ansible/roles/state-ledger/meta/main.yml
+  - src/ansible/roles/lerobot/meta/main.yml
+  - src/terraform/registry/aws/main.tf
+  - src/terraform/registry/aws/variables.tf
+  - src/terraform/registry/aws/outputs.tf
+  - src/terraform/registry/aws/iam.tf
+  - src/terraform/registry/gcp/main.tf
+  - src/terraform/registry/gcp/variables.tf
+  - src/terraform/registry/gcp/outputs.tf
+  - src/terraform/registry/gcp/iam.tf
+  - src/terraform/gcp/main.tf
+  - src/terraform/gcp/artifact_registry.tf
+  - src/terraform/gcp/artifact_registry_variables.tf
+  - src/terraform/gcp/ovkit/artifact_registry.tf
+  - src/terraform/gcp/ovkit/artifact_registry_variables.tf
+  - src/terraform/aws/main.tf
+  - src/terraform/aws/ecr_variables.tf
+  - src/terraform/aws/ecr_outputs.tf
+  - src/terraform/aws/isaac-workstation/ecr.tf
+  - src/terraform/aws/isaac-workstation/ecr_variables.tf
+  - src/terraform/aws/isaac-workstation/ecr_outputs.tf

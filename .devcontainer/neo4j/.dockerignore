@@ -1,0 +1,7 @@
+*
+!Dockerfile
+!.dockerignore
+!bootstrap.py
+!healthcheck.py
+!Dockerfile.gateway
+!haproxy.cfg

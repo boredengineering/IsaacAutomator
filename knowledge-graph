@@ -1,0 +1,11 @@
+#!/bin/sh
+# Optional offline knowledge tooling, deliberately outside the deployment image.
+set -eu
+ROOT="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd -P)"
+PYTHON="${ISAAC_GRAPH_PYTHON:-${HOME:-/nonexistent}/.cache/isaacautomator-graph/venv/bin/python}"
+if [ ! -x "$PYTHON" ]; then
+    printf '%s\n' 'Optional graph environment not found. See src/knowledge_graph/README.md.' >&2
+    exit 2
+fi
+cd "$ROOT"
+exec "$PYTHON" -I -B -c 'import runpy, sys; sys.path.insert(0, sys.argv.pop(1)); runpy.run_module("src.knowledge_graph.cli", run_name="__main__")' "$ROOT" "$@"

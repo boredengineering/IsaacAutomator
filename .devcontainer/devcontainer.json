@@ -1,9 +1,10 @@
 {
     "name": "Isaac Automator DevContainer",
-    "build": {
-        "dockerfile": "Dockerfile",
-        "context": ".."
-    },
+    "dockerComposeFile": "docker-compose.yml",
+    "service": "app",
+    "runServices": ["app", "automator-neo4j", "neo4j-gateway"],
+    "workspaceFolder": "/workspaces/IsaacAutomator",
+    "shutdownAction": "stopCompose",
     "features": {
         "ghcr.io/devcontainers/features/terraform:1": {
             "version": "1.8"

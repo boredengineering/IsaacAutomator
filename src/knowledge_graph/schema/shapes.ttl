@@ -1,0 +1,68 @@
+@prefix ia: <urn:ia:> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+ia:DeclarationShape a sh:NodeShape ; sh:targetClass ia:Declaration ; sh:nodeKind sh:IRI ;
+    sh:closed true ; sh:ignoredProperties (rdf:type) ;
+    sh:property [ sh:path ia:kind ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:pattern "^[A-Z][A-Za-z0-9]+$" ; sh:not [ sh:pattern "Instance$" ] ] ;
+    sh:property [ sh:path rdfs:label ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ] ;
+    sh:property [ sh:path ia:path ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ] ;
+    sh:property [ sh:path ia:line ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ; sh:minInclusive 1 ] ;
+    sh:property [ sh:path prov:wasDerivedFrom ; sh:minCount 1 ; sh:maxCount 1 ; sh:nodeKind sh:IRI ; sh:class ia:SourceFile ] .
+
+# Trusted local SHACL Core only. No imports, rules, JS or SPARQL.
+ia:ClaimShape a sh:NodeShape ; sh:targetClass ia:Claim ;
+    sh:targetSubjectsOf rdf:subject, rdf:predicate, rdf:object ;
+    sh:nodeKind sh:IRI ; sh:class ia:Claim ; sh:closed true ; sh:ignoredProperties (rdf:type) ;
+    sh:property [ sh:path rdf:subject ; sh:minCount 1 ; sh:maxCount 1 ; sh:nodeKind sh:IRI ] ;
+    sh:property [ sh:path rdf:predicate ; sh:minCount 1 ; sh:maxCount 1 ; sh:nodeKind sh:IRI ] ;
+    sh:property [ sh:path rdf:object ; sh:minCount 1 ; sh:maxCount 1 ; sh:nodeKind sh:IRIOrLiteral ] ;
+    sh:property [ sh:path ia:objectLexical ; sh:maxCount 1 ; sh:datatype xsd:string ] ;
+    sh:property [ sh:path ia:propositionKey ; sh:minCount 1 ; sh:maxCount 1 ; sh:nodeKind sh:IRI ] ;
+    sh:property [ sh:path ia:evidenceKind ; sh:minCount 1 ; sh:maxCount 1 ; sh:in ("desired"^^xsd:string "documented"^^xsd:string "static_implementation"^^xsd:string "test_definition"^^xsd:string "test_execution"^^xsd:string "observation"^^xsd:string "historical_report"^^xsd:string) ] ;
+    sh:property [ sh:path ia:scope ; sh:minCount 1 ; sh:maxCount 1 ; sh:nodeKind sh:IRI ; sh:class ia:Scope ] ;
+    sh:property [ sh:path ia:condition ; sh:minCount 1 ; sh:maxCount 1 ; sh:nodeKind sh:IRI ; sh:class ia:Condition ] ;
+    sh:property [ sh:path ia:assessment ; sh:minCount 1 ; sh:maxCount 1 ; sh:nodeKind sh:IRI ; sh:class ia:ReviewAssessment ] ;
+    sh:property [ sh:path ia:extractor ; sh:minCount 1 ; sh:maxCount 1 ; sh:nodeKind sh:IRI ; sh:class prov:SoftwareAgent ] ;
+    sh:property [ sh:path ia:occurrence ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:minLength 1 ] ;
+    sh:property [ sh:path prov:wasDerivedFrom ; sh:minCount 1 ; sh:maxCount 1 ; sh:nodeKind sh:IRI ; sh:class ia:SourceLocator ] ;
+    sh:property [ sh:path prov:wasGeneratedBy ; sh:minCount 1 ; sh:maxCount 1 ; sh:nodeKind sh:IRI ; sh:class prov:Activity ] .
+
+ia:ScopeShape a sh:NodeShape ; sh:targetClass ia:Scope ; sh:nodeKind sh:IRI ;
+    sh:closed true ; sh:ignoredProperties (rdf:type) ;
+    sh:property [ sh:path ia:cloud ; sh:minCount 1 ; sh:maxCount 1 ; sh:in ("gcp"^^xsd:string "aws"^^xsd:string "azure"^^xsd:string "alicloud"^^xsd:string "unknown"^^xsd:string "shared"^^xsd:string) ] ;
+    sh:property [ sh:path ia:executionPath ; sh:minCount 1 ; sh:maxCount 1 ; sh:in ("source"^^xsd:string "image"^^xsd:string "unknown"^^xsd:string) ] .
+ia:ConditionShape a sh:NodeShape ; sh:targetClass ia:Condition ; sh:nodeKind sh:IRI ;
+    sh:closed true ; sh:ignoredProperties (rdf:type) ;
+    sh:property [ sh:path ia:conditionState ; sh:minCount 1 ; sh:maxCount 1 ; sh:in ("unconditional"^^xsd:string "expression"^^xsd:string "unresolved"^^xsd:string) ] ;
+    sh:property [ sh:path ia:expression ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ] .
+ia:AssessmentShape a sh:NodeShape ; sh:targetClass ia:ReviewAssessment ; sh:nodeKind sh:IRI ;
+    sh:closed true ; sh:ignoredProperties (rdf:type) ;
+    sh:property [ sh:path ia:disposition ; sh:minCount 1 ; sh:maxCount 1 ; sh:in ("supported"^^xsd:string "unreviewed"^^xsd:string "disputed"^^xsd:string "rejected"^^xsd:string) ] .
+ia:LocatorShape a sh:NodeShape ; sh:targetClass ia:SourceLocator ; sh:nodeKind sh:IRI ;
+    sh:closed true ; sh:ignoredProperties (rdf:type) ;
+    sh:property [ sh:path ia:path ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ] ;
+    sh:property [ sh:path ia:sha256 ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:pattern "^[a-f0-9]{64}$" ] ;
+    sh:property [ sh:path ia:line ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ; sh:minInclusive 1 ; sh:lessThanOrEquals ia:end_line ] ;
+    sh:property [ sh:path ia:end_line ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ; sh:minInclusive 1 ] ;
+    sh:property [ sh:path ia:snapshot ; sh:minCount 1 ; sh:maxCount 1 ; sh:nodeKind sh:IRI ; sh:class ia:SourceSnapshot ] ;
+    sh:property [ sh:path prov:specializationOf ; sh:minCount 1 ; sh:maxCount 1 ; sh:nodeKind sh:IRI ; sh:class ia:SourceFile ] .
+ia:SourceShape a sh:NodeShape ; sh:targetClass ia:SourceFile ; sh:nodeKind sh:IRI ;
+    sh:closed true ; sh:ignoredProperties (rdf:type) ;
+    sh:property [ sh:path ia:path ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ] ;
+    sh:property [ sh:path ia:sha256 ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:pattern "^[a-f0-9]{64}$" ] ;
+    sh:property [ sh:path prov:wasDerivedFrom ; sh:minCount 1 ; sh:maxCount 1 ; sh:nodeKind sh:IRI ; sh:class ia:SourceSnapshot ] .
+ia:SnapshotShape a sh:NodeShape ; sh:targetClass ia:SourceSnapshot ; sh:nodeKind sh:IRI ;
+    sh:closed true ; sh:ignoredProperties (rdf:type) ;
+    sh:property [ sh:path ia:repoId ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:pattern "^[A-Za-z0-9_-]+$" ] ;
+    sh:property [ sh:path ia:policyDigest ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:pattern "^[a-f0-9]{64}$" ] .
+ia:ActivityShape a sh:NodeShape ; sh:targetClass ia:ExtractionRun ; sh:class prov:Activity ; sh:nodeKind sh:IRI ;
+    sh:closed true ; sh:ignoredProperties (rdf:type) ;
+    sh:property [ sh:path prov:used ; sh:minCount 1 ; sh:maxCount 1 ; sh:nodeKind sh:IRI ; sh:class ia:SourceSnapshot ] ;
+    sh:property [ sh:path prov:wasAssociatedWith ; sh:nodeKind sh:IRI ; sh:class prov:SoftwareAgent ] .
+ia:AgentShape a sh:NodeShape ; sh:targetClass prov:SoftwareAgent ; sh:nodeKind sh:IRI ;
+    sh:closed true ; sh:ignoredProperties (rdf:type) ;
+    sh:property [ sh:path ia:extractorVersion ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:minLength 1 ] .

@@ -1,0 +1,3 @@
+FROM haproxy:3.2-alpine@sha256:6343ce34a132a5dceaa24767d739df2bd519f8f7c1079ae39e4821334e8eb42e
+COPY --chown=root:root haproxy.cfg /usr/local/etc/haproxy/haproxy.cfg
+USER 65532:65532

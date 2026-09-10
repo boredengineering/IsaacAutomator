@@ -1,0 +1,111 @@
+# Dedicated development services. No workstation deployment services here.
+name: isaacautomator-dev
+
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    command: [sleep, infinity]
+    working_dir: /workspaces/IsaacAutomator
+    volumes:
+      - ..:/workspaces/IsaacAutomator:cached
+      - ..:/app:cached
+    environment:
+      ISAAC_AUTOMATOR_NEO4J_URI: bolt://automator-neo4j:7687
+      ISAAC_AUTOMATOR_NEO4J_HTTP_URI: http://automator-neo4j:7474
+    networks: [default, graph]
+    depends_on:
+      automator-neo4j:
+        condition: service_healthy
+
+  automator-neo4j:
+    image: isaacautomator-neo4j:5.26.30-local
+    build:
+      context: ./neo4j
+      dockerfile: Dockerfile
+    user: "7474:7474"
+    restart: unless-stopped
+    stop_grace_period: 60s
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 2g
+    cpus: 2.0
+    pids_limit: 256
+    environment:
+      NEO4J_dbms_security_auth__enabled: "true"
+      NEO4J_server_memory_heap_initial__size: 256m
+      NEO4J_server_memory_heap_max__size: 512m
+      NEO4J_server_memory_pagecache_size: 256m
+      NEO4J_server_default__listen__address: 0.0.0.0
+      NEO4J_server_bolt_advertised__address: "localhost:${ISAAC_NEO4J_BOLT_PORT:-17687}"
+      NEO4J_server_http_advertised__address: "localhost:${ISAAC_NEO4J_HTTP_PORT:-17474}"
+      NEO4J_dbms_security_allow__csv__import__from__file__urls: "false"
+      NEO4J_dbms_security_procedures_unrestricted: ""
+      NEO4J_dbms_security_procedures_allowlist: "dbms.components,db.schema.visualization,db.labels,db.relationshipTypes,db.propertyKeys"
+      NEO4J_dbms_usage__report_enabled: "false"
+
+    volumes:
+      - neo4j-data:/data
+      - neo4j-logs:/logs
+      - neo4j-auth:/automator-secrets
+    networks: [graph]
+    healthcheck:
+      test: [CMD, python3, /opt/automator-neo4j/healthcheck.py]
+      interval: 10s
+      timeout: 8s
+      start_period: 60s
+      retries: 12
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+  # Docker does not publish an internal-only endpoint. A fixed TCP gateway
+  # supplies loopback ingress without giving the database an egress route.
+  neo4j-gateway:
+    image: isaacautomator-neo4j-gateway:3.2-local
+    build:
+      context: ./neo4j
+      dockerfile: Dockerfile.gateway
+    user: "65532:65532"
+    restart: unless-stopped
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    read_only: true
+    mem_limit: 64m
+    cpus: 0.5
+    pids_limit: 32
+    networks: [graph, ingress]
+    depends_on:
+      automator-neo4j:
+        condition: service_healthy
+    ports:
+      - target: 7474
+        published: "${ISAAC_NEO4J_HTTP_PORT:-17474}"
+        host_ip: 127.0.0.1
+      - target: 7687
+        published: "${ISAAC_NEO4J_BOLT_PORT:-17687}"
+        host_ip: 127.0.0.1
+    healthcheck:
+      test: [CMD, haproxy, -c, -f, /usr/local/etc/haproxy/haproxy.cfg]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: 5m
+        max-file: "2"
+
+networks:
+  default:
+  ingress:
+  graph:
+    internal: true
+
+volumes:
+  neo4j-data:
+  neo4j-logs:
+  neo4j-auth:

@@ -1,0 +1,52 @@
+@prefix ia: <urn:ia:> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+
+<urn:ia:vocabulary:v1> a owl:Ontology ;
+    rdfs:comment "Automator explicit RDF 1.1 evidence vocabulary v1. No imports or inference required. Static structure and lineage are not runtime truth." .
+ia:Claim a rdfs:Class ; rdfs:subClassOf prov:Entity ;
+    rdfs:comment "One attributable occurrence of a quoted proposition, represented with rdf:subject/predicate/object. Does not assert the base triple. Independent activities or occurrences remain independent claims." .
+ia:SourceSnapshot a rdfs:Class ; rdfs:subClassOf prov:Entity .
+ia:SourceFile a rdfs:Class ; rdfs:subClassOf prov:Entity .
+ia:SourceLocator a rdfs:Class ; rdfs:subClassOf prov:Entity .
+ia:ExtractionRun a rdfs:Class ; rdfs:subClassOf prov:Activity .
+ia:ReviewAssessment a rdfs:Class ; rdfs:comment "Immutable disposition attached to an occurrence; supported static structure does not imply deployment correctness." .
+ia:Scope a rdfs:Class .
+ia:Condition a rdfs:Class ; rdfs:comment "Unconditional, expression or unresolved. Expressions are never evaluated by this service." .
+ia:Declaration a rdfs:Class ; rdfs:comment "Logical source declaration, never a runtime instance." .
+ia:Dataset a rdfs:Class .
+ia:NamedGraph a rdfs:Class .
+ia:propositionKey a rdf:Property ; rdfs:comment "Versioned canonical term grouping only; excludes scope, assessment and occurrence provenance." .
+ia:objectLexical a rdf:Property ; rdfs:comment "Original literal lexical form alongside the native rdf:object literal; protects against parser lexical normalization." .
+ia:evidenceKind a rdf:Property .
+ia:scope a rdf:Property ; rdfs:range ia:Scope .
+ia:condition a rdf:Property ; rdfs:range ia:Condition .
+ia:assessment a rdf:Property ; rdfs:range ia:ReviewAssessment .
+ia:extractor a rdf:Property ; rdfs:range prov:SoftwareAgent .
+ia:occurrence a rdf:Property .
+ia:cloud a rdf:Property .
+ia:executionPath a rdf:Property .
+ia:conditionState a rdf:Property .
+ia:expression a rdf:Property .
+ia:disposition a rdf:Property .
+ia:extractorVersion a rdf:Property .
+ia:path a rdf:Property .
+ia:line a rdf:Property .
+ia:end_line a rdf:Property .
+ia:sha256 a rdf:Property .
+ia:snapshot a rdf:Property ; rdfs:range ia:SourceSnapshot .
+ia:repoId a rdf:Property .
+ia:policyDigest a rdf:Property .
+ia:kind a rdf:Property .
+ia:declaredGraph a rdf:Property ; rdfs:comment "Explicit candidate-generation context manifest. Unlisted or missing contexts fail validation." .
+ia:claimsGraph a rdf:Property .
+ia:provenanceGraph a rdf:Property .
+ia:sourcesGraph a rdf:Property .
+ia:entitiesGraph a rdf:Property .
+ia:consumed_by a rdf:Property ; rdfs:comment "Source-supported field read, not merely a mention and not runtime consumption." .
+ia:requires a rdf:Property ; rdfs:comment "Scoped prerequisite, not automatic temporal order or PROV derivation." .
+ia:passed_to a rdf:Property .
+ia:references_field a rdf:Property .
+ia:notifies a rdf:Property ; rdfs:comment "Notification reference, not evidence a handler ran." .

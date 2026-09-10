@@ -162,6 +162,8 @@ Isaac Automator provides first-class, non-interactive instructions and native sk
   * `transfer-data` — Bi-directional file synchronization and autorun setup.
   * `troubleshoot` — Common failure diagnostics and auto-repair.
 * **Persistent Session Memory:** Agents track multi-session progress in [`.agents/memory/INDEX.md`](.agents/memory/INDEX.md).
+* **Optional Evidence Graph:** The offline [`knowledge-graph` CLI](src/knowledge_graph/README.md) indexes selected public structural sources with cited claims, provenance, validation and explicit gaps. It uses a separate environment, never provisions resources, and is not required for deployments.
+* **Dedicated Development Neo4j:** The [Compose-backed devcontainer](.devcontainer/neo4j/README.md) includes a separate authenticated IsaacAutomator database with private networking and persistent volumes. It does not reuse Arena's service or automatically ingest the evidence graph; agent-safe projection/retrieval remains a separate gate.
 
 ---
 
