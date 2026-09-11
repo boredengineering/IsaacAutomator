@@ -4,6 +4,7 @@ import contextlib
 import io
 import subprocess
 import unittest
+import tempfile
 from types import SimpleNamespace
 from unittest import mock
 
@@ -11,6 +12,12 @@ import click
 
 from src.python.config import c as config
 from src.python.deploy_command import DeployCommand
+
+
+def setUpModule():
+    patcher = mock.patch('src.python.deploy_command.get_my_public_ip', return_value='192.0.2.1')
+    patcher.start()
+    unittest.addModuleCleanup(patcher.stop)
 
 
 class Test_DeploymentNameCallback(unittest.TestCase):
@@ -302,6 +309,45 @@ class Test_SecurityProfileOptions(unittest.TestCase):
         self.assertEqual(profile_opt.default, "simple")
 
 
+class Test_BackendOptions(unittest.TestCase):
+    def test_invalid_backend_choice_never_echoes_untrusted_value(self):
+        from click.testing import CliRunner
+        cmd = DeployCommand('test-backend', callback=lambda **params: None)
+        cmd.params = [p for p in cmd.params if p.name == 'state_backend']
+        result = CliRunner().invoke(cmd, ['--state-backend', 'private-sentinel'])
+        self.assertNotEqual(result.exit_code, 0)
+        self.assertNotIn('private-sentinel', result.output)
+
+    def test_real_click_sources_and_profile_precedence(self):
+        from click.testing import CliRunner
+        from src.python.backend_selection import select_backend
+        from click.core import ParameterSource
+        profile = {'terraform_state': {'backend': 'gcs', 'namespace': 'studio',
+            'destination': {'bucket': 'example-state', 'project': 'example-project', 'prefix': 'isaacautomator/v2'}}}
+        captured = {}
+        def callback(**params):
+            ctx = click.get_current_context()
+            captured['source'] = ctx.get_parameter_source('state_backend')
+            captured['bucket_source'] = ctx.get_parameter_source('state_bucket')
+            captured['backend'] = select_backend(params, profile, 'gcp', ctx).backend
+        with mock.patch('src.python.deploy_command.get_my_public_ip', return_value='192.0.2.1'):
+            cmd = DeployCommand('test-backend', callback=callback)
+        cmd.params = [p for p in cmd.params if p.name in ('state_backend', 'backend_config', 'state_bucket')]
+        self.assertEqual({p.name for p in cmd.params}, {'state_backend', 'backend_config', 'state_bucket'})
+        runner = CliRunner()
+        for args, env, expected, source in (
+            ([], {}, 'gcs', ParameterSource.DEFAULT),
+            (['--state-backend', 'local'], {}, 'local', ParameterSource.COMMANDLINE),
+            (['--state-backend', 'local'], {'ISAAC_STATE_BUCKET': 'example-state'}, 'local', ParameterSource.COMMANDLINE),
+        ):
+            result = runner.invoke(cmd, args, env=env)
+            self.assertEqual(result.exit_code, 0, result.output)
+            self.assertEqual(captured['backend'], expected)
+            self.assertEqual(captured['source'], source)
+            if env:
+                self.assertEqual(captured['bucket_source'], ParameterSource.ENVIRONMENT)
+
+
 class Test_DemosOption(unittest.TestCase):
     def test_demos_options_present(self):
         cmd = DeployCommand("test-cloud")
@@ -337,6 +383,11 @@ class Test_DemosOption(unittest.TestCase):
 
 class Test_GcpGpuCountResolution(unittest.TestCase):
     def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        patcher = mock.patch.dict(config, state_dir=temporary.name)
+        patcher.start()
+        self.addCleanup(patcher.stop)
         import importlib.util
         from importlib.machinery import SourceFileLoader
         from pathlib import Path
@@ -347,7 +398,8 @@ class Test_GcpGpuCountResolution(unittest.TestCase):
         spec = importlib.util.spec_from_loader("deploy_gcp", loader)
         self.mod = importlib.util.module_from_spec(spec)
         sys.modules["deploy_gcp"] = self.mod
-        spec.loader.exec_module(self.mod)
+        with mock.patch('src.python.utils.shell_command', return_value=SimpleNamespace(stdout=b'')):
+            spec.loader.exec_module(self.mod)
 
     def test_gpu_count_inference_and_explicit_override(self):
         from click.testing import CliRunner
@@ -392,6 +444,7 @@ class Test_GcpGpuCountResolution(unittest.TestCase):
                  mock.patch.object(self.mod.GCPDeployer, "ask_existing_behavior"), \
                  mock.patch("deploy_gcp.gcp_login"), \
                  mock.patch.object(self.mod.GCPDeployer, "plan_terraform"), \
+                 mock.patch.object(self.mod.GCPDeployer, "initialize_terraform"), \
                  mock.patch.object(self.mod.GCPDeployer, "validate_ansible"), \
                  mock.patch.object(self.mod.GCPDeployer, "save_meta"):
 
@@ -402,6 +455,29 @@ class Test_GcpGpuCountResolution(unittest.TestCase):
                     expected,
                     f"Mismatch for {itype} with cli_gpu={cli_gpu}",
                 )
+
+    def test_remote_cli_and_legacy_environment_refuse_before_login_or_writes(self):
+        from click.testing import CliRunner
+        args = ['--deployment-name', 'test-backend', '--project', 'example-project',
+                '--zone', 'us-central1-a', '--instance-type', 'g2-standard-8',
+                '--isaac-workstation-gpu-count', 'auto', '--ingress-cidrs', '192.0.2.1/32',
+                '--existing', 'modify', '--no-upload', '--dry-run', '--isaacsim', 'no',
+                '--isaaclab', 'no', '--isaaclab-arena', 'no', '--demos', 'no']
+        for flags, env in ((['--state-backend', 'gcs'], {}),
+                           (['--state-bucket', 'auto'], {}),
+                           ([], {'ISAAC_STATE_BUCKET': 'example-state'})):
+            with self.subTest(flags=flags, env=bool(env)), \
+                 mock.patch.object(self.mod, 'gcp_login') as login, \
+                 mock.patch.object(self.mod, 'shell_command') as shell, \
+                 mock.patch('src.python.deployer.os.makedirs') as mkdir, \
+                 mock.patch('src.python.deployer.Path.write_text') as write:
+                result = CliRunner().invoke(self.mod.main, args + flags, env=env, input='\n')
+                self.assertNotEqual(result.exit_code, 0)
+                self.assertIn('not implemented', result.output)
+                login.assert_not_called()
+                shell.assert_not_called()
+                mkdir.assert_not_called()
+                write.assert_not_called()
 
 
 if __name__ == "__main__":

@@ -1,0 +1,4 @@
+# Public schema example only; no resources are created or verified.
+terraform_state:
+  schema_version: 1
+  backend: local

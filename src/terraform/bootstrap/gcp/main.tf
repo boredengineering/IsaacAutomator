@@ -4,50 +4,32 @@
 # ==============================================================================
 
 terraform {
-  required_version = ">= 1.3.5"
+  required_version = ">= 1.7.0, < 2.0.0"
+  backend "local" {}
   required_providers {
     google = {
       source  = "hashicorp/google"
-      version = ">= 4.57.0"
+      version = "= 6.45.0"
     }
   }
 }
 
-variable "project" {
-  type        = string
-  description = "GCP Project ID"
-}
-
-variable "region" {
-  type        = string
-  default     = "us-central1"
-  description = "GCP Region for the state bucket"
-}
-
-variable "state_bucket_name" {
-  type        = string
-  default     = ""
-  description = "Explicit state bucket name (defaults to isaacautomator-state-<project>-<region>)"
-}
-
-variable "kms_key_name" {
-  type        = string
-  default     = ""
-  description = "Optional KMS CMEK key to encrypt state objects"
-}
-
-locals {
-  name = var.state_bucket_name != "" ? var.state_bucket_name : "isaacautomator-state-${var.project}-${var.region}"
+provider "google" {
+  project = var.project
+  region  = var.region
 }
 
 # Production-Hardened State Bucket
 resource "google_storage_bucket" "state_bucket" {
-  name                        = local.name
+  name                        = var.state_bucket_name
   project                     = var.project
   location                    = var.region
   force_destroy               = false
   uniform_bucket_level_access = true
   public_access_prevention    = "enforced"
+  lifecycle {
+    prevent_destroy = true
+  }
 
   versioning {
     enabled = true
@@ -75,10 +57,11 @@ resource "google_storage_bucket" "state_bucket" {
   }
 }
 
-output "state_bucket_name" {
-  value = google_storage_bucket.state_bucket.name
-}
-
-output "state_bucket_url" {
-  value = google_storage_bucket.state_bucket.url
+resource "google_storage_bucket_iam_member" "controller" {
+  bucket = google_storage_bucket.state_bucket.name
+  role   = "roles/storage.objectAdmin"
+  member = var.controller_principal
+  lifecycle {
+    prevent_destroy = true
+  }
 }

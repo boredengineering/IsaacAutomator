@@ -1,0 +1,19 @@
+#!/usr/bin/env python3
+"""Container-aware explicit drift commands; no activation on import."""
+import os
+from pathlib import Path
+import shlex
+import subprocess
+import sys
+
+
+if __name__ == "__main__":
+    root = Path(__file__).resolve().parent
+    if os.path.exists("/.dockerenv"):
+        from src.python.drift_command import main
+        main()
+    else:
+        result = subprocess.run(
+            [str(root / "run"), shlex.join(["./drift", *sys.argv[1:]])], check=False,
+        )
+        sys.exit(result.returncode)

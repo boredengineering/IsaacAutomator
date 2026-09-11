@@ -1,0 +1,9 @@
+# Public schema example only; no resources are created or verified.
+terraform_state:
+  schema_version: 1
+  backend: gcs
+  namespace: studio-dev
+  destination:
+    bucket: example-state-bucket
+    project: example-backend-project
+    prefix: isaacautomator/v2

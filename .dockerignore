@@ -17,6 +17,25 @@ Dockerfile
 /state
 # Git ignores do not protect Docker build contexts or COPY instructions.
 /configs/private/
+# Runtime credentials, local controller recovery and personal agent records
+# must not enter an image through COPY ., even when untracked by Git.
+**/.env
+**/.env.*
+**/*.pem
+**/*.key
+**/*.tfstate*
+**/*.tfvars
+**/*.tfvars.json
+**/*.tfplan
+**/credentials.json
+**/application_default_credentials.json
+**/.ssh
+**/.aws
+**/.azure
+**/.config/gcloud
+**/.terraform-operations
+.hermes/
+.agents/memory/
 *.hosts
 *.swp
 .mypy_cache/

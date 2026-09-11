@@ -26,6 +26,30 @@ _isaac_automator_complete() {
     fi
 }
 
+_isaac_state_backend_complete() {
+    local cur="${COMP_WORDS[COMP_CWORD]}"
+    local prev="${COMP_WORDS[COMP_CWORD-1]}"
+    COMPREPLY=()
+    if [[ $COMP_CWORD -eq 1 ]]; then
+        COMPREPLY=($(compgen -W "validate propose doctor bootstrap --help" -- "$cur"))
+    elif [[ "$prev" == "--cloud" ]]; then
+        local clouds="aws gcp azure"
+        [[ "${COMP_WORDS[1]}" == validate ]] && clouds+=" alicloud"
+        COMPREPLY=($(compgen -W "$clouds" -- "$cur"))
+    elif [[ "$cur" == -* ]]; then
+        local options="--config --cloud --help"
+        case "${COMP_WORDS[1]}" in
+            validate) options+=" --terraform-version" ;;
+            doctor) options+=" --acknowledge-reads --workload-resource-group" ;;
+            bootstrap) options+=" --bootstrap-state-root --region --controller-principal --workload-resource-group --acknowledge-reads --apply --approve-creation" ;;
+            propose) options="--cloud --namespace --owner-scope --region --tenant-id --help" ;;
+        esac
+        COMPREPLY=($(compgen -W "$options" -- "$cur"))
+    fi
+}
+
+complete -o default -F _isaac_state_backend_complete ./state-backend state-backend
+
 # register for ./command and command forms
 for cmd in destroy ssh novnc start stop repair upload download import; do
     complete -o default -F _isaac_automator_complete "./$cmd"

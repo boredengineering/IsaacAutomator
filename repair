@@ -27,6 +27,8 @@ import click
 from src.python.aws import aws_validate_credentials
 from src.python.azure import azure_login
 from src.python.config import c as config
+from src.python.terraform_runner import TerraformRunnerError
+from src.python import backend_runtime
 from src.python.utils import (
     colorize_error,
     colorize_info,
@@ -128,20 +130,29 @@ def main(
     # run terraform
     if terraform:
         click.echo(colorize_info("* Re-running Terraform..."))
-        tfstate_file = Path(
-            f"{config['state_dir']}/{deployment_name}/.tfstate"
-        ).absolute()
-        shell_command(
-            f"terraform init -upgrade -no-color -input=false -reconfigure -backend-config=\"path={tfstate_file}\" {' > /dev/null' if not debug else ''}",
-            cwd=f"{config['terraform_dir']}/{cloud}",
-            verbose=debug,
-        )
-        shell_command(
-            "terraform apply -auto-approve "
-            + f"-var-file={config['state_dir']}/{deployment_name}/.tfvars",
-            cwd=f"{config['terraform_dir']}/{cloud}",
-            verbose=debug,
-        )
+        try:
+            record = backend_runtime.load_backend_record(
+                deployment_name, state_root=Path(config["state_dir"]).absolute()
+            )
+            if record is not None:
+                _repair_gcs(record)
+            else:
+                tfstate_file = Path(
+                    f"{config['state_dir']}/{deployment_name}/.tfstate"
+                ).absolute()
+                shell_command(
+                    f"terraform init -upgrade -no-color -input=false -reconfigure -backend-config=\"path={tfstate_file}\" {' > /dev/null' if not debug else ''}",
+                    cwd=f"{config['terraform_dir']}/{cloud}",
+                    verbose=debug,
+                )
+                shell_command(
+                    "terraform apply -auto-approve "
+                    + f"-var-file={config['state_dir']}/{deployment_name}/.tfvars",
+                    cwd=f"{config['terraform_dir']}/{cloud}",
+                    verbose=debug,
+                )
+        except (TerraformRunnerError, ValueError):
+            raise click.ClickException("Terraform repair failed; recovery files are preserved.") from None
 
     # run ansible
     if ansible:
@@ -152,6 +163,32 @@ def main(
             cwd=f"{config['ansible_dir']}",
             verbose=debug,
         )
+
+
+def _repair_gcs(record):
+    """Apply a saved plan against the pinned remote workstation backend."""
+    if record.status != "active" or not record.lineage:
+        raise click.ClickException("Saved GCS deployment is not active; reconcile backend ownership before repair.")
+    runner = None
+    try:
+        with backend_runtime.record_runner(
+            record, state_root=Path(config["state_dir"]).absolute(),
+            terraform_root=Path(config["terraform_dir"]).absolute(),
+        ) as runner:
+            runner.init()
+            before = runner.pull_state()
+            if before["lineage"] != record.lineage:
+                raise click.ClickException("Authoritative state lineage differs from saved GCS ownership; repair refused.")
+            plan = runner.plan()
+            runner.apply(plan, acknowledge_mutation=True)
+            after = runner.pull_state()
+            if after["lineage"] != before["lineage"] or after["serial"] < before["serial"]:
+                raise click.ClickException("Terraform state identity changed; recovery files are preserved.")
+            runner.assert_no_recovery()
+    finally:
+        if runner is not None and runner.recovery_directory is not None:
+            click.echo("Private Terraform recovery retained at " + str(runner.recovery_directory)
+                       + "; secure it before reboot and review before retrying.", err=True)
 
 
 def _resolve_ingress_cidrs(ingress_cidrs_str: str, debug: bool) -> list:

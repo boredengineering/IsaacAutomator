@@ -17,7 +17,9 @@
 # endregion
 
 import os
+import shlex
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -27,15 +29,20 @@ from src.python.aws import aws_validate_credentials
 from src.python.azure import azure_login
 from src.python.config import c as config
 from src.python.debug import debug_break  # noqa
+from src.python.terraform_backend import BackendSpec
+from src.python.terraform_runner import TerraformRunner, TerraformRunnerError
+from src.python.terraform_sources import workstation_source_files
 from src.python.utils import (
+    approved_deployment_path,
     colorize_info,
     colorize_prompt,
     colorize_result,
     deployments,
     format_cloud_name,
     gcp_login,
+    read_local_tfstate,
     read_meta,
-    shell_command,
+    require_legacy_local_backend,
 )
 
 
@@ -75,26 +82,56 @@ def main(
     if dryrun:
         print(colorize_info("* Dry run - not destroying anything"))
 
-    tfstate_file = Path(f"{config['state_dir']}/{deployment_name}/.tfstate").absolute()
-    tfvars_file = Path(f"{config['state_dir']}/{deployment_name}/.tfvars").absolute()
+    deployment_data_dir = approved_deployment_path(deployment_name)
+    tfstate_file = deployment_data_dir / ".tfstate"
+    tfvars_file = deployment_data_dir / ".tfvars"
+
+    try:
+        from src.python import backend_runtime
+        record = backend_runtime.load_backend_record(
+            deployment_name, state_root=Path(config["state_dir"]).absolute()
+        )
+        if record is not None:
+            _destroy_gcs(record, deployment_data_dir, dryrun=dryrun)
+            return
+    except (TerraformRunnerError, ValueError):
+        raise click.ClickException("Terraform destroy operation failed; recovery files are preserved.") from None
+
+    require_legacy_local_backend(tfstate_file.parent)
+
+    # Absence of a local snapshot is not evidence that cloud resources are gone.
+    if not tfstate_file.is_file():
+        raise click.ClickException(
+            "Local Terraform state is unavailable. Destruction is refused and "
+            "recovery files are preserved; verify the authoritative backend first."
+        )
 
     # determine what cloud the deployment is for
 
     cloud = "none"
 
-    if Path(tfstate_file).exists():
-        text = Path(tfstate_file).read_text()
-        if "registry.terraform.io/hashicorp/aws" in text:
-            cloud = "aws"
-        elif "registry.terraform.io/hashicorp/azurerm" in text:
-            cloud = "azure"
-        elif "registry.terraform.io/hashicorp/google" in text:
-            cloud = "gcp"
-        elif "registry.terraform.io/hashicorp/alicloud" in text:
-            cloud = "alicloud"
-
-    if cloud == "none":
-        print(colorize_info(f'* No cloud resources found for "{deployment_name}"'))
+    state = read_local_tfstate(tfstate_file, require_identity=True)
+    providers = {
+        "registry.terraform.io/hashicorp/aws": "aws",
+        "registry.terraform.io/hashicorp/azurerm": "azure",
+        "registry.terraform.io/hashicorp/google": "gcp",
+        "registry.terraform.io/hashicorp/alicloud": "alicloud",
+    }
+    clouds = {
+        name
+        for resource in state["resources"]
+        for provider, name in providers.items()
+        if resource.get("mode") == "managed"
+        and isinstance(resource.get("provider"), str)
+        and f'"{provider}"' in resource["provider"]
+        and resource.get("instances")
+    }
+    if len(clouds) != 1:
+        raise click.ClickException(
+            "Cloud resource ownership is empty or ambiguous. Destruction is "
+            "refused and recovery files are preserved."
+        )
+    cloud = clouds.pop()
 
     # validate credentials
     if "azure" == cloud:
@@ -106,58 +143,58 @@ def main(
         region = meta.get("input_params", {}).get("region", None)
         aws_validate_credentials(deployment_name, region=region, verbose=debug)
 
-    if cloud != "none":
-        # do `terraform init` in case we didn't map /app dir
-        # (the case when prebuilt image is used)
-        click.echo(colorize_info("* Initializing terraform modules..."))
-        shell_command(
-            f"terraform init -upgrade -no-color -input=false -reconfigure -backend-config=\"path={tfstate_file}\" {' > /dev/null' if not debug else ''}",
-            verbose=debug,
-            cwd=f"{config['terraform_dir']}/{cloud.lower()}",
+    operation = None
+    try:
+        operation = TerraformRunner(
+            source_root=Path(config["terraform_dir"]).absolute() / cloud,
+            source_files=workstation_source_files(cloud),
+            backend_spec=BackendSpec.from_dict(None, cloud=cloud), target_scope=None,
+            deployment_name=deployment_name, state_root=Path(config["state_dir"]).absolute(),
+            variables_file=tfvars_file,
         )
-
-        if dryrun:
-            # only show what would be destroyed by terraform
-
-            click.echo(
-                colorize_info(
-                    f'* Showing changes to {format_cloud_name(cloud)} resources used by "{deployment_name}"...'
-                )
-            )
-
-            shell_command(
-                command=f'terraform plan -destroy -var-file="{tfvars_file}"',
-                cwd=f"{config['terraform_dir']}/{cloud.lower()}",
-                exit_on_error=False,
-                verbose=debug,
-            )
-
-        else:
-            # destroy cloud resources
-
-            click.echo(
-                colorize_info(
+        with operation as runner:
+            require_legacy_local_backend(deployment_data_dir)
+            if read_local_tfstate(tfstate_file, require_identity=True) != state:
+                raise click.ClickException("State changed before destruction; recovery files are preserved.")
+            runner.init()
+            plan = runner.plan(destroy=True)
+            if dryrun:
+                click.echo(colorize_info(
+                    "* Destroy plan completed without apply. Planning may contact cloud APIs; "
+                    "private plan diagnostics are not printed."
+                ))
+            else:
+                click.echo(colorize_info(
                     f'* Destroying {format_cloud_name(cloud)} resources used by "{deployment_name}"...'
-                )
-            )
-
-            shell_command(
-                command=f'terraform destroy -auto-approve -var-file="{tfvars_file}"',
-                cwd=f"{config['terraform_dir']}/{cloud.lower()}",
-                exit_on_error=True,
-                verbose=debug,
-            )
+                ))
+                runner.apply(plan, acknowledge_mutation=True)
+                remaining = read_local_tfstate(tfstate_file, require_identity=True)
+                if remaining["lineage"] != state["lineage"] or remaining["serial"] < state["serial"]:
+                    raise click.ClickException(
+                        "Terraform state identity changed or could not be verified; recovery files are preserved."
+                    )
+                if any(resource.get("mode") == "managed" and resource.get("instances")
+                       for resource in remaining["resources"]):
+                    raise click.ClickException("Terraform still records managed resources; recovery files are preserved.")
+                # Check while still locked, before deleting any recovery inputs.
+                runner.assert_no_recovery()
+                # Do not release the shared controller lock before local cleanup:
+                # a subsequent creator could otherwise be deleted by this call.
+                shutil.rmtree(deployment_data_dir)
+    except (TerraformRunnerError, ValueError):
+        raise click.ClickException("Terraform destroy operation failed; recovery files are preserved.") from None
+    finally:
+        if operation is not None and operation.recovery_directory is not None:
+            click.echo("Private Terraform recovery retained at " + str(operation.recovery_directory)
+                       + "; secure it before reboot and review before retrying.", err=True)
 
     # remove tfstate, tfvars, keys, etc
 
-    deployment_data_dir = f"{config['state_dir']}/{deployment_name}"
     deployment_data_dir_relative = os.path.relpath(
         deployment_data_dir, config["app_dir"]
     )
 
     if not dryrun:
-        # remove deployment data dir
-        shutil.rmtree(deployment_data_dir, ignore_errors=True)
         click.echo(
             colorize_info(f'* Removed "{deployment_data_dir_relative}" directory')
         )
@@ -172,10 +209,62 @@ def main(
         click.echo(colorize_result(f'* Deployment "{deployment_name}" destroyed'))
 
 
+def _destroy_gcs(record, directory, *, dryrun):
+    """Destroy only the saved workstation state; never its backend storage."""
+    from src.python import backend_runtime
+
+    runner = None
+    if record.status != "active" or not record.lineage:
+        raise click.ClickException("Saved GCS deployment is not active; reconcile backend ownership before destruction.")
+    try:
+        with backend_runtime.record_runner(
+            record, state_root=Path(config["state_dir"]).absolute(),
+            terraform_root=Path(config["terraform_dir"]).absolute(),
+        ) as runner:
+            runner.init()
+            state = runner.pull_state()
+            if state["lineage"] != record.lineage:
+                raise click.ClickException("Authoritative state lineage differs from saved GCS ownership; recovery files are preserved.")
+            plan = runner.plan(destroy=True)
+            if dryrun:
+                click.echo(colorize_info(
+                    "* Destroy plan completed without apply. Planning may contact cloud APIs; "
+                    "private plan diagnostics are not printed."
+                ))
+                return
+            runner.apply(plan, acknowledge_mutation=True)
+            remaining = runner.pull_state()
+            if remaining["lineage"] != state["lineage"] or remaining["serial"] < state["serial"]:
+                raise click.ClickException(
+                    "Terraform state identity changed or could not be verified; recovery files are preserved."
+                )
+            if any(resource.get("mode") == "managed" and resource.get("instances")
+                   for resource in remaining["resources"]):
+                raise click.ClickException("Terraform still records managed resources; recovery files are preserved.")
+            runner.assert_no_recovery()
+            if backend_runtime.load_backend_record(record.deployment_name, state_root=directory.parent) != record:
+                raise click.ClickException("Saved backend changed during destruction; recovery files are preserved.")
+            shutil.rmtree(directory)
+    finally:
+        if runner is not None and runner.recovery_directory is not None:
+            click.echo("Private Terraform recovery retained at " + str(runner.recovery_directory)
+                       + "; secure it before reboot and review before retrying.", err=True)
+    click.echo(colorize_result(
+        f'* Deployment "{record.deployment_name}" destroyed; remote backend storage retained.'
+    ))
+
+
 if __name__ == "__main__":
     if os.path.exists("/.dockerenv"):
         # we're in docker, run command
         main()
     else:
         # we're outside, start docker container first
-        shell_command(f"./run '{' '.join(sys.argv)}'", verbose=True)
+        # run expects one container-shell command; quote each argument once,
+        # without invoking a host shell or forwarding a host-only script path.
+        result = subprocess.run(
+            [str(Path(__file__).resolve().with_name("run")),
+             shlex.join(["./destroy", *sys.argv[1:]])],
+            shell=False, check=False,
+        )
+        sys.exit(result.returncode)

@@ -92,7 +92,7 @@ c["isaaclab_arena_git_repo"] = "https://github.com/isaac-sim/IsaacLab-Arena.git"
 
 # --profile / --security-profile
 # Security tier: "simple" ($0 added cost, auto-locked /32 IP firewall),
-# "team" (<$0.10/mo, remote state with locking), or
+# "team" (shared asset access, local state by default), or
 # "enterprise" (KMS CMEK, secret manager, zero-trust private access).
 c["default_security_profile"] = "simple"
 
@@ -176,6 +176,9 @@ import yaml
 
 from src.python.registry_profile import RegistryProfileError, normalize_registries
 from src.python.huggingface_profile import normalize_huggingface
+from src.python.backend_selection import (
+    BackendSelectionError, load_profile_yaml, normalize_profile_backend,
+)
 
 BUILTIN_PROFILES: dict[str, dict[str, Any]] = {
     "simple": {
@@ -192,12 +195,12 @@ BUILTIN_PROFILES: dict[str, dict[str, Any]] = {
     "team": {
         "name": "team",
         "tier": "team",
-        "description": "Collaborative studio profile with remote GCS state locking and shared asset access",
+        "description": "Collaborative studio profile with shared asset access and local state by default",
         "enable_cmek": False,
         "enable_iap_only": False,
         "enable_oslogin": False,
         "enable_secrets": True,
-        "state_bucket": "auto",
+        "state_bucket": "",
         "ingress_cidrs": ["auto"],
     },
     "enterprise": {
@@ -208,7 +211,7 @@ BUILTIN_PROFILES: dict[str, dict[str, Any]] = {
         "enable_iap_only": True,
         "enable_oslogin": True,
         "enable_secrets": True,
-        "state_bucket": "auto",
+        "state_bucket": "",
         "ingress_cidrs": [],
     },
 }
@@ -236,8 +239,7 @@ def list_available_profiles(repo_root: str | None = None) -> dict[str, dict[str,
         for path in sorted(pdir.glob("*.y*ml")):
             stem = path.stem
             try:
-                with open(path, "r", encoding="utf-8") as f:
-                    data = yaml.safe_load(f) or {}
+                data = load_profile_yaml(path)
                 # Observed workstation inventories are not security profiles.
                 if data.get("kind") == "workstation-baseline":
                     continue
@@ -258,8 +260,9 @@ def list_available_profiles(repo_root: str | None = None) -> dict[str, dict[str,
                     "raw": data,
                     **normalize_registries(data),
                     **normalize_huggingface(data),
+                    **normalize_profile_backend(data),
                 }
-            except RegistryProfileError:
+            except (RegistryProfileError, BackendSelectionError):
                 raise
             except Exception:
                 pass
@@ -282,8 +285,7 @@ def load_profile_spec(identifier: str, repo_root: str | None = None) -> dict[str
     direct_path = Path(identifier)
     if direct_path.exists() and direct_path.is_file():
         try:
-            with open(direct_path, "r", encoding="utf-8") as f:
-                data = yaml.safe_load(f) or {}
+            data = load_profile_yaml(direct_path)
             if data.get("kind") == "workstation-baseline":
                 return None
             sec = data.get("security", {})
@@ -302,8 +304,9 @@ def load_profile_spec(identifier: str, repo_root: str | None = None) -> dict[str
                 "raw": data,
                 **normalize_registries(data),
                 **normalize_huggingface(data),
+                **normalize_profile_backend(data),
             }
-        except RegistryProfileError:
+        except (RegistryProfileError, BackendSelectionError):
             raise
         except Exception:
             return None

@@ -171,17 +171,9 @@ class AzureDeployer(Deployer):
         Import existing AZ resource group into terraform state
         cwd: directory where terraform scripts are located
         """
-        debug = self.params["debug"]
-        resource_group = self.params["resource_group"]
-        state_dir = self.config["state_dir"]
-        deployment_name = self.params["deployment_name"]
-
-        shell_command(
-            f"terraform import -var-file={state_dir}/{deployment_name}/.tfvars "
-            + "module.common.azurerm_resource_group.isa_rg"
-            + f" {resource_group} {' > /dev/null' if not debug else ''}",
-            verbose=debug,
-            cwd=cwd,
+        self.import_terraform_resource(
+            cwd=cwd, address="module.common.azurerm_resource_group.isa_rg",
+            resource_id=self.params["resource_group"],
         )
 
     def main(self):
@@ -211,12 +203,14 @@ class AzureDeployer(Deployer):
                 click.echo(colorize_info("=" * 70 + "\n"))
                 self.initialize_terraform(cwd=f"{config['terraform_dir']}/azure")
                 if len(self.params["resource_group"]) > 0:
-                    self.import_resource_group(cwd=f"{config['terraform_dir']}/azure")
+                    click.echo(colorize_info("* Existing resource group is not imported during planning; "
+                                             "the plan may show creation until explicit adoption."))
                 self.plan_terraform(cwd=f"{config['terraform_dir']}/azure")
                 self.validate_ansible()
                 click.echo(colorize_info("\n" + "=" * 70))
                 click.echo(colorize_info("* [DRY-RUN] SUCCESS: Terraform plan and Ansible syntax checks passed!"))
-                click.echo(colorize_info("* No cloud resources were provisioned and no costs were incurred."))
+                click.echo(colorize_info("* No apply or import was performed. Planning can read cloud APIs "
+                                         "and acquire backend locks; it is not offline validation."))
                 click.echo(colorize_info("=" * 70 + "\n"))
                 return
 

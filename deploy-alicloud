@@ -94,23 +94,8 @@ class DeployAlicloudCommand(DeployCommand):
         if value is None:
             return value
 
-        value = value.lower().replace(" ", "-")
-
-        if "aliyun_access_key" in ctx.params and "aliyun_secret_key" in ctx.params:
-            valid_regions = alicloud_list_regions(
-                aliyun_access_key=ctx.params["aliyun_access_key"],
-                aliyun_secret_key=ctx.params["aliyun_secret_key"],
-            )
-            if value not in valid_regions:
-                raise click.BadParameter(
-                    colorize_error(
-                        f'Invalid region: "{value}". Choose one of: '
-                        + ", ".join(valid_regions)
-                        + "."
-                    )
-                )
-
-        return value
+        # Parsing must not contact Alibaba before backend validation.
+        return value.lower().replace(" ", "-")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -212,6 +197,21 @@ class AlicloudDeployer(Deployer):
     def __init__(self, params, config):
         super().__init__(params, config)
 
+        self.require_local_backend()
+        if "aliyun_access_key" in self.params and "aliyun_secret_key" in self.params:
+            valid_regions = alicloud_list_regions(
+                aliyun_access_key=self.params["aliyun_access_key"],
+                aliyun_secret_key=self.params["aliyun_secret_key"],
+            )
+            if self.params["region"] not in valid_regions:
+                raise click.BadParameter(
+                    colorize_error(
+                        f'Invalid region: "{self.params["region"]}". Choose one of: '
+                        + ", ".join(valid_regions) + "."
+                    ),
+                    param_hint="--region",
+                )
+
         # auto-detect if region of deployment is in China
         if self.input_params["in_china"] == "auto" and params["region"][:2] == "cn":
             if self.params["debug"]:
@@ -245,7 +245,8 @@ class AlicloudDeployer(Deployer):
                 self.validate_ansible()
                 click.echo(colorize_info("\n" + "=" * 70))
                 click.echo(colorize_info("* [DRY-RUN] SUCCESS: Terraform plan and Ansible syntax checks passed!"))
-                click.echo(colorize_info("* No cloud resources were provisioned and no costs were incurred."))
+                click.echo(colorize_info("* No apply was performed. Planning can read cloud APIs "
+                                         "and acquire backend locks; it is not offline validation."))
                 click.echo(colorize_info("=" * 70 + "\n"))
                 return
 

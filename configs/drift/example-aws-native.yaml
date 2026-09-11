@@ -1,0 +1,10 @@
+{
+  "provider": "aws",
+  "provision": false,
+  "schedule_enabled": false,
+  "correction": "report_only",
+  "schedule": "17 3 * * *",
+  "retries": 0,
+  "timeout_seconds": 300,
+  "max_attempts_per_day": 1
+}

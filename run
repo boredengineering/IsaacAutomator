@@ -8,12 +8,11 @@ if [[ $(docker images -q "$TAG" 2> /dev/null) == '' ]]; then
   "${SELF_DIR}/build"
 fi
 
-# Forward selected credential env vars if they are set on the host.
-# AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY (and optional AWS_SESSION_TOKEN /
-# AWS_DEFAULT_REGION) take precedence over the SSO flow that stores creds in
-# state/.aws/. GCP/Azure creds are still persisted in state/ so deployments
-# stay self-contained when env vars are absent.
+# Forward only selected ambient identity variables, by name so values are not
+# exposed in Docker's process arguments. Backend and workload role selection
+# remains explicit in their respective configuration; this grants neither role.
 ENV_ARGS=()
+MOUNT_ARGS=()
 for var in \
   ALIYUN_ACCESS_KEY \
   ALIYUN_SECRET_KEY \
@@ -21,12 +20,146 @@ for var in \
   AWS_SECRET_ACCESS_KEY \
   AWS_SESSION_TOKEN \
   AWS_DEFAULT_REGION \
+  AWS_REGION \
+  AWS_ROLE_ARN \
+  AWS_ROLE_SESSION_NAME \
   AWS_PROFILE \
-  AWS_SSO_USE_DEVICE_CODE; do
+  AWS_SSO_USE_DEVICE_CODE \
+  GOOGLE_CLOUD_PROJECT \
+  GOOGLE_OAUTH_ACCESS_TOKEN \
+  CLOUDSDK_CORE_PROJECT \
+  ARM_CLIENT_ID \
+  ARM_TENANT_ID \
+  ARM_SUBSCRIPTION_ID \
+  ARM_USE_OIDC \
+  ARM_USE_AZUREAD \
+  ARM_USE_MSI \
+  AZURE_CLIENT_ID \
+  AZURE_TENANT_ID \
+  AZURE_SUBSCRIPTION_ID; do
   if [[ -n "${!var}" ]]; then
-    ENV_ARGS+=(-e "${var}=${!var}")
+    ENV_ARGS+=(-e "${var}")
   fi
 done
+
+# Strip trailing separators before each lstat-style check: Bash -L on link/
+# follows a directory link. Do not realpath/canonicalize away linked components.
+path_has_symlink() {
+  local check_path="$1"
+  while [[ "${check_path}" != / && -n "${check_path}" ]]; do
+    if [[ "${check_path}" == */ ]]; then
+      check_path="${check_path%/}"
+      continue
+    fi
+    if [[ -L "${check_path}" ]]; then
+      return 0
+    fi
+    check_path="$(dirname -- "${check_path}")"
+  done
+  return 1
+}
+
+# External credential/token references are explicitly mounted read-only. Do not
+# read their contents, copy them into the checkout, or forward an unusable host
+# path. Docker bind mounts require safe absolute paths; linked paths are refused.
+for var in AWS_WEB_IDENTITY_TOKEN_FILE AWS_SHARED_CREDENTIALS_FILE AWS_CONFIG_FILE \
+  GOOGLE_APPLICATION_CREDENTIALS CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE \
+  ARM_OIDC_TOKEN_FILE_PATH AZURE_FEDERATED_TOKEN_FILE; do
+  if [[ -n "${!var}" ]]; then
+    credential_path="${!var}"
+    if [[ "${credential_path}" != /* || ! -f "${credential_path}" || ! -r "${credential_path}" ||
+          "${credential_path}" == *','* || "${credential_path}" == *'"'* ||
+          "${credential_path}" == *$'\n'* ||
+          "${credential_path}" == *$'\r'* || "/${credential_path}/" == *'/../'* ]]; then
+      printf '%s\n' "Invalid external credential file reference: ${var}" >&2
+      exit 2
+    fi
+    if path_has_symlink "${credential_path}"; then
+      printf '%s\n' "Symlinked external credential file reference: ${var}" >&2
+      exit 2
+    fi
+    container_path="/run/isaac-credentials/${var}"
+    MOUNT_ARGS+=(--mount "type=bind,source=${credential_path},target=${container_path},readonly")
+    ENV_ARGS+=(-e "${var}=${container_path}")
+  fi
+done
+
+# Bootstrap administration state must survive --rm independently of workstations.
+# This is an explicit host-directory reference, not a forwarded secret/env value.
+if [[ -n "${ISAAC_BOOTSTRAP_STATE_ROOT:-}" ]]; then
+  admin_path="${ISAAC_BOOTSTRAP_STATE_ROOT}"
+  if [[ "${admin_path}" != /* || ! -d "${admin_path}" || ! -O "${admin_path}" ||
+        ! -r "${admin_path}" || ! -w "${admin_path}" || ! -x "${admin_path}" ||
+        "${admin_path}" == *','* || "${admin_path}" == *'"'* ||
+        "${admin_path}" == *$'\n'* || "${admin_path}" == *$'\r'* ||
+        "/${admin_path}/" == *'/../'* ]]; then
+    printf '%s\n' 'Bootstrap state requires an existing private absolute host directory.' >&2
+    exit 2
+  fi
+  if path_has_symlink "${admin_path}"; then
+    printf '%s\n' 'Linked bootstrap state directories are unsupported.' >&2
+    exit 2
+  fi
+  if ! admin_mode="$(stat -c '%a' -- "${admin_path}" 2>/dev/null)"; then
+    admin_mode="$(stat -f '%Lp' "${admin_path}" 2>/dev/null)" || admin_mode=""
+  fi
+  if [[ "${admin_mode}" != 700 ]]; then
+    printf '%s\n' 'Bootstrap state directory must have owner-only mode 0700.' >&2
+    exit 2
+  fi
+  MOUNT_ARGS+=(--mount "type=bind,source=${admin_path},target=/run/isaac-bootstrap-state")
+fi
+
+# Explicit upload/download directory, never an implicit home/root mount.
+# The Python entrypoint rewrites --local-dir to this stable container path.
+if [[ -n "${ISAAC_TRANSFER_LOCAL_DIR:-}" ]]; then
+  transfer_path="${ISAAC_TRANSFER_LOCAL_DIR}"
+  transfer_read_only="${ISAAC_TRANSFER_READ_ONLY:-}"
+  if [[ "${transfer_path}" != /* || -z "${transfer_path//\//}" ||
+        ! -d "${transfer_path}" || ! -r "${transfer_path}" || ! -x "${transfer_path}" ||
+        "${transfer_path}" == *','* || "${transfer_path}" == *'"'* ||
+        "${transfer_path}" == *$'\n'* || "${transfer_path}" == *$'\r'* ||
+        "/${transfer_path}/" == *'/../'* || "/${transfer_path}/" == *'/./'* ||
+        ( "${transfer_read_only}" != true && "${transfer_read_only}" != false ) ]]; then
+    printf '%s\n' 'Invalid explicit transfer directory or write scope.' >&2
+    exit 2
+  fi
+  if path_has_symlink "${transfer_path}"; then
+    printf '%s\n' 'Symlinked transfer directories are unsupported.' >&2
+    exit 2
+  fi
+  transfer_mount="type=bind,source=${transfer_path},target=/run/isaac-transfer-local"
+  if [[ "${transfer_read_only}" == true ]]; then
+    transfer_mount+=",readonly"
+  elif [[ ! -w "${transfer_path}" ]]; then
+    printf '%s\n' 'Download destination must be writable.' >&2
+    exit 2
+  fi
+  MOUNT_ARGS+=(--mount "${transfer_mount}")
+elif [[ -n "${ISAAC_TRANSFER_READ_ONLY:-}" ]]; then
+  printf '%s\n' 'Transfer write scope requires an explicit directory.' >&2
+  exit 2
+fi
+
+# Bind sources are resolved by the daemon, not the CLI host. Only local
+# endpoints are supported for external credentials; never infer remote files
+# from local metadata. DOCKER_CONTEXT overrides DOCKER_HOST, as in Docker CLI.
+if (( ${#MOUNT_ARGS[@]} )); then
+  if [[ -n "${DOCKER_CONTEXT:-}" ]]; then
+    docker_endpoint="$(docker context inspect "${DOCKER_CONTEXT}" --format '{{.Endpoints.docker.Host}}' 2>/dev/null)" || docker_endpoint=""
+  elif [[ -n "${DOCKER_HOST:-}" ]]; then
+    docker_endpoint="${DOCKER_HOST}"
+  else
+    docker_endpoint="$(docker context inspect --format '{{.Endpoints.docker.Host}}' 2>/dev/null)" || docker_endpoint=""
+  fi
+  case "${docker_endpoint}" in
+    unix:///?*|npipe:////./pipe/?*) ;;
+    *)
+      printf '%s\n' 'External bind mounts require a local Docker endpoint (Unix socket or local named pipe); remote or unresolved endpoints are unsupported.' >&2
+      exit 2
+      ;;
+  esac
+fi
 
 # clean up stale URL file
 OPEN_URL_FILE="${SELF_DIR}/.open-url"
@@ -55,12 +188,20 @@ WATCHER_PID=$!
 # Apple Silicon that forces QEMU emulation, under which the terraform provider
 # plugins crash. the deploy only orchestrates remote (x86) cloud VMs, so the
 # container's own arch does not matter. force an arch with DOCKER_DEFAULT_PLATFORM.
-docker run -it --rm --network host \
+TTY_ARGS=(-i)
+if [[ -t 0 && -t 1 ]]; then
+  TTY_ARGS+=(-t)
+fi
+docker run "${TTY_ARGS[@]}" --rm --network host \
   -v "${SELF_DIR}":/app \
   "${ENV_ARGS[@]}" \
+  "${MOUNT_ARGS[@]}" \
   "$TAG" "${*:-bash}"
+COMMAND_STATUS=$?
 
 # stop the background watcher
 kill "${WATCHER_PID}" 2>/dev/null
 wait "${WATCHER_PID}" 2>/dev/null
 rm -f "${OPEN_URL_FILE}"
+
+exit "${COMMAND_STATUS}"

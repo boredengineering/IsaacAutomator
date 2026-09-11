@@ -35,7 +35,7 @@ from src.python.aws import (
     aws_start_instance,
 )
 from src.python.azure import azure_login, azure_start_instance
-from src.python.gcp import gcp_get_instance_status, gcp_start_instance
+from src.python.gcp import gcp_get_instance_status, gcp_start_instance, gcp_instance_name
 from src.python.config import c as config
 from src.python.utils import (
     colorize_error,
@@ -100,8 +100,7 @@ def main(
         aws_validate_credentials(deployment_name, region=region, verbose=debug)
     elif "azure" == cloud:
         azure_login(verbose=debug)
-    elif "gcp" == cloud:
-        gcp_login(verbose=debug)
+
 
     # go through instance roles
 
@@ -152,7 +151,8 @@ def main(
             meta = read_meta(deployment_name, debug)
             zone = meta.get("params", {}).get("zone") or meta.get("input_params", {}).get("zone")
             project = meta.get("params", {}).get("project") or meta.get("input_params", {}).get("project")
-            instance_name = vm_id.split("/")[-1] if vm_id else f"{meta.get('params', {}).get('prefix', 'isaac')}-{deployment_name}-isaac-workstation-vm"
+            instance_name = gcp_instance_name(vm_id, project=project, zone=zone)
+            gcp_login(verbose=debug)
             gcp_start_instance(instance_name, zone=zone, project=project, verbose=debug)
             # wait for VM to start
             while True:

@@ -38,6 +38,17 @@ from src.python.utils import (
 )
 
 
+class _BackendChoice(click.Choice):
+    def convert(self, value, param, ctx):
+        try:
+            return super().convert(value, param, ctx)
+        except click.BadParameter:
+            raise click.BadParameter(
+                "Unsupported backend; choose local, gcs, s3 or azurerm.",
+                ctx=ctx, param=param,
+            ) from None
+
+
 class DeployCommand(click.core.Command):
     """
     Defines common cli options for "deploy-*" commands.
@@ -424,7 +435,7 @@ class DeployCommand(click.core.Command):
         # ingress cidr blocks
         help = (
             "CIDR blocks for ingress traffic on the created VM, "
-            + f'comma separated. Type "myip" to use your public IP ({get_my_public_ip(verbose="--debug" in sys.argv or os.environ.get("DEBUG", "0") == "1")}). '
+            + 'comma separated. Type "myip" to resolve your public IP during deployment. '
             + "Add /8, /16, or /24 to specify the subnet mask."
         )
         self.params.insert(
@@ -443,7 +454,7 @@ class DeployCommand(click.core.Command):
         # --profile / --security-profile
         help = (
             'Security & deployment profile. Valid values: "simple" ($0 added cost, auto-locked /32 IP firewall), '
-            + '"team" (<$0.10 added cost, remote state with locking), '
+            + '"team" (shared asset access, local state by default), '
             + '"enterprise" (KMS CMEK, secret manager, zero-trust private access), '
             + 'or any custom profile name / YAML path in configs/profiles/'
         )
@@ -474,9 +485,18 @@ class DeployCommand(click.core.Command):
                 ("--state-bucket",),
                 type=str,
                 default="",
-                help="Remote state bucket name (e.g. gs://my-state-bucket or 'auto').",
+                envvar="ISAAC_STATE_BUCKET",
+                help="Deprecated GCP-only state intent. Use --state-backend gcs with --backend-config instead.",
             ),
         )
+
+        self.params.extend([
+            click.Option(("--state-backend",), default="local", show_default=True,
+                         type=_BackendChoice(["local", "gcs", "s3", "azurerm"]),
+                         help="Explicit state backend choice. GCS execution is supported for GCP; S3/Azure execution remains unavailable. Omitted defaults never override a profile."),
+            click.Option(("--backend-config",), type=str,
+                         help="Path to a strict nonsecret backend YAML/JSON configuration. GCS deployment also requires an explicit --project."),
+        ])
 
         self.params.insert(
             len(self.params),

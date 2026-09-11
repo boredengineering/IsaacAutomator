@@ -1,0 +1,16 @@
+# Public schema example only; no resources are created or verified.
+terraform_state:
+  schema_version: 1
+  backend: s3
+  namespace: studio-dev
+  workspace: default
+  destination:
+    bucket: example-state-bucket
+    region: us-east-1
+    owner_account_id: "123456789012"
+    key_prefix: isaacautomator/v2
+  locking:
+    mode: native
+    timeout_seconds: 120
+  authentication:
+    mode: ambient

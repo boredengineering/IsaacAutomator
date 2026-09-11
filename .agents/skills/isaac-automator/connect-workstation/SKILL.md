@@ -38,7 +38,15 @@ capture. Use **NoMachine**, **NICE DCV**, **Sunshine + Moonlight**, or **Parsec*
 ./novnc <name>
 ```
 
-This prints a URL of the form `http://<ip>:6080/vnc.html?host=<ip>&port=6080&password=<vnc_password>&resize=scale`.
+For public-IP deployments this prints a noVNC URL without a password parameter;
+enter the password in the browser instead of exposing it in logs/browser history.
+For saved GCP IAP-only deployments, the command starts a foreground IAP tunnel to
+port 6080 on loopback. Open the printed localhost URL after gcloud reports that it
+is listening, and keep the command running. Use `--local-port 16080` if needed.
+Effective `iap.tunnelInstances.accessViaIAP` access is required; this command does
+not grant it or expose a public IP. The localhost URL belongs to the machine/network
+namespace running the tunnel; remote devcontainers may require an explicit local
+port-forward configured by the operator.
 
 ## KasmVNC (WebRTC browser desktop with native clipboard)
 

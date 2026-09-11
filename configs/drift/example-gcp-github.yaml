@@ -1,0 +1,27 @@
+# Offline WorkflowConfig schema, NOT detector DriftConfig.
+# Replace repository, source/image pins, identities, backend namespace and config.
+# Deliberately INVALID until real reviewed immutable source/image pins are supplied.
+# No workflow is installed/enabled by loading or generating this example.
+schema_version: 1
+repository: example/infrastructure
+protected_branch: main
+source_revision: REPLACE_WITH_REVIEWED_40_HEX_COMMIT
+runtime_image: REPLACE_WITH_APPROVED_IMAGE_AT_SHA256_DIGEST
+terraform_version: 1.10.5
+provider: gcp
+identity:
+  workload_identity_provider: projects/123456789/locations/global/workloadIdentityPools/drift/providers/github
+  service_account: drift@sample-project.iam.gserviceaccount.com
+config_path: configs/drift/production.yaml
+deployments: [gpu-a]
+backend_identity: studio/production/workstations
+namespace: studio
+scopes: [workstation_infrastructure]
+runner_labels: [ubuntu-24.04]
+timeout_minutes: 30
+max_parallel: 1
+schedule:
+  enabled: false
+  cron_utc: '17 */6 * * *'
+correction_mode: report_only
+notifications: job_summary

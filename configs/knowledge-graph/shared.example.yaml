@@ -1,0 +1,85 @@
+# INERT REVIEW EXAMPLE ONLY: no loader, CLI registration, endpoint or credentials.
+# Task 19 + Task 21 verification primitives, NOT Task 20 registry publication.
+# No shared service, provider, infrastructure, global agent settings or overlays.
+schema: ia-shared-example/v1
+enabled: false
+transport: explicitly_provided_local_bundle_only
+registry_provider: null
+remote_transport_implemented: false
+graph_admission_implemented: false
+
+# A human trust administrator must independently verify the issuer/organization
+# and immutable repository ID with the authoritative source provider. Display
+# names, checkout paths, fork names and a bundle's own claims are not enrollment.
+# These placeholders grant no trust. Never put private signing keys here.
+trust:
+  issuer: example-issuer
+  organization: example-team
+  repository_id: replace-with-authoritatively-verified-immutable-id
+  repository_name: team/public-code
+  key_id: replace-with-reviewed-key-id
+  public_key: null  # API requires 32 raw Ed25519 public-key bytes, pinned out of band.
+  openssl: /usr/bin/openssl  # Real Ed25519 verification, 5s timeout; missing support denies.
+  max_lease_seconds: 3600  # Review the acceptable offline revocation exposure window.
+  minimum_sequence: 1  # Obtain current floors out of band before a cold-cache import.
+  minimum_revocation_epoch: 1
+  revoked_generations: []
+  revoked_keys: []
+
+# No paths are automatically discovered or expanded; no default cache is used.
+# Supply absolute, nonsymlink, owner-only paths in an explicit Python API call.
+# The cache must be a separate empty directory (or this module's existing cache),
+# outside the repository, existing local graph cache, Terraform state and backups.
+local_bundle_directory: null
+quarantine_cache_directory: null
+
+# Protocol contract (not configurable limits):
+# - identity schema ia-shared-identity/v1; issuer + org + immutable repository ID
+#   + reviewed display name + exact 40/64-hex revision + admitted source SHA-256
+#   manifest + policy/extractor/locked-dependency SHA-256 digests + dirty: false.
+# - At most 2048 explicit relative source IDs. No checkout path enters identity.
+# - ia-shared-catalog/v1 signs canonical_json(payload) with Ed25519. Its envelope
+#   is {payload: <object>, signature: <base64 64-byte signature>}; no algorithm
+#   negotiation. All identity, generation, artifact, lease and sequence fields
+#   are signed. Catalog sequence is one stream per enrolled repository in v1;
+#   channel/per-policy catalogs require another reviewed protocol version.
+# - Exactly catalog.json (<=1 MiB), dataset.trig (<=16 MiB) and manifest.json
+#   (<=1 MiB). manifest.json is the portable identity, NOT the existing local
+#   publication manifest. generation = SHA-256(canonical_json(artifact descriptors)),
+#   each descriptor exactly {sha256: <hex>, size: <positive integer>}.
+# - Artifact schema ia-shared-opaque-canonical/v1: no archives/pickle/sidecars.
+#   RDF is UTF-8 checked and hashed but NEVER parsed or admitted by these modules.
+# - 8 retained bundle/staging directories maximum; identical import is idempotent.
+#   Quota exhaustion fails closed. Cleanup/retention/restore remain manual review
+#   gates; never delete/roll back replay checkpoints to make space.
+# - Directory/file modes are owner-only; descriptor walks reject symlinks,
+#   nonregular/hardlinked files and unsafe pointer names. Cache state and active
+#   pointer commit together under a lock. Uncertain commits retain complete bytes
+#   for readback. status() re-verifies and persists the latest observed UTC time.
+
+# Public API (Python only):
+#   portable_identity(**fields), identity_digest(identity), require_checkout(a, b)
+#   TrustPolicy(...), verify_envelope(bytes, trust, expected_identity, now=utc_int)
+#   Checkpoint.from_verified(payload, now=utc_int, previous=checkpoint)
+#   SharedClient(cache, trust, enabled=True).import_local(bundle, identity, now=...)
+#   SharedClient(...).status(identity, now=...)
+#   SharedClient(...).observe_catalog(envelope_bytes, identity, now=...)
+# observe_catalog authenticates withdrawals, preserves cumulative revocations and
+# invalidates the active pointer; revoked signing keys cannot authorize updates.
+# Client receipts say signature_and_bytes_only, matches_supplied_identity,
+# verified_cache and query_ready: false. The caller must independently capture
+# and authorize the expected source/policy/extractor fingerprints; supplying a
+# dict does NOT discover Git identity or establish actual checkout freshness.
+
+# Trust operations are NOT automated: administrator-approved key rotation must
+# retain checkpoints/revocations, use a new key ID and a separately pinned public
+# key, with a higher catalog sequence. Untrusted PRs/agents cannot enroll keys,
+# change policy pins, reset floors or publish. Disconnects cannot learn immediate
+# revocations or erase learned data: trusted-clock leases bound this exposure.
+# Cache/clock rollback by the owner cannot be prevented by local filesystem state.
+# Any later publisher needs separate approval and a confined public-source build,
+# RDF/SHACL validation and derived-view parity, not signatures/checksums alone.
+# UNIMPLEMENTED: provider selection, transport/authentication, publisher/catalog
+# CAS/approval receipts, key enrollment/discovery, snapshot/CLI integration,
+# confined RDF admission/JSON parity, graph queries, historical selection,
+# retention/backup recovery, agent/MCP integration, service/Neo4j hosting, pilot.

@@ -1,0 +1,88 @@
+# Approved EXTERNAL runtime config format for ./drift check --config PATH.
+# This is NOT a workflow/native-monitor generator config and not proof of health.
+# Copy to protected controller storage, review exact identities/paths, then bind
+# baseline_ref to the protected receipt from the verified successful apply.
+# Never use today's checkout, HEAD, guessed state discovery or a ready=true flag.
+# Example placeholders do not enroll a deployment; baseline_ref:null is partial.
+schema_version: 1
+deployment: gpu-a
+cloud: aws
+backend_config:
+  schema_version: 1
+  backend: local
+  namespace: default
+  workspace: default
+  locking:
+    mode: native
+    timeout_seconds: 30
+  authentication:
+    mode: ambient
+# Local operations need not authenticate just to invent an account scope.
+target_scope: null
+state_root: /srv/isaac/state
+# Must exactly equal state_root/deployment/.tfstate, no aliases or symlinks.
+local_state_path: /srv/isaac/state/gpu-a/.tfstate
+baseline_store: /srv/isaac/private-baselines
+# Replace with baseline-<64 lowercase hex> from BaselineStore.publish().
+baseline_ref: null
+# Approved current state binding; actual state must match EXACTLY. The verified
+# baseline receipt must have this lineage and a serial no greater than this one.
+expected_lineage: 00000000-0000-0000-0000-000000000001
+expected_serial: 1
+scope: workstation_infrastructure
+drift:
+  enabled: true
+  scopes: [workstation_infrastructure]
+  executor: on_demand
+  correction: report_only
+  command_timeout: 300
+  lock_timeout: 30
+  retention_days: 7
+# Optional explicit approved output root; no default disk report/history writes.
+# Parent must already exist with trusted ownership; leaf may be created 0700.
+# Must not overlap state_root or baseline_store in either direction.
+# report_root: /srv/isaac/drift-reports/gpu-a
+#
+# Runtime guarantees/limits:
+# - Only local backend + workstation_infrastructure is integrated. S3/GCS/Azure
+#   backend reads are blocked pending backend_controller review AND the service
+#   release gate. Other scopes require their own concrete adapter (exit 3).
+# - Readiness is derived from private receipt/source/input/lock digest checks,
+#   exact local path + lineage/current serial, current lifecycle marker absence,
+#   and revalidation under the controller lock and around native plan execution.
+# - migration.json, relocation.json, .tfstate.retired, backend.json,
+#   .isaac-claim-v1.json and errored.tfstate block this legacy-local adapter.
+#   Their absence is not a cloud ownership/health claim. Missing baseline is
+#   partial; no implicit snapshot creation, state adoption or apply occurs.
+# - No-lock recipes are conservatively restricted to provider-free expressions
+#   and outputs. Resource/data/provider declarations require a captured lock;
+#   init uses -lockfile=readonly. All module references are blocked until a
+#   reviewed resolver exists. Lexical matching can conservatively reject words
+#   in comments/strings too. Terraform source/providers remain trusted code;
+#   a refresh-enabled plan may read providers, but this bridge never calls apply.
+# - Public JSON excludes raw plans, values, inputs, provider errors and paths.
+#   Exit: 0 covered clean, 1 execution/config/storage error, 2 findings,
+#   3 incomplete/blocked. An output change is desired_change, not automatically
+#   evidence of unauthorized external resource drift.
+# - Explicit report_root writes private report-<digest>.json artifacts and a
+#   bounded HistoryStore under report_root/history (one immutable stream identity).
+#   History retention_days applies to observations, NOT immutable artifacts;
+#   artifact cleanup is an explicitly managed operator responsibility. No cloud
+#   report transport, heartbeat, notification or watchdog scheduling is implied.
+#   Denied/corrupt/conflicting history writes fail nonzero. Differing observations
+#   with the same second timestamp are rejected by HistoryStore; do not invent
+#   timestamps or retry writes automatically. Reconcile a changed stream identity
+#   using a separately approved root, never delete/reset history implicitly.
+#
+# Workflow compatibility:
+# The external workflow generator's config_path must reference a reviewed file
+# using THIS schema available inside the execution container, with the existing
+# state and private baseline store mounted at these exact absolute paths.
+# Generated invocation is supported without changing the pinned selection:
+# ./drift check gpu-a --config /approved/runtime.yaml \
+#   --scope workstation_infrastructure --format json --report-dir /approved/reports
+# Deployment/scope are assertions against this config, not overrides. report-dir
+# explicitly approves a report root; if report_root is also configured they must
+# match. A remote ephemeral hosted runner lacking local state/baselines is NOT
+# a supported healthy deployment. Native cloud-monitor configs are separate and
+# do not enable this runtime's intentionally blocked remote lifecycle path.

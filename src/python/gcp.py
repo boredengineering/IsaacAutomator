@@ -19,9 +19,31 @@ Utils for GCP
 """
 
 from datetime import datetime, timezone
+import re
 import click
 
 from src.python.utils import colorize_error, colorize_info, shell_command
+
+
+def gcp_instance_name(vm_id, *, project, zone):
+    """Validate an authoritative VM ID against explicit saved workload scope."""
+    project_pattern = r'[a-z][a-z0-9-]{4,28}[a-z0-9]'
+    zone_pattern = r'[a-z][a-z0-9-]*[0-9]-[a-z]'
+    name_pattern = r'[a-z](?:[a-z0-9-]{0,61}[a-z0-9])?'
+    if (not isinstance(project, str) or not re.fullmatch(project_pattern, project)
+            or not isinstance(zone, str) or not re.fullmatch(zone_pattern, zone)):
+        raise click.ClickException('Saved GCP project and zone are required and must be valid; ambient defaults are not used.')
+    if isinstance(vm_id, str):
+        match = re.fullmatch(
+            rf'(?:https://(?:www|compute)\.googleapis\.com/compute/v1/)?'
+            rf'projects/({project_pattern})/zones/({zone_pattern})/instances/({name_pattern})', vm_id)
+        if match:
+            if match.group(1) != project or match.group(2) != zone:
+                raise click.ClickException('Authoritative GCP VM ID disagrees with saved project and zone.')
+            return match.group(3)
+        if re.fullmatch(name_pattern, vm_id):
+            return vm_id
+    raise click.ClickException('Authoritative GCP VM ID is missing or invalid; instance names are never guessed.')
 
 
 def _build_gcloud_args(zone: str = None, project: str = None) -> str:

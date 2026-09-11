@@ -2,16 +2,12 @@
 Workstation Deep Inspector Modal for isaac9s
 """
 import json
-from pathlib import Path
 from rich.text import Text
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.screen import ModalScreen
 from textual.widgets import Button, Label, Static
-
-from src.tui.backend import REPO_ROOT
-
 
 class WorkstationInspectorModal(ModalScreen):
     """Deep inspection modal displaying cloud metadata, networking, burn rate, and state."""
@@ -55,34 +51,12 @@ class WorkstationInspectorModal(ModalScreen):
         return "~$0.95 / hr", "Cloud GPU Instance"
 
     def get_state_content(self) -> str:
-        path_str = self.workstation.get("path")
-        if not path_str:
-            return "No persistent cloud state file found (Local bare-metal node)."
-
-        ws_dir = Path(path_str)
-        tfstate = ws_dir / ".tfstate"
-        meta = ws_dir / "meta.json"
-
-        summary = {}
-        if meta.exists():
-            try:
-                with open(meta) as f:
-                    summary["meta_params"] = json.load(f).get("params", {})
-            except Exception as e:
-                summary["meta_error"] = str(e)
-
-        if tfstate.exists():
-            try:
-                with open(tfstate) as f:
-                    raw_tf = json.load(f)
-                    summary["outputs"] = raw_tf.get("outputs", {})
-                    summary["resources_count"] = len(raw_tf.get("resources", []))
-            except Exception as e:
-                summary["tfstate_error"] = str(e)
-
-        if not summary:
-            return f"State directory: {ws_dir} (empty or unreadable state)"
-
+        # Controller inventory is already projected from the shared descriptor
+        # schema. Never render raw Terraform outputs/params or secret references.
+        summary = {key: self.workstation.get(key, "unknown") for key in
+                   ("backend", "namespace", "attachment", "backend_access", "status")}
+        summary["remote_execution"] = "blocked pending production gates"
+        summary["vm_status"] = "unknown (state metadata is not a live VM probe)"
         return json.dumps(summary, indent=2)
 
     def compose(self) -> ComposeResult:
@@ -99,6 +73,8 @@ class WorkstationInspectorModal(ModalScreen):
             yield Label(f"Workstation Deep Inspector: [bold cyan]{name}[/]", id="dialog-title")
 
             with VerticalScroll(id="inspector-body"):
+                yield Static(Text("STATE BACKEND (read-only)\n" + self.get_state_content()),
+                             id="inspector-backend", classes="box-panel")
                 yield Static(
                     f"[bold white]GENERAL METADATA[/]\n"
                     f"  Name:             [cyan]{name}[/]\n"
@@ -112,7 +88,7 @@ class WorkstationInspectorModal(ModalScreen):
                     f"[bold white]BILLING & RUNTIME TELEMETRY[/]\n"
                     f"  Estimated Rate:   [yellow]{rate}[/]\n"
                     f"  Billing Category: {billing_desc}\n"
-                    f"  Lifecycle State:  {'Active Cost Accumulation' if status in ('PROVISIONED', 'RUNNING') else 'Cost Paused (Storage Only)'}\n\n"
+                    f"  Lifecycle State:  {'Active Cost Accumulation' if status in ('PROVISIONED', 'RUNNING') else 'Unknown (not a live VM status check)'}\n\n"
                     f"[bold white]PHYSICAL AI COMPATIBILITY[/]\n"
                     f"  Isaac Sim:        6.0.1 Standalone Kit\n"
                     f"  Isaac Lab:        v3.0.0-beta2 (Omniverse Kit Compatible)\n"
@@ -123,7 +99,7 @@ class WorkstationInspectorModal(ModalScreen):
 
             with Horizontal(classes="modal-btn-bar"):
                 yield Button("Connect [c]", id="btn-inspect-connect", variant="primary")
-                yield Button("Toggle Raw State [t]", id="btn-inspect-raw", variant="default")
+                yield Button("Safe State Summary [t]", id="btn-inspect-raw", variant="default")
                 yield Button("Close [Esc / q]", id="btn-inspect-close", variant="error")
 
     def toggle_state_view(self) -> None:
@@ -131,7 +107,7 @@ class WorkstationInspectorModal(ModalScreen):
         details = self.query_one("#inspector-details", Static)
         if self.show_raw_state:
             state_json = self.get_state_content()
-            details.update(f"[bold cyan]Raw Terraform & Meta State:[/]\n\n{state_json}")
+            details.update(Text("Safe backend summary (no raw state):\n\n" + state_json))
         else:
             name = self.workstation.get("name", "workstation")
             cloud = self.workstation.get("cloud", "UNKNOWN")

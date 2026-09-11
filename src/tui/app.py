@@ -2,7 +2,7 @@
 isaac9s - The k9s-style Terminal User Interface for Isaac Automator & Installer
 """
 import os
-import shutil
+import asyncio
 import subprocess
 import time
 from datetime import datetime
@@ -24,7 +24,7 @@ from textual.widgets import (
     TabPane,
 )
 
-from src.tui.backend import INSTALLER_BIN, REPO_ROOT, WorkstationBackend
+from src.tui.backend import INSTALLER_BIN, REPO_ROOT, load_deployment_inventory, prepare_deployment_command, redact_command_text
 from src.tui.screens import (
     CloudAuthBridgeModal,
     DeployWorkstationModal,
@@ -38,6 +38,33 @@ from src.tui.screens import (
     WorkstationsPane,
 )
 from src.tui.telemetry import SystemTelemetry
+
+
+class BackendAwareWorkstationsPane(WorkstationsPane):
+    """Keep the existing fleet view; load controller receipts off the UI loop."""
+
+    def refresh_workstations(self) -> None:
+        self.run_worker(self.load_workstations(), group="backend-inventory", exclusive=True)
+
+    async def load_workstations(self, *, timeout: float = 5.0) -> None:
+        try:
+            self.current_vms = await load_deployment_inventory(timeout=timeout)
+        except (OSError, ValueError, asyncio.TimeoutError):
+            self.current_vms = [{"name": "Controller state unavailable", "cloud": "UNKNOWN",
+                                 "status": "STATE UNKNOWN / VM UNKNOWN", "gpu": "unknown", "ip": "N/A",
+                                 "profile": "Unknown", "backend_access": "unknown", "attachment": "unreadable"}]
+        self.render_workstations()
+
+    def render_workstations(self) -> None:
+        table = self.query_one("#workstations-table", DataTable)
+        table.clear()
+        if not self.current_vms:
+            table.add_row("local-workstation", "BARE-METAL", Text("READY", style="green"),
+                          "Physical Host", "127.0.0.1", "Simple ($0/mo)")
+            return
+        for vm in self.current_vms:
+            table.add_row(Text(vm["name"]), Text(vm["cloud"]), Text(vm["status"], style="yellow"),
+                          Text(vm["gpu"]), Text(vm["ip"]), Text(vm.get("profile", "Unknown")))
 
 
 class TelemetryBanner(Static):
@@ -96,6 +123,7 @@ class Isaac9sApp(App):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.active_proc: subprocess.Popen | None = None
+        self.backend_dispatch_worker = None
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
@@ -106,7 +134,7 @@ class Isaac9sApp(App):
                 yield SubsystemsPane(id="pane-subsystems")
 
             with TabPane("Workstations & Fleet [2]", id="tab-workstations"):
-                yield WorkstationsPane(id="pane-workstations")
+                yield BackendAwareWorkstationsPane(id="pane-workstations")
 
             with TabPane("Real-Time Logs [3]", id="tab-logs"):
                 yield LogsPane(id="pane-logs")
@@ -132,7 +160,7 @@ class Isaac9sApp(App):
                         "  [bold white]?[/]: Open this Help reference\n"
                         "  [bold white]c[/]: Open Remote Desktop selector modal (noVNC, NoMachine, Sunshine, SSH)\n"
                         "  [bold white]p[/]: Run hardware probe & diagnostic tests\n"
-                        "  [bold white]h[/]: Run automated state drift reconciliation & healing\n"
+                        "  [bold white]h[/]: Preview local installer tooling repair (not cloud drift)\n"
                         "  [bold white]a[/]: Open Cloud Authentication & SSO bridge modal\n"
                         "  [bold white]s[/]: Start highlighted workstation\n"
                         "  [bold white]x[/]: Stop highlighted workstation (pauses billing)\n"
@@ -148,10 +176,10 @@ class Isaac9sApp(App):
                         "  ./isaac9s                   Launch interactive terminal cockpit\n"
                         "  ./deploy-<cloud> --dry-run  Test Terraform & Ansible dry-run\n"
                         "  ./isaac-installer doctor    Pre-flight audit in terminal\n"
-                        "  ./isaac-installer repair    Reconcile and heal drift\n\n"
+                        "  ./isaac-installer repair    Preview local tooling repair; cloud drift is separate\n\n"
                         "[bold cyan]Security Profiles:[/]\n"
                         "  Tier 1: Simple Mode        $0.00 / mo, Dynamic /32 IP lock, Direct Outbound\n"
-                        "  Tier 2: Collaborative      <$0.10 / mo, Cloud remote state with native locking\n"
+                        "  Tier 2: Collaborative      Local state by default; remote backend requires explicit opt-in\n"
                         "  Tier 3: Enterprise         ~$35-$180 / mo, KMS CMEK keys, Cloud Secret Manager, Zero-Trust IAP\n\n"
                         "[bold cyan]Cloud Authentication Wizards (SSO / Device Flow):[/]\n"
                         "  AWS SSO Login:             aws sso login --use-device-code\n"
@@ -230,11 +258,11 @@ class Isaac9sApp(App):
         self.log_message("[bold green]Subsystem probe completed.[/]")
 
     def action_run_heal(self) -> None:
-        self.log_message("[bold yellow]Executing self-healing state drift repair...[/]")
+        self.log_message("[bold yellow]Previewing local installer tooling repair only. Cloud drift is UNKNOWN (not checked).[/]")
         if INSTALLER_BIN.exists():
             self.run_async_command(f"{INSTALLER_BIN} repair --dry-run")
         else:
-            self.log_message("[green]No drift detected. System state is healthy.[/]")
+            self.log_message("[yellow]Local installer unavailable: tooling health UNKNOWN. Cloud drift not checked; no repair performed.[/]")
 
     def action_run_audit(self) -> None:
         self.log_message("[bold cyan]Running pre-flight architecture audit...[/]")
@@ -244,6 +272,9 @@ class Isaac9sApp(App):
 
     def action_run_start(self) -> None:
         selected_vm = self.workstations_pane.get_selected_workstation()
+        if selected_vm.get("attachment") not in (None, "legacy-local"):
+            self.notify("Start blocked: saved attachment is not verified for remote execution.", severity="warning")
+            return
         name = selected_vm.get("name", "workstation")
         if name == "local-workstation" or selected_vm.get("cloud") == "BARE-METAL":
             self.log_message("[bold yellow]Notice:[/] local-workstation is a bare-metal node (always running).")
@@ -257,6 +288,9 @@ class Isaac9sApp(App):
 
     def action_run_stop(self) -> None:
         selected_vm = self.workstations_pane.get_selected_workstation()
+        if selected_vm.get("attachment") not in (None, "legacy-local"):
+            self.notify("Stop blocked: saved attachment is not verified for remote execution.", severity="warning")
+            return
         name = selected_vm.get("name", "workstation")
         if name == "local-workstation" or selected_vm.get("cloud") == "BARE-METAL":
             self.log_message("[bold yellow]Notice:[/] local-workstation is a bare-metal node. Cloud stop does not apply.")
@@ -277,6 +311,8 @@ class Isaac9sApp(App):
         self.log_message("[bold cyan]All tab data refreshed.[/]")
 
     def action_cancel_running_process(self) -> None:
+        if self.backend_dispatch_worker is not None:
+            self.backend_dispatch_worker.cancel()
         if self.active_proc and self.active_proc.poll() is None:
             pid = self.active_proc.pid
             self.log_message(f"[bold red]Aborting active subprocess (PID {pid})...[/]")
@@ -304,27 +340,8 @@ class Isaac9sApp(App):
             return
 
         self.action_tab_logs()
-        self.log_message(f"[bold white]$ {cmd}[/]")
-
-        # GCP ADC Pre-check & auto-recovery
-        if "deploy-gcp" in cmd:
-            adc_path = Path(os.environ.get("GOOGLE_APPLICATION_CREDENTIALS") or os.path.expanduser("~/.config/gcloud/application_default_credentials.json"))
-            if not adc_path.exists():
-                legacy_dir = Path(os.path.expanduser("~/.config/gcloud/legacy_credentials"))
-                found_adc = None
-                if legacy_dir.exists():
-                    for acc in legacy_dir.iterdir():
-                        cand = acc / "adc.json"
-                        if cand.exists():
-                            found_adc = cand
-                            break
-                if found_adc:
-                    try:
-                        adc_path.parent.mkdir(parents=True, exist_ok=True)
-                        shutil.copyfile(found_adc, adc_path)
-                        self.log_message(f"[dim cyan]Recovered GCP Application Default Credentials from {found_adc.parent.name}[/]")
-                    except Exception:
-                        pass
+        display_cmd = redact_command_text(cmd)
+        self.log_message(f"[bold white]$ {display_cmd}[/]")
 
         def worker():
             env = os.environ.copy()
@@ -343,10 +360,10 @@ class Isaac9sApp(App):
                 )
                 self.active_proc = proc
                 pid = proc.pid
-                self.call_from_thread(self.logs_pane.set_proc_running, pid, cmd)
+                self.call_from_thread(self.logs_pane.set_proc_running, pid, display_cmd)
 
                 for line in iter(proc.stdout.readline, ""):
-                    clean = line.rstrip("\r\n")
+                    clean = redact_command_text(cmd, line.rstrip("\r\n"))
                     if clean:
                         self.call_from_thread(self.log_message, f"  {clean}")
 
@@ -365,7 +382,7 @@ class Isaac9sApp(App):
                     )
                     self.call_from_thread(self.logs_pane.set_proc_idle, f"EXIT {proc.returncode}")
             except Exception as e:
-                self.call_from_thread(self.log_message, f"[bold red]Subprocess execution error: {e}[/]")
+                self.call_from_thread(self.log_message, f"[bold red]Subprocess execution error: {redact_command_text(cmd, str(e))}[/]")
                 self.call_from_thread(self.logs_pane.set_proc_idle, "ERROR")
             finally:
                 self.active_proc = None
@@ -421,6 +438,16 @@ class Isaac9sApp(App):
     def on_deploy_submitted(self, result: dict | None) -> None:
         if not result:
             return
+        self.backend_dispatch_worker = self.run_worker(
+            self.dispatch_deployment(result), group="backend-dispatch", exclusive=True)
+
+    async def dispatch_deployment(self, result: dict) -> None:
+        try:
+            cmd = await prepare_deployment_command(result, timeout=5.0)
+        except (ValueError, OSError, asyncio.TimeoutError):
+            self.notify("Deployment blocked: check explicit project and backend configuration. "
+                        "Remote execution is not enabled; validate its config offline.", severity="error")
+            return
         name = result.get("name", "workstation")
         cloud = result.get("cloud", "gcp")
         gpu = result.get("gpu", "")
@@ -428,47 +455,7 @@ class Isaac9sApp(App):
         spot = result.get("spot", False)
         flex_start = result.get("flex_start", False)
         profile = result.get("profile", "simple")
-        demos = result.get("demos", [])
         dry_run = result.get("dry_run", False)
-
-        deploy_script = REPO_ROOT / f"deploy-{cloud}"
-        cmd = (
-            f"{deploy_script} "
-            f"--deployment-name {name} "
-            f"--instance-type {gpu} "
-            f"--profile {profile} "
-            f"--existing replace "
-            f"--ingress-cidrs 0.0.0.0/0 "
-            f"--isaacsim latest "
-            f"--isaaclab latest "
-            f"--isaaclab-arena latest "
-            f"--no-upload"
-        )
-        if cloud == "gcp":
-            res = subprocess.run(["gcloud", "config", "get-value", "project"], capture_output=True, text=True)
-            project = res.stdout.strip() or "cybernetic-renan"
-            cmd += f" --project {project} --isaac-workstation-gpu-count 1"
-            if zone and zone != "default":
-                cmd += f" --zone {zone}"
-            if flex_start:
-                cmd += " --flex-start"
-            elif spot:
-                cmd += " --spot --auto-restore"
-        elif cloud in ("aws", "alicloud"):
-            if zone and zone != "default":
-                cmd += f" --region {zone}"
-            if spot and cloud == "aws":
-                cmd += " --spot"
-        elif cloud == "azure":
-            if zone and zone != "default":
-                cmd += f" --region {zone}"
-
-        if dry_run:
-            cmd += " --dry-run"
-        if demos:
-            cmd += f" --demos {','.join(demos)}"
-        else:
-            cmd += " --demos no"
 
         if flex_start:
             sched_desc = " [FLEX-START DWS]"

@@ -238,7 +238,10 @@ class TestArtifactRegistry(unittest.TestCase):
                     deployer.params["cloud"] = "aws"
                 else:
                     deployer.tf_outputs["cloud"] = "aws"
-                with self.assertRaisesRegex(click.ClickException, "GCP"):
+                # Fresh Terraform output is now checked against the deployer
+                # cloud before the registry-specific handoff validation.
+                message = "GCP" if source == "params" else "cloud output.*inconsistent"
+                with self.assertRaisesRegex(click.ClickException, message):
                     deployer.create_ansible_inventory()
                 deployer.save_meta()
                 del deployer

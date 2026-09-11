@@ -225,6 +225,10 @@ class AWSDeployer(Deployer):
         self.output_deployment_info(extra_text=extra_info, print_text=print_text)
 
     def main(self):
+        # Reject unsupported/saved remote backends before credential access.
+        self.require_local_backend()
+        aws_validate_credentials(verbose=self.params["debug"])
+
         # ask what to do if deployment already exists
         self.ask_existing_behavior()
 
@@ -252,7 +256,8 @@ class AWSDeployer(Deployer):
                 self.validate_ansible()
                 click.echo(colorize_info("\n" + "=" * 70))
                 click.echo(colorize_info("* [DRY-RUN] SUCCESS: Terraform plan and Ansible syntax checks passed!"))
-                click.echo(colorize_info("* No cloud resources were provisioned and no costs were incurred."))
+                click.echo(colorize_info("* No apply was performed. Planning can read cloud APIs "
+                                         "and acquire backend locks; it is not offline validation."))
                 click.echo(colorize_info("=" * 70 + "\n"))
                 return
 
@@ -294,10 +299,6 @@ def main(**params):
 
 if __name__ == "__main__":
     if os.path.exists("/.dockerenv"):
-        # set DEBUG env var if --debug option is used, so that pre-click code can also see debug mode
-        debug = "--debug" in sys.argv or os.environ.get("DEBUG", "0") == "1"
-        # validate AWS credentials and prompt for new ones if needed
-        aws_validate_credentials(verbose=debug)
         # run command
         main()
     else:

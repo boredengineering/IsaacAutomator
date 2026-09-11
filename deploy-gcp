@@ -89,16 +89,8 @@ class DeployGCPCommand(DeployCommand):
             self.param_index("zone") + 1,
             click.core.Option(
                 ("--project",),
-                prompt=colorize_prompt(f"* {help_message}"),
                 callback=self.project_callback,
-                default=shell_command(
-                    "gcloud config list --format 'value(core.project)'",
-                    verbose=False,
-                    exit_on_error=False,
-                    capture_output=True,
-                )
-                .stdout.decode("utf-8")
-                .strip(),
+                default=None,
                 help=help_message,
             ),
         )
@@ -201,12 +193,25 @@ class GCPDeployer(Deployer):
 
     cloud = "gcp"
 
-    def __init__(self, params, config):
-        super().__init__(params, config)
-
     def main(self):
-        # ask what to do if deployment already exists
+        # Restore and validate existing configuration before any cloud discovery.
         self.ask_existing_behavior()
+
+        # Discovery and prompting must wait until backend intent is validated.
+        if self.params.get("project") is None:
+            self.require_local_backend()
+            default_project = shell_command(
+                "gcloud config list --format 'value(core.project)'",
+                verbose=False,
+                exit_on_error=False,
+                capture_output=True,
+            ).stdout.decode("utf-8").strip()
+            self.params["project"] = click.prompt(
+                colorize_prompt("* Project ID (see https://console.cloud.google.com/cloud-resource-manager)"),
+                default=default_project,
+                value_proc=lambda value: DeployGCPCommand.project_callback(None, None, value),
+            )
+            self.input_params["project"] = self.params["project"]
 
         if self.existing_behavior != "run_ansible":
             # create tfvars file, deal with existing deployment
@@ -331,7 +336,8 @@ class GCPDeployer(Deployer):
                 self.validate_ansible()
                 click.echo(colorize_info("\n" + "=" * 70))
                 click.echo(colorize_info("* [DRY-RUN] SUCCESS: Terraform plan and Ansible syntax checks passed!"))
-                click.echo(colorize_info("* No cloud resources were provisioned and no costs were incurred."))
+                click.echo(colorize_info("* No apply was performed. Planning can read cloud APIs "
+                                         "and acquire backend locks; it is not offline validation."))
                 click.echo(colorize_info("=" * 70 + "\n"))
                 return
 

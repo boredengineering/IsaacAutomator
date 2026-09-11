@@ -1,0 +1,8 @@
+# Verified public upstream refs/tags/v4.2.1 using git ls-remote.
+name: AWS detection OIDC
+uses: aws-actions/configure-aws-credentials@b47578312673ae6fa5b5096b330d9fbac3d116df
+with:
+  role-to-assume: @@ROLE_ARN@@
+  aws-region: @@REGION@@
+  audience: sts.amazonaws.com
+  role-session-name: isaac-drift-detection

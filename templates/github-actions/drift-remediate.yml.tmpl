@@ -1,0 +1,14 @@
+# REMEDIATION GENERATION UNAVAILABLE — intentionally no executable YAML.
+# Never turn this into a job gated only by `environment: NAME` or dispatch input.
+# Required implementation boundary before any correction workflow can be emitted:
+# - authenticated protected-environment settings/review verification receipt;
+# - independently configured trust anchor (not a detector-writable JSON flag);
+# - repository plan/visibility supports required reviewers, prevent-self-review,
+#   protected deployment branches and no administrator bypass;
+# - separate workload/backend-admin identity, never the detector role;
+# - approval bound to exact saved plan, source/input/lock digests, backend identity,
+#   live observations and expiry, with protected report/plan storage;
+# - fail closed on stale, altered, self-approved, replayed or unverifiable receipts.
+# Until then, WorkflowConfig rejects every correction mode except report_only.
+# An external signed approval mechanism is also unsupported until its independent
+# issuer/trust-anchor and protected transport are actually integrated and tested.

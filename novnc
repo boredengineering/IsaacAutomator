@@ -18,11 +18,17 @@
 
 
 import os
+import ipaddress
+import shlex
+import subprocess
 import sys
+from pathlib import Path
+from urllib.parse import urlencode
 
 import click
 
 from src.python.config import c as config
+from src.python.gcp import gcp_instance_name
 from src.python.utils import (
     colorize_error,
     colorize_info,
@@ -66,10 +72,13 @@ def deployments_callback(ctx, param, value):
     type=click.Choice(INSTANCE_ROLE_NAMES),
     help="Instance role",
 )
+@click.option('--local-port', default=6080, type=click.IntRange(1024, 65535),
+              help='Loopback port for an IAP tunnel; keep this command running.')
 def main(
     instance_role: str,
     debug: bool,
     deployment_name: str,
+    local_port: int,
 ):
     vm_ip = read_tf_output(deployment_name, f"{instance_role}_ip", verbose=debug)
 
@@ -82,9 +91,43 @@ def main(
         raise click.Abort()
 
     meta = read_meta(deployment_name, verbose=debug)
-    vnc_password = meta["input_params"].get("vnc_password", "")
+    params = meta.get('params', {})
+    cloud = read_tf_output(deployment_name, 'cloud', verbose=debug)
+    iap = read_tf_output(deployment_name, 'iap_enabled', verbose=debug)
+    iap = str(params.get('enable_iap_only', False) if iap == '' else iap).lower()
+    if iap not in ('true', 'false'):
+        raise click.ClickException('Invalid IAP setting; refusing an ambiguous connection.')
+    if iap == 'true':
+        if cloud != 'gcp':
+            raise click.ClickException('IAP tunnel requires an authoritative GCP deployment.')
+        try:
+            instance = gcp_instance_name(
+                read_tf_output(deployment_name, f'{instance_role}_vm_id', verbose=debug),
+                project=params.get('project'), zone=params.get('zone'))
+        except ValueError as exc:
+            raise click.ClickException(str(exc)) from None
+        url = f'http://127.0.0.1:{local_port}/vnc.html?resize=scale'
+        click.echo(colorize_info(f'* When gcloud reports the tunnel is listening, open {url}'))
+        click.echo('Keep this command running. Enter the VNC password in the browser, not in the URL.')
+        try:
+            result = subprocess.run([
+                'gcloud', 'compute', 'start-iap-tunnel', instance, '6080',
+                f'--local-host-port=127.0.0.1:{local_port}',
+                f"--project={params['project']}", f"--zone={params['zone']}", '--quiet'],
+                shell=False, check=False)
+        except (OSError, subprocess.SubprocessError):
+            raise click.ClickException('IAP tunnel could not start; verify gcloud access.') from None
+        if result.returncode:
+            raise click.exceptions.Exit(result.returncode if result.returncode > 0 else 128 - result.returncode)
+        return
 
-    url = f"http://{vm_ip}:6080/vnc.html?host={vm_ip}&port=6080&password={vnc_password}&resize=scale"
+    try:
+        address = ipaddress.ip_address(vm_ip)
+    except ValueError:
+        raise click.ClickException('No valid public IP; verify the saved private-access settings.') from None
+    host = f'[{address}]' if address.version == 6 else str(address)
+    query = urlencode({'host': str(address), 'port': 6080, 'resize': 'scale'})
+    url = f"http://{host}:6080/vnc.html?{query}"
     click.echo(colorize_info(f"* noVNC URL: {url}"))
 
     if os.path.exists("/.dockerenv"):
@@ -99,4 +142,6 @@ if __name__ == "__main__":
         main()
     else:
         # we're outside, start docker container first
-        shell_command(f"./run '{' '.join(sys.argv)}'", verbose=True)
+        raise SystemExit(subprocess.call([
+            str(Path(__file__).resolve().parent / 'run'),
+            shlex.join(['./novnc', *sys.argv[1:]])]))

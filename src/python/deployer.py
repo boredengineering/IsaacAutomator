@@ -14,7 +14,10 @@
 # limitations under the License.
 # endregion
 
+from contextlib import contextmanager
 import json
+import copy
+import ipaddress
 import os
 import re
 import shlex
@@ -22,6 +25,11 @@ import sys
 from pathlib import Path
 
 import click
+from src.python.backend_selection import BackendSelectionError, load_profile_yaml, select_backend
+from src.python.terraform_backend import BackendSpec
+from src.python.terraform_runner import TerraformRunner, TerraformRunnerError
+from src.python.terraform_sources import workstation_source_files
+from src.python.backend_runtime import load_backend_record, runtime_guard, write_private_metadata
 
 from src.python.debug import debug_break  # noqa
 from src.python.utils import (
@@ -30,8 +38,8 @@ from src.python.utils import (
     colorize_prompt,
     colorize_result,
     get_my_public_ip,
-    read_meta,
     read_tf_output,
+    require_legacy_local_backend,
     shell_command,
     subnet_from_ip,
 )
@@ -39,6 +47,9 @@ from src.python.utils import (
 
 class Deployer:
     cloud = None
+    _BACKEND_CONTROLLER_FIELDS = frozenset({
+        'terraform_state', 'state_backend', 'state_bucket', 'backend_config', 'profile_spec', 'backend_runtime',
+    })
 
     def __init__(self, params, config):
         self._persistence_ready = False
@@ -48,6 +59,15 @@ class Deployer:
         self.params = params
         self.config = config
         self.existing_behavior = None
+        saved = self.require_saved_backend()
+        if saved is not None:
+            if self.cloud != saved.backend_spec.cloud:
+                raise click.ClickException('Saved backend cloud cannot be changed.')
+            self.params.setdefault('terraform_state', saved.backend_spec.to_dict())
+            if self.params.get('project') is None:
+                self.params['project'] = saved.target_scope
+            self.params['backend_runtime'] = {'identity': saved.identity, 'status': saved.status,
+                                             'lineage': saved.lineage}
 
         # save original params so we can recreate command line
         self.input_params = params.copy()
@@ -212,7 +232,7 @@ class Deployer:
 
         try:
             spec = load_profile_spec(str(profile_name), repo_root=self.config.get("app_dir"))
-        except RegistryProfileError as exc:
+        except (RegistryProfileError, BackendSelectionError) as exc:
             raise click.ClickException(str(exc)) from exc
 
         if not spec:
@@ -227,6 +247,12 @@ class Deployer:
             sys.exit(1)
 
         tier = spec.get("tier", "simple")
+        if not spec.get("path") and spec.get("name") in ("team", "enterprise"):
+            click.echo(
+                "Warning: built-in team/enterprise now use local state by default; "
+                "remote state requires explicit --state-backend and --backend-config opt-in. "
+                "GCS lifecycle is supported; S3/Azure workstation mutation is not enabled.", err=True,
+            )
         self.params["security_profile"] = tier
         self.params["profile"] = profile_name
         self.params["profile_spec"] = spec
@@ -248,11 +274,131 @@ class Deployer:
             self.params["enable_oslogin"] = spec.get("enable_oslogin", False)
         if "enable_secrets" not in self.params:
             self.params["enable_secrets"] = spec.get("enable_secrets", False)
-        if "state_bucket" not in self.params or not self.params.get("state_bucket"):
-            self.params["state_bucket"] = spec.get("state_bucket", "")
+        backend_profile = dict(spec)
+        if 'terraform_state' in self.params:
+            backend_profile['terraform_state'] = self.params['terraform_state']
+        try:
+            backend = select_backend(
+                self.params, backend_profile, self.cloud or 'aws',
+                click.get_current_context(silent=True),
+            )
+        except BackendSelectionError as exc:
+            raise click.ClickException(str(exc)) from None
+        if backend.backend not in ('local', 'gcs'):
+            raise click.ClickException(
+                "Remote backend lifecycle is not implemented safely; deployment is refused "
+                "until verified attachment/migration support is available."
+            )
+        self.params['terraform_state'] = backend.to_dict()
+        self.params['state_backend'] = backend.backend
+        self.params['state_bucket'] = ''
+        self.params.pop('backend_config', None)
+        if backend.backend == 'gcs':
+            project = self.params.get('project')
+            if not isinstance(project, str) or not re.fullmatch(r'[a-z][a-z0-9-]{4,28}[a-z0-9]', project):
+                raise click.ClickException('GCS deployment requires an explicit --project workload project ID.')
+            self.params.setdefault('backend_runtime', {
+                'identity': backend.identity(self.params.get('project'), self.params['deployment_name']),
+                'status': 'configured', 'lineage': None})
+        # Save effective selection, never paths to mutable external config or
+        # discarded lower-priority intent that could mask a future attachment.
+        for key in self._BACKEND_CONTROLLER_FIELDS:
+            self.input_params.pop(key, None)
+        self.input_params['state_backend'] = backend.backend
+        effective_profile = copy.deepcopy(spec)
+        # Retain workload profile settings, but not a discarded state destination.
+        for block in (effective_profile, effective_profile.get('raw', {}),
+                      effective_profile.get('raw', {}).get('security', {}).get('storage', {})):
+            for key in ('terraform_state', 'state_backend', 'state_bucket', 'backend_config'):
+                block.pop(key, None)
+        self.params['profile_spec'] = effective_profile
+        self.require_backend()
 
         if self.params.get("debug"):
             click.echo(colorize_info(f"* Selected security profile: '{profile_name}' (Tier: {tier})"))
+
+    def _require_local_intent(self, params):
+        if not isinstance(params, dict):
+            raise click.ClickException("Cannot verify backend metadata; attachment/migration review is required.")
+        if params.get('state_bucket') or params.get('backend_config') or params.get('state_backend') not in (None, '', 'local'):
+            raise click.ClickException("Remote backend lifecycle is not implemented safely; verify attachment/migration before continuing.")
+        try:
+            backend = BackendSpec.from_dict(params.get('terraform_state'), cloud=self.cloud or 'aws')
+        except ValueError:
+            raise click.ClickException("Invalid backend configuration; remote lifecycle is not implemented safely.") from None
+        if backend.backend != 'local':
+            raise click.ClickException("Remote backend lifecycle is not implemented safely; verify attachment/migration before continuing.")
+        for key in ('profile_spec', 'raw'):
+            if key in params:
+                self._require_local_intent(params[key])
+        if 'security' in params:
+            security = params['security']
+            if not isinstance(security, dict):
+                raise click.ClickException("Cannot verify backend metadata; attachment/migration review is required.")
+            if 'storage' in security:
+                self._require_local_intent(security['storage'])
+
+    def require_saved_local_backend(self):
+        """Saved identity wins, including against an explicit new local choice."""
+        directory = Path(self.config['state_dir']) / self.params['deployment_name']
+        try:
+            require_legacy_local_backend(directory)
+        except click.ClickException:
+            raise click.ClickException(
+                "Saved backend attachment cannot be used by the legacy executor; "
+                "backend-aware attachment/migration is not implemented safely. "
+                "Preserve existing metadata and verify the authoritative state; do not change its destination."
+            ) from None
+        meta = directory / 'meta.json'
+        if meta.exists():
+            try:
+                data = load_profile_yaml(meta)
+            except BackendSelectionError:
+                raise click.ClickException("Cannot verify backend metadata; attachment/migration review is required.") from None
+            for section in ('params', 'input_params'):
+                self._require_local_intent(data.get(section, {}))
+
+    def require_saved_backend(self):
+        """Saved GCS params dispatch natively; old claim/migration records stay fenced."""
+        try:
+            record = load_backend_record(self.params['deployment_name'], state_root=self.config['state_dir'])
+        except TerraformRunnerError as exc:
+            raise click.ClickException(str(exc)) from None
+        if record is None:
+            self.require_saved_local_backend()
+        return record
+
+    def require_backend(self, params=None):
+        """Check effective intent against persisted destination before any write."""
+        params = self.params if params is None else params
+        saved = self.require_saved_backend()
+        try:
+            spec = BackendSpec.from_dict(params.get('terraform_state'), cloud=self.cloud or 'aws')
+            if spec.backend == 'local':
+                if saved is not None:
+                    raise ValueError()
+                self._require_local_intent(params)
+                return
+            if spec.backend != 'gcs' or params.get('state_backend') not in (None, 'gcs'):
+                raise ValueError()
+            identity = spec.identity(params.get('project'), self.params['deployment_name'])
+            if saved is not None and saved.identity != identity:
+                raise ValueError()
+            if (saved is not None and saved.lineage is not None
+                    and params.get('backend_runtime', {}).get('status') == 'configured'):
+                # init may have durably pinned an empty GCS state during a plan.
+                # A later ordinary metadata save must not erase that receipt.
+                params['backend_runtime'] = {'identity': saved.identity, 'status': saved.status, 'lineage': saved.lineage}
+            directory = Path(self.config['state_dir']) / self.params['deployment_name']
+            if saved is None and ((directory / '.tfstate').exists() or (directory / 'meta.json').exists()):
+                raise ValueError()
+        except (ValueError, TypeError, AttributeError):
+            raise click.ClickException('Backend destination is invalid or changed; explicit attachment/migration is required.') from None
+
+    def require_local_backend(self, params=None):
+        """Recheck disk and current/restored intent before any legacy mutation."""
+        self.require_saved_local_backend()
+        self._require_local_intent(self.params if params is None else params)
 
     def validate_registry_params(self, params, cloud=None):
         from src.python.huggingface_profile import normalize_huggingface
@@ -285,6 +431,7 @@ class Deployer:
 
         if not getattr(self, "_persistence_ready", False):
             return
+        self.require_backend()
         self.params.update(self.validate_registry_params(self.params))
 
         meta_file = (
@@ -299,16 +446,19 @@ class Deployer:
         }
 
         Path(meta_file).parent.mkdir(parents=True, exist_ok=True)
-        Path(meta_file).write_text(json.dumps(data, indent=4))
+        try:
+            write_private_metadata(meta_file, data)
+        except TerraformRunnerError as exc:
+            raise click.ClickException(str(exc)) from None
 
         if self.params["debug"]:
             click.echo(colorize_info(f"* Meta info saved to '{meta_file}'"))
 
     def read_meta(self):
-        return read_meta(
-            self.params["deployment_name"],
-            self.params["debug"],
-        )
+        try:
+            return load_profile_yaml(Path(self.config['state_dir']) / self.params['deployment_name'] / 'meta.json')
+        except BackendSelectionError:
+            raise click.ClickException("Cannot read deployment metadata; recovery files are preserved.") from None
 
     def recreate_command_line(self, separator=" \\\n"):
         """
@@ -318,6 +468,8 @@ class Deployer:
         command_line = sys.argv[0]
 
         for k, v in self.input_params.items():
+            if k in self._BACKEND_CONTROLLER_FIELDS and k != 'state_backend':
+                continue
             k = k.replace("_", "-")
 
             if isinstance(v, bool):
@@ -345,6 +497,7 @@ class Deployer:
         Ask what to do if deployment already exists
         """
 
+        self.require_backend()
         deployment_name = self.params["deployment_name"]
         existing = self.params["existing"]
 
@@ -368,6 +521,7 @@ class Deployer:
             # restore params from meta file
             self._persistence_ready = False
             r = self.read_meta()
+            self.require_backend(r["params"])
             registry = self.validate_registry_params(r["params"])
             self.params = r["params"]
             self.params.update(registry)
@@ -379,22 +533,48 @@ class Deployer:
                 )
             )
 
-        # update meta info (with new value for existing_behavior)
-        self.save_meta()
+        # Preserve the old inputs and receipt until active GCS destruction is
+        # verified. A failed replacement must still describe the old workload.
+        self._gcs_replacement_destroyed = False
+        active_gcs_replace = (self.existing_behavior == 'replace'
+            and self.params.get('state_backend') == 'gcs'
+            and self.params.get('backend_runtime', {}).get('status') != 'configured')
+        if not active_gcs_replace:
+            self.save_meta()
 
         # destroy existing deployment``
-        if self.existing_behavior == "replace":
+        if self.existing_behavior == "replace" and not self.params.get('dry_run') and not (
+                self.params.get('state_backend') == 'gcs'
+                and self.params.get('backend_runtime', {}).get('status') == 'configured'):
             debug = self.params["debug"]
             click.echo(colorize_info("* Deleting existing deployment..."))
 
-            shell_command(
-                command=f'{self.config["app_dir"]}/destroy "{deployment_name}" --yes'
-                + f' {"--debug" if debug else ""}',
-                verbose=debug,
-            )
+            if self.params.get('state_backend') == 'gcs':
+                with self._terraform_operation(str(Path(self.config['terraform_dir']) / self.cloud)) as runner:
+                    runner.init()
+                    runner.apply(runner.plan(destroy=True), acknowledge_mutation=True)
+                    state = runner.pull_state()
+                    if (state['lineage'] != self.params['backend_runtime']['lineage']
+                            or any(resource['mode'] == 'managed' and resource['instances'] for resource in state['resources'])):
+                        runner.retain_recovery()
+                        raise click.ClickException('GCS replacement destruction is incomplete; recovery review required.')
+                    runner.assert_no_recovery()
+                    try:
+                        self.save_meta()
+                    except BaseException:
+                        runner.retain_recovery()
+                        raise
+                self._gcs_replacement_destroyed = True
+            else:
+                shell_command(
+                    command=f'{self.config["app_dir"]}/destroy "{deployment_name}" --yes'
+                    + f' {"--debug" if debug else ""}',
+                    verbose=debug,
+                )
 
-            # update meta info if deployment was destroyed
-            self.save_meta()
+            # GCS publication above stays inside the recovery-capable context.
+            if self.params.get('state_backend') != 'gcs':
+                self.save_meta()
 
     def create_tfvars(self, tfvars: dict | None = None):
         """
@@ -408,6 +588,7 @@ class Deployer:
             - run_ansible: keep tfvars/tfstate, don't ask for user input, skip terraform steps
         """
 
+        self.require_backend()
         self.params.update(self.validate_registry_params(self.params))
         if tfvars is None:
             tfvars = {}
@@ -499,7 +680,7 @@ class Deployer:
                 "enable_iap_only": self.params.get("enable_iap_only", False),
                 "enable_oslogin": self.params.get("enable_oslogin", False),
                 "enable_secrets": self.params.get("enable_secrets", False),
-                "state_bucket": self.params.get("state_bucket", ""),
+
             }
         )
 
@@ -547,6 +728,8 @@ class Deployer:
         if (
             self.existing_behavior == "modify"
             or self.existing_behavior == "overwrite"
+            or (self.existing_behavior == 'replace'
+                and getattr(self, '_gcs_replacement_destroyed', False))
             or not os.path.exists(tfvars_file)
         ):
             self._write_tfvars_file(path=tfvars_file, tfvars=tfvars)
@@ -555,7 +738,7 @@ class Deployer:
         """
         Write tfvars file
         """
-
+        self.require_backend()
         debug = self.params["debug"]
 
         if debug:
@@ -566,6 +749,8 @@ class Deployer:
 
         with open(path, "w") as f:
             for key, value in tfvars.items():
+                if key.replace('-', '_') in self._BACKEND_CONTROLLER_FIELDS:
+                    continue
                 # convert booleans to strings
                 if isinstance(value, bool):
                     value = {
@@ -591,11 +776,14 @@ class Deployer:
         Write to file if write=True
         """
 
+        self.require_backend()
+        self._require_current_terraform_outputs()
         self.params.update(self.validate_registry_params(self.params))
         debug = self.params["debug"]
         deployment_name = self.params["deployment_name"]
 
-        ansible_vars = self.params.copy()
+        ansible_vars = {key: value for key, value in self.params.items()
+                        if key not in self._BACKEND_CONTROLLER_FIELDS}
 
         # add config
         ansible_vars["config"] = self.config
@@ -622,8 +810,33 @@ class Deployer:
             "isaac_workstation_ip",
             "cloud",
         ]:
-            if k not in self.params or ansible_vars[k] is None:
+            if (getattr(self, '_terraform_outputs_ready', None) is True
+                    or k not in self.params or ansible_vars[k] is None):
                 ansible_vars[k] = self.tf_output(k)
+
+        if (ansible_vars['cloud'] not in ('aws', 'gcp', 'azure', 'alicloud')
+                or (self.cloud is not None and ansible_vars['cloud'] != self.cloud)):
+            raise click.ClickException('Terraform cloud output is absent or inconsistent; inventory write refused.')
+        endpoint = None
+        if ansible_vars['cloud'] == 'gcp' and (self.params.get('enable_iap_only') or self.params.get('enable_oslogin')):
+            values = self._connection_outputs()
+            ansible_vars['isaac_workstation_ip'] = self._connection_ip(values)
+            endpoint = self._ssh_endpoint(values)
+        try:
+            if not isinstance(ansible_vars['isaac_workstation_ip'], str):
+                raise ValueError
+            ipaddress.ip_address(ansible_vars['isaac_workstation_ip'])
+        except ValueError:
+            # An explicit inventory-only localhost target is supported, but actual
+            # Terraform address outputs must remain IPs, never inventory text.
+            host = ansible_vars['isaac_workstation_ip']
+            explicit_hostname = (
+                getattr(self, '_terraform_outputs_ready', None) is not True
+                and self.params.get('isaac_workstation_ip') == host
+                and host == 'localhost'
+            )
+            if not explicit_hostname:
+                raise click.ClickException('Terraform workstation IP output is absent or invalid; inventory write refused.') from None
 
         # Validate the actual cloud handed to Ansible, not only class identity.
         self.validate_registry_params(self.params, cloud=ansible_vars["cloud"])
@@ -636,6 +849,14 @@ class Deployer:
 
         template = Path(f"{self.config['ansible_dir']}/inventory.template").read_text()
         res = template.format(**ansible_vars)
+        if endpoint is not None:
+            # Child-group values override legacy parent key/user settings.
+            # Explicit true overrides ansible.cfg's legacy host checking=false.
+            res += ('\n[isaac_workstation:vars]\n'
+                    f'ansible_user={endpoint.user}\n'
+                    f'ansible_ssh_private_key_file={endpoint.identity_file}\n'
+                    f'ansible_ssh_common_args={shlex.join(endpoint.ssh_argv()[1:])}\n'
+                    'ansible_ssh_host_key_checking=True\n')
 
         # write to file
         if write:
@@ -651,85 +872,177 @@ class Deployer:
 
         return res
 
-    def initialize_terraform(self, cwd: str):
-        """
-        Initialize Terraform via shell command supporting local state or dynamic GCS remote backend
-        cwd: directory where terraform scripts are located
-        """
-        debug = self.params["debug"]
-        deployment_name = self.params["deployment_name"]
-        state_bucket = self.params.get("state_bucket") or os.environ.get("ISAAC_STATE_BUCKET")
-        is_dry_run = self.params.get("dry_run", False)
-        backend_override_path = Path(cwd) / "backend_override.tf.json"
-
-        if not state_bucket or is_dry_run:
-            tfstate_file = Path(
-                f"{self.config['state_dir']}/{deployment_name}/.tfstate"
-            ).absolute()
-            backend_args = f'-backend-config="path={tfstate_file}"'
-            backend_override_path.write_text(
-                json.dumps({"terraform": {"backend": {"local": {}}}}, indent=2)
-            )
-        else:
-            bucket = state_bucket.replace("gs://", "").rstrip("/")
-            if bucket == "auto":
-                project = self.params.get("project") or "default"
-                zone = self.params.get("zone") or "us-central1-a"
-                region = "-".join(zone.split("-")[:-1]) if "-" in zone else "us-central1"
-                bucket = f"isaacautomator-state-{project}-{region}"
-            prefix = f"isaacautomator/v1/deployments/{deployment_name}/terraform"
-            backend_args = (
-                f'-backend-config="bucket={bucket}" '
-                f'-backend-config="prefix={prefix}"'
-            )
-            backend_override_path.write_text(
-                json.dumps({"terraform": {"backend": {"gcs": {}}}}, indent=2)
-            )
-
-        shell_command(
-            f"terraform init -upgrade -no-color -input=false -reconfigure {backend_args} {' > /dev/null' if not debug else ''}",
-            verbose=debug,
-            cwd=cwd,
+    def _new_terraform_runner(self, cwd: str):
+        """Build an unentered local/GCS operation with exact persisted selection."""
+        self.require_backend()
+        cloud = self.cloud or Path(cwd).name
+        source = Path(cwd).absolute()
+        if source != Path(self.config['terraform_dir']).absolute() / cloud:
+            raise click.ClickException('Terraform source root must match the configured workstation cloud root.')
+        try:
+            source_files = workstation_source_files(cloud)
+            for relative in source_files:
+                path = source / relative
+                if ('..' in path.parts or not path.is_file()
+                        or any(p.is_symlink() for p in (path, *path.parents))):
+                    raise click.ClickException('Allowlisted Terraform source is missing or unsafe.')
+        except (ValueError, OSError):
+            raise click.ClickException('Cannot preflight reviewed Terraform sources; diagnostics withheld.') from None
+        spec = BackendSpec.from_dict(self.params.get('terraform_state'), cloud=cloud)
+        guard = None
+        if spec.backend == 'gcs':
+            record = load_backend_record(self.params['deployment_name'], state_root=self.config['state_dir'])
+            if record is None:
+                raise click.ClickException('Persist the exact GCS backend selection before running Terraform.')
+            guard = runtime_guard(record, state_root=self.config['state_dir'])
+        return TerraformRunner(
+            source_root=source,
+            source_files=source_files,
+            backend_spec=spec,
+            target_scope=self.params.get('project') if spec.backend == 'gcs' else None,
+            deployment_name=self.params['deployment_name'],
+            state_root=Path(self.config['state_dir']).absolute(),
+            variables_file=Path(self.config['state_dir']).absolute() / self.params['deployment_name'] / '.tfvars',
+            remote_guard=guard,
+            staging_root=Path(self.config['state_dir']).absolute() / '.terraform-operations',
         )
+
+    @contextmanager
+    def _terraform_operation(self, cwd: str):
+        operation = None
+        try:
+            operation = self._new_terraform_runner(cwd)
+            with operation as runner:
+                yield runner
+        except TerraformRunnerError as exc:
+            # Runner errors intentionally contain no Terraform diagnostics/inputs.
+            raise click.ClickException(str(exc)) from None
+        finally:
+            if operation is not None and operation.recovery_directory is not None:
+                # Never let the only recovery copy disappear with a local runner.
+                # Keep the private paths available to API and CLI callers alike.
+                self.terraform_recovery_directory = operation.recovery_directory
+                self.terraform_recovery_state = operation.recovery_state
+                click.echo(colorize_error(
+                    f'* Terraform recovery requires manual review: {operation.recovery_directory}. '
+                    'Contains secrets; retain securely before reboot or temporary-directory cleanup. '
+                    'Do not retry or delete until recovery is reviewed.'
+                ), err=True)
+
+    def initialize_terraform(self, cwd: str):
+        """Preflight only; actual init is deferred to each isolated operation.
+
+        No active context, lock or temporary directory survives this call. This
+        preserves the public call shape without leaking resources when a caller
+        fails between initialize and run/plan. Import must likewise use the
+        isolated import API, never a shell command in this source directory.
+        Every operation rechecks current and saved backend intent.
+        """
+        try:
+            self._new_terraform_runner(cwd)
+        except TerraformRunnerError as exc:
+            raise click.ClickException(str(exc)) from None
 
     def run_terraform(self, cwd: str):
-        """
-        Apply Terraform via shell command
-        cwd: directory where terraform scripts are located
-        """
+        """Initialize, save a plan and apply that exact plan in one context."""
+        self.require_backend()
+        if self.params.get('dry_run'):
+            raise click.ClickException('Terraform apply is forbidden during dry-run.')
+        self.tf_outputs = {}
+        self._terraform_outputs_ready = False
+        with self._terraform_operation(cwd) as runner:
+            runner.init()
+            plan = runner.plan()
+            runner.apply(plan, acknowledge_mutation=True)
+            if self.params['terraform_state']['backend'] == 'gcs':
+                previous = copy.deepcopy(self.params.get('backend_runtime'))
+                try:
+                    state = runner.pull_state()
+                    self.params['backend_runtime'] = {
+                        'identity': json.loads(runner.backend_identity), 'status': 'active', 'lineage': state['lineage']}
+                    self.save_meta()
+                except BaseException:
+                    self.params['backend_runtime'] = previous
+                    runner.retain_recovery()
+                    raise TerraformRunnerError('GCS apply completed but metadata publication is uncertain; recovery evidence retained') from None
+            outputs = runner.output()
+        values = {key: copy.deepcopy(item['value']) for key, item in outputs.items()}
+        if any(not isinstance(values.get(key), str) or not values[key].strip()
+               for key in ('ssh_key', 'isaac_workstation_ip', 'cloud')):
+            raise click.ClickException('Required Terraform workstation output is absent or invalid; downstream writes refused.')
+        if values['cloud'] != (self.cloud or Path(cwd).name):
+            raise click.ClickException('Terraform cloud output does not match the deployment; downstream writes refused.')
+        try:
+            ipaddress.ip_address(self._connection_ip(values))
+        except ValueError:
+            raise click.ClickException('Terraform workstation IP output is invalid; downstream writes refused.') from None
+        self.tf_outputs = values
+        self._terraform_outputs_ready = True
 
-        debug = self.params["debug"]
-        deployment_name = self.params["deployment_name"]
+    def _connection_ip(self, values):
+        """Validate fresh GCP connection scope/flags, without guessing a public IP."""
+        if values.get('cloud') != 'gcp':
+            return values.get('isaac_workstation_ip')
+        for output, parameter in (('iap_enabled', 'enable_iap_only'), ('oslogin_enabled', 'enable_oslogin')):
+            value = values.get(output, False)
+            if type(value) is not bool or value != bool(self.params.get(parameter, False)):
+                raise click.ClickException('Terraform SSH security output disagrees with the selected deployment.')
+        if values.get('iap_enabled') or values.get('oslogin_enabled'):
+            match = re.fullmatch(r'projects/([a-z][a-z0-9-]{4,28}[a-z0-9])/zones/([a-z][a-z0-9-]+)/instances/([a-z][a-z0-9-]{0,62})',
+                                 values.get('isaac_workstation_vm_id', ''))
+            if not match or match.group(1) != self.params.get('project') or match.group(2) != self.params.get('zone'):
+                raise click.ClickException('Terraform IAP/OS Login instance scope is absent or inconsistent.')
+        return values.get('isaac_workstation_private_ip') if values.get('iap_enabled') else values.get('isaac_workstation_ip')
 
-        shell_command(
-            "terraform apply -auto-approve "
-            + f"-var-file={self.config['state_dir']}/{deployment_name}/.tfvars",
-            cwd=cwd,
-            verbose=debug,
-        )
+    def _connection_outputs(self):
+        if getattr(self, '_terraform_outputs_ready', None) is True:
+            return self.tf_outputs
+        values = {name: self.tf_output(name) for name in ('cloud', 'iap_enabled', 'oslogin_enabled',
+            'isaac_workstation_ip', 'isaac_workstation_private_ip', 'isaac_workstation_vm_id')}
+        for name in ('iap_enabled', 'oslogin_enabled'):
+            if values[name] in ('True', 'true', 'False', 'false'):
+                values[name] = values[name].lower() == 'true'
+        return values
+
+    def _ssh_endpoint(self, values):
+        from src.python.file_transfer import endpoint_from_config
+        try:
+            return endpoint_from_config(self.params, values,
+                Path(self.config['state_dir']).absolute() / self.params['deployment_name'],
+                default_user=self.config['default_ssh_user'])
+        except ValueError as exc:
+            raise click.ClickException(str(exc)) from None
+
+    def _require_current_terraform_outputs(self):
+        if getattr(self, '_terraform_outputs_ready', None) is False:
+            raise click.ClickException('Verified Terraform outputs are unavailable; downstream writes refused.')
 
     def plan_terraform(self, cwd: str):
-        """
-        Validate Terraform configuration and generate speculative plan without applying.
-        """
-        debug = self.params.get("debug", False)
-        deployment_name = self.params["deployment_name"]
+        """Validate through a real plan, without applying or logging its inputs.
 
-        click.echo(colorize_info("* Running `terraform validate`..."))
-        shell_command("terraform validate -no-color", cwd=cwd, verbose=debug)
+        Terraform planning includes configuration validation. It may contact the
+        backend and execute providers; this is not offline validation. The saved
+        plan is secret-bearing and is discarded at context exit.
+        """
+        with self._terraform_operation(cwd) as runner:
+            runner.init()
+            plan = runner.plan()
+            return plan.has_changes
 
-        click.echo(colorize_info("* Running `terraform plan` (speculative dry-run)..."))
-        shell_command(
-            "terraform plan -no-color "
-            + f"-var-file={self.config['state_dir']}/{deployment_name}/.tfvars",
-            cwd=cwd,
-            verbose=True,
-        )
+    def import_terraform_resource(self, cwd: str, address: str, resource_id: str):
+        """Import LOCAL state in its own initialized context, never shared cwd."""
+        self.require_backend()
+        if self.params.get('dry_run'):
+            raise click.ClickException('Terraform import is forbidden during dry-run.')
+        with self._terraform_operation(cwd) as runner:
+            runner.init()
+            runner.import_resource(address, resource_id, acknowledge_mutation=True)
 
     def validate_ansible(self, playbook_name: str = "isaac-workstation"):
         """
         Validate Ansible playbook syntax without running tasks.
         """
+        self.require_backend()
         click.echo(colorize_info(f"* Validating Ansible playbook syntax ({playbook_name}.yaml)..."))
         shell_command(
             f"ansible-playbook --syntax-check {playbook_name}.yaml",
@@ -741,10 +1054,21 @@ class Deployer:
         """
         Export SSH key from Terraform state
         """
-
+        self.require_backend()
+        self._require_current_terraform_outputs()
         deployment_name = self.params["deployment_name"]
+        if self.cloud == 'gcp':
+            # Saved flags may be stale: validate authoritative security outputs
+            # independently on export, including paths without a fresh apply.
+            values = self._connection_outputs()
+            self._connection_ip(values)
+            if values.get('oslogin_enabled'):
+                self._ssh_endpoint(values)  # Resolve the actual gcloud OS Login identity.
+                return  # Never serialize OS_LOGIN_ACTIVE or copy the user's private key.
 
-        key = read_tf_output(deployment_name, "ssh_key", verbose=self.params["debug"])
+        key = self.tf_output('ssh_key')
+        if not isinstance(key, str) or not key.strip() or key.strip() == 'OS_LOGIN_ACTIVE':
+            raise click.ClickException('Terraform SSH key output is absent or invalid; key export refused.')
         key_file = f"{self.config['state_dir']}/{deployment_name}/key.pem"
         with open(key_file, "w") as f:
             f.write(key if key.endswith("\n") else key + "\n")
@@ -760,7 +1084,7 @@ class Deployer:
         """
         Run Ansible playbook via shell command
         """
-
+        self.require_backend()
         debug = self.params["debug"]
         deployment_name = self.params["deployment_name"]
 
@@ -791,13 +1115,20 @@ class Deployer:
 
     def tf_output(self, key: str, default: str = ""):
         """
-        Read Terraform output.
-        Cache read values in self._tf_outputs.
+        Read Terraform output, preserving native types from a fresh apply snapshot.
+        Other reads dispatch the saved backend in the explicitly configured state root.
         """
+        self.require_backend()
+        self._require_current_terraform_outputs()
+        if getattr(self, '_terraform_outputs_ready', None) is True:
+            return copy.deepcopy(self.tf_outputs.get(key, default))
 
         if key not in self.tf_outputs:
             deployment_name = self.params["deployment_name"]
-            value = read_tf_output(deployment_name, key, verbose=self.params["debug"])
+            value = read_tf_output(
+                deployment_name, key, verbose=self.params["debug"],
+                state_dir=self.config["state_dir"],
+            )
             if value == "" and self.params["debug"]:
                 click.echo(
                     colorize_error(
@@ -813,6 +1144,7 @@ class Deployer:
         return self.tf_outputs[key]
 
     def upload_user_data(self):
+        self.require_backend()
         shell_command(
             f'./upload "{self.params["deployment_name"]}" '
             + f'{"--debug" if self.params["debug"] else ""}',

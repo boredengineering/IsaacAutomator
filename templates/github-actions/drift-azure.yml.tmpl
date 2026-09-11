@@ -1,0 +1,8 @@
+# Verified public upstream refs/tags/v2.3.0^{} peeled commit using git ls-remote.
+name: Azure detection OIDC
+uses: azure/login@a457da9ea143d694b1b9c7c869ebb04ebe844ef5
+with:
+  client-id: @@CLIENT_ID@@
+  tenant-id: @@TENANT_ID@@
+  subscription-id: @@SUBSCRIPTION_ID@@
+  audience: api://AzureADTokenExchange

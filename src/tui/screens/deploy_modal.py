@@ -1,11 +1,16 @@
 """
 Interactive In-Cockpit Workstation Deployer Modal for isaac9s
 """
+from pathlib import Path
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.screen import ModalScreen
 from textual.widgets import Button, Checkbox, Input, Label, RadioButton, RadioSet, Select, Static
+
+import asyncio
+
+from src.tui.backend import load_backend_selection
 
 
 class DeployWorkstationModal(ModalScreen):
@@ -64,6 +69,11 @@ class DeployWorkstationModal(ModalScreen):
         self.scheduling_model = "standard"
         self.use_spot = False
         self.use_flex_start = False
+        self.selected_state_backend = None
+        self.effective_state_backend = None
+        self.validated_selection = None
+        self.backend_config = ""
+        self.backend_worker = None
 
     @staticmethod
     def get_zones_for_selection(cloud: str, gpu: str) -> list[tuple[str, str]]:
@@ -135,6 +145,9 @@ class DeployWorkstationModal(ModalScreen):
                     yield RadioButton("Microsoft Azure", id="rb-cloud-azure")
                     yield RadioButton("Alibaba Cloud", id="rb-cloud-alicloud")
 
+                yield Label("GCP project (explicit target; no account discovery):")
+                yield Input(placeholder="my-project-id", id="inp-deploy-project")
+
                 yield Label("[bold white]3. GPU & Multi-GPU Instance Type:[/]")
                 yield Select(
                     options=self.CLOUD_GPUS["gcp"],
@@ -160,12 +173,22 @@ class DeployWorkstationModal(ModalScreen):
                 yield Label("[bold white]6. Multi-Cloud Security Profile:[/]")
                 with RadioSet(id="deploy-profile-select"):
                     yield RadioButton("Tier 1: Simple Mode ($0.00/mo, dynamic /32 IP whitelist)", value=True, id="rb-profile-simple")
-                    yield RadioButton("Tier 2: Team Mode (<$0.10/mo, shared GCS/S3 remote state)", id="rb-profile-team")
+                    yield RadioButton("Tier 2: Team Mode (local state unless explicitly selected below)", id="rb-profile-team")
                     yield RadioButton("Tier 3: Enterprise ($35-$180/mo, Cloud NAT, CMEK, Zero-Trust IAP)", id="rb-profile-enterprise")
                     from src.python.config import list_available_profiles
                     for custom_name, custom_meta in list_available_profiles().items():
                         if custom_name not in ("simple", "team", "enterprise"):
                             yield RadioButton(f"Custom: {custom_name} ({custom_meta.get('tier', 'custom')})", id=f"rb-profile-custom-{custom_name}")
+
+                yield Label("Terraform state backend (independent of security tier):")
+                yield Select([("Inherit profile (local if unspecified)", "inherit"),
+                              ("Local (explicit override)", "local"), ("GCS (GCP only, opt-in)", "gcs"),
+                              ("S3 (AWS only, opt-in)", "s3"), ("Azure Blob (Azure only, opt-in)", "azurerm")],
+                             value="inherit", allow_blank=False, id="sel-state-backend")
+                yield Input(placeholder="Explicit nonsecret backend YAML/JSON path", id="inp-backend-config")
+                yield Button("Validate backend config (offline)", id="btn-backend-validate")
+                yield Static("Inherit profile intent. Validate to resolve backend; cloud access UNKNOWN.",
+                             id="backend-status", markup=False)
 
                 yield Label("[bold white]7. Optional Pre-Installed Robotics Demos:[/]")
                 with Horizontal(classes="checkbox-row"):
@@ -181,7 +204,7 @@ class DeployWorkstationModal(ModalScreen):
 
             with Horizontal(classes="modal-btn-bar"):
                 yield Button("Dry Run / Validate", id="btn-deploy-dryrun", variant="warning")
-                yield Button("Launch Deployment [Enter]", id="btn-deploy-launch", variant="success")
+                yield Button("Launch Deployment [Enter]", id="btn-deploy-launch", variant="success", disabled=True)
                 yield Button("Cancel [Esc / q]", id="btn-deploy-cancel", variant="error")
 
     def build_summary_text(self) -> str:
@@ -202,19 +225,21 @@ class DeployWorkstationModal(ModalScreen):
 
         prof_desc = "Simple Mode ($0.00/mo added infrastructure). Dynamic /32 IP lock."
         if self.selected_profile == "team":
-            prof_desc = "Team Mode (<$0.10/mo storage). Distributed state locking via GCS/S3."
+            prof_desc = "Team Mode. State backend is an independent explicit selection."
         elif self.selected_profile == "enterprise":
             prof_desc = "Enterprise Mode ($35-$180/mo). Zero public IP, Cloud NAT, CMEK, IAP Zero-Trust."
         elif self.selected_profile not in ("simple", "team", "enterprise"):
-            from src.python.config import list_available_profiles
-            meta = list_available_profiles().get(self.selected_profile, {})
-            prof_desc = f"Custom Profile '{self.selected_profile}' (Tier: {meta.get('tier', 'custom')})."
+            prof_desc = f"Custom Profile '{self.selected_profile}'; saved backend intent is inherited unless overridden."
 
         return (
             f"[bold cyan]Deployment Preview ({self.selected_cloud.upper()}):[/]\n"
             f"• Instance & GPU: [bold white]{self.selected_gpu}[/] | Zone: [cyan]{self.selected_zone}[/]\n"
             f"• Provisioning Model: {sched_badge}{resilience_str}\n"
-            f"• Security & Storage: [white]{prof_desc}[/]"
+            f"• Security & Storage: [white]{prof_desc}[/]\n"
+            f"• State backend: {self.effective_state_backend or 'UNKNOWN'} "
+            f"({'inherited profile intent' if self.selected_state_backend is None else 'explicit override'}); cloud access UNKNOWN. "
+            + ("Execution BLOCKED; validate intent. Remote execution remains disabled."
+               if self.effective_state_backend != "local" else "Local intent validated offline.")
         )
 
     def update_summary(self) -> None:
@@ -261,6 +286,7 @@ class DeployWorkstationModal(ModalScreen):
             except Exception:
                 pass
             self.update_scheduling_visibility()
+            self.invalidate_backend_validation()
             self.update_summary()
 
         elif event.radio_set.id == "deploy-scheduling-model":
@@ -287,10 +313,15 @@ class DeployWorkstationModal(ModalScreen):
             else:
                 self.selected_profile = "simple"
 
+            self.invalidate_backend_validation()
             self.update_summary()
 
     def on_select_changed(self, event: Select.Changed) -> None:
-        if event.select.id == "sel-deploy-gpu":
+        if event.select.id == "sel-state-backend":
+            self.selected_state_backend = None if event.value == "inherit" else str(event.value)
+            self.invalidate_backend_validation()
+            self.update_summary()
+        elif event.select.id == "sel-deploy-gpu":
             self.selected_gpu = str(event.value)
             try:
                 zone_select = self.query_one("#sel-deploy-zone", Select)
@@ -306,7 +337,9 @@ class DeployWorkstationModal(ModalScreen):
             self.update_summary()
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
-        if event.button.id == "btn-deploy-cancel":
+        if event.button.id == "btn-backend-validate":
+            self.start_backend_validation()
+        elif event.button.id == "btn-deploy-cancel":
             self.dismiss(None)
         elif event.button.id == "btn-deploy-dryrun":
             self.submit_deployment(dry_run=True)
@@ -314,6 +347,14 @@ class DeployWorkstationModal(ModalScreen):
             self.submit_deployment(dry_run=False)
 
     def submit_deployment(self, dry_run: bool = False) -> None:
+        snapshot = (self.selected_cloud, self.selected_state_backend, self.backend_config, self.selected_profile)
+        if self.validated_selection != snapshot or self.effective_state_backend != "local":
+            # Unknown/inherited remote dry-run resolves intent, never a deploy wrapper.
+            if dry_run:
+                self.start_backend_validation()
+            else:
+                self.notify("Execution blocked: validate inherited intent or deliberately select local. Remote execution disabled.", severity="warning")
+            return
         name_input = self.query_one("#inp-deploy-name", Input)
         name = name_input.value.strip() or "isaac-ws-01"
 
@@ -335,8 +376,61 @@ class DeployWorkstationModal(ModalScreen):
             "profile": self.selected_profile,
             "demos": demos,
             "dry_run": dry_run,
+            "state_backend": self.selected_state_backend,
+            "backend_config": self.backend_config,
+            "project": self.query_one("#inp-deploy-project", Input).value.strip(),
         }
         self.dismiss(result)
+
+    def on_input_changed(self, event: Input.Changed) -> None:
+        if event.input.id == "inp-backend-config":
+            self.backend_config = event.value.strip()
+            self.invalidate_backend_validation()
+
+    def on_mount(self) -> None:
+        self.start_backend_validation()
+
+    def invalidate_backend_validation(self) -> None:
+        self.validated_selection = None
+        self.effective_state_backend = None
+        if self.backend_worker is not None:
+            self.backend_worker.cancel()
+        if not self.is_mounted:
+            return
+        self.query_one("#btn-deploy-launch", Button).disabled = True
+        self.query_one("#backend-status", Static).update(
+            "Backend intent UNKNOWN. Inherit profile unless explicitly overridden. Remote execution BLOCKED.")
+        self.start_backend_validation()
+
+    def start_backend_validation(self) -> None:
+        self.backend_worker = self.run_worker(self.validate_backend(), group="backend-validation", exclusive=True)
+
+    async def validate_backend(self) -> None:
+        snapshot = (self.selected_cloud, self.selected_state_backend, self.backend_config, self.selected_profile)
+        panel = self.query_one("#backend-status", Static)
+        panel.update("Resolving backend intent offline…")
+        try:
+            spec = await load_backend_selection(*snapshot)
+        except (ValueError, OSError, asyncio.TimeoutError):
+            if snapshot == (self.selected_cloud, self.selected_state_backend, self.backend_config, self.selected_profile):
+                self.validated_selection = None
+                self.effective_state_backend = None
+                self.query_one("#btn-deploy-launch", Button).disabled = True
+                panel.update("Intent invalid or unavailable; backend UNKNOWN. No setup run; execution BLOCKED.")
+            return
+        if snapshot != (self.selected_cloud, self.selected_state_backend, self.backend_config, self.selected_profile):
+            return
+        self.validated_selection = snapshot
+        self.effective_state_backend = spec.backend
+        self.query_one("#btn-deploy-launch", Button).disabled = spec.backend != "local"
+        origin = "Inherited profile/config intent" if self.selected_state_backend is None else "Explicit override"
+        panel.update(f"{origin}: {spec.backend}. Cloud access UNKNOWN (not checked). "
+                     "Remote execution BLOCKED pending production gates. No setup was run.")
+        self.update_summary()
+
+    def on_unmount(self) -> None:
+        if self.backend_worker is not None:
+            self.backend_worker.cancel()
 
     def action_dismiss_modal(self) -> None:
         self.dismiss(None)

@@ -2,6 +2,15 @@
 
 Declarative profiles allow you to configure cloud infrastructure, networking, security tiers, remote Terraform state backends, and workstation applications in a reproducible, version-controlled YAML file.
 
+> **Backend implementation status:** Local is the deployment default, including the
+> built-in `team` and `enterprise` presets. Remote backend schema validation is available,
+> but remote deployment/lifecycle remains fail-closed until attachment, recovery and
+> migration gates are implemented. Legacy YAML examples below that select remote storage
+> are design/configuration examples, not working remote deployment recipes; `auto` does
+> not provision a bucket. See [backend validation and examples](../state-backends/README.md)
+> for the current contract. `--state-backend local` can override remote profile intent
+> for a **new** local deployment; it never migrates an existing attachment.
+
 Keep personal profiles in `configs/private/`, which is excluded from Git and
 Docker builds, and select them by explicit path. The current cloud loader does
 not transport the complete robotics stack to Ansible; a workstation inventory
@@ -29,10 +38,10 @@ Isaac Automator categorizes infrastructure setups into three standardized securi
 | Tier | Profile Example | Added Infra Cost | Network & Ingress | Terraform State Backend | Cryptography & Secrets | Ideal For |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Simple** | [`simple-workstation.yaml`](simple-workstation.yaml) | **$0.00 / month** | Ephemeral public IP, firewall auto-locked to caller `/32` CIDR | Local (`./state/<name>/.tfstate`) | Cloud default encryption, environment variables | Solo developers, researchers, personal experiments |
-| **Team** | [`team-studio.yaml`](team-studio.yaml) | **<$0.10 / month** | Ephemeral public IP, firewall auto-locked to caller or team CIDRs | Remote GCS bucket (`auto`) with distributed object locking | Cloud default encryption, Google Secret Manager | Small teams, shared projects, CI/CD runners |
-| **Enterprise** | [`enterprise-zero-trust.yaml`](enterprise-zero-trust.yaml) | **~$35 - $180+ / mo** | Zero Public IP (Cloud IAP TCP Tunnel only), Managed Cloud NAT Gateway | Remote GCS bucket (`auto`) with object locking & soft delete | Regional KMS CMEK auto-rotation, Secret Manager, OS Login 2FA | Enterprise compliance, regulated industries, corporate perimeters |
-| **Studio Enterprise** | [`studio-enterprise.yaml`](studio-enterprise.yaml) | **~$35 - $180+ / mo** | Zero Public IP (Cloud IAP / SSM / Bastion), Managed Cloud NAT | Remote GCS/S3 bucket (`auto`) with distributed object locking | Regional KMS CMEK auto-rotation, Secret Manager, OS Login 2FA | Production robotics studios co-located with Omniverse Nucleus & high-speed shared USD storage |
-| **Custom** | [`custom-developer.yaml`](custom-developer.yaml) | *Granular / Variable* | Selectable (IAP or Public /32 lock, Cloud NAT toggle) | Selectable (`local` or `gcs`) | Selectable (`google_managed` or `kms_cmek`) | Hybrid setups balancing security, remote state, and cost |
+| **Team** | [`team-studio.yaml`](team-studio.yaml) | *Depends on selected services* | Ephemeral public IP, firewall auto-locked to caller or team CIDRs | Built-in preset defaults local; legacy remote YAML execution is blocked | Cloud default encryption, Google Secret Manager | Small teams, shared projects, CI/CD runners |
+| **Enterprise** | [`enterprise-zero-trust.yaml`](enterprise-zero-trust.yaml) | **~$35 - $180+ / mo** | Zero Public IP (Cloud IAP TCP Tunnel only), Managed Cloud NAT Gateway | Built-in preset defaults local; legacy remote YAML execution is blocked | Regional KMS CMEK auto-rotation, Secret Manager, OS Login 2FA | Enterprise compliance, regulated industries, corporate perimeters |
+| **Studio Enterprise** | [`studio-enterprise.yaml`](studio-enterprise.yaml) | **~$35 - $180+ / mo** | Zero Public IP (Cloud IAP / SSM / Bastion), Managed Cloud NAT | Local only for execution; remote remains planned | Regional KMS CMEK auto-rotation, Secret Manager, OS Login 2FA | Production robotics studios co-located with Omniverse Nucleus & high-speed shared USD storage |
+| **Custom** | [`custom-developer.yaml`](custom-developer.yaml) | *Granular / Variable* | Selectable (IAP or Public /32 lock, Cloud NAT toggle) | Local execution; opt-in remote schema validation only | Selectable (`google_managed` or `kms_cmek`) | Hybrid setups balancing security, remote state, and cost |
 
 ---
 
@@ -46,7 +55,10 @@ When you pass the `--profile` (or `--security-profile`) option, Isaac Automator 
 4. **Built-In Presets**: Standard keywords (`simple`, `team`, `enterprise`) map directly to the built-in defaults.
 
 > [!TIP]
-> **CLI Flags Take Precedence:** Explicit CLI arguments override profile settings. For example, if your profile sets `state_bucket: "auto"`, but you run with `--state-bucket gs://my-override-bucket`, the command-line value will be used.
+> **Backend precedence:** Explicit backend CLI settings override a new-deployment
+> profile; Click defaults do not count as explicit selection. Contradictory explicit
+> choices are errors. Existing attachment identity cannot be redirected by precedence.
+> Legacy `--state-bucket` is deprecated and remote execution is currently blocked.
 
 ---
 
@@ -70,10 +82,10 @@ security:
     ingress_cidrs: ["auto"]         # ["auto"] auto-detects caller public IP (/32 lock); or list specific CIDRs: ["1.2.3.4/32"]
 
   storage:
-    state_backend: "gcs"            # "local" (./state/<name>/) or "gcs" (remote object store)
-    state_bucket: "auto"            # "auto" (auto-provisions isaacautomator-state-<project>-<region>) or bucket name
-    state_locking: true             # true = enable distributed state locking to prevent concurrent overwrite
-    soft_delete_days: 7             # GCS retention policy window for disaster recovery
+    state_backend: "local"          # Legacy schema; use top-level terraform_state for new backend configuration
+    state_bucket: ""                # Remote values are deprecated intent, not storage provisioning
+    state_locking: true             # Legacy descriptive setting, not proof of configured locking
+    soft_delete_days: 7             # Legacy desired policy, not automatically provisioned
 
   cryptography:
     encryption_type: "google_managed" # "google_managed" ($0/mo) or "kms_cmek" (Customer-Managed Encryption Keys)
@@ -119,8 +131,9 @@ The [`studio-enterprise.yaml`](studio-enterprise.yaml) profile is specifically e
    * Isaac Sim and Omniverse Kit render via native Vulkan surface rendering that standard 2D VNC/noVNC cannot capture (resulting in a black or frozen viewport).
    * The profile configures dual hardware-accelerated remote desktop providers: **NICE DCV** and **NoMachine** (`remote_desktop: "dcv,nomachine"`), delivering low-latency 60fps 3D simulation streaming across private networks.
 4. **Distributed Team State Locking**:
-   * State is stored in a hardened cloud storage bucket (`gs://` or `s3://`) with distributed object locking.
-   * Multiple engineers, CI/CD runners, and automation pipelines can operate concurrently without risking Terraform state corruption or conflicting deployments.
+   * Planned optional backend infrastructure provides cloud state storage and native locking.
+   * Remote execution is currently blocked. Even after enablement, Terraform state locking
+     will not serialize every SSH, Ansible or direct start/stop operation across controllers.
 5. **GCP Flex-start (Dynamic Workload Scheduler) & Spot Resilience**:
    * **Guaranteed Runtime Without Instant Stockouts**: Leverages Google Cloud's Dynamic Workload Scheduler (**Flex-start**) to queue GPU requests during regional capacity crunches, provisioning the VM when available with a **guaranteed run duration of up to 7 days** (`max_run_duration: 604800s`) and `STOP` termination action.
    * **Non-Preemptible Stability**: Unlike standard Spot VMs which can be terminated at any moment with 30 seconds notice, Flex-start instances run uninterrupted for their allocated window, making them ideal for long-running Isaac Lab training, Arena benchmark evaluations, and multi-day robotics experiments.

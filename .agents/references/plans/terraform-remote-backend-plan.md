@@ -1,6 +1,6 @@
 # Opt-in Multi-Cloud Terraform Remote Backend and Drift Management Implementation Plan
 
-> **For Hermes:** Use the subagent-driven-development skill, if available, to implement this plan task-by-task. Otherwise use focused `delegate_task` workers with independent specification and code review. Read the repository rules first. This document authorizes planning only, not implementation, deployment, migration, commits or pushes.
+> **For Hermes:** Use the subagent-driven-development skill, if available, to implement this plan task-by-task. Otherwise use focused `delegate_task` workers with independent specification and code review. Read the repository rules first. The user subsequently authorized implementation; that does not authorize live deployment, migration, workflow activation, commits, pushes or environment-setting changes.
 
 **Goal:** Let users explicitly choose local state or a properly configured remote Terraform backend for AWS, GCP or Azure, with safe deployment, lifecycle operations, migration and recovery from another controller; then offer opt-in drift detection and controlled correction through the local CLI, generated GitHub Actions or selected cloud-native services.
 
@@ -8,7 +8,11 @@
 
 **Tech stack:** Existing Python/Click CLI, Terraform, AWS S3, GCP Cloud Storage, Azure Blob Storage, Textual TUI, Python unittest/mock and provider-mocked Terraform tests. Prefer Python standard library and existing cloud CLIs; introduce dependencies only after checking packaging and supported environments.
 
-**Status:** Proposed; no implementation steps completed. Source baseline reviewed on 2026-09-10, branch `devcontainer`. Line references are navigation hints and must be rechecked before editing.
+**Status:** Implementation started with the fail-closed safety and offline backend/runner foundation slice. This is not a completed remote-backend product. Source baseline reviewed on 2026-09-10, branch `devcontainer`; line references below describe that baseline and must be rechecked before editing.
+
+**First-slice scope:** `state-backend validate --cloud CLOUD --config PATH` is available with public examples in `configs/state-backends/`. BackendSpec adapters/version checks and an isolated runner are implemented as foundations. The runner's provider-free local test verifies state persistence through three disposable contexts; remote mutations remain disabled. Legacy destroy/output safety, explicit opt-in and host-wrapper exit-status/headless regressions are covered separately. See `configs/state-backends/README.md` for available behavior and limitations.
+
+**Remaining gates:** Task 2 provider/bootstrap schema and lockfile validation, production call-site integration of Task 4, Task 5 bootstrap, authenticated portions of Task 6, and Tasks 7–23 are not delivered by this first slice. Task 3's saved-descriptor conflicts fail closed rather than enabling attachment/migration. Task 13 has configuration examples only, not completed operator/TUI documentation. No remote deployment, live IAM/locking acceptance, state migration, drift workflow or shared graph publication has been run. The installed Terraform 1.8.5 is sufficient for the local fixture, not the conservative remote >=1.10.0 feature gate; no binary or image setting was changed.
 
 **Drift extension:** Added following the user's request on 2026-09-10. Provider and GitHub capabilities in section 4.6 were checked against official documentation; numbered references resolve to the Sources section. There is no `.github/` directory in the inspected checkout. Templates, generators, cloud monitors and corrective actions below are proposed deliverables, not files or services activated by this planning update.
 
@@ -82,7 +86,7 @@ Historical audit evidence, not implementation acceptance: 22 deployer tests and 
 
 ## 3. Proposed user experience and configuration contract
 
-All command names and configuration fields introduced in this section are **proposed**, not currently available. Final help and tests must use the same names.
+Except for the offline validation and explicit selection foundation noted above, command names and workflows in this section remain **proposed**. Final help and tests must use the same names. A validated remote selection is currently refused for execution, never silently redirected to local state.
 
 ### 3.1 Commands
 
@@ -90,7 +94,7 @@ Add a top-level `state-backend` Click command with subcommands:
 
 | Proposed command | Purpose and side effects |
 | --- | --- |
-| `state-backend validate --config PATH` | Offline schema/compatibility validation; no cloud calls |
+| `state-backend validate --cloud CLOUD --config PATH [--terraform-version VERSION]` | Available: offline schema/cloud pairing and optional supplied-version compatibility validation; no cloud or Terraform calls |
 | `state-backend bootstrap plan --config PATH` | Show backend infrastructure changes, identity, permissions and costs; cloud reads/refresh require authorization |
 | `state-backend bootstrap apply --config PATH --yes` | Explicitly provision approved backend infrastructure, separately from any workstation |
 | `state-backend doctor --config PATH` | Authenticated read-only checks; distinguish unknown from denied/missing |
@@ -787,6 +791,49 @@ These are reference targets, not claims that live provider behavior was tested d
 
 ## 10. Definition of done and implementation ledger
 
+**Overall status: partially implemented; full-plan definition of done NOT met.** The completed milestone below records delivered foundations without reducing the original acceptance criteria. An unchecked full-product criterion means it has not been signed off for the complete release, not necessarily that no supporting code exists.
+
+### 10.1 Completed milestone: safety and offline foundations
+
+Evidence baseline: the implementation checkpoint [20260910_193701_a5b58500](../../memory/sessions/20260910_193701_a5b58500.md) records **237 passing tests across 15 targeted suites**, with warnings treated as errors and no skips. The execution report is `/tmp/isaac-backend-final-g1vj2d8b/results.json` (temporary, local evidence). This is the recorded implementation run, not a claim of a new full-suite run each time this document is edited.
+
+- [x] Local defaults and explicit backend-selection precedence are covered; unsupported remote execution is refused rather than silently redirected.
+- [x] Immutable BackendSpec, native-cloud field adapters, strict nonsecret configuration parsing and version gates have offline tests. This does not establish provider/bootstrap compatibility or live storage ownership.
+- [x] Legacy-local destroy/output guards reject missing, malformed, ambiguous and known-remote state; regression tests cover path/symlink safety and preservation of recovery files on failure.
+- [x] The isolated runner foundation has a real provider-free local apply → fresh-context output → destroy test, plus locking, cancellation and saved-plan integrity tests. Production lifecycle callers are not yet integrated.
+- [x] Possible `errored.tfstate` is retained instead of deleted during runner cleanup. Retained staging is private but not reboot-durable; secure manual recovery remains necessary.
+- [x] The offline validation CLI, Bash completion and four public backend examples are available; validation explicitly does not establish cloud readiness.
+- [x] Host-wrapper non-TTY execution/exit codes and backend rejection before cloud authentication/discovery have regression coverage. Generic public-IP/git-ref lookups and outside-container Docker startup are not claimed to be offline.
+- [x] Targeted regression evidence and implementation limitations are recorded; no live deployment, migration, drift workflow or shared-ledger publication was performed.
+
+### 10.2 Task delivery ledger
+
+| Plan tasks | Current delivery status | Work still required for task/release acceptance |
+| --- | --- | --- |
+| 1 — safety regressions | Implemented at the legacy-local boundary | Carry these guarantees through the backend-aware lifecycle; mocked failures are not live remote acceptance. |
+| 2 — compatibility baseline | Partial: schema adapters and runtime feature gates | Validate selected Terraform/provider/bootstrap combinations and provider lockfiles. |
+| 3 — configuration and selection | Partial: validation, precedence and fail-closed selection | Complete saved-descriptor identity/attachment integration; refusal is not migration support. |
+| 4 — isolated runner | Partial: production local deploy/import/destroy integration exercised; review fixes in progress | Finish all backend-aware consumers and durable recovery/release gates before remote mutation. |
+| 5 — durable bootstrap | Partial: create-new stacks, explicit plan/apply CLI, proposals and read-only doctor implemented | Complete reviewed use-existing/ownership/effective-IAM, restore and provider-specific acceptance; read-only checks leave write/locking status unknown. |
+| 6 — setup/CLI integration | Partial: explicit setup commands and credential/admin-root transport exercised | Finish concrete authenticated controller integration, write probes and end-to-end command parity; local transport is not identity proof. |
+| 7–12 — remote lifecycle, recovery, migration and acceptance | Partial components under implementation/review; not delivered end-to-end | Integrate exact manifest/claim/state-content contracts, recovery/migration and TUI; fix review findings and verify concrete lifecycle consumers. |
+| 13 — user-facing integration/documentation | Partial: examples and limitation documentation | Finish CLI/TUI/operator documentation and workflow parity. |
+| 14–18 — drift and configurable automation | Partial: detector/approval contracts, private baselines, inert workflows and disabled native stacks exercised | Complete concrete detector/approval/reporting/watchdog integration and independent review; runtime, identity, notification and correction acceptance remain open. |
+| 19–23 — optional shared evidence ledger | Partial trust/cache primitives under review; no registry/service/pilot delivery | Complete publication/admission and selected synchronization path; optional service and comparative pilot decisions remain separate. |
+
+Live acceptance requires separate authorization, but that is not a reason to mark unfinished implementation complete. Record each provider as untested, blocked or verified with evidence; do not infer one provider's readiness from another's tests. The optional ledger has its own acceptance checklist in section 11 and must not be presented as delivered with the core foundation.
+
+The intermediate [implementation/review checkpoint](../../memory/sessions/20260910_204512_c2887b81.md)
+records **350 passing tests across 23 suites**, including provider-free local Terraform
+execution. It is not a final run over all changing components or a clean final review.
+Native scheduler pinned-provider schema/mocked-plan verification is distinct from live
+operation. Follow the [work log](terraform-remote-backend-implementation-log.md) for review
+findings and integration gaps; none of the full-product boxes below is closed by this update.
+
+### 10.3 Full-product acceptance criteria — still open
+
+The original requirements below remain unchanged. Mark an item complete only when its whole stated scope is implemented and verified, citing the relevant tests/review or separately authorized live acceptance. Passing the foundation milestone alone does not close these criteria.
+
 - [ ] Local remains the default and works without backend setup.
 - [ ] Users explicitly choose remote storage; no silent bootstrap, fallback or migration.
 - [ ] GCS/S3/Azure Blob adapters and version gates are implemented and independently reviewed.
@@ -809,7 +856,146 @@ These are reference targets, not claims that live provider behavior was tested d
 - [ ] Workflow/native drift acceptance and correction modes are recorded separately from backend/lifecycle readiness.
 - [ ] No secrets/state artifacts committed; no unapproved environment edits or cloud resources left running.
 
-Planning completion is not implementation completion. Keep these boxes unchecked until backed by the specified evidence; record provider-specific blockers rather than filling gaps with assumed success.
+Planning completion and foundation completion are not full-plan completion. Keep remaining boxes unchecked until backed by the specified evidence; record provider-specific blockers rather than filling gaps with assumed success. Update the task ledger and evidence alongside future checkbox changes rather than weakening the definition of done to match partial delivery.
+
+### 10.4 Review guide: remaining work and remote-mutation gates
+
+**Status snapshot: 2026-09-10, after the latest review-fix batch. The feature is partially implemented, not ready for remote production use.** This section summarizes the remaining work for human review; it does not lower section 10.3's acceptance criteria. Earlier milestones and the implementation work log contain historical intermediate statuses. Worker-reported fixes are not independently accepted until re-reviewed against a consistent code snapshot.
+
+#### Remaining tasks, in recommended order
+
+| Order | Remaining task | Completion evidence required |
+| --- | --- | --- |
+| 1 | Independently review the latest drift/workflow, baseline/history, migration/controller, approval-issuer, deployment-state and TUI fixes; review the new local drift CLI integration. | Reviewer checks actual code and reproduces each regression; explicit scoped pass/fail, with unresolved findings listed. |
+| 2 | Resolve the three registry-related suite failures around changed inventory-output behavior. | Establish whether code or fixtures violate the intended contract; fix the cause without weakening safety assertions, then rerun affected and integration suites. |
+| 3 | Complete the reproducible test environment and run one consistent full regression. | Supported Terraform/runtime/dependencies, explicit skip accounting, exact commands and saved results for the same source snapshot. Do not add overlapping worker test totals. |
+| 4 | Finish remote lifecycle wiring. | Authenticated identity/scope, protected ownership claims, saved attachment/state verification and guarded runner execution connected to deploy/apply/import/destroy and remaining lifecycle/output/connection consumers. |
+| 5 | Finish recovery and migration integration. | Durable runner recovery, explicit pending-claim reconciliation, fresh-controller recovery, preserved state identity and verified source retirement/old-writer exclusion. |
+| 6 | Complete remote drift and operational monitoring. | Deployment-time applied-baseline capture, verified remote checks, durable sanitized reports, notification delivery and independent overdue-check monitoring exercised end to end. Local `drift check` now exists but still needs independent integration review. |
+| 7 | Implement genuinely independent remediation approval. | Authenticated distinct reviewer/executor identities, exact-plan approval, single-use consumption and immediate live revalidation. Same-UID local issuer grants remain correctly rejected; do not relabel identities or weaken that gate. |
+| 8 | Complete the selected optional shared-ledger path. | Authorized identity capture, publication/synchronization, confined RDF validation and query admission. Signature/cache verification alone is not query readiness; hosting remains conditional on the pilot decision. |
+| 9 | Perform separately authorized provider acceptance and reconcile documentation. | AWS/GCP/Azure results recorded individually; final CLI/TUI/operator guidance and task ledger reflect actual evidence. No inferred multi-cloud success from one provider or a mocked test. |
+
+#### What the user needs to provide for review
+
+**Offline code review needs no additional credentials or manual inspection of every file.** Existing implementation authorization covers offline development, tests and review. The review process must provide:
+
+- A fixed source snapshot including untracked new files, not only ordinary `git diff` output. Creating a commit or pushing is not required and is not authorized by this checklist.
+- Independent examination of each finding, its fix and its regression test.
+- Integrated tests against that same snapshot, with pass/fail/skip results and limitations.
+- Separate evidence for implementation, independent review and live acceptance.
+
+**User decisions or explicit permission are needed for:**
+
+- Test-environment dependency changes or tool upgrades; no installation was performed by this status update.
+- Selecting the independent approval architecture, such as protected CI review with a separate execution identity.
+- Live cloud acceptance: designated account/project/subscription, region, spending limit, permitted operations and cleanup authorization. Do not paste credentials into chat.
+- Installing/activating workflows or schedulers later. Inert generation is not activation.
+
+#### What is missing or failing in the test runs
+
+These are observations from the status inspection and saved run logs, not permanent environment facts; recheck them before execution.
+
+| Item | Observed limitation | Required follow-up |
+| --- | --- | --- |
+| Terraform | Installed version is **1.8.5**; remote policy requires **>=1.10,<2**. | Use an explicitly approved compatible test runtime and validate provider/backend combinations. Local 1.8.5 fixtures do not establish remote acceptance. |
+| TUI | **Textual and Rich are absent**; full UI execution is unverified. | Declare/provision the agreed dependencies with permission and run actual headless/runtime UI tests. |
+| Workflow linting | **actionlint is absent**; its test was skipped. | Run it in the agreed test environment and record the result. |
+| Registry regressions | `artifact_registry`, `artifact_registry_ansible` and `container_registry_ansible` suites are nonpassing around inventory-output expectations. | Diagnose against the intended production contract, repair and rerun. These are failures, not merely unavailable tools. |
+| Knowledge graph | Default Python lacks RDFLib; the worker reports passing tests in the existing graph virtualenv. | Use the correct declared runtime; do not interpret a wrong-interpreter failure as a graph regression or silently install globally. |
+| Cloud acceptance | No live multi-cloud ownership, locking, restore, permission or remote-migration acceptance has run. | Execute bounded, separately authorized sandbox tests and record results per provider. |
+| Aggregate evidence | Latest worker suites overlap and ran while other files changed. | Produce one consistent full-run report; earlier green totals do not supersede later review findings. |
+
+Saved broader-run diagnostics: `/tmp/migration-review-tests-mlr0qmmg/` (temporary local evidence; retain sanitized results before relying on them long-term). Source/runtime inspection confirmed the installed version and missing UI/lint dependencies; this documentation edit is not a new test execution.
+
+#### Remote execution integration — clarified implementation scope
+
+**The refusals below are temporary implementation restrictions, not inherent cloud/Terraform limitations or reasons to postpone implementation.** Complete backend-aware execution rather than treating every optional coordination feature as a prerequisite. In the inspected source:
+
+- `src/python/terraform_runner.py`, `TerraformRunner.apply()` (lines 590–594), refuses nonlocal backends.
+- `TerraformRunner.import_resource()` (lines 609–617) refuses remote import without the integrated ownership/attachment path.
+- `TerraformRunner.destroy()` (lines 639–643) refuses remote destruction.
+- `src/python/deployment_state.py` defines a trusted `mutation_adapter`/guard contract, but that interface alone is not a production mutation bridge.
+- `src/python/backend_controller.py` supplies restricted **read-only** authenticated adapters. Its read receipt is deliberately not write authority. The current credential modes also do not establish CI/OIDC parity.
+
+The core deployment path must provide these practical safeguards:
+
+- [ ] Configure supported backend/provider authentication and explicit project/account/subscription scope. Different backend and workload identities are legitimate when deliberately configured and authorized.
+- [ ] Persist the selected backend location; reject accidental new-deployment reuse and unknown access failures. Existing remote state is normal for an existing deployment; explicit attachment/migration must not be confused with silent adoption.
+- [ ] Use native backend locking and Terraform saved-plan/state consistency checks. Native locking does not prevent selection of the wrong destination or duplicate management through separate states.
+- [ ] Execute the deliberately selected source, inputs and provider locks through an isolated operation and saved plan. Ordinary configuration updates do not require reconstruction of a last-applied baseline; baseline reconstruction remains important for drift comparison and recovery.
+- [ ] Retain durable recovery evidence after partial apply, failed state writes or uncertain publication; temporary runner staging is not reboot-durable.
+- [ ] Verify post-operation state/publication, destroy cleanup and migration/source-retirement behavior, including failure paths.
+- [ ] Obtain independent code-review approval and provider-specific acceptance evidence before release.
+
+Custom distributed reservations/claims, continuous state-content attestation, independent drift-approval issuers and shared-ledger admission are separate capabilities, not universal prerequisites for user-requested deployment. Preserve protections for already-written claim/migration records while reconciling existing code; do not bypass them blindly or remove the remote refusals without connecting and testing the actual execution path. This clarification supersedes broader prerequisite wording elsewhere in the plan for the initial remote-backend delivery; it does not declare existing code complete.
+
+Bootstrap is a separate boundary: explicitly creating backend infrastructure uses its own local administration state. It does **not** enable remote workstation mutation. Likewise, the dedicated supervised migration service is not proof that general remote lifecycle mutations are ready. Terraform state storage in the cloud also does not imply Terraform execution runs in the cloud.
+
+**Recommended sequence:** deliver the GCS deployment/lifecycle path and usable local–cloud file synchronization below → independently review and run authorized GCP acceptance → complete S3/Azure parity → optional advanced drift/ledger capabilities. IAP/security and Neo4j infrastructure can proceed independently of those optional capabilities.
+
+### 10.5 Immediate solution: remote Terraform state and local–cloud file sync
+
+**User requirement:** provide both a usable remote backend and an explicit way to synchronize selected local work with cloud storage/workstations. Do not delay this delivery for research into another repository or completion of optional trust frameworks. This is an implementation specification, not a claim that the proposed options already exist.
+
+#### Separate the two kinds of data
+
+| Data | Mechanism | Authority and lifecycle |
+| --- | --- | --- |
+| Terraform infrastructure state | Native GCS backend first; S3/Azure parity afterward | Terraform is the writer. State bucket survives workstation destruction. Use Terraform's explicit migration, never rsync `.tfstate` or `.terraform`. |
+| Working files: selected code, assets, datasets, models and results | rsync over SSH; GCP private VMs use an IAP-backed SSH transport | Explicit push or pull per selected directory. No implicit bidirectional merge or automatic destructive mirroring. |
+| Durable off-VM file copies | Optional `gcloud storage rsync` to a separate data bucket/prefix | User selects what to copy and when to restore. Object storage is not a POSIX filesystem; permissions/symlink semantics need documented handling. Data storage is separate from Terraform state. |
+| Neo4j data | Database-consistent backup/export and restore | Do not rsync a live database data directory. Independently retained database storage/backups must survive GPU workstation teardown. |
+
+#### Existing code to extend, not replace with another framework
+
+- `upload`: rsync from configured local uploads directory to a selectable remote directory; currently direct-IP/key SSH, host-key checks disabled and deletion enabled by default.
+- `download`: rsync from a remote results directory to local results; currently direct-IP/key SSH, host-key checks disabled, deletion enabled by default and elevated remote rsync.
+- `src/python/gcp.py`: existing IAP SSH helper. Reuse its intended connection behavior after checking argument handling; it is not yet proof that rsync/IAP works.
+- `src/python/utils.py`: output/discovery consumers must resolve the saved backend rather than require a local state file.
+- `.agents/skills/isaac-automator/transfer-data/SKILL.md` and README data-transfer section: update alongside command behavior.
+
+#### Delivery sequence and acceptance
+
+1. **Finish GCS backend execution.** Connect `backend_selection`, `TerraformRunner`, `Deployer` and lifecycle/output callers. Support create-new/use-existing storage, explicit saved destination and local-to-GCS migration. Keep local default and do not automatically migrate registry states. Verify deploy → outputs → fresh-controller management → destroy, leaving the bucket intact. Code review and offline tests precede separately authorized cloud execution.
+2. **Create one reusable connection description for transfer and shell operations.** Carry instance/project/zone, SSH identity and known-host policy from the deployment configuration/authoritative outputs. Support ordinary SSH and GCP IAP without requiring a public IP; handle OS Login deliberately. Do not assume the username/key path from direct SSH works for every OS Login configuration. Use scoped IAP/OS Login permissions and retain SSH host verification.
+3. **Extend `upload`/`download` for selected paths.** Preserve existing folder conventions; add explicit local-path selection, dry-run, exclusion rules and resumable partial transfers using supported rsync options. Make deletion opt-in, document that compatibility change and show affected deletions in preview. Avoid blanket `sudo rsync`; use the selected user's writable directories. Quote local and remote arguments safely, bound subprocesses and preserve exit status/cancellation.
+4. **Add named transfer mappings.** Each mapping names a local directory, a remote directory and a direction (`push` or `pull`). Suggested use: local source → cloud workspace; cloud results → local results. Reject overlapping contradictory mappings; define which side wins instead of running two mirrors and calling it conflict resolution. Scheduling is optional and off by default.
+5. **Add optional durable GCS data sync.** Implement explicit upload/restore for selected data prefixes, separate from state. No deletion by default. Do not promise a cloud copy exists until transfer and verification succeed. Explain egress/storage costs and distinguish VM-mounted persistence from off-VM backup.
+6. **Verify and document the complete workflow.** Test direct SSH and IAP argument construction, explicit direction, spaces/special characters, exclusions, dry-run, no-delete default, overwrite behavior, interrupted/resumed transfers and surfaced failures. Exercise real rsync against disposable local fixtures where available, then a user-authorized private GCP VM. Confirm remote-state deployments can use upload/download without reading stale local `.tfstate`.
+
+**Transfer safety defaults:** exclude Terraform state/staging, credential/key files, `.env`, local secret stores and live database directories from general workspace mappings. Use scoped allowlists; a broad home-directory or repository mirror is not the default. Credentials use the existing explicit authentication transport, not file sync. Rsync push/pull may overwrite changed files even without `--delete`; previews and documented source-of-truth rules must make that clear. Remote absence/read failure must never trigger local deletion.
+
+**First usable milestone:** deploy a GCP workstation with GCS-managed Terraform state, connect through IAP, push a selected local working directory, pull results, optionally retain a data copy in GCS, and destroy the workstation without deleting backend/data storage. Neo4j deployment/ingestion is a parallel infrastructure track, not a dependency of this milestone. Full S3/Azure and optional drift/ledger acceptance remain separate tasks, not silently dropped scope.
+
+### 10.6 GCS implementation and live acceptance update — 2026-09-11
+
+This dated update supersedes older statements that **all** ordinary remote operations
+remain unimplemented; it does not mark the entire 23-task plan complete.
+
+- GCS native execution and persisted backend-aware output/lifecycle integration are
+  implemented. S3/Azure ordinary remote execution remains outside this enabled slice.
+- Selected-directory rsync upload/download, IAP/OS Login endpoint selection, opt-in
+  deletion, previews, safe defaults and explicit host/container directory mapping are
+  implemented and independently reviewed. The final scoped same-snapshot regression
+  has **536 passed, 1 skipped across 35 suites**; exclusions and review boundaries are
+  explicit in the acceptance report. Private noVNC uses a loopback IAP tunnel.
+- Real GCS permission and native Terraform experiments passed in **cybernetic-renan**
+  (the actual project ID). The Automator GCS runner also passed live init/apply/read/
+  destroy with a provider-free resource, including a fresh read-only controller context.
+- A separate private e2-micro Terraform experiment verified creation, no public IP,
+  Shielded VM settings and stop/start. Its VM, disk, network resources and backend were
+  destroyed and absence verified. No GPU or NAT gateway was provisioned.
+- All seven temporary experiment buckets were deleted, including object versions.
+  Exact short-lived usage charges are not measured; zero cost is not claimed.
+- The current identity lacks IAP tunnel access in both project and instance probes.
+  No IAM grants were added. Live IAP rsync and complete GPU/Isaac installation remain
+  unverified. This is an actual permission/acceptance gap, not a ledger/approval prerequisite.
+- A subsequent Docker-image live test was blocked before execution by the approval
+  tool and was not retried. Further live experimentation awaits user approval.
+
+Detailed resource accounting, evidence, review findings and final test results:
+[GCS acceptance report](terraform-gcs-acceptance-20260911.md).
 
 ## 11. Optional shared evidence ledger and local agent caches
 

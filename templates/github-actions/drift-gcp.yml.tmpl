@@ -1,0 +1,9 @@
+# Verified public upstream refs/tags/v2.1.10 using git ls-remote.
+name: GCP detection OIDC
+uses: google-github-actions/auth@ba79af03959ebeac9769e648f473a284504d9193
+with:
+  workload_identity_provider: @@WORKLOAD_IDENTITY_PROVIDER@@
+  service_account: @@SERVICE_ACCOUNT@@
+  create_credentials_file: true
+  export_environment_variables: true
+  cleanup_credentials: true

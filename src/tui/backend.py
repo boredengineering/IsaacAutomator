@@ -1,11 +1,213 @@
 import json
+import asyncio
 import os
 import shutil
+import shlex
 import subprocess
+import sys
+import stat
 from pathlib import Path
 
-REPO_ROOT = Path("/workspaces/IsaacAutomator")
+from src.python.backend_selection import select_backend
+from src.python.config import c, load_profile_spec
+from src.python.deployment_manifest import DeploymentManifest, strict_json
+
+
+def backend_selection(cloud: str, state_backend: str | None = None, backend_config: str = "",
+                      profile: str | None = None):
+    """Share CLI precedence; None inherits saved intent, local is deliberate.
+
+    A standalone new profile editor has no inherited intent and defaults local.
+    A deployment profile must be loaded successfully, never silently discarded.
+    """
+    saved = load_profile_spec(profile, repo_root=str(REPO_ROOT)) if profile else {}
+    if saved is None:
+        raise ValueError("Profile unavailable; backend intent unknown")
+    params = {}
+    if state_backend:
+        params["state_backend"] = state_backend
+    elif not profile and not backend_config:
+        params["state_backend"] = "local"
+    if backend_config:
+        params["backend_config"] = str(Path(backend_config).expanduser().resolve())
+    spec = select_backend(params, saved, cloud)
+    args = ["--state-backend", spec.backend]
+    if backend_config:
+        args.extend(["--backend-config", params["backend_config"]])
+    return spec, args
+
+
+def deployment_command(result: dict) -> str:
+    """Transport selections to the shared CLI, never implement lifecycle here."""
+    cloud = result.get("cloud", "gcp")
+    spec, backend_args = backend_selection(
+        cloud, result.get("state_backend"), result.get("backend_config", ""),
+        result.get("profile", "simple"))
+    if spec.backend != "local":
+        raise ValueError("Remote execution blocked pending production gates; use offline backend validation")
+    argv = [str(REPO_ROOT / f"deploy-{cloud}"),
+            "--deployment-name", result.get("name", "workstation"),
+            "--instance-type", result.get("gpu", ""),
+            "--profile", result.get("profile", "simple"),
+            "--existing", "replace", "--ingress-cidrs", "0.0.0.0/0",
+            "--isaacsim", "latest", "--isaaclab", "latest",
+            "--isaaclab-arena", "latest", "--no-upload", *backend_args]
+    zone = result.get("zone", "")
+    if cloud == "gcp":
+        # No account discovery or invented fallback project in the event loop.
+        project = result.get("project", "")
+        if not project:
+            raise ValueError("Supply an explicit GCP project before deployment")
+        argv.extend(["--project", project, "--isaac-workstation-gpu-count", "1"])
+        if result.get("flex_start"):
+            argv.append("--flex-start")
+        elif result.get("spot"):
+            argv.extend(["--spot", "--auto-restore"])
+    elif cloud == "aws" and result.get("spot"):
+        argv.append("--spot")
+    if zone and zone != "default":
+        argv.extend(["--zone" if cloud == "gcp" else "--region", zone])
+    if result.get("dry_run"):
+        argv.append("--dry-run")
+    argv.extend(["--demos", ",".join(result.get("demos", [])) or "no"])
+    return shlex.join(argv)
+
+
+def redact_command_text(command: str, text: str | None = None) -> str:
+    """Keep backend-config paths in execution only, including echoed output."""
+    argv = shlex.split(command)
+    result = command if text is None else text
+    for index, arg in enumerate(argv):
+        if arg == "--backend-config" and index + 1 < len(argv):
+            path = argv[index + 1]
+            result = result.replace(shlex.quote(path), "<backend-config>")
+            result = result.replace(path, "<backend-config>")
+    return result
+
+
+async def _run_offline_json(argv, *, timeout: float = 5.0, output_limit: int = 8192):
+    """Shared terminable boundary for offline validation and filesystem loaders.
+
+    No shell or deploy wrapper. Bound stdout and wall time; kill/reap on timeout,
+    cancellation or overflow. Diagnostics never cross this boundary.
+    """
+    proc = None
+    spawn = asyncio.create_task(asyncio.create_subprocess_exec(
+        *argv, cwd=str(REPO_ROOT), stdin=asyncio.subprocess.DEVNULL,
+        stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL,
+        limit=8192))
+    try:
+        # Keep ownership if cancellation arrives while the child is spawning.
+        proc = await asyncio.shield(spawn)
+
+        async def collect():
+            output = b""
+            while True:
+                chunk = await proc.stdout.read(min(8192, output_limit + 1 - len(output)))
+                if not chunk:
+                    break
+                output += chunk
+                if len(output) > output_limit:
+                    raise ValueError("Offline output exceeds limit")
+            await proc.wait()
+            return output
+
+        raw = await asyncio.wait_for(collect(), timeout=max(0.001, min(timeout, 30.0)))
+        if proc.returncode != 0:
+            raise ValueError("Invalid offline configuration")
+        return json.loads(raw)
+    finally:
+        if proc is None:
+            proc = await spawn
+        if proc.returncode is None:
+            try:
+                proc.kill()
+            except ProcessLookupError:
+                pass
+            await asyncio.wait_for(proc.wait(), timeout=1.0)
+
+
+async def validate_backend_config(cloud: str, config_path: str, *, timeout: float = 5.0):
+    """Offline CLI validation only, not authenticated backend health."""
+    unknown = {"status": "unknown", "cloud_access": "not_checked",
+               "remote_lifecycle": "not_enabled"}
+    try:
+        data = await _run_offline_json([
+            sys.executable, "-m", "src.python.state_backend_command", "validate",
+            "--cloud", cloud, "--config", config_path], timeout=timeout)
+        if (data.get("status") != "valid-config" or data.get("cloud") != cloud
+                or data.get("backend") not in ("local", "s3", "gcs", "azurerm")
+                or data.get("cloud_access") != "not_checked"):
+            raise ValueError("Unexpected validation response")
+        return {"status": "valid-config", "backend": data["backend"], "cloud": cloud,
+                "cloud_access": "not_checked", "remote_lifecycle": "not_enabled"}
+    except asyncio.TimeoutError:
+        return {**unknown, "reason": "timeout"}
+    except ValueError:
+        return {**unknown, "reason": "invalid-config"}
+    except (OSError, TypeError, AttributeError):
+        return {**unknown, "reason": "validation-unavailable"}
+
+
+async def load_backend_selection(cloud: str, state_backend: str | None = None,
+                                 backend_config: str = "", profile: str | None = None,
+                                 *, timeout: float = 5.0):
+    """Load canonical nonsecret intent in the same bounded validation process boundary."""
+    from src.python.terraform_backend import BackendSpec
+    data = await _run_offline_json([
+        sys.executable, "-m", "src.tui.backend", "selection",
+        json.dumps([cloud, state_backend, backend_config, profile])], timeout=timeout)
+    return BackendSpec.from_dict(data, cloud=cloud)
+
+
+async def prepare_deployment_command(result: dict, *, timeout: float = 5.0) -> str:
+    """Resolve profile/config and construct execution transport in a bounded child."""
+    data = await _run_offline_json([
+        sys.executable, "-m", "src.tui.backend", "deployment-command", json.dumps(result)], timeout=timeout)
+    if not isinstance(data, dict) or not isinstance(data.get("command"), str):
+        raise ValueError("Invalid offline command response")
+    return data["command"]
+
+
+async def load_deployment_inventory(*, timeout: float = 5.0, repo_root=None):
+    """Load only controller-local inventory; timeout is unknown, not empty fleet."""
+    data = await _run_offline_json([
+        sys.executable, "-m", "src.tui.backend", "inventory",
+        json.dumps(str(REPO_ROOT if repo_root is None else repo_root))],
+        timeout=timeout, output_limit=1024 * 1024)
+    if not isinstance(data, list) or not all(isinstance(row, dict) for row in data):
+        raise ValueError("Invalid offline inventory response")
+    return data
+
+
+REPO_ROOT = Path(c["app_dir"])
 INSTALLER_BIN = REPO_ROOT / "isaac-installer/bin/isaac-installer"
+
+
+def _read_controller_mapping(path):
+    """Bounded local legacy inventory input, never a FIFO/device/symlink read."""
+    fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+    with os.fdopen(fd, "rb") as stream:
+        if not stat.S_ISREG(os.fstat(stream.fileno()).st_mode):
+            raise ValueError("Controller metadata must be a regular file")
+        data = strict_json(stream.read(1024 * 1024 + 1))
+    if not isinstance(data, dict):
+        raise ValueError("Controller metadata must be a mapping")
+    return data
+
+
+def _legacy_remote_intent(meta: dict) -> bool:
+    """Any saved remote hint is unverified, even beside apparently local state."""
+    for key in ("state_bucket", "backend_config"):
+        if meta.get(key):
+            return True
+    if meta.get("state_backend") not in (None, "", "local"):
+        return True
+    block = meta.get("terraform_state")
+    if block is not None and (not isinstance(block, dict) or block.get("backend") != "local"):
+        return True
+    return any(_legacy_remote_intent(value) for value in meta.values() if isinstance(value, dict))
+
 
 class WorkstationBackend:
     @staticmethod
@@ -36,54 +238,95 @@ class WorkstationBackend:
 
     @staticmethod
     def get_deployments():
-        """Lists local state deployments in state/"""
+        """List controller-local receipts, never enumerate cloud accounts/buckets.
+
+        A valid saved receipt is not proof of attachment or cloud reachability.
+        In particular, never fall back to stale local state beside a descriptor.
+        """
         deployments = []
         state_dir = REPO_ROOT / "state"
         if not state_dir.exists():
             return deployments
 
         for item in sorted(state_dir.iterdir()):
-            if item.is_dir() and not item.name.startswith("."):
+            if item.is_dir() and not item.is_symlink() and not item.name.startswith("."):
+                descriptor = item / "backend.json"
+                if os.path.lexists(descriptor):
+                    row = {"name": item.name, "cloud": "UNKNOWN", "gpu": "none",
+                           "ip": "N/A", "profile": "Unknown", "path": str(item),
+                           "backend": "unknown", "backend_access": "unknown",
+                           "attachment": "invalid", "status": "ATTACHMENT INVALID / VM UNKNOWN"}
+                    try:
+                        fd = os.open(descriptor, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+                        with os.fdopen(fd, "rb") as stream:
+                            info = os.fstat(stream.fileno())
+                            if (not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid()
+                                    or info.st_mode & 0o077 or info.st_nlink != 1):
+                                raise ValueError("Unsafe descriptor")
+                            saved = DeploymentManifest.from_json(stream.read(1024 * 1024 + 1))
+                        data = saved.to_dict()
+                        identity = saved.identity
+                        if identity["deployment_name"] != item.name:
+                            raise ValueError("Descriptor name mismatch")
+                        row.update(backend=identity["backend"], cloud=identity["cloud"].upper(),
+                                   namespace=identity["namespace"], attachment="present-unverified",
+                                   status="ATTACHMENT PRESENT / VM UNKNOWN",
+                                   gpu=data["inputs"].get("instance_type", "none"),
+                                   profile=data["inputs"].get("security_tier", "Unknown"))
+                    except OSError:
+                        row.update(attachment="unreadable", status="ATTACHMENT UNREACHABLE / VM UNKNOWN")
+                    except ValueError:
+                        pass
+                    deployments.append(row)
+                    continue
                 meta_file = item / "meta.json"
                 tfstate_file = item / ".tfstate"
                 name = item.name
                 cloud = "UNKNOWN"
                 gpu = "none"
-                status = "CONFIGURED"
+                status = "STATE UNKNOWN / VM UNKNOWN"
+                backend_access = "unknown"
                 ip = "N/A"
                 profile = "simple"
+                attachment = "legacy-local"
+                backend_kind = "local"
 
-                if meta_file.exists():
+                if os.path.lexists(meta_file):
                     try:
-                        with open(meta_file) as f:
-                            meta = json.load(f)
-                            params = meta.get("params", {})
-                            cloud = params.get("cloud") or meta.get("config", {}).get("cloud") or cloud
-                            gpu = (
-                                params.get("isaac_workstation_instance_type")
-                                or params.get("instance_type")
-                                or params.get("isaac_workstation_gpu_type", gpu)
-                            )
-                            profile = params.get("security_profile") or params.get("profile", "simple")
-                            if "aws_access_key_id" in params:
-                                cloud = "AWS"
+                        meta = _read_controller_mapping(meta_file)
+                        if _legacy_remote_intent(meta):
+                            attachment = "legacy-remote-unverified"
+                            backend_kind = "unknown"
+                            status = "LEGACY REMOTE UNVERIFIED / VM UNKNOWN"
+                        params = meta.get("params", {})
+                        cloud = params.get("cloud") or meta.get("config", {}).get("cloud") or cloud
+                        gpu = (
+                            params.get("isaac_workstation_instance_type")
+                            or params.get("instance_type")
+                            or params.get("isaac_workstation_gpu_type", gpu)
+                        )
+                        profile = params.get("security_profile") or params.get("profile", "simple")
+                        if "aws_access_key_id" in params:
+                            cloud = "AWS"
                     except Exception:
-                        pass
+                        attachment = "unreadable"
+                        backend_kind = "unknown"
+                        status = "BACKEND INTENT UNKNOWN / VM UNKNOWN"
 
-                if tfstate_file.exists():
+                if attachment == "legacy-local" and tfstate_file.exists():
                     try:
-                        with open(tfstate_file) as f:
-                            state = json.load(f)
-                            outputs = state.get("outputs", {})
-                            ip = (
-                                outputs.get("isaac_workstation_ip", {}).get("value")
-                                or outputs.get("isaac_ip", {}).get("value")
-                                or ip
-                            )
-                            st_cloud = outputs.get("cloud", {}).get("value")
-                            if st_cloud:
-                                cloud = st_cloud
-                            status = "PROVISIONED"
+                        state = _read_controller_mapping(tfstate_file)
+                        outputs = state.get("outputs", {})
+                        for key in ("isaac_workstation_ip", "isaac_ip"):
+                            entry = outputs.get(key, {})
+                            if entry.get("sensitive") is not True and isinstance(entry.get("value"), str):
+                                ip = entry["value"] or ip
+                                break
+                        cloud_entry = outputs.get("cloud", {})
+                        if cloud_entry.get("sensitive") is not True and cloud_entry.get("value") in ("aws", "gcp", "azure", "alicloud"):
+                            cloud = cloud_entry["value"]
+                        status = "LOCAL STATE PRESENT / VM UNKNOWN"
+                        backend_access = "local-file-only"
                     except Exception:
                         pass
 
@@ -95,6 +338,9 @@ class WorkstationBackend:
                     "ip": str(ip),
                     "profile": str(profile).capitalize(),
                     "path": str(item),
+                    "backend": backend_kind,
+                    "backend_access": backend_access,
+                    "attachment": attachment,
                 })
 
         return deployments
@@ -240,3 +486,23 @@ class WorkstationBackend:
         })
 
         return subsystems
+
+
+if __name__ == "__main__":
+    # Internal read-only worker, not a lifecycle CLI. Never print loader errors.
+    try:
+        if len(sys.argv) != 3:
+            raise ValueError("Unsupported offline operation")
+        payload = json.loads(sys.argv[2])
+        if sys.argv[1] == "selection":
+            result = backend_selection(*payload)[0].to_dict()
+        elif sys.argv[1] == "deployment-command":
+            result = {"command": deployment_command(payload)}
+        elif sys.argv[1] == "inventory":
+            REPO_ROOT = Path(payload)
+            result = WorkstationBackend.get_deployments()
+        else:
+            raise ValueError("Unsupported offline operation")
+        print(json.dumps(result))
+    except Exception:
+        sys.exit(2)

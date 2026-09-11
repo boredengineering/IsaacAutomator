@@ -3,13 +3,16 @@ Declarative Profile & Dynamic Security Configurator Screen for isaac9s
 Supports Simple, Team, Enterprise, and Custom modes with persistent YAML profiles.
 """
 from pathlib import Path
-from typing import Any
+import asyncio
+import re
+import yaml
+
 from textual.app import ComposeResult
 from textual.containers import Horizontal, Vertical, VerticalScroll
-from textual.widgets import Button, Checkbox, Input, Label, RadioButton, RadioSet, Static
+from textual.widgets import Button, Checkbox, Input, Label, RadioButton, RadioSet, Select, Static
 
-from src.python.config import list_available_profiles, load_profile_spec, save_profile_spec
-from src.tui.backend import REPO_ROOT
+from src.python.config import save_profile_spec
+from src.tui.backend import REPO_ROOT, backend_selection, load_backend_selection
 
 
 class ProfilesPane(VerticalScroll):
@@ -19,6 +22,12 @@ class ProfilesPane(VerticalScroll):
         super().__init__(*args, **kwargs)
         self.selected_profile: str = "default-workstation.yaml"
         self.selected_tier: str = "simple"
+        self.selected_cloud = "gcp"
+        self.selected_state_backend = "local"
+        self.backend_config = ""
+        self.backend_worker = None
+        self.validated_backend = None
+        self.validated_selection = None
 
     def compose(self) -> ComposeResult:
         yield Static(
@@ -45,7 +54,7 @@ class ProfilesPane(VerticalScroll):
             yield Label("[bold cyan]3. CUSTOM SUBSYSTEM TOGGLES & COST CALCULATOR:[/]")
             yield Checkbox("Zero Public IP (Cloud IAP TCP Forwarding Tunnel)", value=True, id="cb-custom-iap")
             yield Checkbox("Cloud NAT Gateway (Required for Private Outbound Packages) [+$32.40/mo]", value=True, id="cb-custom-nat")
-            yield Checkbox("Remote GCS State Storage with Native Object Locking [+$0.05/mo]", value=True, id="cb-custom-gcs")
+
             yield Checkbox("Customer-Managed Encryption Keys (Cloud KMS CMEK) [+$1.80/mo]", value=False, id="cb-custom-kmscmek")
             yield Checkbox("Shielded VM (Secure Boot, vTPM, Integrity Monitoring) [$0.00/mo]", value=True, id="cb-custom-shielded")
             yield Checkbox("Centralized OS Login with Mandatory 2FA [$0.00/mo]", value=True, id="cb-custom-oslogin")
@@ -54,6 +63,18 @@ class ProfilesPane(VerticalScroll):
             with Horizontal(classes="action-bar"):
                 yield Label("[bold white]Profile Name:[/] ", classes="action-label")
                 yield Input(value="cybernetic-custom", id="inp-custom-profile-name", placeholder="profile-name")
+
+        with Vertical(classes="box-panel"):
+            yield Label("Terraform state (independent of security tier; local default):")
+            yield Select([("GCP", "gcp"), ("AWS", "aws"), ("Azure", "azure"), ("Alibaba", "alicloud")],
+                         value="gcp", allow_blank=False, id="sel-profile-cloud")
+            yield Select([("Local", "local"), ("GCS (GCP only)", "gcs"),
+                          ("S3 (AWS only)", "s3"), ("Azure Blob (Azure only)", "azurerm")],
+                         value="local", allow_blank=False, id="sel-profile-backend")
+            yield Input(placeholder="Nonsecret backend YAML/JSON file path", id="inp-profile-backend-config")
+            yield Button("Validate backend intent (offline)", id="btn-profile-backend-validate")
+            yield Static("Local default. Remote execution blocked pending production gates.",
+                         id="profile-backend-status", markup=False)
 
         yield Static(id="profile-details-panel", classes="box-panel")
 
@@ -103,9 +124,7 @@ class ProfilesPane(VerticalScroll):
             if self.query_one("#cb-custom-nat", Checkbox).value:
                 added_cost += 32.40
                 breakdown.append("Cloud NAT Gateway ($32.40)")
-            if self.query_one("#cb-custom-gcs", Checkbox).value:
-                added_cost += 0.05
-                breakdown.append("GCS Remote State ($0.05)")
+
             if self.query_one("#cb-custom-kmscmek", Checkbox).value:
                 added_cost += 1.80
                 breakdown.append("Cloud KMS CMEK ($1.80)")
@@ -125,7 +144,7 @@ class ProfilesPane(VerticalScroll):
                 "• [bold white]Firewall Ingress:[/]   [cyan]Dynamic /32 IP Whitelist[/] (auto-locked to caller IP via curl ifconfig.me)\n"
                 "• [bold white]Outbound Internet:[/]  Direct ephemeral public IP (Eliminates $32/mo Cloud NAT fee)\n"
                 "• [bold white]Data Encryption:[/]    Free cloud-default encryption (Google-managed, AWS SSE-S3, Azure PMK)\n"
-                "• [bold white]State Storage:[/]      Local state in ./state/<name>/.tfstate with POSIX 0600 permissions\n"
+                "• [bold white]State Storage:[/]      Local by default; explicit backend intent below\n"
                 "• [bold white]IAM Requirements:[/]   Standard personal developer credentials (zero Org Admin / KMS blockers)"
             )
         elif tier_id == "tier-team":
@@ -135,8 +154,8 @@ class ProfilesPane(VerticalScroll):
                 "• [bold white]Firewall Ingress:[/]   Dynamic /32 IP Whitelist or shared team subnet CIDR\n"
                 "• [bold white]Outbound Internet:[/]  Direct ephemeral public IP\n"
                 "• [bold white]Data Encryption:[/]    Free cloud-default encryption with bucket versioning\n"
-                "• [bold white]State Storage:[/]      Cloud remote state (S3, GCS, Azure Blob, AliCloud OSS) with native locking\n"
-                "• [bold white]IAM Requirements:[/]   Object Admin on dedicated team state bucket"
+                "• [bold white]State Storage:[/]      Local by default; Team does not enable remote state\n"
+                "• [bold white]Remote State:[/]       Explicit GCS/S3/Azure selection only; execution currently blocked"
             )
         elif tier_id == "tier-enterprise":
             panel.update(
@@ -157,32 +176,34 @@ class ProfilesPane(VerticalScroll):
                 f"• [bold white]Dynamic Added Cost:[/]  [bold green]{cost_str}[/] ({items_str})\n"
                 f"• [bold white]Network Perimeter:[/]  {'Zero Public IP (Cloud IAP Tunnel)' if self.query_one('#cb-custom-iap', Checkbox).value else 'Public IP (/32 Lock)'}\n"
                 f"• [bold white]Outbound Routing:[/]   {'Managed Cloud NAT Gateway' if self.query_one('#cb-custom-nat', Checkbox).value else 'Direct Ephemeral Public'}\n"
-                f"• [bold white]Storage Backend:[/]    {'GCS Remote State with Distributed Locking' if self.query_one('#cb-custom-gcs', Checkbox).value else 'Local State (.tfstate)'}\n"
+                f"• [bold white]Storage Backend:[/]    Explicit selection below; no automatic bucket creation\n"
                 f"• [bold white]Cryptographic Key:[/]  {'Customer-Managed KMS CMEK (90d rotation)' if self.query_one('#cb-custom-kmscmek', Checkbox).value else 'Google-Managed Default ($0)'}\n"
                 f"• [bold white]Hardware Security:[/]  {'Shielded VM (Secure Boot + vTPM)' if self.query_one('#cb-custom-shielded', Checkbox).value else 'Standard VM'}\n"
                 f"• [bold white]Identity & Access:[/]  {'OS Login with Mandatory 2FA' if self.query_one('#cb-custom-oslogin', Checkbox).value else 'Static Metadata RSA Key'}"
             )
 
     def export_yaml(self) -> Path:
+        spec = {"profile_name": self.selected_profile, "cloud": self.selected_cloud,
+                "security": {"tier": self.selected_tier},
+                "workstation": {"base_profile": self.selected_profile},
+                "terraform_state": self.backend_intent()}
         out_dir = REPO_ROOT / "state"
         out_dir.mkdir(parents=True, exist_ok=True)
         out_file = out_dir / "active-profile.yaml"
-        content = (
-            f"# Generated by isaac9s\n"
-            f"profile: {self.selected_profile}\n"
-            f"security_tier: {self.selected_tier}\n"
-            f"auto_ip_lockdown: true\n"
-        )
+        content = yaml.safe_dump(spec, sort_keys=False)
         out_file.write_text(content)
         return out_file
 
     def save_custom_profile_yaml(self) -> Path:
         prof_name = self.query_one("#inp-custom-profile-name", Input).value.strip() or "custom-profile"
+        if not re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9_-]{0,62}", prof_name):
+            raise ValueError("Profile name must be a simple name, not a path")
         spec = {
             "schema_version": "v1alpha1",
             "profile_name": prof_name,
             "description": f"Custom profile saved from isaac9s ({prof_name})",
-            "cloud": "gcp",
+            "cloud": self.selected_cloud,
+            "terraform_state": self.backend_intent(),
             "security": {
                 "tier": "custom",
                 "network": {
@@ -190,12 +211,7 @@ class ProfilesPane(VerticalScroll):
                     "cloud_nat": self.query_one("#cb-custom-nat", Checkbox).value,
                     "ingress_cidrs": [] if self.query_one("#cb-custom-iap", Checkbox).value else ["auto"],
                 },
-                "storage": {
-                    "state_backend": "gcs" if self.query_one("#cb-custom-gcs", Checkbox).value else "local",
-                    "state_bucket": "auto" if self.query_one("#cb-custom-gcs", Checkbox).value else "",
-                    "state_locking": self.query_one("#cb-custom-gcs", Checkbox).value,
-                    "soft_delete_days": 7,
-                },
+
                 "cryptography": {
                     "encryption_type": "kms_cmek" if self.query_one("#cb-custom-kmscmek", Checkbox).value else "google_managed",
                     "kms_keyring_name": "auto" if self.query_one("#cb-custom-kmscmek", Checkbox).value else "",
@@ -215,7 +231,68 @@ class ProfilesPane(VerticalScroll):
         }
         return save_profile_spec(prof_name, spec, repo_root=str(REPO_ROOT))
 
+    def backend_intent(self) -> dict:
+        selection = (self.selected_cloud, self.selected_state_backend, self.backend_config)
+        if self.selected_state_backend == "local" and not self.backend_config:
+            return backend_selection(self.selected_cloud)[0].to_dict()
+        if selection != self.validated_selection or self.validated_backend is None:
+            raise ValueError("Validate the selected backend configuration before saving")
+        return self.validated_backend.to_dict()
+
+    def on_select_changed(self, event: Select.Changed) -> None:
+        if event.select.id == "sel-profile-cloud":
+            self.selected_cloud = str(event.value)
+        elif event.select.id == "sel-profile-backend":
+            self.selected_state_backend = str(event.value)
+        else:
+            return
+        self.invalidate_backend()
+
+    def on_input_changed(self, event: Input.Changed) -> None:
+        if event.input.id == "inp-profile-backend-config":
+            self.backend_config = event.value.strip()
+            self.invalidate_backend()
+
+    def invalidate_backend(self) -> None:
+        self.validated_backend = None
+        self.validated_selection = None
+        if self.backend_worker is not None:
+            self.backend_worker.cancel()
+        if self.is_mounted:
+            self.query_one("#profile-backend-status", Static).update(
+                "Selection changed. Validate before saving. Cloud access UNKNOWN; remote execution BLOCKED.")
+
+    async def validate_backend(self) -> None:
+        selection = (self.selected_cloud, self.selected_state_backend, self.backend_config)
+        panel = self.query_one("#profile-backend-status", Static)
+        panel.update("Validating offline intent…")
+        try:
+            spec = await load_backend_selection(*selection, timeout=5.0)
+        except (ValueError, OSError, asyncio.TimeoutError):
+            panel.update("Invalid configuration or validation timeout. No backend setup performed.")
+            return
+        if selection != (self.selected_cloud, self.selected_state_backend, self.backend_config):
+            return
+        self.validated_backend = spec
+        self.validated_selection = selection
+        panel.update("Intent validated (not cloud access). Saving preserves nonsecret intent only. "
+                     "Remote execution BLOCKED pending production gates.")
+
+    def on_unmount(self) -> None:
+        if self.backend_worker is not None:
+            self.backend_worker.cancel()
+
     def on_button_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id == "btn-profile-backend-validate":
+            self.backend_worker = self.run_worker(self.validate_backend(), group="backend-validation", exclusive=True)
+            return
+        try:
+            self.handle_profile_button(event)
+        except (ValueError, OSError):
+            event.stop()
+            self.notify("Profile not saved: validate backend configuration and check the profile name/path.", severity="error")
+
+    def handle_profile_button(self, event: Button.Pressed) -> None:
         if event.button.id == "btn-export-profile":
             path = self.export_yaml()
             self.notify(f"Exported spec to {path.name}")

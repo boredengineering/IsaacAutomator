@@ -18,14 +18,17 @@
 
 
 import os
+import subprocess
 import sys
 
 import click
 
 from src.python.config import c as config
+from src.python.file_transfer import endpoint_from_config
 from src.python.utils import (
+    approved_deployment_path,
+    read_meta,
     colorize_error,
-    colorize_info,
     deployments,
     format_instance_role,
     read_tf_output,
@@ -70,21 +73,26 @@ def main(
     debug: bool,
     deployment_name: str,
 ):
-    vm_ip = read_tf_output(deployment_name, f"{instance_role}_ip", verbose=debug)
-
-    if vm_ip in ["NA", ""]:
-        click.echo(
-            colorize_info(
-                f'* No {format_instance_role(instance_role)} VM found for "{deployment_name}" deployment.'
-            )
+    outputs = {key: read_tf_output(deployment_name, key, verbose=debug)
+               for key in ("cloud", f"{instance_role}_vm_id", f"{instance_role}_ip")}
+    try:
+        endpoint = endpoint_from_config(
+            read_meta(deployment_name, verbose=debug), outputs,
+            approved_deployment_path(deployment_name), role=instance_role,
+            default_user=config["default_ssh_user"],
         )
-        raise click.Abort()
-
-    shell_command(
-        f"ssh -o StrictHostKeyChecking=no {config['default_ssh_user']}@{vm_ip} "
-        + f"-i {config['state_dir']}/{deployment_name}/key.pem",
-        verbose=True,
-    )
+        if endpoint.host in ("NA", "", None):
+            raise click.ClickException(
+                f'No {format_instance_role(instance_role)} VM found for "{deployment_name}" deployment.'
+            )
+        result = subprocess.run(
+            [*endpoint.ssh_argv(), f"{endpoint.user}@{endpoint.host}"],
+            shell=False, check=False,
+        )
+    except (OSError, ValueError, subprocess.SubprocessError):
+        raise click.ClickException("SSH connection failed; verify the saved connection and authentication.") from None
+    if result.returncode:
+        raise click.exceptions.Exit(result.returncode)
 
 
 if __name__ == "__main__":
