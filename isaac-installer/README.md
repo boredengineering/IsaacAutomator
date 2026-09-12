@@ -38,6 +38,18 @@ forks. Store customized profiles in `../configs/private/` (excluded from Git and
 Docker builds). See [private profiles and cloud/local parity](../configs/PRIVATE_PROFILES.md)
 for the distinction between executable profiles and observed workstation baselines.
 
+Profile parsing requires **PyYAML in the `python3` environment used by the
+installer** (on Ubuntu, the `python3-yaml` package). With `sudo`, ensure it is
+available to root's interpreter too; an unprivileged virtual environment alone
+does not establish that. A missing dependency is an actionable error, not an
+automatic package installation or a fallback to partial YAML parsing.
+
+The legacy loader transports values as data, not evaluated shell text. Duplicate,
+malformed or ambiguous profiles fail instead of silently selecting the default.
+Observed `workstation-baseline` documents and the new shared
+`workstation-profile` schema are rejected until a dedicated installer adapter
+exists. Current `config/*.yaml` presets remain the executable legacy schema.
+
 ### 1. Inspect Active YAML Configuration
 ```bash
 ./bin/isaac-installer config

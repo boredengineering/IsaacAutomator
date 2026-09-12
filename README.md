@@ -13,6 +13,7 @@ The result is a fully configured remote desktop cloud VM with NVIDIA drivers, Is
 - [TLDR ;)](#tldr-)
 - [Interactive Terminal Cockpit (`isaac9s`)](#interactive-terminal-cockpit-isaac9s)
 - [Bare-Metal Physical Workstations (`isaac-installer`)](#bare-metal-physical-workstations-isaac-installer)
+- [Offline Workstation Software Profiles](#offline-workstation-software-profiles)
 - [Development Environments](#development-environments)
   - [Option A: VS Code DevContainer (Recommended)](#option-a-vs-code-devcontainer-recommended)
   - [Option B: Local Docker CLI](#option-b-local-docker-cli)
@@ -119,6 +120,37 @@ Full documentation: [`isaac-installer/README.md`](file:///workspaces/IsaacAutoma
 
 ---
 
+## Offline Workstation Software Profiles
+
+Inspect proposed software intent without Docker, cloud credentials, Terraform or
+an installer. This read-only command requires Python 3.10+, Click and PyYAML;
+use the existing Automator Python environment or provide those dependencies in
+your own isolated environment. It never installs dependencies automatically.
+
+```sh
+./workstation-profile list
+./workstation-profile validate minimal
+./workstation-profile resolve default
+./workstation-profile resolve default --disable arena
+```
+
+The public `minimal`, `default` and `full` presets describe the robotics software
+contract. An explicit local YAML path can be selected instead. `resolve --enable`
+and `--disable` override component selection for that invocation only; unmet
+dependencies are errors, not silently enabled components. Validation checks
+intent, not runtime compatibility. Resolution reports unpinned references,
+desired-configuration identity and unsupported target adapters; it does not
+fetch source revisions or establish that a workstation is deployable.
+
+For example, disabling GR00T in `full` also requires `serving.enabled: false`
+in an explicit YAML overlay; a running-service request must not silently survive
+removal of its component.
+
+These are **not** replacements for the current cloud `--profile` security
+selector or the legacy installer's `--config` files. Cloud/installer/Packer
+consumption remains a separate implementation gate; `ready_for_apply` is false.
+See [the schema, field mapping and limits](configs/workstations/README.md).
+
 ## Development Environments
 
 ### Option A: VS Code DevContainer (Recommended)
@@ -208,7 +240,16 @@ Isaac Automator provides first-class, non-interactive instructions and native sk
 ```
 
 * Supported GPUs: NVIDIA L4 (`g2-*`), NVIDIA T4 (`n1-*`), NVIDIA RTX PRO 6000 (`g4-*`).
-* **Flex-start:** Enable Dynamic Workload Scheduling with `--flex-start` for substantial cloud cost savings.
+* **Flex-start generation:** `--flex-start` and `--spot` are mutually exclusive.
+  `--flex-max-run-seconds` bounds the VM's configured runtime (1–604800; default
+  604800). `--flex-create-timeout-seconds` bounds Terraform's create polling
+  (1–86400; default 3600). These flags require Flex-start; the create timeout is
+  **not** an allocation-wait limit or cloud cancellation. The pinned Google
+  provider 8.2.0 does not expose `requestValidForDuration`; standalone API
+  acceptance, queue cancellation and cleanup remain unverified. Do not treat a
+  successful generated/mock plan as authorization or proof of a working GPU VM.
+  `g4-standard-48` requires one RTX PRO 6000 Server Edition GPU and
+  `g4-standard-384` requires eight; both use Hyperdisk Balanced boot disks.
 * **State Backups:** Pass `--backup-bucket <gcs-uri>` to enable automated state persistence and preemption protection.
 
 ### Azure
@@ -250,6 +291,8 @@ Isaac Automator provides first-class, non-interactive instructions and native sk
 | `--isaaclab-arena` | Git ref for Isaac Lab Arena, or `latest` / `no` | `latest` |
 | `--demos` | Out-of-the-box demo shortcuts (`quadruped-locomotion`, `humanoid-locomotion`, `franka-manipulation`) | `no` |
 | `--flex-start` | *(GCP only)* Deploy using GCP Dynamic Workload Scheduler | `no-flex-start` |
+| `--flex-max-run-seconds` | *(GCP Flex-start only)* Configured maximum VM runtime, 1–604800 seconds | `604800` |
+| `--flex-create-timeout-seconds` | *(GCP Flex-start only)* Terraform create polling timeout, not queue wait/cancellation | `3600` |
 | `--backup-bucket` | *(GCP only)* GCS bucket URI for automated preemption & 10m backups | `""` |
 | `--auto-restore` | *(GCP only)* Restore workspace automatically from backup bucket on deployment | `no` |
 | `--ingress-cidrs` | Allowed IP CIDR blocks (use `myip` for current IP, or `myip/16`, `myip/24`) | `0.0.0.0/0` |
@@ -554,12 +597,30 @@ If you lose the local `state/` directory but still have cloud resources running,
 
 ### Pre-Built Golden Images
 
-To reduce provisioning time from ~15 minutes down to <2 minutes, bake a custom image containing NVIDIA drivers and pre-cached Isaac binaries:
+Golden images can reduce provisioning time, but build timing, supported hardware
+and from-image robotics compatibility require separate live validation. Image
+builds provision paid cloud resources; do not start one without a budget and a
+cleanup plan.
 
 ```sh
 ./image-gcp --image-name isaac-workstation-base
 ./deploy-gcp my-workstation --from-image
 ```
+
+`image-gcp`, `image-aws` and `image-azure` now treat `--dry-run` as a local,
+rendering-only preview: no Docker forwarding/build, cloud authentication, remote
+Git-ref lookup, image overwrite, Packer plugin initialization or image creation.
+Provide required options to avoid interactive prompts. This is **not** Packer
+validation, a capacity check, or proof that an image can boot. An unset host
+`VERSION` remains unresolved in a preview; real builds require a version.
+
+Actual builds pass Packer variables and Ansible secret extra-vars through
+short-lived owner-only JSON files rather than interpolating passwords into child
+command lines. AWS image builds use the existing AWS credential chain instead of
+writing keys with `aws configure set`. Prefer prompts/credential-chain setup over
+typing secrets into your original shell command, which the wrapper cannot erase
+from shell history. Raw Packer tracing is disabled by the wrapper; builds remain
+unverified until exercised against an authorized target.
 
 ---
 

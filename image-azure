@@ -17,7 +17,6 @@
 # endregion
 
 import os
-import shlex
 import sys
 from datetime import date
 
@@ -31,6 +30,7 @@ from src.python.azure import (
 from src.python.config import c as config
 from src.python.debug import debug_break, debug_start  # noqa
 from src.python.deploy_command import DeployCommand
+from src.python.image_command_utils import configure_image_preview, forward_image_command, local_image_mode, preview_image_build, run_packer_build
 from src.python.utils import (
     colorize_error,
     colorize_info,
@@ -82,6 +82,8 @@ class ImageAzureCommand(DeployCommand):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        configure_image_preview(self)
 
         # remove params not applicable to image building
         self.params = [
@@ -236,7 +238,11 @@ def build_azure_image(params, config):
     image_name = params.get("image_name", "")
     existing = params["existing"]
 
-    version = os.environ.get("VERSION", "")
+    version = os.environ.get("VERSION") or None
+    if params.get("dry_run", False):
+        # Host previews do not run ./run to resolve VERSION; render it as null.
+        return preview_image_build("azure", params, version)
+
     if not version:
         click.echo(colorize_error("Error: VERSION environment variable is not set."))
         sys.exit(1)
@@ -255,7 +261,6 @@ def build_azure_image(params, config):
             )
         )
         sys.exit(1)
-    os.environ["AZURE_SUBSCRIPTION_ID"] = subscription_id
 
     # ensure destination resource group exists
     azure_ensure_resource_group(resource_group, region, verbose=debug)
@@ -269,50 +274,32 @@ def build_azure_image(params, config):
 
     packer_dir = f"{config['app_dir']}/src/packer/azure"
 
-    # initialize packer plugins
-    click.echo(colorize_info("* Initializing Packer..."))
-    shell_command(
-        f"packer init {packer_dir}/isaac-workstation.pkr.hcl",
-        verbose=debug,
-    )
-
-    # build packer command (shlex.quote protects against shell metacharacters
-    # in user-supplied values such as passwords, git refs, and image names)
-    def _v(name, value):
-        return f"-var={name}={shlex.quote(str(value))}"
-
     demos = params.get("demos", "no")
-    packer_vars = [
-        _v("azure_location", region),
-        _v("vm_size", instance_type),
-        _v("managed_image_resource_group_name", resource_group),
-        _v("version", version),
-        _v("system_user_password", system_user_password),
-        _v("isaacsim", isaacsim),
-        _v("isaaclab", isaaclab),
-        _v("isaaclab_arena", isaaclab_arena),
-        _v("demos", demos),
-        "-var=in_china=false",
-    ]
+    packer_vars = {
+        "azure_location": region,
+        "vm_size": instance_type,
+        "managed_image_resource_group_name": resource_group,
+        "version": version,
+        "system_user_password": system_user_password,
+        "isaacsim": isaacsim,
+        "isaaclab": isaaclab,
+        "isaaclab_arena": isaaclab_arena,
+        "demos": demos,
+        "in_china": False,
+    }
 
     if "install_gr00t" in params:
-        packer_vars.append(f"-var=install_gr00t={'true' if params['install_gr00t'] else 'false'}")
+        packer_vars["install_gr00t"] = bool(params["install_gr00t"])
     if "enable_neo4j" in params:
-        packer_vars.append(f"-var=enable_neo4j={'true' if params['enable_neo4j'] else 'false'}")
+        packer_vars["enable_neo4j"] = bool(params["enable_neo4j"])
 
     if image_name:
-        packer_vars.append(_v("image_name", full_image_name))
-
-    packer_cmd = (
-        f"packer build " + " ".join(packer_vars) + f" {packer_dir}/isaac-workstation.pkr.hcl"
-    )
+        packer_vars["image_name"] = full_image_name
 
     click.echo(colorize_info("* Building Azure managed image with Packer..."))
 
-    if debug:
-        click.echo(colorize_info(f"* Command: {packer_cmd}"))
-
-    shell_command(packer_cmd, verbose=debug)
+    run_packer_build(f"{packer_dir}/isaac-workstation.pkr.hcl", packer_vars,
+                     debug=debug, env={"AZURE_SUBSCRIPTION_ID": subscription_id})
 
     click.echo(colorize_info("* Image build complete!"))
 
@@ -323,7 +310,7 @@ def main(**params):
 
 
 if __name__ == "__main__":
-    if os.path.exists("/.dockerenv"):
+    if os.path.exists("/.dockerenv") or local_image_mode(main):
         main()
     else:
-        shell_command(f"./run '{' '.join(sys.argv)}'", verbose=True)
+        sys.exit(forward_image_command(__file__))

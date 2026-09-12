@@ -47,6 +47,7 @@ from src.python.utils import (
 
 class Deployer:
     cloud = None
+    _existing_configuration_validator = None
     _BACKEND_CONTROLLER_FIELDS = frozenset({
         'terraform_state', 'state_backend', 'state_bucket', 'backend_config', 'profile_spec', 'backend_runtime',
     })
@@ -468,6 +469,9 @@ class Deployer:
         command_line = sys.argv[0]
 
         for k, v in self.input_params.items():
+            # Unset optional arguments must remain unset when parsed again.
+            if v is None:
+                continue
             if k in self._BACKEND_CONTROLLER_FIELDS and k != 'state_backend':
                 continue
             k = k.replace("_", "-")
@@ -494,7 +498,11 @@ class Deployer:
 
     def ask_existing_behavior(self):
         """
-        Ask what to do if deployment already exists
+        Select/restore configuration, validate it, then persist or replace.
+
+        The workflow's optional offline hook runs against restored parameters
+        before any metadata write or destruction. Other providers retain their
+        existing behavior when no hook is supplied.
         """
 
         self.require_backend()
@@ -532,6 +540,13 @@ class Deployer:
                     f"* Repairing existing deployment \"{self.params['deployment_name']}\"..."
                 )
             )
+
+        if self._existing_configuration_validator is not None:
+            try:
+                self._existing_configuration_validator()
+            except BaseException:
+                self._persistence_ready = False
+                raise
 
         # Preserve the old inputs and receipt until active GCS destruction is
         # verified. A failed replacement must still describe the old workload.

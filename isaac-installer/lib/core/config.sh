@@ -19,7 +19,7 @@ resolve_profile_path() {
 
     # Direct existing path
     if [[ -f "$target" ]]; then
-        echo "$target"
+        printf '%s\n' "$target"
         return 0
     fi
 
@@ -27,114 +27,82 @@ resolve_profile_path() {
     case "$target" in
         minimal|headless|ci)
             if [[ -f "${SCRIPT_DIR}/config/minimal-headless.yaml" ]]; then
-                echo "${SCRIPT_DIR}/config/minimal-headless.yaml"
+                printf '%s\n' "${SCRIPT_DIR}/config/minimal-headless.yaml"
                 return 0
             fi
+            printf 'Installer preset minimal-headless.yaml is missing; restore it or use an exact YAML path.\n' >&2
+            return 1
             ;;
         full|ecosystem|all)
             if [[ -f "${SCRIPT_DIR}/config/full-ecosystem.yaml" ]]; then
-                echo "${SCRIPT_DIR}/config/full-ecosystem.yaml"
+                printf '%s\n' "${SCRIPT_DIR}/config/full-ecosystem.yaml"
                 return 0
             fi
+            printf 'Installer preset full-ecosystem.yaml is missing; restore it or use an exact YAML path.\n' >&2
+            return 1
             ;;
         default|standard|workstation)
             if [[ -f "${SCRIPT_DIR}/config/default-profile.yaml" ]]; then
-                echo "${SCRIPT_DIR}/config/default-profile.yaml"
+                printf '%s\n' "${SCRIPT_DIR}/config/default-profile.yaml"
                 return 0
             fi
+            printf 'Installer preset default-profile.yaml is missing; restore it or use an exact YAML path.\n' >&2
+            return 1
             ;;
     esac
 
-    # Search config/*.yaml matching target
-    local match
-    match=$(find "${SCRIPT_DIR}/config" -maxdepth 1 -type f -name "*${target}*.yaml" 2>/dev/null | head -n 1 || true)
-    if [[ -n "$match" && -f "$match" ]]; then
-        echo "$match"
+    # Retain unique substring lookup, but treat the request literally, not as a glob.
+    local candidate filename
+    local -a matches=()
+    if [[ -n "$target" ]]; then
+        for candidate in "${SCRIPT_DIR}/config/"*.yaml; do
+            [[ -f "$candidate" ]] || continue
+            filename="${candidate##*/}"
+            [[ "$filename" == *"$target"* ]] && matches+=("$candidate")
+        done
+    fi
+    if [[ ${#matches[@]} -eq 1 ]]; then
+        printf '%s\n' "${matches[0]}"
         return 0
     fi
-
-    echo "${DEFAULT_CONFIG_PATH}"
+    if [[ ${#matches[@]} -gt 1 ]]; then
+        printf 'Ambiguous installer profile: %s; use an exact file path.\n' "$target" >&2
+    else
+        printf 'Unknown installer profile: %s; use a preset alias or existing YAML path.\n' "$target" >&2
+    fi
+    return 1
 }
 
 # Load and parse YAML configuration profile into environment variables
 load_config_profile() {
-    local requested="${1:-${DEFAULT_CONFIG_PATH}}"
-    CONFIG_FILE="$(resolve_profile_path "$requested")"
-    detect_target_user
+    local requested="${1-${DEFAULT_CONFIG_PATH}}"
+    local resolved
+    # Protect filename newlines from command substitution, then remove only the
+    # sentinel and the single record terminator printed by the resolver.
+    resolved="$(resolve_profile_path "$requested" && printf '.')" || return 1
+    resolved="${resolved%.}"
+    resolved="${resolved%$'\n'}"
 
-    # Robust Python-based YAML parser (Handles PyYAML or recursive standard token fallback)
-    local env_exports
-    env_exports=$(python3 -c "
-import sys, re
-
-def parse_yaml_file(filepath):
-    try:
-        import yaml
-        with open(filepath, 'r') as f:
-            data = yaml.safe_load(f)
-            if isinstance(data, dict):
-                return data
-    except Exception:
-        pass
-
-    tokens = []
-    with open(filepath, 'r') as f:
-        for line in f:
-            raw = line.split('#')[0].rstrip()
-            if not raw or raw.isspace():
-                continue
-            indent = len(raw) - len(raw.lstrip())
-            trimmed = raw.strip()
-            if ':' not in trimmed:
-                continue
-            k, v = trimmed.split(':', 1)
-            tokens.append((indent, k.strip(), v.strip().strip('\"\'')))
-
-    def build_tree(idx, min_indent):
-        node = {}
-        while idx < len(tokens):
-            indent, k, v = tokens[idx]
-            if indent < min_indent:
-                break
-            if v == '':
-                sub_node, next_idx = build_tree(idx + 1, indent + 1)
-                node[k] = sub_node
-                idx = next_idx
-            else:
-                if v.lower() == 'true': node[k] = True
-                elif v.lower() == 'false': node[k] = False
-                elif v.isdigit(): node[k] = int(v)
-                else: node[k] = v
-                idx += 1
-        return node, idx
-
-    root, _ = build_tree(0, 0)
-    return root
-
-def flatten_dict(d, prefix='CFG_'):
-    items = []
-    if not isinstance(d, dict):
-        return items
-    for k, v in d.items():
-        clean_k = re.sub(r'[^A-Za-z0-9_]', '_', str(k)).upper()
-        new_key = f'{prefix}{clean_k}'
-        if isinstance(v, dict):
-            items.extend(flatten_dict(v, f'{new_key}_'))
-        else:
-            val_str = 'true' if v is True else ('false' if v is False else str(v))
-            items.append((new_key, val_str))
-    return items
-
-cfg = parse_yaml_file('${CONFIG_FILE}')
-if cfg.get('kind') == 'workstation-baseline':
-    sys.exit('Workstation baseline is an inventory, not an executable installer profile.')
-for k, v in flatten_dict(cfg):
-    print(f'export {k}=\"{v}\"')
-") || return 1
-
-    if [[ -n "$env_exports" ]]; then
-        eval "$env_exports"
+    # Stage data before applying it: process substitution alone hides parser failures.
+    # NUL-delimited records preserve whitespace, quotes and shell metacharacters.
+    local profile_data key value
+    profile_data=$(mktemp) || return 1
+    if ! python3 "${BASH_SOURCE[0]%/*}/profile_parser.py" "$resolved" > "$profile_data"; then
+        rm -f -- "$profile_data"
+        return 1
     fi
+    # CFG_* is reserved for the active profile, including flags added by the caller.
+    # Failed resolution/parsing leaves the previous profile intact. Operational
+    # variables retain their existing CLI-override semantics below.
+    for key in "${!CFG_@}"; do
+        unset "$key"
+    done
+    while IFS= read -r -d '' key && IFS= read -r -d '' value; do
+        export "$key=$value"
+    done < "$profile_data"
+    rm -f -- "$profile_data"
+    CONFIG_FILE="$resolved"
+    detect_target_user
 
     # Map CFG variables to operational parameters if not overridden by CLI
     PROFILE_NAME="${CFG_PROFILE_NAME:-default}"

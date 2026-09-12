@@ -1,0 +1,11 @@
+# Overlay on shared defaults: all software, not legacy desktop/teleoperation.
+# GR00T/LeRobot interpreter and wheels remain unresolved in isolated runtimes.
+schema_version: v1alpha1
+kind: workstation-profile
+name: full
+target: offline
+components:
+  arena: {enabled: true}
+  gr00t: {enabled: true}
+  lerobot: {enabled: true}
+serving: {enabled: true}

@@ -1,0 +1,89 @@
+# Shared offline intent only. No EULA acceptance or verified compatibility.
+schema_version: v1alpha1
+kind: workstation-profile
+name: default
+target: offline
+components:
+  sim:
+    enabled: true
+    execution: native
+    runtime: kit
+    source: {mode: standalone, version: '6.0.1', sha256: null}
+  lab:
+    enabled: true
+    execution: native
+    runtime: lab
+    source:
+      mode: git
+      repository: https://github.com/isaac-sim/IsaacLab.git
+      ref: v3.0.0-beta2
+      revision: null
+  arena:
+    enabled: true
+    execution: native
+    runtime: lab
+    source:
+      mode: git
+      repository: https://github.com/isaac-sim/IsaacLab-Arena.git
+      ref: release/0.3.0-prerelease
+      revision: null
+  gr00t:
+    enabled: false
+    execution: native
+    runtime: gr00t
+    source:
+      mode: git
+      repository: https://github.com/NVIDIA/Isaac-GR00T.git
+      ref: dev
+      revision: null
+  lerobot:
+    enabled: false
+    execution: native
+    runtime: lerobot
+    source:
+      mode: git
+      repository: https://github.com/huggingface/lerobot.git
+      ref: v0.4.3
+      revision: null
+runtimes:
+  kit:
+    manager: bundled
+    environment: kit
+    python: null
+    torch: null
+    torchvision: null
+    cuda_runtime: null
+    architecture: null
+  lab:
+    manager: conda
+    environment: isaaclab
+    python: '3.12'
+    torch: '2.10.0+cu128'
+    torchvision: null
+    cuda_runtime: '12.8'
+    architecture: sm_120
+  gr00t:
+    manager: uv
+    environment: gr00t
+    python: null
+    torch: null
+    torchvision: null
+    cuda_runtime: null
+    architecture: null
+  lerobot:
+    manager: conda
+    environment: lerobot
+    python: null
+    torch: null
+    torchvision: null
+    cuda_runtime: null
+    architecture: null
+serving:
+  enabled: false
+  bind: 127.0.0.1
+  port: 5561
+  embodiment: NEW_EMBODIMENT
+  model:
+    repository: nvidia/GR00T-N1.7-3B
+    ref: main
+    revision: null

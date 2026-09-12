@@ -135,6 +135,7 @@ Master index of session memory checkpoints for Isaac Automator.
 | 2026-09-10 19:37 | `a5b58500` | Remote-backend safety and offline foundations | Fail-closed lifecycle/output guards, explicit backend selection, isolated runner and offline CLI; 237 targeted tests pass including real local persistence; remote execution, bootstrap, drift and shared-ledger work remain gated; no deployment or commit | [`20260910_193701_a5b58500.md`](./sessions/20260910_193701_a5b58500.md) |
 | 2026-09-10 20:45 | `c2887b81` | Remote-backend intermediate implementation/review gate | 350 tests pass across 23 suites; isolated local execution and bootstrap/drift/manifest components progressing through independent review; full remote feature remains incomplete and gated; active workers and acceptance gaps documented | [`20260910_204512_c2887b81.md`](./sessions/20260910_204512_c2887b81.md) |
 | 2026-09-11 03:05 | `5c7757a7` | GCS execution and cleaned GCP acceptance | GCS lifecycle and rsync/IAP integration; 536 pass, 1 skip; private e2-micro and seven buckets deleted; IAP grant/live GPU acceptance pending | [`20260911_030500_5c7757a7.md`](./sessions/20260911_030500_5c7757a7.md) |
+| 2026-09-12 22:20 | `b34952b6` | First offline profile/Flex/image-safety batch | Reviewed resolver/CLI, safe legacy parsing, bounded Flex generation and protected image previews; 315 scoped Python tests, 15 mocked plans and three Packer syntax checks pass; adapters and live GPU/image acceptance remain open | [`20260912_222001_b34952b6.md`](./sessions/20260912_222001_b34952b6.md) |
 
 
 

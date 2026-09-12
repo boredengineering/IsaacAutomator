@@ -22,10 +22,11 @@ from datetime import date
 
 import click
 
-from src.python.aws import aws_load_credentials, aws_validate_credentials
+from src.python.aws import aws_image_credentials
 from src.python.config import c as config
 from src.python.debug import debug_break, debug_start  # noqa
 from src.python.deploy_command import DeployCommand
+from src.python.image_command_utils import configure_image_preview, forward_image_command, local_image_mode, preview_image_build, run_packer_build
 from src.python.utils import (
     colorize_error,
     colorize_info,
@@ -100,6 +101,8 @@ class ImageAWSCommand(DeployCommand):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        configure_image_preview(self)
 
         # remove params not applicable to image building
         self.params = [
@@ -207,65 +210,51 @@ def build_ami(params, config):
     # use image name as deployment name
     params["deployment_name"] = image_name or "aws-image"
 
-    # load AWS credentials
-    creds = aws_load_credentials(verbose=debug)
+    version = os.environ.get("VERSION") or None
+    if params.get("dry_run", False):
+        # Host previews do not run ./run to resolve VERSION; render it as null.
+        return preview_image_build("aws", params, version)
 
-    version = os.environ.get("VERSION", "")
     if not version:
         click.echo(colorize_error("Error: VERSION environment variable is not set."))
         sys.exit(1)
 
-    # set AWS credentials as env vars for packer (only if using explicit credentials)
-    if creds.get("aws_access_key_id"):
-        os.environ["AWS_ACCESS_KEY_ID"] = creds["aws_access_key_id"]
-    if creds.get("aws_secret_access_key"):
-        os.environ["AWS_SECRET_ACCESS_KEY"] = creds["aws_secret_access_key"]
-    if creds.get("aws_session_token"):
-        os.environ["AWS_SESSION_TOKEN"] = creds["aws_session_token"]
+    # load AWS credentials only for an actual build
+    creds = aws_image_credentials(verbose=debug)
+
+    # Only the Packer child receives explicit credentials; retain ambient auth.
+    packer_env = {key.upper(): creds[key] for key in (
+        "aws_access_key_id", "aws_secret_access_key", "aws_session_token"
+    ) if creds.get(key)}
 
     packer_dir = f"{config['app_dir']}/src/packer/aws/isaac-workstation.pkr.hcl"
 
-    # initialize packer plugins
-    click.echo(colorize_info("* Initializing Packer..."))
-    shell_command(
-        f"packer init {packer_dir}",
-        verbose=debug,
-    )
-
-    # build packer command
     demos = params.get("demos", "no")
-    packer_vars = [
-        f'-var=aws_region="{region}"',
-        f'-var=instance_type="{instance_type}"',
-        f'-var=version="{version}"',
-        f'-var=system_user_password="{system_user_password}"',
-        f'-var=isaacsim="{isaacsim}"',
-        f'-var=isaaclab="{isaaclab}"',
-        f'-var=isaaclab_arena="{isaaclab_arena}"',
-        f'-var=demos="{demos}"',
-        f"-var=in_china=false",
-    ]
+    packer_vars = {
+        "aws_region": region,
+        "instance_type": instance_type,
+        "version": version,
+        "system_user_password": system_user_password,
+        "isaacsim": isaacsim,
+        "isaaclab": isaaclab,
+        "isaaclab_arena": isaaclab_arena,
+        "demos": demos,
+        "in_china": False,
+    }
 
     if "install_gr00t" in params:
-        packer_vars.append(f"-var=install_gr00t={'true' if params['install_gr00t'] else 'false'}")
+        packer_vars["install_gr00t"] = bool(params["install_gr00t"])
     if "enable_neo4j" in params:
-        packer_vars.append(f"-var=enable_neo4j={'true' if params['enable_neo4j'] else 'false'}")
+        packer_vars["enable_neo4j"] = bool(params["enable_neo4j"])
 
     if image_name:
         full_image_name = f"isaacautomator.isaacworkstation.{image_name}"
-        packer_vars.append(f'-var=image_name="{full_image_name}"')
-
-    force_flag = "-force" if existing == "overwrite" else ""
-    packer_cmd = (
-        f"packer build {force_flag} " + " ".join(packer_vars) + f" {packer_dir}"
-    )
+        packer_vars["image_name"] = full_image_name
 
     click.echo(colorize_info("* Building AWS AMI with Packer..."))
 
-    if debug:
-        click.echo(colorize_info(f"* Command: {packer_cmd}"))
-
-    shell_command(packer_cmd, verbose=debug)
+    run_packer_build(packer_dir, packer_vars, debug=debug,
+                     env=packer_env, force=existing == "overwrite")
 
     click.echo(colorize_info("* AMI build complete!"))
 
@@ -276,9 +265,7 @@ def main(**params):
 
 
 if __name__ == "__main__":
-    if os.path.exists("/.dockerenv"):
-        debug = "--debug" in sys.argv or os.environ.get("DEBUG", "0") == "1"
-        aws_validate_credentials(verbose=debug)
+    if os.path.exists("/.dockerenv") or local_image_mode(main):
         main()
     else:
-        shell_command(f"./run '{' '.join(sys.argv)}'", verbose=True)
+        sys.exit(forward_image_command(__file__))

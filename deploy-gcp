@@ -148,6 +148,25 @@ class DeployGCPCommand(DeployCommand):
             ),
         )
 
+        # Independent runtime and local Terraform polling limits. Google 8.2.0
+        # has no requestValidForDuration field; create timeout is NOT queue wait.
+        self.params.insert(
+            self.param_index("flex_start") + 1,
+            click.core.Option(
+                ("--flex-max-run-seconds",), type=click.IntRange(1, 604800), default=None,
+                help="Flex-start VM maximum runtime in seconds (default: 604800).",
+            ),
+        )
+        self.params.insert(
+            self.param_index("flex_start") + 2,
+            click.core.Option(
+                ("--flex-create-timeout-seconds",), type=click.IntRange(1, 86400), default=None,
+                help="Flex-start Terraform create timeout in seconds (default: 3600); "
+                     "not an allocation wait or cloud cancellation. Allocation-wait "
+                     "configuration is unsupported by the pinned Google provider.",
+            ),
+        )
+
         # --spot/--no-spot
         self.params.insert(
             self.param_index("flex_start"),
@@ -193,8 +212,104 @@ class GCPDeployer(Deployer):
 
     cloud = "gcp"
 
+    def resolve_scheduling(self):
+        """Resolve profile defaults and reject incompatible scheduling offline."""
+        ctx = click.get_current_context(silent=True)
+        explicit_flex = ctx and ctx.get_parameter_source("flex_start") in (
+            click.core.ParameterSource.COMMANDLINE,
+            click.core.ParameterSource.PROMPT,
+        )
+        prof_spec = self.params.get("profile_spec", {})
+        prof_flex = prof_spec.get("enable_flex_start", False) or (
+            prof_spec.get("raw", {}).get("security", {}).get("compute", {}).get("scheduling") == "flex_start"
+        )
+        # Repair uses saved effective values, not this invocation's CLI sources
+        # or the defaults of the profile that originally produced the workload.
+        if self.existing_behavior != "repair" and not explicit_flex and prof_flex:
+            self.params["flex_start"] = True
+        if self.params.get("spot", False) and self.params.get("flex_start", False):
+            raise click.ClickException("Spot and Flex-start cannot be selected together.")
+        for key, maximum in (("flex_max_run_seconds", 604800),
+                             ("flex_create_timeout_seconds", 86400)):
+            value = self.params.get(key)
+            if value is None:
+                continue
+            if not self.params.get("flex_start", False):
+                raise click.ClickException(f"{key} requires Flex-start.")
+            if type(value) is not int or not 1 <= value <= maximum:
+                raise click.ClickException(f"{key} must be an integer between 1 and {maximum}.")
+
+    def validate_configuration(self):
+        if self.existing_behavior != "run_ansible":
+            self.resolve_scheduling()
+            self.resolve_gpu_count()
+
+    def resolve_gpu_count(self):
+        """Resolve and validate GPUs without persistence or cloud discovery."""
+        instance_type = self.params["isaac_workstation_instance_type"]
+        instance_type_prefix = instance_type[:2]
+        ctx = click.get_current_context(silent=True)
+        # A restored count is authoritative even when this CLI used defaults.
+        explicit_user_gpu_count = self.existing_behavior == "repair"
+        if ctx:
+            src = ctx.get_parameter_source("isaac_workstation_gpu_count")
+            if src in (
+                click.core.ParameterSource.COMMANDLINE,
+                click.core.ParameterSource.PROMPT,
+            ):
+                explicit_user_gpu_count = True
+
+        user_gpu_count = self.params.get("isaac_workstation_gpu_count")
+        if explicit_user_gpu_count and user_gpu_count and str(user_gpu_count) != "auto":
+            gpu_count = int(user_gpu_count)
+        elif user_gpu_count and str(user_gpu_count) not in ("auto", "1"):
+            gpu_count = int(user_gpu_count)
+        else:
+            # Infer default GPU count from machine type family
+            if instance_type_prefix == "g4":
+                if "384" in instance_type:
+                    gpu_count = 8
+                elif "192" in instance_type:
+                    gpu_count = 4
+                elif "96" in instance_type:
+                    gpu_count = 2
+                else:
+                    gpu_count = 1
+            elif instance_type_prefix == "g2":
+                if "96" in instance_type:
+                    gpu_count = 8
+                elif "48" in instance_type:
+                    gpu_count = 4
+                elif "24" in instance_type:
+                    gpu_count = 2
+                else:
+                    gpu_count = 1
+            elif instance_type_prefix == "a2":
+                if "8g" in instance_type:
+                    gpu_count = 8
+                elif "4g" in instance_type:
+                    gpu_count = 4
+                elif "2g" in instance_type:
+                    gpu_count = 2
+                else:
+                    gpu_count = 1
+            else:
+                gpu_count = 1
+
+        if self.params.get("flex_start", False) and instance_type_prefix == "g4":
+            expected_gpus = {
+                "g4-standard-48": 1, "g4-standard-96": 2,
+                "g4-standard-192": 4, "g4-standard-384": 8,
+            }[instance_type]
+            if gpu_count != expected_gpus:
+                raise click.ClickException(
+                    f"GPU count for {instance_type} must be {expected_gpus} with Flex-start."
+                )
+        return gpu_count
+
     def main(self):
-        # Restore and validate existing configuration before any cloud discovery.
+        # Validate restored intent before ask_existing_behavior saves or destroys.
+        self._existing_configuration_validator = self.validate_configuration
         self.ask_existing_behavior()
 
         # Discovery and prompting must wait until backend intent is validated.
@@ -228,79 +343,11 @@ class GCPDeployer(Deployer):
                 "g4": "nvidia-rtx-pro-6000",
             }.get(instance_type_prefix, "nvidia-l4")
 
-            # Determine GPU count: honor explicit user choice or infer from instance type
-            ctx = click.get_current_context(silent=True)
-            explicit_user_gpu_count = False
-            if ctx:
-                src = ctx.get_parameter_source("isaac_workstation_gpu_count")
-                if src in (
-                    click.core.ParameterSource.COMMANDLINE,
-                    click.core.ParameterSource.PROMPT,
-                ):
-                    explicit_user_gpu_count = True
-
-            user_gpu_count = self.params.get("isaac_workstation_gpu_count")
-            if explicit_user_gpu_count and user_gpu_count and str(user_gpu_count) != "auto":
-                gpu_count = int(user_gpu_count)
-            elif user_gpu_count and str(user_gpu_count) not in ("auto", "1"):
-                gpu_count = int(user_gpu_count)
-            else:
-                # Infer default GPU count from machine type family
-                if instance_type_prefix == "g4":
-                    if "384" in instance_type:
-                        gpu_count = 8
-                    elif "192" in instance_type:
-                        gpu_count = 4
-                    elif "96" in instance_type:
-                        gpu_count = 2
-                    else:
-                        gpu_count = 1
-                elif instance_type_prefix == "g2":
-                    if "96" in instance_type:
-                        gpu_count = 8
-                    elif "48" in instance_type:
-                        gpu_count = 4
-                    elif "24" in instance_type:
-                        gpu_count = 2
-                    else:
-                        gpu_count = 1
-                elif instance_type_prefix == "a2":
-                    if "8g" in instance_type:
-                        gpu_count = 8
-                    elif "4g" in instance_type:
-                        gpu_count = 4
-                    elif "2g" in instance_type:
-                        gpu_count = 2
-                    else:
-                        gpu_count = 1
-                else:
-                    gpu_count = 1
-
-            # Scheduling resolution: Profile-driven flex_start/spot defaults with CLI override
-            explicit_flex = False
-            explicit_spot = False
-            if ctx:
-                explicit_flex = ctx.get_parameter_source("flex_start") in (
-                    click.core.ParameterSource.COMMANDLINE,
-                    click.core.ParameterSource.PROMPT,
-                )
-                explicit_spot = ctx.get_parameter_source("spot") in (
-                    click.core.ParameterSource.COMMANDLINE,
-                    click.core.ParameterSource.PROMPT,
-                )
-
-            prof_spec = self.params.get("profile_spec", {})
-            prof_flex = prof_spec.get("enable_flex_start", False) or (
-                prof_spec.get("raw", {}).get("security", {}).get("compute", {}).get("scheduling") == "flex_start"
-            )
-
-            if not explicit_flex and prof_flex:
-                self.params["flex_start"] = True
-                if not explicit_spot:
-                    self.params["spot"] = False
+            gpu_count = self.resolve_gpu_count()
 
             use_spot = self.params.get("spot", False)
             use_flex_start = self.params.get("flex_start", False)
+
             backup_bucket = self.params.get("backup_bucket", "")
             if (use_spot or use_flex_start) and (not backup_bucket or backup_bucket == "auto"):
                 backup_bucket = f"{self.params['project']}-{self.params['deployment_name']}-backups"
@@ -320,6 +367,10 @@ class GCPDeployer(Deployer):
                     "boot_disk_type": boot_disk_type,
                     "use_flex_start": self.params.get("flex_start", False),
                     "use_spot": use_spot,
+                    **({
+                        "flex_max_run_seconds": self.params.get("flex_max_run_seconds") or 604800,
+                        "flex_create_timeout_seconds": self.params.get("flex_create_timeout_seconds") or 3600,
+                    } if use_flex_start else {}),
                 }
             )
 

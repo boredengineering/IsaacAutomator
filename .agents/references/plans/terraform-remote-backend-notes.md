@@ -1,6 +1,8 @@
 # The overall picture
 
 
+Proceed with the upcoming update to the terraform-remote-backend-plan to keep the development of the terraform-remote-backend and more. Expand the plan to also include Infracost tool to our project so we can estimate infra structure cost at will. there are some sections that we action action needed at the end, help me expand those.
+
 We’ve been building three connected parts:
 
 - Isaac Automator: provisioning and managing cloud GPU workstations.
@@ -41,8 +43,7 @@ The implementation was reviewed and exercised with offline tests and mocked Terr
 
 Need to proceed with the live test to see if we can provision the machines properly and create the images as well.
 
-4. Evidence graph and Neo4j
-
+4. Evidence graph and dedicated Neo4j visualization service
 
 We built a sandboxed source-evidence index with RDF/PROV/SHACL, bounded queries and a dedicated Neo4j visualization service.
 
@@ -56,8 +57,9 @@ Verified milestones included:
 
 The key architectural distinction: RDF is authoritative; Neo4j is a derived snapshot. This is not automatic local/cloud database synchronization, nor proof that indexed deployment code works at runtime.
 
-5. Most recent implementation: GCS state and file sync
+This might need improvement but right now it immensely improves agent peform when deployming and maintaining infrastructure.
 
+5. Most recent implementation: GCS state and file sync
 
 We implemented:
 
@@ -74,8 +76,9 @@ Optional drift automation and shared-ledger features were kept separate from ord
 
 The final recorded scoped regression was 536 passed and 1 skipped across 35 suites—not an all-repository acceptance result.
 
-6. What actually ran in GCP
+Still need to implement the deployment using the flex-start with the RTX PRO 6000, there are 2 machines we should be aiming for: g4-standard-48 and g4-standard-384.
 
+6. What actually ran in GCP
 
 In project cybernetic-renan, the previous session verified:
 
@@ -89,7 +92,6 @@ All seven experiment buckets and the test VM, disk, firewall, subnet and VPC wer
 The e2-micro test validated infrastructure mechanics only. It did not satisfy your RTX PRO 6000 acceptance requirement.
 
 Where we stopped
-
 
 The next acceptance target was g4-standard-48 with one RTX PRO 6000, preferably in us-west1.
 
@@ -105,10 +107,10 @@ Still outstanding:
 
 Current checkout
 
-
 I checked Git now: branch devcontainer, clean working tree, HEAD 1cdc4f0. The test and cloud results above are recovered historical evidence; I have not rerun them in this turn.
 
 The latest detailed acceptance record is:
 .agents/references/plans/terraform-gcs-acceptance-20260911.md
 
 Bottom line: we now have implemented GCS deployment plumbing and file-transfer integration, backed by offline tests and bounded live infrastructure experiments. We have not yet demonstrated the complete private RTX PRO 6000 Isaac workstation deployment end to end.
+

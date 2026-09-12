@@ -22,6 +22,7 @@ import json
 import os
 import shlex
 import sys
+import subprocess
 from pathlib import Path
 
 import click
@@ -110,6 +111,37 @@ def aws_cli_set(key, value, verbose=False):
         exit_on_error=True,
         capture_output=True,
     )
+
+
+def aws_image_credentials(verbose=False):
+    """Resolve the active CLI chain for Packer without changing AWS config.
+
+    Unlike deployment's historical SSO export flow this neither clears existing
+    credentials nor puts exported keys in `aws configure set` process arguments.
+    Login is explicit; an expired session must be refreshed before building.
+    """
+    try:
+        result = subprocess.run(
+            ["aws", "configure", "export-credentials", "--format", "process"],
+            capture_output=True, text=True,
+        )
+        if result.returncode != 0:
+            raise ValueError()
+        exported = json.loads(result.stdout)
+        credentials = {"aws_access_key_id": exported.get("AccessKeyId", ""),
+                       "aws_secret_access_key": exported.get("SecretAccessKey", ""),
+                       "aws_session_token": exported.get("SessionToken", "")}
+        if (not all(isinstance(value, str) for value in credentials.values()) or
+                not credentials["aws_access_key_id"] or not credentials["aws_secret_access_key"]):
+            raise ValueError()
+        return credentials
+    except (OSError, ValueError, AttributeError):
+        # Never print raw CLI stdout/stderr or JSON errors: these may contain keys.
+        raise click.ClickException(
+            "Unable to resolve AWS image credentials. Use AWS CLI v2 with "
+            "'aws configure export-credentials' support and a working credential "
+            "chain; refresh SSO with 'aws sso login --profile <profile>' first."
+        ) from None
 
 
 def aws_load_credentials(verbose=False):

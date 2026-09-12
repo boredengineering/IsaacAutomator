@@ -64,6 +64,28 @@ variable "use_flex_start" {
   default     = false
 }
 
+variable "flex_max_run_seconds" {
+  description = "Flex-start VM runtime in seconds; independent of create polling timeout."
+  type        = number
+  default     = 604800
+  nullable    = false
+  validation {
+    condition     = var.flex_max_run_seconds >= 1 && var.flex_max_run_seconds <= 604800 && floor(var.flex_max_run_seconds) == var.flex_max_run_seconds
+    error_message = "Flex-start runtime must be an integer between 1 and 604800 seconds."
+  }
+}
+
+variable "flex_create_timeout_seconds" {
+  description = "Flex-start Terraform create polling timeout, not allocation wait or cancellation. Google 8.2.0 does not expose requestValidForDuration."
+  type        = number
+  default     = 3600
+  nullable    = false
+  validation {
+    condition     = var.flex_create_timeout_seconds >= 1 && var.flex_create_timeout_seconds <= 86400 && floor(var.flex_create_timeout_seconds) == var.flex_create_timeout_seconds
+    error_message = "Flex-start create timeout must be an integer between 1 and 86400 seconds (local one-day safety limit, not allocation wait)."
+  }
+}
+
 variable "use_spot" {
   description = "Deploy using GCP Spot VM (preemptible with 60-91% discount)"
   type        = bool

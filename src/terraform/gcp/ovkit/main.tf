@@ -31,8 +31,27 @@ resource "google_compute_instance" "default" {
   # allows to change instance type without destroying everything
   allow_stopping_for_update = true
 
+  lifecycle {
+    precondition {
+      condition     = !(var.use_spot && var.use_flex_start)
+      error_message = "Spot and Flex-start cannot be selected together."
+    }
+    precondition {
+      condition = !var.use_flex_start || !startswith(var.instance_type, "g4-") || var.gpu_count == lookup({
+        g4-standard-48 = 1, g4-standard-96 = 2, g4-standard-192 = 4, g4-standard-384 = 8
+      }, var.instance_type, -1)
+      error_message = "Flex-start G4 GPU count must match the exact machine shape."
+    }
+    precondition {
+      condition = !var.use_flex_start || !startswith(var.instance_type, "g4-") || (
+        var.gpu_type == "nvidia-rtx-pro-6000" && var.boot_disk_type == "hyperdisk-balanced"
+      )
+      error_message = "Flex-start G4 requires NVIDIA RTX PRO 6000 and a hyperdisk-balanced boot disk."
+    }
+  }
+
   timeouts {
-    create = "60m"
+    create = var.use_flex_start ? "${var.flex_create_timeout_seconds}s" : "60m"
   }
 
   dynamic "scheduling" {
@@ -55,7 +74,7 @@ resource "google_compute_instance" "default" {
       on_host_maintenance         = "TERMINATE" # required for GPUs
 
       max_run_duration {
-        seconds = 604800 # 7 days max allowed duration
+        seconds = var.flex_max_run_seconds
       }
     }
   }

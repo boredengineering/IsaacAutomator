@@ -89,11 +89,20 @@ variable "enable_neo4j" {
 }
 
 variable "vnc_password" {
+  sensitive = true
   default = ""
 }
 
 variable "system_user_password" {
+  sensitive = true
   default = ""
+}
+
+# Required controller-local 0600 JSON file, created/cleaned by image-*.
+# Direct Packer users must supply and securely remove this file themselves.
+variable "ansible_secret_vars_file" {
+  type = string
+  description = "Owner-only JSON Ansible password vars file; use the image-* wrapper."
 }
 
 variable "in_china" {
@@ -145,7 +154,8 @@ build {
     ]
     extra_arguments = [
       "--skip-tags", "${var.skip_tags}",
-      "--extra-vars", "cloud='azure' deployment_name='azure_image' isaacsim_git_checkpoint='${var.isaacsim}' isaaclab_git_checkpoint='${var.isaaclab}' isaaclab_arena_git_checkpoint='${var.isaaclab_arena}' demos='${var.demos}' install_gr00t=${var.install_gr00t} enable_neo4j=${var.enable_neo4j} vnc_password='${var.vnc_password}' system_user_password='${var.system_user_password}' in_china=${var.in_china} uploads_dir='/home/ubuntu/uploads' results_dir='/home/ubuntu/results' workspace_dir='/home/ubuntu/workspace'"
+      "--extra-vars", "cloud='azure' deployment_name='azure_image' isaacsim_git_checkpoint='${var.isaacsim}' isaaclab_git_checkpoint='${var.isaaclab}' isaaclab_arena_git_checkpoint='${var.isaaclab_arena}' demos='${var.demos}' install_gr00t=${var.install_gr00t} enable_neo4j=${var.enable_neo4j} in_china=${var.in_china} uploads_dir='/home/ubuntu/uploads' results_dir='/home/ubuntu/results' workspace_dir='/home/ubuntu/workspace'",
+      "--extra-vars", "@${var.ansible_secret_vars_file}"
     ]
   }
 

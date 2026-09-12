@@ -1,20 +1,22 @@
-# Opt-in Multi-Cloud Terraform Remote Backend and Drift Management Implementation Plan
+# Terraform Remote Backend, Workstation Profiles and Cost-Aware Deployment Implementation Plan
 
 > **For Hermes:** Use the subagent-driven-development skill, if available, to implement this plan task-by-task. Otherwise use focused `delegate_task` workers with independent specification and code review. Read the repository rules first. The user subsequently authorized implementation; that does not authorize live deployment, migration, workflow activation, commits, pushes or environment-setting changes.
 
-**Goal:** Let users explicitly choose local state or a properly configured remote Terraform backend for AWS, GCP or Azure, with safe deployment, lifecycle operations, migration and recovery from another controller; then offer opt-in drift detection and controlled correction through the local CLI, generated GitHub Actions or selected cloud-native services.
+**Goal:** Deliver profile-driven, cost-visible Isaac workstations with safe optional remote Terraform state, local/cloud robotics parity and verified RTX PRO 6000 Flex-start deployment; retain multi-cloud recovery/migration and optional drift/shared-evidence development as separately accepted workstreams.
 
-**Architecture:** Preserve local state as the default. Introduce a validated backend descriptor and one backend-aware Terraform runner used by every deployment/lifecycle path. Provision durable backend infrastructure separately from workstations, isolate each Terraform operation, and keep recovery metadata distinct from Terraform state and VM data. Reuse that runner for drift reports and approved remediation; scheduling systems are adapters, not alternative Terraform owners.
+**Architecture:** Preserve local state as the default and reuse the backend descriptor/isolated Terraform runner across deployment and lifecycle paths. Resolve one versioned workstation contract into the existing Bash installer, Ansible, Packer and CLI/TUI adapters rather than replacing those engines. Add optional on-demand Infracost estimates over the same resolved inputs or an exact saved plan. Keep backend storage, working data, registries/images and evidence services independently owned; drift and graph services never gate ordinary deployment.
 
-**Tech stack:** Existing Python/Click CLI, Terraform, AWS S3, GCP Cloud Storage, Azure Blob Storage, Textual TUI, Python unittest/mock and provider-mocked Terraform tests. Prefer Python standard library and existing cloud CLIs; introduce dependencies only after checking packaging and supported environments.
+**Tech stack:** Existing Python/Click CLI, Terraform, Bash installer, Ansible, Packer, AWS S3, GCP Cloud Storage, Azure Blob Storage, Textual TUI, optional pinned Infracost CLI, Python unittest/mock and provider-mocked Terraform tests. Prefer Python standard library and existing cloud CLIs; introduce dependencies only after checking packaging and supported environments.
 
-**Status:** Implementation started with the fail-closed safety and offline backend/runner foundation slice. This is not a completed remote-backend product. Source baseline reviewed on 2026-09-10, branch `devcontainer`; line references below describe that baseline and must be rechecked before editing.
+**Current status — 2026-09-12:** GCS execution/lifecycle and selected-directory transfer integration are implemented with historical scoped and bounded live evidence in §10.6. Full private GPU workstation acceptance, shared-profile parity, Infracost integration, S3/Azure execution parity and general attachment/migration are not signed off. This update changes the plan only: no installation, IAM grant, deployment, image publication, commit or push is authorized or performed here. Source checkout inspected on `devcontainer` at `e0e33d5`; the existing user-edited `terraform-remote-backend-notes.md` is preserved.
 
-**First-slice scope:** `state-backend validate --cloud CLOUD --config PATH` is available with public examples in `configs/state-backends/`. BackendSpec adapters/version checks and an isolated runner are implemented as foundations. The runner's provider-free local test verifies state persistence through three disposable contexts; remote mutations remain disabled. Legacy destroy/output safety, explicit opt-in and host-wrapper exit-status/headless regressions are covered separately. See `configs/state-backends/README.md` for available behavior and limitations.
+**Reading order / status precedence:** §12 is the current cross-product roadmap, Tasks 24–37 are its actionable additions, and §13 is the next-action/decision checklist. §10.6 is the latest recorded GCS acceptance. Older baseline prose, task ledgers and environment observations in §§2–10.5 are historical where they conflict with those updates; do not rerun completed work or treat old remote refusals/test failures as current findings without rechecking source. Tasks 1–23 remain tracked, not discarded or all completed. Every future gate records implementation, independent review and live verification separately.
 
-**Remaining gates:** Task 2 provider/bootstrap schema and lockfile validation, production call-site integration of Task 4, Task 5 bootstrap, authenticated portions of Task 6, and Tasks 7–23 are not delivered by this first slice. Task 3's saved-descriptor conflicts fail closed rather than enabling attachment/migration. Task 13 has configuration examples only, not completed operator/TUI documentation. No remote deployment, live IAM/locking acceptance, state migration, drift workflow or shared graph publication has been run. The installed Terraform 1.8.5 is sufficient for the local fixture, not the conservative remote >=1.10.0 feature gate; no binary or image setting was changed.
+**Historical first-slice scope (superseded for GCS by §10.6):** `state-backend validate --cloud CLOUD --config PATH`, BackendSpec adapters/version checks and the isolated runner established the offline foundation. Remote mutations were disabled at that milestone; GCS has subsequently been integrated. Legacy destroy/output safety, explicit opt-in and host-wrapper regressions remain required. Recheck `configs/state-backends/README.md` and actual command help during implementation.
 
-**Drift extension:** Added following the user's request on 2026-09-10. Provider and GitHub capabilities in section 4.6 were checked against official documentation; numbered references resolve to the Sources section. There is no `.github/` directory in the inspected checkout. Templates, generators, cloud monitors and corrective actions below are proposed deliverables, not files or services activated by this planning update.
+**Remaining gates:** Use §§10.6, 12.1 and 13 rather than the original first-slice restrictions to select work. In particular, provider-free fresh-controller GCS reads do not establish full workstation recovery, private IAP transfer or GPU acceptance. Historical Terraform versions and dependency failures are observations, not permanent environment requirements; select and exercise a compatible pinned runtime before new acceptance.
+
+**Drift extension:** Added following the user's request on 2026-09-10. Provider and GitHub capabilities in section 4.6 were checked against official documentation; numbered references resolve to the Sources section. Some inert templates/contracts were subsequently implemented (§10.2); live activation, identity and corrective-action acceptance remain separate. This update installs or activates no workflow.
 
 **Shared evidence extension:** Section 11 adds a researched, optional remote evidence-ledger architecture and Tasks 19–23 for discussion and a separately approved pilot. It preserves the canonical RDF model and local agent caches. It is not a decision to deploy Neo4j remotely, synchronize personal agent memories, or make a graph service a dependency of Terraform/drift operations.
 
@@ -32,6 +34,9 @@
 - Local-to-remote, remote-to-local and remote-location migration with safety checks.
 - A fresh controller attaching to an existing remote-managed deployment.
 - Offline regression coverage and separately authorized live acceptance for each provider.
+- Shared resolved workstation profiles across local/cloud installation, Packer and isaac9s; staged parity acceptance in §12.
+- Optional on-demand Infracost estimates and comparisons with explicit usage, coverage, privacy and pricing-model boundaries.
+- GCP Flex-start acceptance for both `g4-standard-48` and `g4-standard-384`, plus separate container-distribution and golden-image acceptance.
 - Drift detection for backend protections, Terraform-managed workstation resources and controller identity; separate integration points for in-VM software checks.
 - A common drift report/remediation contract with on-demand checks, optional scheduling, notifications, suppressions and failed/missed-check monitoring.
 - Inert, configurable GitHub Actions templates and a user-invoked generator; separate explicit installation/activation and OIDC setup.
@@ -41,7 +46,7 @@
 
 - Copying the local Neo4j evidence graph to a VM or synchronizing graph databases.
 - Backing up VM disks, datasets, model weights or training results through Terraform state.
-- Changing the robotics software stack or installer/Ansible parity work.
+- Unrelated robotics feature development. The originally excluded installer/Ansible parity work is now explicitly included through Tasks 24–27, without replacing the two engines or changing the target stack silently.
 - HCP Terraform remote execution, Kubernetes/Consul backends, Alibaba remote state, or unrestricted cross-cloud backend combinations in the first release.
 - Automatically migrating the separately managed ECR/Artifact Registry states.
 - Automatic activation of workflows, cloud policy remediation or recurring checks merely because remote state was selected.
@@ -746,7 +751,7 @@ Maintain separate acceptance labels for backend support, workstation lifecycle, 
 
 ## 8. Delivery order, risks and decisions
 
-**Dependency order:** Task 1 safety guard → Tasks 2–4 contract/runner → Task 5 provider bootstrap slices and Task 6 CLI → Tasks 7–8 deployment/lifecycle → Tasks 9–10 attachment/migration → Tasks 11–12 planning/TUI → Task 13 backend documentation and verification → Tasks 14–15 drift contract/detector → Task 16 controlled correction → Task 17 opt-in GitHub templates/generator → Task 18 selected native adapters and drift release evidence. Bootstrap providers can be developed in parallel after the shared schema stabilizes; one owner maintains the shared runner/config contract. Native adapters can be developed independently of GitHub once shared drift contracts stabilize; they do not make GitHub mandatory.
+**Original backend dependency order (current cross-product order: §12.7):** Task 1 safety guard → Tasks 2–4 contract/runner → Task 5 provider bootstrap slices and Task 6 CLI → Tasks 7–8 deployment/lifecycle → Tasks 9–10 attachment/migration → Tasks 11–12 planning/TUI → Task 13 backend documentation and verification → Tasks 14–15 drift contract/detector → Task 16 controlled correction → Task 17 opt-in GitHub templates/generator → Task 18 selected native adapters and drift release evidence. Bootstrap providers can be developed in parallel after the shared schema stabilizes; one owner maintains the shared runner/config contract. Native adapters can be developed independently of GitHub once shared drift contracts stabilize; they do not make GitHub mandatory.
 
 Review each slice first for requirements/safety, then for code quality. Keep provider setup independent from rollout of remote lifecycle support. Do not expose an enabled remote UI choice before the matching lifecycle path is ready; an experimental setup command must label its limits.
 
@@ -806,7 +811,7 @@ Evidence baseline: the implementation checkpoint [20260910_193701_a5b58500](../.
 - [x] Host-wrapper non-TTY execution/exit codes and backend rejection before cloud authentication/discovery have regression coverage. Generic public-IP/git-ref lookups and outside-container Docker startup are not claimed to be offline.
 - [x] Targeted regression evidence and implementation limitations are recorded; no live deployment, migration, drift workflow or shared-ledger publication was performed.
 
-### 10.2 Task delivery ledger
+### 10.2 Historical intermediate task delivery ledger (read with §§10.6 and 12.1)
 
 | Plan tasks | Current delivery status | Work still required for task/release acceptance |
 | --- | --- | --- |
@@ -988,7 +993,7 @@ remain unimplemented; it does not mark the entire 23-task plan complete.
   destroyed and absence verified. No GPU or NAT gateway was provisioned.
 - All seven temporary experiment buckets were deleted, including object versions.
   Exact short-lived usage charges are not measured; zero cost is not claimed.
-- The current identity lacks IAP tunnel access in both project and instance probes.
+- The identity tested on 2026-09-11 lacked IAP tunnel access in both project and instance probes; recheck on resumption.
   No IAM grants were added. Live IAP rsync and complete GPU/Isaac installation remain
   unverified. This is an actual permission/acceptance gap, not a ledger/approval prerequisite.
 - A subsequent Docker-image live test was blocked before execution by the approval
@@ -1206,6 +1211,405 @@ The named new modules are proposed Task 19–21 deliverables, not tests that exi
 
 Keep this ledger separate from section 10's backend/drift acceptance. A decision not to deploy a shared graph is a valid outcome, not an incomplete Terraform feature.
 
+## 12. Cross-product continuation — profiles, costs and real workstation acceptance
+
+**Planning update: 2026-09-12.** This section expands the user's next actions without rewriting historical test evidence. New modules, commands and fixtures named below are **proposed**, unless explicitly identified as existing. Development can use focused parallel workers, with one contract owner and independent specification/security review followed by code-quality review for every slice. No commit, push, tool installation, IAM change or paid experiment follows merely from completing this plan.
+
+### 12.1 Current capability and evidence matrix
+
+| Workstream | Implemented / recorded evidence | Next release gate |
+| --- | --- | --- |
+| Workstation profiles | Local YAML profiles and cloud security/custom-profile machinery exist; the complete robotics handoff is not established | One resolved, versioned software contract with explicit adapters and no silently ignored fields (Tasks 24–25) |
+| Installer/cloud parity | Both engines contain Sim/Lab/Arena/GR00T/LeRobot logic; the [parity review](../../memory/sessions/20260910_061133_51928612.md) found concrete divergences | Interpreter, dependency isolation, revision/rerun/failure behavior and runtime receipts agree for a selected profile (Tasks 26–27) |
+| GCS and transfer | Historical 536 pass / 1 skip, private e2-micro and provider-free GCS experiments; all experiment resources cleaned | Real private product deployment, IAP transfer and failure/cleanup acceptance (Tasks 31–33) |
+| Flex-start GPU | CLI/Terraform support exists, but neither required size has full product acceptance | Separately signed off `g4-standard-48` and `g4-standard-384`; no CPU or alternative GPU substitution |
+| Distribution | Optional Artifact Registry/ECR/Docker Hub/HF paths have offline/mocked evidence | Private guest pull, digest/revision verification, real selected workload and scoped cleanup (Task 34) |
+| Golden images | Packer and `image-*` paths exist | Bake, sanitize, boot through `--from-image`, verify runtime and destroy test resources (Task 35) |
+| Cost estimation | isaac9s contains hard-coded price guesses; no integrated Infracost acceptance | Optional repeatable CLI/TUI estimates with coverage, assumptions and no fake fallback prices (Tasks 28–30) |
+| Evidence graph | Historical static index, 226-claim Neo4j readback and 120 graph tests; user reports substantial practical benefit | Preserve current workflow; improve consumer tracing and measure representative tasks (Task 36), not a required hosted service |
+| S3/Azure, recovery and automation | Partial components/contracts, not general multi-cloud end-to-end acceptance | Provider-by-provider execution, attachment/migration and optional executor acceptance (Task 37, existing Tasks 1–23) |
+
+A historical pass is neither a current runtime probe nor permission to repeat a cloud mutation. Cost estimation is not a billing report, a quota check or evidence of capacity. Static graph conformance is not deployment acceptance.
+
+### 12.2 One profile model, distinct infrastructure and software concerns
+
+**Design:** reuse the installer's named/custom YAML profile idea without forcing its entire Bash-oriented configuration into Terraform. Preserve existing security profiles and backend descriptors. Introduce a common validated workstation software contract, then compose it with a cloud deployment envelope. The bare-metal installer consumes the software part; cloud CLI and Packer use the same resolved software part through Ansible. isaac9s edits/validates these contracts rather than maintaining a second parser.
+
+| Contract area | Required fields / rules |
+| --- | --- |
+| Identity | Schema version, profile name, source/version, target adapter and canonical nonsecret digest; record source of overrides |
+| Software components | Sim/Lab/Arena/GR00T/LeRobot enabled flags, source mode, upstream/fork URLs and immutable resolved revisions; explicit native/container execution per supported component |
+| Runtime | Python version and named/repo-local environment per component, Conda/UV policy, torch/torchvision wheel tuple, CUDA compatibility and architecture constraints |
+| Workspace | User-owned root, component paths, fork/upstream topology, data/results/cache locations; local versus cloud path binding is deliberate, not assumed identical |
+| Serving | Model/revision or container digest, embodiment, bind address, port and client endpoint derived from one definition; secrets are external references only |
+| Infrastructure envelope | Cloud, explicit project/account/subscription, region/zone, machine type, provisioning model, run/wait limits, boot/data/scratch disk selection, network and security choices |
+| Optional integrations | Existing registry/HF settings, named transfer mappings, independent backend selection, cost usage assumptions; drift/graph sharing remain opt-in |
+
+**Proposed UX:** retain cloud `--profile` compatibility for existing security/custom profiles; add a distinct `--workstation-profile NAME_OR_PATH`. Do not silently change what existing `--profile full` or security tiers mean across tools. Offer proposed `workstation-profile validate`, `resolve` and `list` commands, with read-only, offline `resolve` producing a redacted contract and field provenance. Revision resolution that needs Git/network is a separate explicit action; offline validation never authenticates or fetches `latest`.
+
+**Resolution:** built-in software defaults → selected software profile → explicit fields in the custom deployment envelope → explicitly supplied CLI overrides. Reject conflicting selectors at the same precedence level. Existing saved backend identity still wins over profile edits; changing software or machine choices never migrates backend storage. Use a narrow versioned compatibility adapter for legacy YAML; warnings list renamed/unsupported keys. Reject unknown keys, duplicate YAML keys, missing files, invalid references, unsupported adapter features and ambiguous enabled/dependency combinations. Start without arbitrary recursive inheritance; presets plus explicit overlays suffice.
+
+**Target-specific limits:** local peripheral/teleoperation and desktop features are not automatically valid on a headless cloud VM. Declare adapter capabilities and reject unsupported selected fields before apply; do not silently drop them. Preserve explicit software-license/model-access decisions rather than interpreting a preset's enabled flag as authorization to accept new terms or redistribute assets.
+
+**Intent versus observation:** preserve the existing rejection of `kind: workstation-baseline` documented in `configs/PRIVATE_PROFILES.md`. Desired profiles, resolved manifests and observed receipts are distinct versioned types; a captured host baseline is not automatically executable. Keep private profile discovery/exclusions intact. Persist resolved software settings privately and atomically so repair/from-image can work without reopening mutable original YAML. Prefer a namespaced typed JSON extra-vars artifact (`--extra-vars @file`) for software settings, separate from SSH inventory and secret delivery; avoid adding more shell/INI interpolation.
+
+**Target software tuple:** Sim 6.0.1 Standalone Kit, Lab v3.0.0-beta2, Arena release/0.3.0-prerelease, GR00T dev with NEW_EMBODIMENT and port 5561, and Blackwell `sm_120` / torch 2.10.0+cu128. Resolve mutable branch names to exact revisions before live acceptance. Lab uses Python 3.12; determine and pin GR00T/LeRobot interpreters from the selected upstream manifests in their own isolated environments. Do not declare Python 3.12 valid for every component or equate the wheel's CUDA runtime with the installed host toolkit/driver version. Source builds versus downloaded Standalone Kit must be explicit profile choices with separate evidence, not interchangeable install methods.
+
+### 12.3 Parity means observable behavior, not matching YAML labels
+
+Keep the Bash installer and Ansible engines. Share schema/defaults, resolution and an acceptance manifest; do not call the entire privileged Bash installer from Ansible to conceal missing transport. For every advertised field, record `profile field → resolved field → consumer → observable assertion`. Unsupported fields fail before provisioning rather than being preserved in YAML but ignored.
+
+Required regression classes:
+
+- Python and environment ownership: Lab/GR00T/LeRobot isolation; no base-Conda contamination or inherited Kit PYTHONPATH leakage; interpreter and package imports come from the selected environment.
+- Dependency/revision fidelity: protect Blackwell wheels from later UV/editable-install resolution; respect lockfiles; immutable image/model refs; rerun with the same profile is idempotent and a changed requested revision is applied or explicitly refused with repair guidance.
+- Failure propagation: install/build pipelines preserve original nonzero exits; no success marker after failed checkout/build/import; failure in a dependency stops dependent stages. Preserve recovery evidence and avoid destructive automatic environment cleanup.
+- Serving: native systemd and container units start only when enabled; endpoint/model/embodiment match the client; timeout, bind failure and unhealthy service are reported. Disabled GR00T has no service, weights download or open port.
+- Workspace/forks: correct destination, ownership and upstream/origin mapping across reruns; no remote push, destructive dirty-tree reset or profile fallback on misspelled names.
+- Acceptance: host facts → environment imports → Sim startup/exit → real Arena physics/task step → policy server round-trip and a bounded rollout. A CUDA matrix multiply, directory existence or ledger string is not simulation success.
+
+### 12.4 On-demand Infracost, without making it a deployment dependency
+
+**Desired experience:** users can estimate a proposed profile, an exact saved plan or changes between two saved estimates at will, from the CLI and isaac9s. Missing Infracost/auth/network does not break normal deployment; it does make a requested cost operation explicitly unavailable/error. A user-selected budget policy may block an approved experiment, but no universal cost/approval framework is introduced.
+
+**Version and API decision:** official documentation consulted on 2026-09-12 describes the newer `infracost scan`, `inspect`, `price` and token-auth command family.[31][32] Older integrations use `breakdown`/`diff` and different authentication. Pin one supported CLI **and pricing/plugin schema** after a compatibility spike; capture `version`/`--help` and exercise actual JSON output. Do not mix command families or assume legacy flags/API-key setup. If the selected release cannot process our G4/Flex-start plans accurately, record that gap and keep partial estimates useful rather than substituting an invented number. Do not run `infracost setup`, `agent setup`, `ide setup`, `ci setup`, `doctor --fix` or auto-update as part of an estimate.
+
+**Proposed project commands (not implemented):**
+
+```text
+./cost estimate --profile PATH --cloud gcp --usage-file PATH --format table|json|markdown
+./cost estimate --deployment NAME --saved-plan PATH --usage-file PATH --format json
+./cost compare --before REPORT_JSON --after REPORT_JSON --format table|json|markdown
+```
+
+Contract for these commands:
+
+1. **Profile/HCL mode:** resolve the same deployment inputs used by Terraform, stage only the selected trusted root and required modules/configuration, and scan without apply/bootstrap/backend migration. No guest provisioning, automatic live usage lookup, cloud credential requirement or hidden Terraform plan. HCL parsing can require module downloads and pricing network access, so label it **no cloud mutation**, not **offline**. Reject untrusted module/hook execution and do not scan the entire repository/home by default.
+2. **Saved-plan mode:** use an existing exact plan from the backend-aware runner, validate deployment/source/input/lockfile bindings, and convert locally with `terraform show -json`. Infracost's current docs show `infracost scan plan.json`; verify this against the pinned runtime.[33] Generating a new refreshed plan is a separately requested cloud-read operation, not a hidden side effect of `cost`. Plan JSON can still contain unknown values and secrets; never assume all values resolve or publish the raw file.
+3. **Usage scenarios:** a reviewed nonsecret usage file supplies running hours, retained disk/image/object storage, request/egress quantities and assumptions. Current docs describe a 730-hour baseline and `usage_file` configuration.[34] Record effective usage, including organization/predefined defaults; arbitrary defaults are not measured consumption. Show full-month baseline, selected experiment runtime, and retained-resource recurring cost separately. Do not scale all monthly line items by runtime: disk/image retention, request charges and tiered egress use their own units/lifetimes.
+4. **Exact scope and coverage:** separate workstation, backend bootstrap, registry, data backup and optional evidence/monitor stacks. Terraform backend configuration is not itself a priced bucket resource in the workstation plan. Include separately selected owner-stack plans for shared resources; report allocation assumptions and deduplicate by stable owner identity, not resource display name. Existing shared resources can cost money despite no planned creation. Packer build time and external artifact/HF/license charges need explicit supplemental assumptions, not an invented Packer-to-Infracost API.
+5. **G4/Flex-start pricing:** confirm recognition of both sizes, intrinsic GPU counts, local SSD and selected disk/network features. Verify the consumption/SKU model; never label on-demand or Spot estimates as Flex-start. If unsupported, show `partial`/`unsupported`, an unpriced-resource list, and a separately attributed provider-catalog/manual estimate with URL/SKU, currency, region, date and units. Do not apply a guessed discount or count included CPU/GPU/SSD charges twice. No claim that price/quota guarantees capacity.
+6. **Comparison:** compare two immutable normalized reports locally. Show profile/input changes and added/removed/changed costs; flag differing currency, pricing date, duration/usage, region and coverage. Never subtract incomparable totals silently. Report the covered subtotal when resources remain unpriced, not a complete total of zero.
+7. **Evidence:** each report records source revision/digest, profile/input and plan digest when available, backend-independent target scope, tool/plugin versions, timestamp, price source/currency, usage, priced/free/unpriced/unknown counts and completeness. States include `complete_within_declared_scope`, `partial`, `unsupported`, `unavailable`, `stale`, `error`; even a complete scoped estimate excludes undeclared spending and is not an invoice. Keep report provenance distinct from actual cloud billing.
+
+**Privacy/authentication:** Infracost documents local parsing and pricing-parameter/resource-count/error-context transmission rather than raw plan or cloud-secret upload to its Pricing API.[35] Cloud/dashboard integrations have a separate data boundary. Review the pinned CLI's effective telemetry, cache and upload behavior before private use; if it cannot meet the selected no-publication policy, refuse that mode. No automatic dashboard/VCS registration, report upload, PR comment or model/agent integration. Use owner-only temporary plan JSON and cache outside source, restrictive subprocess environment, bounded output/time and deletion on success/error/cancel; retain only explicitly selected sanitized reports. Exclude raw state, secret values, user-data, SSH material and unrestricted tags/names from terminal/TUI exports. For the currently documented noninteractive family, credentials arrive by `INFRACOST_CLI_AUTHENTICATION_TOKEN` through approved secret transport, not CLI arguments, profile YAML or Docker build args.[36] Account setup is user-controlled; never solicit the token in chat.
+
+**Packaging/UI:** propose optional `WITH_INFRACOST=0|1` and a checksum-verified version pin in `Dockerfile`, with disabled-path build tests. No global installation, VS Code setting change or devcontainer mutation is part of this plan. Reuse the existing Python wrappers and runtime selection; verify host/container path visibility. Replace `src/tui/screens/inspector.py:get_cost_estimate` and `src/tui/screens/profiles.py:calculate_custom_overhead` guesses with an explicit Estimate/Refresh action calling the common adapter asynchronously. No API call on every keystroke, no credentials in widgets, no `~$0.95/hr` fallback. Bare-metal infrastructure cost is `not estimated`, not proof that electricity/hardware is free. UI shows assumptions, timestamp, partial/stale state and cancel/errors.
+
+### 12.5 Flex-start acceptance: two machines, two gates
+
+Google's current G4 documentation identifies **RTX PRO 6000 Blackwell Server Edition**, not the local Workstation Edition.[37] Record that distinction in the cloud target contract; do not edit the active local hardware standard or promise equivalent topology/performance.
+
+| Required target | Documented shape to revalidate before apply | Purpose |
+| --- | --- | --- |
+| `g4-standard-48` | 48 vCPUs, 180 GB host memory, 1 RTX PRO 6000 GPU / 96 GB GPU memory | First full private workstation, single-GPU simulation and policy acceptance |
+| `g4-standard-384` | 384 vCPUs, 1,440 GB host memory, 8 RTX PRO 6000 GPUs / 768 GB aggregate GPU memory | Separate multi-GPU enumeration, device placement, communication and workload acceptance |
+
+The documented Local SSD configuration is 1,500 GiB and 12,000 GiB respectively; inspect the selected provider/API shape and disk mode rather than silently forcing a generic disk recipe.[37] Treat local scratch as non-durable. Verify supported boot/data disk types and minimums, image architecture, drivers, host maintenance, no automatic restart where required and actual GPU enumeration in the guest. Do not infer GPU count from a generic vCPU divisor.
+
+**Scheduling contract:** audit the existing standalone `FLEX_START` path first; do not introduce a MIG only because DWS exists. Current standalone documentation distinguishes allocation wait (`requestValidForDuration`: zero, or 90–7,200 seconds) from run duration (up to seven days) and termination action.[38] Pin provider support and map both independently. Expose pending/allocation timeout/cancel/failure honestly, never start Ansible before RUNNING and reachable. Canceling a local subprocess must also reconcile any pending cloud creation; stopping the CLI is not teardown. Verify standalone restart behavior separately from MIG behavior; restart can require fresh quota/capacity and is not an assured seven-day extension. Do not silently switch to Spot/on-demand or another zone/type.
+
+**Live stages, serialized by default:**
+
+1. Read-only preflight in `cybernetic-renan`: active approved identity, billing/APIs, exact project/zone, fresh machine catalog and preemptible quota for Flex-start, CPU/GPU/SSD limits, effective resource-scoped IAP/OS Login, service-account use and backend object access. Prefer `us-west1` if supported; alternative zones require a selected allowlist. Missing catalog/quota is not capacity proof; record queue outcomes separately. No self-granted IAM.
+2. Approve per-stage spend cap, maximum allocation wait, maximum run/build time, region/size, private egress path and teardown scope. Estimate ongoing storage/registry/backend/NAT and cancellation overhead as well as GPU runtime. Alerts are not a hard spending cap; record an external cleanup recovery procedure if the controller dies. Previous timed-out approvals are not reusable.
+3. On `g4-standard-48`, run actual `deploy-gcp` with explicit selected profiles/GCS destination/Flex-start settings and all required noninteractive options. Use unique experiment identities and separate test storage. Distinguish ordinary deployment from a replacement test; replacement may only target an experiment-owned deployment. Verify private IP, IAP-source SSH firewall, intended Shielded VM/OS Login settings, outbound package/model access and authoritative outputs. IAP is inbound connectivity, not an internet-egress solution: explicitly select approved NAT/proxy/private mirrors or a pre-baked image, and price it.
+4. Verify IAP SSH and selected-directory upload/download: synthetic files with spaces, hashes, exclusions, no-delete default, dry-run, explicit overwrite semantics, interrupted transfer/retry, changed-host-key refusal and error propagation. Test private noVNC tunnel reachability without exposing passwords; use NoMachine or recorded frames for 3D viewport evidence.
+5. Run §12.3 acceptance with the exact software profile and record versions, imports, driver/GPU facts, physics result and policy round-trip. If a component is disabled, mark it `not_selected`; do not label the whole ecosystem tested. Preserve results off VM before termination. Test ordinary supported stop/start and Flex-start expiry/recreation paths distinctly with a shortened permitted run duration; do not wait seven days for a test.
+6. Destroy and verify absence before escalating to `g4-standard-384`. Launch that size only with its own budget/capacity approval. Enumerate all eight devices, verify per-device allocations/health, declared simulation/inference device placement and a bounded multi-GPU communication workload. Follow measured topology and current G4 guidance, including evaluating `NCCL_P2P_LEVEL=SYS` for this shape, scoped to the workload rather than a blanket global shell change.[37] Do not claim distributed-training readiness from GPU enumeration or linear speedup from GPU count.
+7. Cleanup every stage on pass/fail/cancel: VM, disks, pending requests, test firewall/subnet/VPC/router/NAT/IP, transient builder resources and explicitly disposable object versions/registry artifacts/images. Verify each tracked handle independently after Terraform destroy. Workstation destroy must leave deliberately shared backend/data/registry resources intact; report retained resources and costs with owner/expiry. Retire disposable owner stacks separately. Capacity failure is `blocked_capacity`, not a software pass or permission to retry indefinitely.
+
+### 12.6 Distribution, image baking and evidence graph
+
+**Two image products:** an OCI runtime image in a registry is not a bootable Packer VM image. Test them separately, then test composition. Keep registries/backend storage independent of workstation teardown and retain chosen artifacts only with explicit ownership/retention approval.
+
+- **Registry/model matrix:** first GCP Artifact Registry keyless private pull and pinned HF staging on an approved GCP guest; later separate AWS ECR and Docker Hub tests with approved identities/providers. Add a user-owned minimal OCI build/push/digest-readback/pull smoke, followed by the selected robotics image's real entrypoint and GPU workload. Verify runtime identity has pull-only access, denied/wrong digest/auth paths fail, optional-disabled profiles fetch nothing, HF revision/checksums and offline cache behavior, and no credential leakage in inventory, state summaries, images or logs. HF gated models and third-party images require applicable access/license terms; do not publish weights or redistribute NVIDIA assets implicitly.
+- **Golden-image matrix:** use the shared resolved software profile in `image-gcp`/Packer, then validate a new `deploy-gcp --from-image` VM with the same acceptance manifest. Record source image ID, resolved profile/revisions, builder/runtime versions and immutable output ID; a mutable family/tag is not acceptance provenance. Separate build-time/runtime identity; clean cached tokens, SSH keys, cloud-init identity and machine-specific configuration before capture. Prove credential cleanup without dumping secrets. `--from-image` must still configure per-deployment networking/identity and validate compatibility; no blind bypass based on an image name. Price builder, image retention and test VM independently. Packer scheduling need not use Flex-start if the pinned builder cannot; disclose and separately approve any alternative rather than hiding it in the cost model.
+- **Graph continuity:** keep the working local RDF/Neo4j advisory path and existing privacy/freshness safeguards. Prioritize missing profile → CLI → Terraform/inventory → role consumer tracing and source-located answers to actual deployment questions. The user's reported improvement motivates continued use; it is not a measured benchmark. Add a small reviewed question set and tool-use receipts comparing direct-source versus graph-assisted investigations; measure correctness, unsupported conclusions, elapsed time and tool/token effort. Reindex only admitted public source; no automatic plan/state/credential/session ingestion or Neo4j reload. Tasks 19–23 remain an optional shared-service pilot, not a prerequisite for this improvement.
+
+### 12.7 Delivery order and ownership
+
+1. **Contract owner:** Task 24 resolves schema/compatibility; Task 25 establishes generation and transport. Freeze the resolved contract before parallel adapter changes.
+2. **Parallel development:** installer/Ansible parity Tasks 26–27; Infracost capability/adapter Tasks 28–29; Flex-start mapping/preflight Task 31. None grants live access. Graph Task 36 can proceed independently after source-admission review.
+3. **User-facing integration:** Task 30 TUI/cost flows after the cost report contract stabilizes. Update examples/operator docs alongside actual functionality, not ahead of it.
+4. **Acceptance:** Task 32 private single-GPU product run after scoped regressions and independent review. Task 34 distribution and Task 35 image baking may reuse an approved single-GPU window only when budget/lifetime and attribution remain clear. Each retains a separate receipt.
+5. **Scale:** Task 33 multi-GPU acceptance after single-GPU teardown and separate approval. An eight-GPU run is not automatically authorized by the first run.
+6. **Broader backends:** Task 37 resumes S3/Azure and general recovery/migration against the existing runner; optional Tasks 14–23 remain independent release tracks. Do not delay the GCP milestone for these tracks or claim they are complete when it passes.
+
+Each task below is a reviewable slice with short substeps: write focused failing tests, observe failure, implement minimally, rerun focused/regression tests, independent specification review, independent code review, record evidence. Split large role/provider changes into per-component patches. Do not execute live tests in default test discovery. Test counts below are not predictions or claimed results.
+
+### Task 24 — Versioned workstation contract and legacy compatibility
+
+**Files:** propose `src/python/workstation_profile.py`, `src/tests/workstation_profile.test.py`, `configs/workstations/README.md` and named YAML examples; inspect/extend `src/python/config.py`, `configs/profiles/example-profile.yaml`, `isaac-installer/config/default-profile.yaml`, `isaac-installer/config/full-ecosystem.yaml`, `isaac-installer/config/minimal-headless.yaml`, `isaac-installer/lib/core/config.sh`.
+
+- [ ] Inventory every existing local/cloud field and its consumer; publish the mapping/unsupported matrix before selecting final names.
+- [ ] Test precedence, duplicate/unknown keys, missing profile, disabled dependencies, unresolved refs and legacy security/backend compatibility.
+- [ ] Implement the shared resolver and a versioned installer adapter with redacted provenance/digest; no dynamic shell evaluation or secret interpolation.
+- [ ] Review default/minimal/full examples against the target tuple, separate runtime environments and optional-off behavior.
+
+**Gate:** every advertised field has a consumer or an explicit unsupported error; offline resolution has no network/cloud/install side effects.
+
+### Task 25 — Profile-to-CLI/Terraform/Ansible/Packer transport
+
+**Files:** extend `src/python/deploy_command.py`, `src/python/deployer.py`, `deploy-gcp`, `src/python/config.py`, `isaac-installer/bin/isaac-installer`; inspect `image-gcp`, `src/packer/gcp/isaac-workstation.pkr.hcl` and cloud siblings. Propose `src/python/workstation_profile_command.py`, `workstation-profile`, `src/tests/workstation_transport.test.py`; retain `src/tests/deploy_command.test.py`, `distribution_profile.test.py`, `profile_privacy.test.py` regressions.
+
+- [ ] Add failing table-driven cases for each field through real resolver and non-mutating rendering boundaries, not mocks that bypass transport.
+- [ ] Add the unambiguous workstation-profile selector and `list`/`validate`/`resolve`; wire adapter-specific outputs and saved nonsecret software identity.
+- [ ] Assert generated Terraform inputs and synthetic inventory/Packer vars match the resolved contract, including disabled-feature omission. Do not print production inventory.
+- [ ] Test explicit false/no overrides, rejection of observed baselines, and saved-profile repair after the original YAML is unavailable. Include `src/ansible/inventory.template` in transport review; retain separate SSH connection and software-data boundaries.
+- [ ] Verify local backend default and existing saved GCS identity survive software/profile edits; backend failures still fail closed.
+
+**Gate:** the same software profile reaches Bash and Ansible/Packer with explicit target-path translation; legacy invocations remain covered.
+
+### Task 26 — Python, packages and installation parity
+
+**Files:** inspect/modify only affected `isaac-installer/lib/modules/{isaacsim,isaaclab,isaaclab_arena,gr00t,physical_ai}.sh`, `src/ansible/roles/{conda,isaacsim-source,isaaclab-source,isaaclab-arena-source,gr00t,lerobot}/`; propose `src/tests/workstation_runtime_contract.test.py` and `src/tests/workstation_installation.test.py`.
+
+- [ ] Capture failures for Python selection, environment separation, UV resync/wheel replacement and the cloud Lab install path.
+- [ ] Share resolved version/source/environment intent, not package environments; implement component-specific installs and explicit dependency checks.
+- [ ] Capture same-profile rerun, changed-ref rerun, dirty checkout and failed build/import cases; preserve original failures and update markers only after verification.
+- [ ] Verify enabled and disabled components, ownership, fork/upstream handling and activation/deactivation without executing a real installer in unit tests.
+
+**Gate:** offline behavioral tests prove transport and failure semantics; actual local runtime compatibility requires Task 27's local acceptance, cloud compatibility requires Task 32, and image compatibility requires Task 35. None is declared from YAML/shell syntax or inferred from another engine.
+
+### Task 27 — Common verification receipts and serving contract
+
+**Files:** extend `src/ansible/roles/gr00t/`, `src/ansible/roles/demos/templates/arena-gr00t.sh.j2`, `src/ansible/roles/state-ledger/templates/isaac-verify-state.j2`, `isaac-installer/lib/modules/gr00t.sh`, `isaac-installer/lib/core/state.sh`; propose `src/tests/workstation_verification.test.py`, `src/tests/workstation_serving.test.py`, `configs/workstations/acceptance.schema.json` and explicitly selected `src/tests/live/local_installer_acceptance.py`.
+
+- [ ] Test native/container port, bind address, embodiment/model mapping, service readiness/failure, disabled service and client wiring.
+- [ ] Emit versioned sanitized per-check receipts: profile digest, target/environment/revisions, observed time, command/check ID, pass/fail/not-selected/unknown and artifact reference.
+- [ ] Make failed required checks return nonzero; distinguish physics/policy tests from CUDA/import/health probes and redact command arguments.
+- [ ] Verify image and source installation use the same acceptance schema without trusting prior success markers.
+- [ ] Run a separately authorized **local Bash-installer acceptance** on a disposable or backed-up isolated target with the required RTX PRO 6000 hardware. Record target ownership, allowed package/service changes, selected profile, restore procedure and approval before invoking install/repair; do not use the developer's live workstation as an implicit fixture. Capture initial install, same-profile rerun, changed requested revision and safely injected installation/service failure, then imports, Sim startup, actual Arena physics and policy round-trip. Failures must not produce success markers. Keep destructive/error injection in disposable environments and restore only experiment-owned changes.
+- [ ] Compare local receipts with Tasks 32/35 using the same resolved software contract/revisions, explicitly accounting for Workstation versus Server Edition hardware and local/cloud path translation. Report each required check and any justified target-specific difference. If the local target is unavailable, mark local parity `not_run`/blocked rather than closing it from cloud results; the independently scoped GCP deployment milestone may still proceed.
+
+**Gate:** shared receipt/serving implementation has offline review; **local live acceptance is a separate open gate** until exercised. Full parity requires actual local + source-cloud + image-cloud receipts, not fixed version strings or an always-zero verifier.
+
+### Task 28 — Infracost capability, packaging and privacy spike
+
+**Files:** propose `src/tests/infracost_contract.test.py`, `configs/cost/README.md`; later modify `Dockerfile` and `build` only where required for optional pinned packaging.
+
+- [ ] Select a CLI release and inspect actual help/JSON schema/auth/plugin behavior in an approved isolated runtime; document legacy-family incompatibility.
+- [ ] Test public synthetic plans for both G4 sizes, Flex-start, disk/NAT/GCS/registry resources, unknown quantities and unsupported SKUs; distinguish fake protocol fixtures from real pricing responses.
+- [ ] Verify external requests/cache/report behavior meets §12.4 privacy policy before scanning private artifacts; define clean cancellation and no-publication configuration.
+- [ ] Add checksum/version/architecture and enabled/disabled-image tests; missing tool/token must produce actionable unavailable status with no auto-install/login.
+
+**Gate:** a recorded compatible CLI contract and coverage report, not just a binary installed. If Flex-start is unpriced, Task 29 must retain partial status and attributed supplemental pricing.
+
+### Task 29 — Cost adapter, usage scenarios and report comparison
+
+**Files:** propose `src/python/cost_estimate.py`, `src/python/cost_command.py`, `cost`, `src/tests/cost_estimate.test.py`, `src/tests/cost_command.test.py`, `configs/cost/gcp-flex-start.example.yaml`, `configs/cost/infracost-usage.example.yml`; integrate existing `terraform_runner.py`/`backend_runtime.py` read-only plan boundaries without adding another Terraform executor.
+
+- [ ] Test §12.4 report schema, Decimal money/unit calculations, coverage and unknown/free distinction; mock pricing transport in ordinary discovery.
+- [ ] Implement profile/HCL and exact saved-plan modes, allowlisted environment and owner-only staging, input/plan binding, bounded subprocess/cancel and cleanup.
+- [ ] Test short runtime versus monthly baseline, retained assets, multi-stack deduplication, missing/unsupported Flex pricing, stale cache and failed authentication/network.
+- [ ] Implement local report comparison and sanitized table/JSON/Markdown exports; test secret canaries never reach logs or exports. A canary fixture is synthetic, never a real credential.
+- [ ] Run an explicitly authorized real pricing-only smoke on public synthetic IaC; confirm no Terraform apply/bootstrap/backend/guest calls and record actual response coverage.
+
+**Gate:** repeatable on-demand estimates and comparisons work without provisioning; unavailable estimates never display fabricated fallback totals.
+
+### Task 30 — isaac9s profiles and cost UX
+
+**Files:** modify `src/tui/screens/profiles.py`, `src/tui/screens/inspector.py`, `src/tui/backend.py` and deployment-screen consumers after tracing them; extend `src/tests/isaac9s.test.py`, `src/tests/terraform_tui.test.py`; propose `src/tests/cost_tui.test.py`.
+
+- [ ] Test real preset discovery, validation and YAML round-trip; remove nonfunctional display-only profile choices or wire them to the shared resolver.
+- [ ] Replace hard-coded prices with explicit asynchronous estimate/refresh using Task 29; label old cached reports stale after profile/region/usage changes.
+- [ ] Cover missing dependency/auth, cancel, partial/unsupported resources and redacted rendering; no cost call on every edit and no automatic infrastructure changes.
+- [ ] Run headless Textual tests in the declared UI runtime; missing Textual/Rich is a blocked test, not a pass.
+
+**Gate:** CLI and UI show the same scoped report and resolved profile; normal deploy remains usable without Infracost.
+
+### Task 31 — Flex-start generation and read-only readiness
+
+**Files:** inspect/extend `deploy-gcp`, `src/python/gcp.py`, `src/python/config.py`, `src/terraform/gcp/main.tf`, `src/terraform/gcp/variables.tf`, `src/terraform/gcp/ovkit/main.tf`, `src/terraform/gcp/ovkit/variables.tf`, `cycle-vm`, `start`, `stop`; propose `src/tests/gcp_flex_start.test.py` and `src/terraform/gcp/tests/flex_start.tftest.hcl` after checking existing test placement.
+
+**Source baseline:** `ovkit/main.tf` currently uses a fixed 60-minute create timeout, a seven-day max runtime and STOP termination, without a surfaced allocation-wait setting; its from-image lookup selects a mutable image family. Validate the provider's native field support and make request/run/timeout and immutable image selection explicit rather than documenting controls that do not exist.
+
+`src/terraform/gcp/ovkit/security.tf` currently creates Router/NAT whenever `enable_iap_only` is selected. Price that actual generated topology now; a NAT-free private-egress profile requires explicit transport/resource changes and validation, not merely a UI checkbox. Preserve a working default egress path while making any alternative deliberate.
+
+- [ ] Test 48/384 exact machine/GPU mapping and incompatibilities, independent allocation-wait/run limits, termination policy and non-Flex behavior.
+- [ ] Validate/mocked-plan against pinned provider schema, including disk/image/private networking/OS Login and no selected optional resources when disabled.
+- [ ] Fix pending/timeout/cancel reconciliation and bounded CLI waits; never mark a queued VM ready or hide a live request after local cancellation.
+- [ ] Build non-mutating readiness output for catalog, quotas, IAP/OS Login and backend access; unknown is distinct from denial, quota from capacity. No IAM auto-grants.
+
+**Gate:** generated product configuration is valid for both shapes and has safe error/lifecycle behavior; live capacity and application success remain unverified.
+
+### Task 32 — Private single-GPU end-to-end acceptance
+
+**Files:** propose `src/tests/live/gcp_workstation_acceptance.py` and `.agents/references/plans/gcp-workstation-acceptance-<date>.md`; reuse `src/tests/gcs_lifecycle.test.py`, `file_transfer.test.py`, `novnc_iap.test.py` and current operator procedures.
+
+- [ ] Require an explicit live selector and approved experiment record with budget/time/identity/resources/cleanup, then complete §12.5 stages 1–5 using actual product wrappers.
+- [ ] Optionally isolate the unresolved IAP/OS Login transport gate first on a separately approved inexpensive private non-GPU VM; verify cleanup, then repeat against the real GPU deployment's authoritative GCS outputs. This diagnostic never satisfies the RTX PRO 6000 acceptance gate.
+- [ ] Verify private connectivity and round-trip file hashes before long installs/models; exit early on unmet prerequisites without unsafe public fallback.
+- [ ] Run per-component runtime acceptance, short-duration lifecycle/restore checks and image/source identity comparisons where selected.
+- [ ] If durable GCS results backup is selected, run a separate data gate: copy synthetic results to a dedicated data bucket/prefix, verify hashes, destroy/recreate the test VM and restore to a clean destination. Cover missing bucket, denied access, interrupted copy and restore failure; never use the Terraform state namespace. Inspect existing `src/ansible/roles/isaac-workstation/tasks/resilience.yml`, `templates/isaac-backup.service.j2` and `files/preempt-listener.py`; auto-restore currently uses `failed_when: false`, so add honest failure reporting and proposed `src/tests/gcs_data_backup.test.py` before live acceptance. This existing results-backup path is not the general named-mapping/selected-directory GCS-sync feature still proposed in §10.5.
+- [ ] Destroy in all outcomes and independently verify resource absence; preserve sanitized results and record retained owner-stack resources separately.
+
+**Gate:** real `g4-standard-48` + GCS + private IAP + rsync + selected robotics runtime accepted with teardown evidence. Native Terraform-only fixtures do not close this task.
+
+### Task 33 — Eight-GPU acceptance and topology
+
+**Files:** extend the proposed live harness and acceptance fixtures with a separate `g4-standard-384` stage; propose `src/tests/live/gcp_multigpu_checks.py` with a bounded workload and sanitized receipts.
+
+- [ ] Obtain separate budget/capacity/cleanup approval after Task 32; reuse its accepted profile and immutable artifacts where compatible.
+- [ ] Verify all eight GPUs, memory/topology, per-device computation and profile-selected sim/inference allocation; run a bounded NCCL/P2P test with evidence-backed settings.
+- [ ] Repeat private transport, real workload, termination/restore and independent teardown; record deviations from single-GPU behavior explicitly.
+
+**Gate:** the eight-GPU shape has its own runtime and cleanup receipt. Single-GPU success never checks this box.
+
+### Task 34 — Live OCI registry and pinned model distribution
+
+**Files:** inspect/extend `src/terraform/registry/gcp/`, `src/terraform/registry/aws/`, `src/ansible/roles/huggingface-artifacts/` and existing registry consumers; reuse `src/tests/artifact_registry*.test.py`, `container_registry_ansible.test.py`, `huggingface_artifacts.test.py`, `ecr_terraform.test.py`; propose `src/tests/live/distribution_acceptance.py`.
+
+- [ ] Reproduce offline distribution/privacy tests against current inventory contracts before live work; historical failures require fresh diagnosis, not blanket exclusions.
+- [ ] Implement §12.6 OCI build/push/digest-readback/private pull, selected GPU entrypoint, HF revision/hash/cache checks and denied/auth mismatch cases.
+- [ ] Test each provider independently and optional-off behavior; no fabricated cross-cloud parity from the GCP result.
+- [ ] Record artifact ownership, license/access conditions, network bytes, retention and deletion. Keep existing repositories/images/models untouched.
+
+**Gate:** selected registry/model delivery actually works on a provisioned guest; artifacts are either verified deleted or explicitly retained with ongoing cost ownership.
+
+### Task 35 — Packer build, sanitization and from-image acceptance
+
+**Files:** extend `image-gcp`, `image-aws`, `image-azure`, `src/packer/{gcp,aws,azure}/isaac-workstation.pkr.hcl` and existing from-image consumers as required; propose `src/tests/workstation_image_contract.test.py`, `src/tests/live/image_acceptance.py`.
+
+**Pre-live safety blockers confirmed in source:** `image-gcp:268–328` authenticates, can delete an image with `--existing overwrite`, and initializes plugins before the dry-run branch. Debug output at lines 325–327/338–341 includes the constructed command with password arguments. The GCP Packer template hardcodes `pd-ssd` at line 132 while `deploy-gcp` selects `hyperdisk-balanced` for G4. Fix these behaviors and their sibling image paths before claiming safe previews or starting a G4 bake; shell quoting does not redact secrets.
+
+- [ ] Test profile → Packer → Ansible mapping and provenance/compatibility validation with synthetic manifests; validate HCL and declared builder capabilities before spending.
+- [ ] Add failing tests for dry-run with overwrite, no authentication/deletion/build during offline preview, debug secret redaction and no secret-bearing process arguments. Use protected input transport, explicitly separate plugin initialization/network validation, and select supported G4 boot disks. Live builds use a unique experiment image name and `--existing fail`; overwriting an existing image requires a separately scoped operation, not routine acceptance.
+- [ ] Bake the selected GCP profile in a separate approved build window, checking install failures and credential/host-identity sanitization before capture.
+- [ ] Boot an immutable image through real product `--from-image`; execute Task 27's verification and private transfer tests rather than trusting Packer success.
+- [ ] Compare source/image startup and provisioning time, report build/runtime/storage costs separately, then delete builder/test VMs, disks and images unless retention was approved. AWS/Azure baking remains separate provider acceptance.
+
+**Gate:** both bake and fresh boot pass, and no build identity/secret is baked into the accepted image.
+
+### Task 36 — Preserve and improve practical graph-assisted operations
+
+**Files:** inspect/extend `src/knowledge_graph/queries.py`, `src/knowledge_graph/neo4j_projection.py`, `src/knowledge_graph/extractors/structural.py`, `configs/knowledge-graph/public.yaml` and its admission-policy consumers, plus `src/tests/knowledge_graph/`; propose `src/tests/knowledge_graph/fixtures/workstation_questions.json`; update `.agents/references/docs/evidence-graph-agent-guide.md` only when the behavior exists.
+
+- [ ] Select real questions about profiles, Flex-start, backend identity, transfer and cost coverage with manually checked direct-source answers and known unknowns.
+- [ ] Add missing public-source consumer edges after admission/privacy review; preserve sandbox, freshness, claim attribution and canonical RDF authority.
+- [ ] Compare graph-assisted versus direct-source runs using actual tool traces; report usefulness and limitations without claiming universal accuracy improvement.
+- [ ] Test stale revision/outage behavior and reconstruction of the replaceable Neo4j projection only in an approved isolated fixture; production reload/publication remains separate.
+
+**Gate:** source-grounded operational help improves or preserves measured task performance with no new deployment dependency or private evidence ingestion.
+
+### Task 37 — Resume multi-cloud recovery and optional automation gates
+
+**Files:** continue Tasks 5–18 in existing `src/python/{terraform_runner,backend_runtime,backend_controller,deployment_state,deployment_manifest,backend_migration}.py`, provider bootstrap/workstation roots and their current focused suites. Attachment helpers are in `backend_controller.py` and `deployment_manifest.py`; `backend_attachment.test.py` is a test, not a same-named production module. Optional Tasks 19–23 retain their own files/ledger.
+
+- [ ] Reconcile older open review items against the frozen current source; do not label unwired S3/Azure adapters a cloud limitation or remove fail-closed guards without implementing their paths.
+- [ ] Deliver S3 and Azure separately: explicit destination/auth, actual apply/read/destroy, native lock conflict, denied backend, partial apply/recovery and owner-stack persistence.
+- [ ] Prove full fresh-controller attachment (not just output read), external credential reconstruction, repair/transfer/lifecycle and explicit local↔remote/remote-location migrations with old-writer exclusion and rollback/recovery tests.
+- [ ] Close optional drift detection/notification/approved correction per selected executor, then revisit the shared-evidence pilot only if chosen. Keep ordinary deployment independent of those issuers/services.
+
+**Gate:** per-provider and per-feature evidence, not a blanket remote-backend completion claim. GCS acceptance remains valid within its scope while other providers are incomplete.
+
+## 13. Next-action checklist, decisions and evidence rules
+
+### 13.1 Developer actions (no cloud credentials needed)
+
+- [ ] Start Task 24's field/consumer inventory and decide legacy profile compatibility; then add failing resolution/transport tests before implementation.
+- [ ] In parallel, prepare Task 28's public-fixture Infracost compatibility/privacy spike and Task 31's provider-schema/Flex-start fixtures. Obtain approval before installing any tool or calling authenticated pricing services.
+- [ ] Reproduce scoped backend/transfer/distribution regressions, recording the source snapshot and exact suite selection; never reuse old totals as a fresh run.
+- [ ] Fix transport/environment/failure semantics before buying long GPU installation time; wire shared verification receipts and cost coverage.
+- [ ] Review each slice independently; resolve findings before the final frozen-snapshot regression and live handoff.
+
+### 13.2 Decisions before the affected operation (not blockers for unrelated work)
+
+| Decision | Proposed default / required user input | Blocks |
+| --- | --- | --- |
+| Software profile | Pinned target tuple in §12.2; default/minimal/full presets and explicit native/container components; confirm model/revision/access terms | Runtime/model acceptance, not schema work |
+| Local acceptance target | Explicit isolated/backed-up RTX PRO 6000 host, permitted install/service changes and restoration scope; never assume the current workstation may be reprovisioned | Local runtime parity only; not independent GCP acceptance |
+| Cloud hardware identity | Requested G4 shapes use Server Edition; keep Workstation Edition local target distinct | Cloud runtime expectations |
+| Initial region | `us-west1` preference after current zone support/quota check; explicit alternative-zone allowlist | Actual allocation, not generation tests |
+| Live identity/IAP | Use existing effective identity if permitted; otherwise request exact scoped IAP/OS Login grant from an authorized admin, never self-grant | Private live SSH/rsync |
+| Spend and duration | Separate caps for single GPU, eight GPUs, OCI/model transfer and Packer build; queue/run/build limits and cleanup owner required | Each paid experiment |
+| Private egress | Select and price NAT/proxy/private mirrors/pre-baked sources; IAP alone does not supply outbound internet | Guest installation/pulls |
+| Infracost runtime/privacy | Approve pinned optional binary/plugin runtime and credentials via secret transport; no IDE/CI/cloud-dashboard setup by default | Authenticated pricing/private scan, not cost unit tests |
+| Artifact retention | Default delete test-owned artifacts/storage after verification; retain only named outputs with owner, expiry and estimated cost | Image/registry publication and teardown |
+| Scope of later providers | Explicit AWS account/Azure subscription and credentials through normal transport | S3/Azure live tests only |
+| Optional automation/graph hosting | Disabled unless selected with budget, identity, schedule/retention and acceptance scope | Only those optional services |
+
+Do not ask the user for every field before doing offline development. Do not infer paid-run authorization from a request to expand this plan. Ask for concrete missing scope when a live stage is ready; previous expired/blocked approval must be renewed.
+
+### 13.3 Exact verification entry points and report format
+
+After implementation, use the existing project test style. Example existing offline targets (inspect their current runtime requirements and isolation before running):
+
+```sh
+PYTHONPATH="$PWD" python3 -B src/tests/deploy_command.test.py
+PYTHONPATH="$PWD" python3 -B src/tests/backend_selection.test.py
+PYTHONPATH="$PWD" python3 -B src/tests/backend_runtime.test.py
+PYTHONPATH="$PWD" python3 -B src/tests/gcs_lifecycle.test.py
+PYTHONPATH="$PWD" python3 -B src/tests/file_transfer.test.py
+PYTHONPATH="$PWD" python3 -B src/tests/novnc_iap.test.py
+PYTHONPATH="$PWD" python3 -B src/tests/distribution_profile.test.py
+PYTHONPATH="$PWD" python3 -B src/tests/container_registry_ansible.test.py
+PYTHONPATH="$PWD" python3 -B src/tests/huggingface_artifacts.test.py
+git diff --check
+```
+
+Run each proposed `src/tests/*.test.py` above with the same invocation **after it exists**, beginning with the observed red test for its task. Use `terraform fmt -check`, `terraform validate` and provider-mocked `terraform test` in isolated copies of the selected roots with the pinned providers and no production backend. Provider download/init can require network; do not label it strictly offline. Run shell syntax and Ansible syntax/lint checks for changed roles, plus real headless UI tests in the selected runtime. Graph tests use the separately declared graph environment as in §11.7. Do not run default discovery over unreviewed live or credential-bearing fixtures.
+
+Each release/experiment report must include:
+
+- Revision/source hashes before and after, resolved profile digest, exact invocation with secret values omitted, tool/provider/runtime versions and effective target scope.
+- Test inventory with unique counts, passed/failed/skipped/excluded suites and reasons; independent reviewer findings and resolution. Never add overlapping worker totals.
+- Distinct outcome per gate: `planned`, `implemented_offline`, `reviewed`, `live_pass`, `failed`, `blocked_permission`, `blocked_capacity`, `not_selected` or `not_run`.
+- Cost report provenance/coverage versus observed runtime/bytes and delayed actual billing if available; not a made-up final charge or zero-cost claim.
+- Experiment-created handles and verified teardown results, retained resources with owners/expiry, and unresolved cleanup failures prominently listed. Temporary `/tmp` diagnostics alone are not durable acceptance evidence; copy only sanitized summaries into the dated plan report.
+
+### 13.4 Expanded definition of done
+
+- [ ] Shared workstation profile resolution and all advertised transport consumers accepted; legacy/default/off paths preserved.
+- [ ] Local/source-cloud/image-cloud selected stack has matching environment/revision/serving intent and actual runtime receipts.
+- [ ] On-demand Infracost CLI and isaac9s estimates/comparisons work with pinned tooling, safe privacy/auth handling, usage/coverage and no fabricated defaults.
+- [ ] `g4-standard-48` Flex-start private product deployment, IAP transfer, robotics checks and verified teardown pass.
+- [ ] `g4-standard-384` independently passes private product, eight-GPU/topology/workload and verified teardown checks.
+- [ ] Selected OCI/HF distribution and golden-image bake/from-image paths have separate live and cleanup evidence.
+- [ ] Current graph workflow remains useful and safe; improvements are evaluated, with shared hosting optional.
+- [ ] S3/Azure, full attachment/migration and selected drift/shared-evidence tracks retain explicit open/completed status under Tasks 1–23/37.
+- [ ] README, operator procedures, related parity/distribution/image plans and CLI/TUI help reflect delivered behavior; no historical broad “complete compatibility” assertion substitutes for these gates.
+
+**First next milestone:** a resolved profile and cost-visible, genuinely private `g4-standard-48` Flex-start workstation that runs the selected robotics stack, transfers work/results and is fully cleaned up. The eight-GPU run is the next independent scale gate—not an assumed extension of that success.
+
+### 13.5 Implementation checkpoint — first offline batch (2026-09-12)
+
+Implementation has started, **not completed the expanded roadmap**. This batch
+does not authorize or perform paid deployment, IAM changes, local installation,
+registry publication or image baking. The pre-existing notes edit is separate.
+
+| Slice | Implemented scope | Remaining gate |
+| --- | --- | --- |
+| Task 24 / Task 25 CLI | Pure strict software resolver, public default/minimal/full presets, field/consumer matrix, provenance/digest and explicit unpinned/unverified results; standalone `workstation-profile list/validate/resolve` with enable/disable overrides | Legacy conversion and actual local/Ansible/Packer consumers, saved deployment transport; `ready_for_apply` remains false |
+| Task 24 legacy parsing | Existing installer profile loader uses data-only transport instead of generated-shell `eval`; malformed/duplicate/new-schema/unknown-profile inputs fail rather than silently using defaults | New shared-profile adapter and full component/runtime parity are still absent |
+| Task 31 generation | Separate runtime and Terraform-create polling limits; Spot/Flex conflict and G4 shape checks; Google provider pinned to inspected 8.2.0 schema; mocked Standard/Spot and both G4 shapes | Provider does not expose allocation-wait field; standalone API acceptance, capacity, cancellation/lifecycle and both paid GPU tests remain unverified |
+| Task 35 prerequisite safety | Local-only image preview and protected host/Packer/Ansible inputs; credential-safe AWS image export; reviewed host/CLI/downstream boundaries and null VERSION preview | Full Packer/provider validation/build, G4 builder compatibility, immutable from-image and runtime acceptance remain separate gates |
+| Tasks 26–30 / 32–37 | No claim of completion from this batch | Runtime parity, Infracost, isaac9s estimates, live registry/model/image tests, graph improvements and remaining backend/provider work |
+
+Independent reviews identified concrete issues beyond the initial focused tests:
+repository changes retaining inherited SHA refs; ambiguous/newline installer
+paths and raw parser-error disclosure; scheduling validation occurring after
+replacement side effects, repaired scheduling provenance and optional-None
+replay arguments; image callbacks/host forwarding/downstream Ansible/auth
+argument exposure. Focused fixes and regression tests address these findings.
+A host-preview smoke also caught a VERSION dependency, fixed without fabricating
+a version or weakening the real-build requirement.
+
+**Fresh verification:** 315 tests passed, zero skipped across 20 scoped Python
+suites; Terraform validation and 15 mocked Flex plan runs passed; Packer 1.16.0
+syntax-only checks passed for all three cloud templates. CLI/host-preview smoke,
+Python syntax, shell syntax and scoped whitespace checks passed. This is not an
+all-repository acceptance run, cloud capacity, installer compatibility or
+image-build evidence. See the [suite inventory and limits](terraform-implementation-offline-20260912.md).
+
+**Next implementation boundary:** wire the explicitly versioned contract into
+legacy conversion and local/Ansible/Packer consumers with saved deployment
+transport (Tasks 24–27). Do not feed a resolved profile to today's cloud
+`--profile` or installer `--config` and imply it is consumed. Infracost/TUI and all
+live acceptance gates remain open; no full-task checkbox above is closed solely
+because the offline resolver exists.
+
 ## Sources
 
 [1] https://developer.hashicorp.com/terraform/cli/commands/plan — tf-plan
@@ -1238,3 +1642,12 @@ Keep this ledger separate from section 10's backend/drift acceptance. A decision
 [28] https://neo4j.com/docs/aura — neo4j-aura
 [29] https://docs.cloud.google.com/storage/docs/request-preconditions — gcs-conditions
 [30] https://learn.microsoft.com/en-us/azure/storage/blobs/concurrency-manage — azure-conditions
+[31] https://www.infracost.io/docs/ — Infracost setup and supported workflow; consulted 2026-09-12, not installation authorization
+[32] https://www.infracost.io/docs/features/cli_commands/ — current scan/inspect/price command family; pin and test actual release
+[33] https://www.infracost.io/docs/features/terraform_plan_json/ — plan JSON input and local processing; Terraform unknown values still require explicit handling
+[34] https://www.infracost.io/docs/features/usage_based_resources/ — 730-hour baseline, usage-file and organization assumptions
+[35] https://www.infracost.io/docs/faq/ — Pricing API versus Infracost Cloud data boundaries; revalidate effective runtime behavior
+[36] https://www.infracost.io/docs/features/environment_variables/ — current noninteractive token contract
+[37] https://docs.cloud.google.com/compute/docs/accelerator-optimized-machines — G4 Server Edition shapes, disks and multi-GPU guidance; catalog is not capacity
+[38] https://docs.cloud.google.com/compute/docs/instances/about-flex-start-vms — allocation wait, runtime, preemptible quota and termination semantics
+[39] https://www.infracost.io/docs/supported_resources/overview/ — inspect actual resource/pricing coverage; supported provider does not prove a particular GPU/SKU

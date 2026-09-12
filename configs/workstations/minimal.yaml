@@ -1,0 +1,10 @@
+# Overlay on shared defaults: Sim 6.0.1 + Lab v3.0.0-beta2 only.
+schema_version: v1alpha1
+kind: workstation-profile
+name: minimal
+target: offline
+components:
+  arena: {enabled: false}
+  gr00t: {enabled: false}
+  lerobot: {enabled: false}
+serving: {enabled: false}

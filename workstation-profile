@@ -1,0 +1,15 @@
+#!/usr/bin/env python3
+"""Offline profile inspection: deliberately no Docker, credentials or cloud setup."""
+if __name__ == "__main__":
+    try:
+        from src.python.workstation_profile_command import main
+
+        main()
+    except ModuleNotFoundError as exc:
+        if exc.name not in ("click", "yaml"):
+            raise
+        raise SystemExit(
+            "Profile inspection requires Click and PyYAML. Use the Automator "
+            "Python environment or install these in your own isolated environment; "
+            "no automatic installation was attempted."
+        ) from None

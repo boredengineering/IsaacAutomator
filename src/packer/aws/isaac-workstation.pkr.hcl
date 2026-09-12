@@ -27,6 +27,7 @@ EOF
 }
 
 variable "aws_access_key_id" {
+  sensitive = true
   default = env("AWS_ACCESS_KEY_ID")
 
   validation {
@@ -40,6 +41,7 @@ EOF
 }
 
 variable "aws_secret_access_key" {
+  sensitive = true
   default = env("AWS_SECRET_ACCESS_KEY")
 
   validation {
@@ -53,6 +55,7 @@ EOF
 }
 
 variable "aws_session_token" {
+  sensitive = true
   default = env("AWS_SESSION_TOKEN")
 }
 
@@ -101,11 +104,20 @@ variable "enable_neo4j" {
 }
 
 variable "vnc_password" {
+  sensitive = true
   default = ""
 }
 
 variable "system_user_password" {
+  sensitive = true
   default = ""
+}
+
+# Required controller-local 0600 JSON file, created/cleaned by image-*.
+# Direct Packer users must supply and securely remove this file themselves.
+variable "ansible_secret_vars_file" {
+  type = string
+  description = "Owner-only JSON Ansible password vars file; use the image-* wrapper."
 }
 
 variable "in_china" {
@@ -180,7 +192,8 @@ build {
     ]
     extra_arguments = [
       "--skip-tags", "${var.skip_tags}",
-      "--extra-vars", "cloud='aws' deployment_name='aws_image' isaacsim_git_checkpoint='${var.isaacsim}' isaaclab_git_checkpoint='${var.isaaclab}' isaaclab_arena_git_checkpoint='${var.isaaclab_arena}' demos='${var.demos}' install_gr00t=${var.install_gr00t} enable_neo4j=${var.enable_neo4j} vnc_password='${var.vnc_password}' system_user_password='${var.system_user_password}' in_china=${var.in_china} generic_driver_apt_package='nvidia-driver-580-server' uploads_dir='/home/ubuntu/uploads' results_dir='/home/ubuntu/results' workspace_dir='/home/ubuntu/workspace'"
+      "--extra-vars", "cloud='aws' deployment_name='aws_image' isaacsim_git_checkpoint='${var.isaacsim}' isaaclab_git_checkpoint='${var.isaaclab}' isaaclab_arena_git_checkpoint='${var.isaaclab_arena}' demos='${var.demos}' install_gr00t=${var.install_gr00t} enable_neo4j=${var.enable_neo4j} in_china=${var.in_china} generic_driver_apt_package='nvidia-driver-580-server' uploads_dir='/home/ubuntu/uploads' results_dir='/home/ubuntu/results' workspace_dir='/home/ubuntu/workspace'",
+      "--extra-vars", "@${var.ansible_secret_vars_file}"
     ]
   }
 

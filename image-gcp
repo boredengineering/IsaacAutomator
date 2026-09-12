@@ -17,7 +17,6 @@
 # endregion
 
 import os
-import shlex
 import sys
 from datetime import date
 
@@ -26,6 +25,7 @@ import click
 from src.python.config import c as config
 from src.python.debug import debug_break, debug_start  # noqa
 from src.python.deploy_command import DeployCommand
+from src.python.image_command_utils import configure_image_preview, forward_image_command, local_image_mode, preview_image_build, run_packer_build
 from src.python.utils import (
     colorize_error,
     colorize_info,
@@ -58,6 +58,16 @@ class ImageGCPCommand(DeployCommand):
     )
 
     @staticmethod
+    def project_default():
+        # Preview asks for an explicit target rather than inspecting cloud state.
+        if click.get_current_context().params.get("dry_run", False):
+            return ""
+        return shell_command(
+            "gcloud config list --format 'value(core.project)'",
+            verbose=False, exit_on_error=False, capture_output=True,
+        ).stdout.decode("utf-8").strip()
+
+    @staticmethod
     def project_callback(ctx, param, value):
         if value == "":
             raise click.BadParameter(colorize_error("Project ID cannot be empty"))
@@ -85,6 +95,8 @@ class ImageGCPCommand(DeployCommand):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        configure_image_preview(self)
 
         # remove params not applicable to image building
         self.params = [
@@ -142,15 +154,8 @@ class ImageGCPCommand(DeployCommand):
                     " https://console.cloud.google.com/cloud-resource-manager)"
                 ),
                 callback=ImageGCPCommand.project_callback,
-                default=shell_command(
-                    "gcloud config list --format 'value(core.project)'",
-                    verbose=False,
-                    exit_on_error=False,
-                    capture_output=True,
-                )
-                .stdout.decode("utf-8")
-                .strip(),
-                help="GCP Project ID. Defaults to the active gcloud project.",
+                default=ImageGCPCommand.project_default,
+                help="GCP Project ID. Defaults to the active gcloud project for builds; explicit in dry-run.",
             ),
         )
 
@@ -260,16 +265,17 @@ def build_gcp_image(params, config):
     image_name = params.get("image_name", "")
     existing = params["existing"]
 
-    version = os.environ.get("VERSION", "")
+    version = os.environ.get("VERSION") or None
+    if params.get("dry_run", False):
+        # Host previews do not run ./run to resolve VERSION; render it as null.
+        return preview_image_build("gcp", params, version)
+
     if not version:
         click.echo(colorize_error("Error: VERSION environment variable is not set."))
         sys.exit(1)
 
     # log into GCP (writes application default credentials to /root/.config/gcloud)
     gcp_login(verbose=debug)
-
-    # packer reads the project from var.gcp_project (also expose as env var)
-    os.environ["GCP_PROJECT"] = project
 
     # handle pre-existing image
     full_image_name = (
@@ -282,63 +288,34 @@ def build_gcp_image(params, config):
 
     packer_dir = f"{config['app_dir']}/src/packer/gcp"
 
-    click.echo(colorize_info("* Initializing Packer..."))
-    shell_command(
-        f"packer init {packer_dir}/isaac-workstation.pkr.hcl",
-        verbose=debug,
-    )
-
-    # build packer command (shlex.quote protects against shell metacharacters
-    # in user-supplied values such as passwords, git refs, and image names)
-    def _v(name, value):
-        return f"-var={name}={shlex.quote(str(value))}"
-
     demos = params.get("demos", "no")
-    packer_vars = [
-        _v("gcp_project", project),
-        _v("gcp_zone", zone),
-        _v("instance_type", instance_type),
-        _v("gpu_type", gpu_type),
-        f"-var=gpu_count={int(gpu_count)}",
-        _v("version", version),
-        _v("system_user_password", system_user_password),
-        _v("isaacsim", isaacsim),
-        _v("isaaclab", isaaclab),
-        _v("isaaclab_arena", isaaclab_arena),
-        _v("demos", demos),
-        "-var=in_china=false",
-    ]
+    packer_vars = {
+        "gcp_project": project,
+        "gcp_zone": zone,
+        "instance_type": instance_type,
+        "gpu_type": gpu_type,
+        "gpu_count": int(gpu_count),
+        "version": version,
+        "system_user_password": system_user_password,
+        "isaacsim": isaacsim,
+        "isaaclab": isaaclab,
+        "isaaclab_arena": isaaclab_arena,
+        "demos": demos,
+        "in_china": False,
+    }
 
     if "install_gr00t" in params:
-        packer_vars.append(f"-var=install_gr00t={'true' if params['install_gr00t'] else 'false'}")
+        packer_vars["install_gr00t"] = bool(params["install_gr00t"])
     if "enable_neo4j" in params:
-        packer_vars.append(f"-var=enable_neo4j={'true' if params['enable_neo4j'] else 'false'}")
+        packer_vars["enable_neo4j"] = bool(params["enable_neo4j"])
 
     if image_name:
-        packer_vars.append(_v("image_name", full_image_name))
-
-    if params.get("dry_run", False):
-        click.echo(colorize_info("* Dry-run mode: validating Packer configuration and Ansible playbooks..."))
-        packer_validate_cmd = (
-            f"packer validate " + " ".join(packer_vars) + f" {packer_dir}/isaac-workstation.pkr.hcl"
-        )
-        if debug:
-            click.echo(colorize_info(f"* Command: {packer_validate_cmd}"))
-        shell_command(packer_validate_cmd, verbose=debug)
-        shell_command(f"ansible-playbook --syntax-check {config['ansible_dir']}/isaac-workstation.yaml", verbose=debug)
-        click.echo(colorize_info("✓ Dry-run complete: Packer template and Ansible playbooks are fully valid!"))
-        return
-
-    packer_cmd = (
-        f"packer build " + " ".join(packer_vars) + f" {packer_dir}/isaac-workstation.pkr.hcl"
-    )
+        packer_vars["image_name"] = full_image_name
 
     click.echo(colorize_info("* Building GCP image with Packer..."))
 
-    if debug:
-        click.echo(colorize_info(f"* Command: {packer_cmd}"))
-
-    shell_command(packer_cmd, verbose=debug)
+    run_packer_build(f"{packer_dir}/isaac-workstation.pkr.hcl", packer_vars,
+                     debug=debug, env={"GCP_PROJECT": project})
 
     click.echo(colorize_info("* Image build complete!"))
 
@@ -349,7 +326,7 @@ def main(**params):
 
 
 if __name__ == "__main__":
-    if os.path.exists("/.dockerenv"):
+    if os.path.exists("/.dockerenv") or local_image_mode(main):
         main()
     else:
-        shell_command(f"./run '{' '.join(sys.argv)}'", verbose=True)
+        sys.exit(forward_image_command(__file__))

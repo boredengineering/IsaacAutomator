@@ -3,8 +3,9 @@ terraform {
   backend "local" {}
   required_providers {
     google = {
-      source  = "hashicorp/google"
-      version = ">= 4.57.0"
+      source = "hashicorp/google"
+      # Verified offline schema; requestValidForDuration is not exposed here.
+      version = "= 8.2.0"
     }
   }
 }
@@ -45,6 +46,8 @@ module "isaac_workstation" {
   from_image                   = var.from_image
   image_project                = var.project
   use_flex_start               = var.use_flex_start
+  flex_max_run_seconds         = var.flex_max_run_seconds
+  flex_create_timeout_seconds  = var.flex_create_timeout_seconds
   use_spot                     = var.use_spot
   project                      = var.project
   enable_cmek                  = var.enable_cmek
