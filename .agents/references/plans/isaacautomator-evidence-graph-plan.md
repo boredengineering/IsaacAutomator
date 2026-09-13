@@ -1,12 +1,49 @@
 # IsaacAutomator Evidence and Dependency Graph Implementation Plan
 
-**Status:** Implementation started: an optional offline structural MVP is present. The full first-release acceptance criteria below are not yet met; see [`src/knowledge_graph/README.md`](../../../src/knowledge_graph/README.md) for supported behavior and remaining gates.
+**Status:** Optional offline structural MVP, explicit-load advisory skill and developer Neo4j projection are implemented; startup discovery, evaluated answer quality and restricted agent-backend integration remain open. The full first-release acceptance criteria below are not yet met; see [`src/knowledge_graph/README.md`](../../../src/knowledge_graph/README.md) and the continuation roadmap below.
 **Prepared:** 2026-09-09.
 **Repository inspected:** `devcontainer`, commit `419d0ef`; working tree was clean before this document.
 **Goal:** Give the agent a source-grounded, optional knowledge service that explains Automator capabilities, traces infrastructure dependencies, identifies evidence gaps, and supports safer engineering decisions.
 **Architecture:** Static, allowlisted extraction produces independently attributable Claims. A small Automator vocabulary, PROV-O, and SHACL govern a canonical RDF evidence dataset. A one-way, rebuildable labeled-property-graph projection supports bounded, read-only retrieval. Deployment remains independent.
 **Proposed stack:** Python in an isolated optional environment; RDFLib and pySHACL for portable RDF 1.1 evidence; NetworkX `MultiDiGraph` for the initial LPG; native RDF 1.2 serialization and Neo4j only behind separate acceptance gates.
 **Execution:** The user authorized implementation and subsequently explicitly requested a dedicated custom Neo4j container integrated with the devcontainer through Docker Compose. That request authorizes the local development service and its image/configuration, not cloud deployment, changes to existing editor/agent settings, commits or pushes. Use test-first implementation and independent specification/security review for each milestone.
+
+## Continuation priorities — 2026-09-13
+
+This is a **planning-only update**, not permission to change startup instructions,
+refresh evidence, publish to Neo4j, register tools or start services. Earlier
+execution authorizations/results below describe their historical milestones;
+they are not blanket approval for new operations.
+
+The [agent-skill continuation plan](evidence-graph-agent-skill-plan.md#continuation-roadmap--startup-discovery-to-evaluated-graph-rag)
+is the implementation checklist for agent discovery and use. This master plan
+continues to own extraction, provenance, privacy and backend release gates.
+
+| Priority | Next milestone | Gate / owner |
+| --- | --- | --- |
+| 1 | A: small, explicitly approved AGENTS.md discovery entry | Agent-skill plan; contract tests plus a genuinely fresh-session trace, not just a link |
+| 2 | B: explicitly authorized local index refresh and known/unknown queries | Agent-skill plan; current/conforming evidence; Neo4j publication remains separate |
+| 3 | C: reviewed coverage for profiles, infrastructure and cost tools | Master Tasks 4–7 plus agent-skill cases; exact public admission, static/runtime distinction |
+| 4 | D: source-search versus graph-assisted answer evaluation | Master Task 10 / section 10; held-out independent gold answers and real traces |
+| Optional | E: registered read-only agent tools | Master Task 11 after D; client discovery, schema, permission and cancellation tests |
+| Optional | F: mediated Neo4j or semantic retrieval | Master Task 12 / section 8; security, provenance parity and measured benefit |
+
+- [x] Read current startup instructions, graph brief/skill, guide and CLI wrapper.
+- [x] Run a read-only readiness check: `./knowledge-graph status` returned exit 3,
+  `stale`, because sources, policy or extractor changed. No refresh was performed.
+- [x] Identify the discovery gap: this session loads AGENTS.md, but it has no
+  graph entry point; the repository skill is explicitly loaded rather than
+  automatically exposed as a dedicated runtime tool.
+- [ ] Complete A–D before claiming automatic graph-assisted engineering support.
+- [ ] Qualify E/F separately; a running Neo4j visualization database does not
+  establish an agent retrieval service or an evaluated Graph-RAG pipeline.
+
+Historical import/test counts below do not prove current freshness or health.
+The current projection was not rechecked in this readiness investigation. Existing
+`shared_contract.py` / `shared_client.py` components do not establish a wired
+shared retrieval backend; shared-ledger/drift work remains optional and cannot
+block the local CLI path, cost estimation or cloud deployment. New public source
+coverage must never include keys, private Terraform state or raw operational logs.
 
 ## Approved milestone: dedicated development Neo4j (2026-09-10)
 
@@ -84,7 +121,7 @@ Implementation status: custom images and Compose wiring are implemented. The
 isolated real-Docker smoke passed authentication, read/write, persistence after
 container recreation, host-loopback HTTP, non-root/mount/network checks, file-import
 denial and an internet-denial probe. The actual development database and gateway
-are running healthy; host Bolt negotiated protocol 5.4. The full graph suite
+were running healthy at that milestone; host Bolt negotiated protocol 5.4. The full graph suite
 passed 97 tests and existing deployment tests passed. The editor container was
 not rebuilt. Detailed commands, caveats and review outcome are recorded in
 [Neo4j acceptance](../../../.devcontainer/neo4j/ACCEPTANCE.md).
@@ -530,7 +567,7 @@ Gate: adversarial input cannot write evidence, escape paths, contact networks, o
 
 ### Task 10 — Benchmark, docs and initial release
 
-Create `src/tests/knowledge_graph/benchmark_cases.json`, `benchmark.py`, `test_benchmark_contract.py`, and `.agents/references/docs/evidence-graph-guide.md`.
+Create `src/tests/knowledge_graph/benchmark_cases.json`, `src/knowledge_graph/benchmark.py`, `src/tests/knowledge_graph/test_benchmark_contract.py`, and `.agents/references/docs/evidence-graph-guide.md`. The benchmark runner is a proposed importable module; it is not implemented yet.
 
 Potential existing documentation edits, only during implementation: `ai/automator.agent.md`, `README.md`, `.agents/references/INDEX.md`. Explain optional use, limitations, no-graph fallback, privacy, rebuild and rollback. Do not modify deployment entry points.
 
@@ -603,7 +640,7 @@ python3 -m src.knowledge_graph.cli validate
 python3 -m src.knowledge_graph.cli status
 python3 -m src.knowledge_graph.cli explain-field container_registry
 python3 -m src.knowledge_graph.cli explain-field workstation.demos
-python3 src/tests/knowledge_graph/benchmark.py
+python3 -m src.knowledge_graph.benchmark
 ```
 
 These CLI names/flags are a proposed contract to implement and test, not existing commands. Index is an explicitly local writer operation; it must enforce the source/sandbox gates and must not be exposed to MCP.

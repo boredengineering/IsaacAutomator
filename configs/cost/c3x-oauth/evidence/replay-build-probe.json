@@ -1,0 +1,8 @@
+{
+  "command": "go build -mod=readonly -o /tmp/isaac-c3x-oauth-parent/gcp-catalog-probe-final ./cmd/gcp-catalog-probe",
+  "result": {
+    "output": "",
+    "exit_code": 0,
+    "error": null
+  }
+}

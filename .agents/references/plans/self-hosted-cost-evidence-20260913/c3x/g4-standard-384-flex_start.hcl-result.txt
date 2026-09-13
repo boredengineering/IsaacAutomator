@@ -1,0 +1,160 @@
+{
+  "costs": [
+    {
+      "resource": "google_compute_network.private",
+      "kind": "google_compute_network",
+      "name": "private",
+      "line_items": [
+        {
+          "dimension": "free",
+          "description": "Free resource",
+          "unit": "n/a",
+          "quantity": "0",
+          "unit_rate": "0",
+          "monthly_cost": "0",
+          "price_source": "static"
+        }
+      ],
+      "monthly_subtotal": "0",
+      "currency": "USD"
+    },
+    {
+      "resource": "google_compute_subnetwork.private",
+      "kind": "google_compute_subnetwork",
+      "name": "private",
+      "line_items": [
+        {
+          "dimension": "free",
+          "description": "Free resource",
+          "unit": "n/a",
+          "quantity": "0",
+          "unit_rate": "0",
+          "monthly_cost": "0",
+          "price_source": "static"
+        }
+      ],
+      "monthly_subtotal": "0",
+      "currency": "USD"
+    },
+    {
+      "resource": "google_compute_instance.workstation",
+      "kind": "google_compute_instance",
+      "name": "workstation",
+      "line_items": [
+        {
+          "dimension": "compute",
+          "description": "Instance (on-demand)",
+          "unit": "hours",
+          "quantity": "730",
+          "unit_rate": "0",
+          "monthly_cost": "0",
+          "price_source": "live"
+        },
+        {
+          "dimension": "boot_disk",
+          "description": "Boot disk",
+          "unit": "GB-month",
+          "quantity": "255",
+          "unit_rate": "0",
+          "monthly_cost": "0",
+          "price_source": "live"
+        },
+        {
+          "dimension": "gpu",
+          "description": "GPU accelerators",
+          "unit": "GPU-hours",
+          "quantity": "5840",
+          "unit_rate": "0",
+          "monthly_cost": "0",
+          "price_source": "live"
+        }
+      ],
+      "monthly_subtotal": "0",
+      "currency": "USD"
+    },
+    {
+      "resource": "google_compute_router.private",
+      "kind": "google_compute_router",
+      "name": "private",
+      "line_items": [
+        {
+          "dimension": "free",
+          "description": "Free resource",
+          "unit": "n/a",
+          "quantity": "0",
+          "unit_rate": "0",
+          "monthly_cost": "0",
+          "price_source": "static"
+        }
+      ],
+      "monthly_subtotal": "0",
+      "currency": "USD"
+    },
+    {
+      "resource": "google_compute_router_nat.private",
+      "kind": "google_compute_router_nat",
+      "name": "private",
+      "line_items": [
+        {
+          "dimension": "gateway_hours",
+          "description": "NAT gateway VM-hours",
+          "unit": "VM-hours",
+          "quantity": "730",
+          "unit_rate": "0.0014",
+          "monthly_cost": "1.022",
+          "price_source": "static"
+        },
+        {
+          "dimension": "data_processed",
+          "description": "Data processed",
+          "unit": "GB",
+          "quantity": "0",
+          "unit_rate": "0.045",
+          "monthly_cost": "0",
+          "price_source": "static"
+        }
+      ],
+      "monthly_subtotal": "1.02",
+      "currency": "USD"
+    },
+    {
+      "resource": "google_storage_bucket.state_example",
+      "kind": "google_storage_bucket",
+      "name": "state_example",
+      "line_items": [
+        {
+          "dimension": "storage",
+          "description": "Standard Storage (US Regional)",
+          "unit": "GB-month",
+          "quantity": "0",
+          "unit_rate": "0",
+          "monthly_cost": "0",
+          "price_source": "live"
+        }
+      ],
+      "monthly_subtotal": "0",
+      "currency": "USD"
+    },
+    {
+      "resource": "google_artifact_registry_repository.images",
+      "kind": "google_artifact_registry_repository",
+      "name": "images",
+      "line_items": [
+        {
+          "dimension": "storage",
+          "description": "Repository storage",
+          "unit": "GB-month",
+          "quantity": "0",
+          "unit_rate": "0",
+          "monthly_cost": "0",
+          "price_source": "live"
+        }
+      ],
+      "monthly_subtotal": "0",
+      "currency": "USD"
+    }
+  ],
+  "project_total": "1.02",
+  "currency": "USD",
+  "generated_at": "2026-09-13T02:59:33Z"
+}

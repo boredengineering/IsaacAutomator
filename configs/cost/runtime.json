@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "cli_version": "2.16.3",
+  "plugin_directory": "/opt/isaac-infracost/plugins",
+  "source": "https://github.com/infracost/cli/tree/v2.16.3/pkg/plugins",
+  "plugins": [
+    {
+      "name": "infracost-parser-terraform",
+      "version": "0.0.71",
+      "platforms": {
+        "linux-amd64": {
+          "url": "https://releases.infracost.io/infracost-parser-terraform/linux/amd64/v0.0.71/data.tar.gz",
+          "checksum_url": "https://releases.infracost.io/infracost-parser-terraform/linux/amd64/v0.0.71/data.tar.gz.sha256",
+          "archive_sha256": "6be821511e3ed852138e9e36d59da2582560088f250860029d7cfd3ee4d5b432",
+          "binary_sha256": "d67640b5e36bf7679a756cf21e65b02273faf349a7a9338c587b17fc1143d32e"
+        },
+        "linux-arm64": {
+          "url": "https://releases.infracost.io/infracost-parser-terraform/linux/arm64/v0.0.71/data.tar.gz",
+          "checksum_url": "https://releases.infracost.io/infracost-parser-terraform/linux/arm64/v0.0.71/data.tar.gz.sha256",
+          "archive_sha256": "74d354b6ad93cbb3b40c73bcb375b3c4ffad132c52111d462bc08d96ea0adf33",
+          "binary_sha256": "7071b2f25521de32a056e611faaad8b818166297b20a46dbb1cc2ebdad28e842"
+        }
+      }
+    },
+    {
+      "name": "infracost-parser-terraform-plan",
+      "version": "0.0.20",
+      "platforms": {
+        "linux-amd64": {
+          "url": "https://releases.infracost.io/infracost-parser-terraform-plan/linux/amd64/v0.0.20/data.tar.gz",
+          "checksum_url": "https://releases.infracost.io/infracost-parser-terraform-plan/linux/amd64/v0.0.20/data.tar.gz.sha256",
+          "archive_sha256": "68eb251df82192ff525d950228d7da4b3b613693bf4efd24954d868e769b9b55",
+          "binary_sha256": "ed0f65f82b622dd685eaf4da95e04393a68e71afff7f66c8e4ad721459fe65d5"
+        },
+        "linux-arm64": {
+          "url": "https://releases.infracost.io/infracost-parser-terraform-plan/linux/arm64/v0.0.20/data.tar.gz",
+          "checksum_url": "https://releases.infracost.io/infracost-parser-terraform-plan/linux/arm64/v0.0.20/data.tar.gz.sha256",
+          "archive_sha256": "c74d680dab031442c4c52d39d6580392be9ecff03138ee1dcbe46e70c3618cae",
+          "binary_sha256": "0c2b2131ebb5b4010f7a809177e6b9aa655ccc864df31d4aec2f8b089a987dd4"
+        }
+      }
+    },
+    {
+      "name": "infracost-provider-google",
+      "version": "0.0.12",
+      "platforms": {
+        "linux-amd64": {
+          "url": "https://releases.infracost.io/infracost-provider-google/linux/amd64/v0.0.12/data.tar.gz",
+          "checksum_url": "https://releases.infracost.io/infracost-provider-google/linux/amd64/v0.0.12/data.tar.gz.sha256",
+          "archive_sha256": "0824dc90e61d90ad49e3282019412be75b666bfc4f009543caf3f56d2f24ee08",
+          "binary_sha256": "41264013eadc9aefeaf0c3bde1156d45ee1ac70b0bd1607fecfc1b2842efe6cf"
+        },
+        "linux-arm64": {
+          "url": "https://releases.infracost.io/infracost-provider-google/linux/arm64/v0.0.12/data.tar.gz",
+          "checksum_url": "https://releases.infracost.io/infracost-provider-google/linux/arm64/v0.0.12/data.tar.gz.sha256",
+          "archive_sha256": "65b5bb4ce3cbd162bea01523ec87785fb1317462fd88708429d5145c4d632b3a",
+          "binary_sha256": "5ad785c8acdf493c7ea8d56a89186e933c5994dbf54229087ff118d8fff5028a"
+        }
+      }
+    }
+  ]
+}

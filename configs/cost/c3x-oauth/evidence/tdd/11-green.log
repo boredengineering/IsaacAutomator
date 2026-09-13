@@ -1,0 +1,28 @@
+=== RUN   TestGCPAuthFailureNotSwallowed
+=== RUN   TestGCPAuthFailureNotSwallowed/servicesBad_Request
+=== RUN   TestGCPAuthFailureNotSwallowed/skusBad_Request
+2026/09/13 16:54:48 WARN GCP service display name not resolved (rename or removed?) vendor=gcp name="Cloud Memorystore for Redis"
+2026/09/13 16:54:48 WARN GCP service display name not resolved (rename or removed?) vendor=gcp name=BigQuery
+2026/09/13 16:54:48 WARN GCP service display name not resolved (rename or removed?) vendor=gcp name="Cloud Filestore"
+2026/09/13 16:54:48 WARN GCP service display name not resolved (rename or removed?) vendor=gcp name="Cloud Bigtable"
+2026/09/13 16:54:48 WARN GCP service display name not resolved (rename or removed?) vendor=gcp name="Secret Manager"
+2026/09/13 16:54:48 WARN GCP service display name not resolved (rename or removed?) vendor=gcp name="Cloud Key Management Service (KMS)"
+2026/09/13 16:54:48 WARN GCP service display name not resolved (rename or removed?) vendor=gcp name="Artifact Registry"
+2026/09/13 16:54:48 WARN GCP service display name not resolved (rename or removed?) vendor=gcp name="Cloud Logging"
+2026/09/13 16:54:48 WARN GCP service display name not resolved (rename or removed?) vendor=gcp name="Cloud Spanner"
+2026/09/13 16:54:48 WARN GCP service display name not resolved (rename or removed?) vendor=gcp name="Cloud Dataflow"
+2026/09/13 16:54:48 WARN GCP service display name not resolved (rename or removed?) vendor=gcp name=Dataproc
+2026/09/13 16:54:48 INFO scraping service vendor=gcp service="Cloud DNS" service_id=FA26-5236-B8B5
+2026/09/13 16:54:48 INFO scraping service vendor=gcp service="Cloud Pub/Sub" service_id=A1E8-BE35-7EBC
+2026/09/13 16:54:48 INFO scraping service vendor=gcp service="Compute Engine" service_id=6F81-5844-456A
+2026/09/13 16:54:48 INFO scraping service vendor=gcp service=Networking service_id=E505-1604-58F8
+2026/09/13 16:54:48 INFO scraping service vendor=gcp service="Cloud Storage" service_id=95FF-2EF5-5EA1
+2026/09/13 16:54:48 INFO scraping service vendor=gcp service="Cloud Run" service_id=152E-C115-5142
+2026/09/13 16:54:48 INFO scraping service vendor=gcp service="Kubernetes Engine" service_id=CCD8-9BF1-090E
+2026/09/13 16:54:48 INFO scraping service vendor=gcp service="Cloud SQL" service_id=9662-B51E-5089
+2026/09/13 16:54:48 INFO scraping service vendor=gcp service="Cloud Run Functions" service_id=29E7-DA93-CA13
+--- PASS: TestGCPAuthFailureNotSwallowed (0.00s)
+    --- PASS: TestGCPAuthFailureNotSwallowed/servicesBad_Request (0.00s)
+    --- PASS: TestGCPAuthFailureNotSwallowed/skusBad_Request (0.00s)
+PASS
+ok  	github.com/c3xdev/c3x-pricing-api/internal/scraper	0.002s

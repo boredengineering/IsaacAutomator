@@ -1,0 +1,108 @@
+{
+  "base_commit": "cc58da98652a0ce9f8aac6d1f574d3578544d8c1",
+  "patch_sha256": "71cb0b8ef8f1ead3ee1f6a2132b63283e92ac5dd31de33c6a23c7f9c8fab5ab7",
+  "files": {
+    ".env.example": {
+      "before_sha256": "ddb8ae053ee679d8082c4e425844b17e695b2f405fad4eb6c0f85cacb0dcf57b",
+      "after_sha256": "e9bab3abb15255cb4a27f69e039b8a09aecc5c1eb24afeb7ddbda782ed4aeab2"
+    },
+    "README.md": {
+      "before_sha256": "c5affc9925543b319c9dd8a95387644a91e175343780f36c4cdf02be3ea25247",
+      "after_sha256": "14e255527f5ee718133d131acdd20d4605be72cff2487d2abd1e0bea774d61c8"
+    },
+    "cmd/gcp-catalog-probe/main.go": {
+      "before_sha256": null,
+      "after_sha256": "367a18fd21a9a90652a99c4a18ba4dddf0dfa68905715cbb2f56762c2095122e"
+    },
+    "cmd/gcp-catalog-probe/main_test.go": {
+      "before_sha256": null,
+      "after_sha256": "59d9405413401331a8d0fa700138179368dff23021804cfa2885fd07ffe19d69"
+    },
+    "cmd/server/gcp_auth_test.go": {
+      "before_sha256": null,
+      "after_sha256": "3b681510920682309c571223b139f14e9eda81caa64b5772a0efe4cd7afc76fb"
+    },
+    "cmd/server/main.go": {
+      "before_sha256": "b07cf480567f951867ec885c5a379826b6d64532f0aa1c707617fa24572dd761",
+      "after_sha256": "5d828f9d686a44e93416d90ab9c661166b85d33f0fe385c735875eda3d73461a"
+    },
+    "deploy/compose/docker-compose.scraper.yml": {
+      "before_sha256": "61d1d0c9ff3ee973984321964b72e34b6ab5f914a4858c0be5eead47030d65d7",
+      "after_sha256": "dd4da6fd359128a6269836c808359bb3f50c331da4c73a43c27c8d23e39acc01"
+    },
+    "docker-compose.yml": {
+      "before_sha256": "9294bac734f10a95513f1f7a27eb16a5d538223d9956b814b6a41f87d3d6c9d8",
+      "after_sha256": "fc823d01d7a07a230b9c632fa280534cee6abe6a8c953cf81387f59896cf027a"
+    },
+    "docs/gcp-auth.md": {
+      "before_sha256": null,
+      "after_sha256": "05ea2f00aef7d1936eff734ddbba24bc3fdcd842a091954d17ff11dcc6812443"
+    },
+    "docs/provider-quirks.md": {
+      "before_sha256": "2335a7d2d2e0504ecb2be2e8eb14c74f85e884f2a15300a3503377a6f1470ead",
+      "after_sha256": "f7253b03dae22d20f8e1c9dac099114cfd6cdc82a8335172c61ac8ea1f1c4546"
+    },
+    "go.mod": {
+      "before_sha256": "9ba58c7e4c2fb2d6750ea87f0533b0b9fea61e6b7a45bc90102fc7666ec3fa5d",
+      "after_sha256": "8b8f533b12ac82e40f6c92f9fc753cb8607aff3515bbfb6a36dcfd6c97587cce"
+    },
+    "go.sum": {
+      "before_sha256": "a8b979b21edd44c394175bc7963ea0341fe7444693028947428582e70f2a37ac",
+      "after_sha256": "b0d4f7ce023e72bc13b8d113a4422e1fa97df5fa1be678e27c859faaf2b9e524"
+    },
+    "internal/config/config.go": {
+      "before_sha256": "c7d699a2cb989fe1504808d918a90eded4ac0ca4c753949ce8ad03d87c6d171f",
+      "after_sha256": "fcbd2be8a3ff7092783141ba318e08ae480789f7d51a84b8f07a604885dcba81"
+    },
+    "internal/config/gcp_auth_test.go": {
+      "before_sha256": null,
+      "after_sha256": "7be191d3aced583b4ca59b9872e63b404d90089bd46db0d60a1238d9e4be6eff"
+    },
+    "internal/scraper/gcp.go": {
+      "before_sha256": "7f2822dc46e3521ac272f7f94e00a0122fefba4b1e80e01fe3cbaced037ac2f6",
+      "after_sha256": "8118acba127119cddcfe6bd78075b1342225cdb331c3e35f0939aff12b8bc5e3"
+    },
+    "internal/scraper/gcp_auth.go": {
+      "before_sha256": null,
+      "after_sha256": "91bfebb8ca558d5cfa212047946dabe1d5516a9f8351fa34a6dee12f16cbdf0a"
+    },
+    "internal/scraper/gcp_auth_test.go": {
+      "before_sha256": null,
+      "after_sha256": "ee0adb32d648e75cf14eefeba4a6c90db4b69ae543cf1a67a5bfa683d0c49c4e"
+    },
+    "internal/scraper/gcp_catalog.go": {
+      "before_sha256": null,
+      "after_sha256": "8d6c4a459de1a575faccec306102a5c8d90a49d7349a26710d86078d0b5da423"
+    },
+    "internal/scraper/gcp_errors_test.go": {
+      "before_sha256": null,
+      "after_sha256": "c11f61f1db766832afbd141cef851e22d8023bc6cf0959021ec831af6157bff9"
+    },
+    "internal/scraper/gcp_probe.go": {
+      "before_sha256": null,
+      "after_sha256": "c3e76fbe817e1a1b65e3fa4f9688e223282e4889f3fc3519269d2bff69c3c28e"
+    },
+    "internal/scraper/gcp_probe_test.go": {
+      "before_sha256": null,
+      "after_sha256": "570502ea3c54f5e8a1e022a1fe70d7adc4ad8a6aea210d59e62bc4b5719e9035"
+    },
+    "internal/scraper/gcp_refresh_test.go": {
+      "before_sha256": null,
+      "after_sha256": "aa1f648f9dc687bcaa09d353a9de5085f675008e759d5fcf51cc14c5e9812e20"
+    },
+    "internal/scraper/gcp_security_test.go": {
+      "before_sha256": null,
+      "after_sha256": "f0f9c815416a1e4ad4bd8a33840d0436f3670664071170d8c5f500c15baea035"
+    }
+  },
+  "binaries": {
+    "gcp-catalog-probe": {
+      "sha256": "551d80a94549276747601f2390f3fd5cd7996793014ce347158e87903c0608d7",
+      "bytes": 11052032
+    },
+    "c3x-pricing-api": {
+      "sha256": "3513f29e939c79956b33839dede99272139b73c6cea98efe0ff640e37048df1a",
+      "bytes": 32045290
+    }
+  }
+}

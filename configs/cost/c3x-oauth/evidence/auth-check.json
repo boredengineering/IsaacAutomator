@@ -1,0 +1,44 @@
+{
+  "project": "cybernetic-renan",
+  "api": "Cloud Billing Catalog v1",
+  "scope": "four bounded GET requests at most; no imports or provisioning",
+  "credentials_printed_or_saved": false,
+  "results": [
+    {
+      "source": "adc",
+      "credential_status": "obtained_in_memory",
+      "requests": [
+        {
+          "path": "services?pageSize=1",
+          "http_status": 200,
+          "records_received": 1,
+          "more_pages": true
+        },
+        {
+          "path": "services/6F81-5844-456A/skus?pageSize=1&currencyCode=USD",
+          "http_status": 200,
+          "records_received": 1,
+          "more_pages": true
+        }
+      ]
+    },
+    {
+      "source": "gcloud",
+      "credential_status": "obtained_in_memory",
+      "requests": [
+        {
+          "path": "services?pageSize=1",
+          "http_status": 200,
+          "records_received": 1,
+          "more_pages": true
+        },
+        {
+          "path": "services/6F81-5844-456A/skus?pageSize=1&currencyCode=USD",
+          "http_status": 200,
+          "records_received": 1,
+          "more_pages": true
+        }
+      ]
+    }
+  ]
+}

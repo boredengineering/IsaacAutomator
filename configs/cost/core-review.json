@@ -1,0 +1,133 @@
+{
+  "passed": true,
+  "security_concerns": [],
+  "logic_errors": [],
+  "suggestions": [],
+  "summary": "Final region blocker resolved for the bounded public-only cost feature: all four actual public fixtures and their exported-plan variants verify us-west1, all 41 scoped core tests pass on Python 3.10.12, and conservative region guards remain intact. This is not approval of wider Task 28-29 gates or authenticated pricing.",
+  "scope": {
+    "workspace": "/workspaces/IsaacAutomator",
+    "review_type": "Independent final re-review after core fix cycle 2",
+    "approved": "Bounded public-only cost adapter core; final known region blocker and regression checks only",
+    "not_approved_open_gates": [
+      "Task 28-29 wider acceptance",
+      "Private input and full private-data/telemetry policy",
+      "Profile/deployment binding",
+      "Native binary Terraform plans and native-platform acceptance",
+      "Local/remote module support",
+      "Lifetime and short-run all-in budgeting",
+      "Multi-stack ownership/allocation",
+      "Authenticated G4 pricing and actual price acceptance"
+    ]
+  },
+  "reviewed_sources": [
+    "src/python/cost_estimate.py:81-138 snapshot_input and source metadata",
+    "src/python/cost_estimate.py:411-498 inventory and _input_regions",
+    "src/python/cost_estimate.py:513-636 estimate source usage, assertion guard and partial-report handling",
+    "src/tests/cost_estimate.test.py:14-93 two added regression tests",
+    "src/tests/cost_estimate.test.py existing core tests",
+    "src/tests/cost_command.test.py",
+    "src/tests/infracost_contract.test.py",
+    "README.md Optional Cost Estimates",
+    "configs/cost/README.md:100-128 fixture examples and region assertion semantics",
+    "/tmp/isaac-cost-region-fix.json"
+  ],
+  "tests": {
+    "python": "3.10.12",
+    "environment": "PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=.",
+    "suites": [
+      {
+        "command": "python3 -B src/tests/cost_estimate.test.py",
+        "tests": 34,
+        "exit_code": 0,
+        "result": "OK"
+      },
+      {
+        "command": "python3 -B src/tests/cost_command.test.py",
+        "tests": 3,
+        "exit_code": 0,
+        "result": "OK"
+      },
+      {
+        "command": "python3 -B src/tests/infracost_contract.test.py",
+        "tests": 4,
+        "exit_code": 0,
+        "result": "OK"
+      }
+    ],
+    "total": 41,
+    "existing_core_checks": 39,
+    "added_checks": 2,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "prior_guards_regression_status": "Existing FIFO/runtime snapshot, Flex, free-component, usage and comparison checks still pass; no broader re-review or new feature requirements introduced."
+  },
+  "independent_fixture_verification": {
+    "fixtures": [
+      "g4-standard-48-standard",
+      "g4-standard-48-flex_start",
+      "g4-standard-384-standard",
+      "g4-standard-384-flex_start"
+    ],
+    "actual_fixture_count": 4,
+    "saved_plan_variant_count": 4,
+    "total_successful_probes": 8,
+    "method": "Read each actual main.tf.json; call estimate on the actual fixture directory and on a temporary public exported-plan-shaped JSON containing its typed resources. Supply the documented usage file and assert us-west1. Mock runtime verification only and clear the authentication token; assert no pricing process invocation.",
+    "common_result": {
+      "region": "us-west1",
+      "region_status": "verified_single",
+      "observed_regions": [
+        "us-west1"
+      ],
+      "status": "unavailable",
+      "reason": "authentication_token_required",
+      "runtime_verification_calls_per_probe": 1,
+      "pricing_process_calls_per_probe": 0
+    },
+    "receipt_crosscheck": "The supplied /tmp/isaac-cost-region-fix.json reports the same four fixture regions with separately checked pinned runtime binaries. This review did not repeat live binary verification or treat unauthenticated receipts as price quotes."
+  },
+  "region_logic_verification": {
+    "global_exception": "Only the exact typed google_compute_network is exempt from absent region/zone/location evidence; network-only inputs remain unknown. Present location fields are still validated, including null and contradictory values.",
+    "uppercase_normalization": "Only google_storage_bucket.location is lowercased. Bucket region, compute zone and other resource location keys do not receive that exception.",
+    "fail_closed": "Unknown or billable resources without location, absent type/location evidence, unresolved values, US/EU/ASIA/NAM4 locations, malformed key/value combinations, mixed regions and contradictory fields cannot become verified_single. Asserted unresolved inputs stop before runtime verification; observed conflicts stop with region_conflicts_with_input.",
+    "saved_plan": "The two added tests exercise exported-plan managed resources in child modules and exclude data resources from managed evidence. Independent probes also cover all four actual fixture resource sets as exported-plan variants.",
+    "text_hcl": "Text HCL remains unverified rather than inventing per-resource binding.",
+    "without_assertion": "Unverified/mixed region evidence remains partial and is excluded from verified input-backed comparison; it is not relabeled by an asserted region.",
+    "extra_direct_probes": {
+      "count": 24,
+      "passed": 24,
+      "modes": [
+        "tf.json",
+        "saved_plan_json child module"
+      ],
+      "cases_in_each_mode": [
+        "Known regional compute plus locationless typed network: verified_single",
+        "Network with explicit null region: unknown",
+        "Network with contradictory us-east1 region: mixed",
+        "Locationless disk: unknown",
+        "Locationless unknown resource: unknown",
+        "Missing type and location: unknown",
+        "Bucket location US-WEST1: verified_single",
+        "Bucket location US: unknown",
+        "Bucket location EU: unknown",
+        "Bucket location US-WEST1 plus contradictory region us-east1: mixed",
+        "Bucket region US-WEST1: unknown",
+        "Artifact registry location US-WEST1: unknown"
+      ]
+    }
+  },
+  "documentation_verdict": "README fixture commands with --region us-west1 now reach the authentication gate rather than region_unverified. Documentation correctly describes the flag as an assertion, preserves text-HCL limitations, and explicitly leaves broader unsupported features and authenticated pricing open.",
+  "execution_boundaries": {
+    "networking_performed": false,
+    "live_authentication_performed": false,
+    "downloads_performed": false,
+    "cloud_or_deployer_fixture_execution": false,
+    "live_runtime_binary_reverification": false,
+    "repository_files_modified_by_reviewer": [],
+    "commit_or_push_performed": false,
+    "created_files": [
+      "/tmp/isaac-cost-final-core-review.json"
+    ],
+    "issues_encountered": []
+  }
+}

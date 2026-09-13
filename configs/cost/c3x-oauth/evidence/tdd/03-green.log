@@ -1,0 +1,4 @@
+=== RUN   TestGCPInvalidModeDoesNotScrape
+--- PASS: TestGCPInvalidModeDoesNotScrape (0.00s)
+PASS
+ok  	github.com/c3xdev/c3x-pricing-api/internal/scraper	0.002s

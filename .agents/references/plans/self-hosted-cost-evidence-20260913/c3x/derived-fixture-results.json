@@ -1,0 +1,22 @@
+[
+  {
+    "fixture": "g4-standard-384-flex_start",
+    "exit_code": 0,
+    "output_file": "g4-standard-384-flex_start.hcl-result.txt"
+  },
+  {
+    "fixture": "g4-standard-384-standard",
+    "exit_code": 0,
+    "output_file": "g4-standard-384-standard.hcl-result.txt"
+  },
+  {
+    "fixture": "g4-standard-48-flex_start",
+    "exit_code": 0,
+    "output_file": "g4-standard-48-flex_start.hcl-result.txt"
+  },
+  {
+    "fixture": "g4-standard-48-standard",
+    "exit_code": 0,
+    "output_file": "g4-standard-48-standard.hcl-result.txt"
+  }
+]

@@ -1,0 +1,31 @@
+{
+  "real_credentials_supplied": false,
+  "cases": [
+    {
+      "case": "explicit_opt_in",
+      "exit_code": 1,
+      "passed": true
+    },
+    {
+      "case": "missing_api_key",
+      "exit_code": 1,
+      "passed": true
+    },
+    {
+      "case": "invalid_mode",
+      "exit_code": 1,
+      "passed": true
+    },
+    {
+      "case": "missing_adc",
+      "exit_code": 1,
+      "passed": true
+    },
+    {
+      "case": "invalid_quota",
+      "exit_code": 1,
+      "passed": true
+    }
+  ],
+  "passed": true
+}

@@ -1,0 +1,7 @@
+# Direct isaac9s runtime dependencies tested together in an isolated Python 3.12 venv.
+# Install only into a dedicated environment; no cloud SDK or pricing login here.
+textual==8.2.8
+rich==15.0.0
+psutil==7.2.2
+PyYAML==6.0.3
+click==8.5.0

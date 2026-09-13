@@ -1,0 +1,44 @@
+=== RUN   TestScrapeGCPAuthBeforeDatabase
+=== RUN   TestScrapeGCPAuthBeforeDatabase/gcp/api_key
+Error: GCP_API_KEY is required when GCP_AUTH_MODE=api_key
+Usage:
+  scrape [flags]
+
+Flags:
+  -h, --help            help for scrape
+      --vendor string   Vendor to scrape: aws, azure, gcp, or all (default "all")
+
+=== RUN   TestScrapeGCPAuthBeforeDatabase/gcp/invalid-sensitive
+Error: GCP_AUTH_MODE must be api_key or adc
+Usage:
+  scrape [flags]
+
+Flags:
+  -h, --help            help for scrape
+      --vendor string   Vendor to scrape: aws, azure, gcp, or all (default "all")
+
+=== RUN   TestScrapeGCPAuthBeforeDatabase/all/api_key
+Error: GCP_API_KEY is required when GCP_AUTH_MODE=api_key
+Usage:
+  scrape [flags]
+
+Flags:
+  -h, --help            help for scrape
+      --vendor string   Vendor to scrape: aws, azure, gcp, or all (default "all")
+
+=== RUN   TestScrapeGCPAuthBeforeDatabase/all/invalid-sensitive
+Error: GCP_AUTH_MODE must be api_key or adc
+Usage:
+  scrape [flags]
+
+Flags:
+  -h, --help            help for scrape
+      --vendor string   Vendor to scrape: aws, azure, gcp, or all (default "all")
+
+--- PASS: TestScrapeGCPAuthBeforeDatabase (0.00s)
+    --- PASS: TestScrapeGCPAuthBeforeDatabase/gcp/api_key (0.00s)
+    --- PASS: TestScrapeGCPAuthBeforeDatabase/gcp/invalid-sensitive (0.00s)
+    --- PASS: TestScrapeGCPAuthBeforeDatabase/all/api_key (0.00s)
+    --- PASS: TestScrapeGCPAuthBeforeDatabase/all/invalid-sensitive (0.00s)
+PASS
+ok  	github.com/c3xdev/c3x-pricing-api/cmd/server	0.003s

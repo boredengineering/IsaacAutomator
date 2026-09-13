@@ -1,0 +1,27 @@
+{
+  "verified_at": "2026-09-13T17:34:32.816516+00:00",
+  "catalog_access": "PASS",
+  "scoped_real_database_import": "PASS",
+  "accurate_G4_estimation": "FAIL_ALL_FOUR_CASES",
+  "native_correct_usage_cases": 4,
+  "independent_evidence_review_passed": true,
+  "parent_raw_rate_arithmetic_verified": true,
+  "archive_checks": [
+    {
+      "name": "catalog-evidence.tar.gz",
+      "sha256": "8ded052107be2c606d68679eb0a509ab7c56f6e9d53ea7257ffb6aa5060e23e2",
+      "members_verified": 17
+    },
+    {
+      "name": "runtime-evidence.tar.gz",
+      "sha256": "5af8f083aa78a6967df73c35ed2e07bb5331315bd37e583938d8269f650effd0",
+      "members_verified": 54
+    }
+  ],
+  "json_python_syntax": "PASS",
+  "credential_pattern_scan": "PASS_no_matches_selected_artifacts",
+  "cleanup": "PASS_no_owned_containers_or_network",
+  "scope": "four-service fully paginated catalog capture with region-projected native helper import; no full scheduled import, no production deployment, no complete infrastructure quote",
+  "source_reference": "../c3x-oauth/verification.json",
+  "no_commit_or_push": true
+}

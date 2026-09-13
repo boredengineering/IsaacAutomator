@@ -1,0 +1,1846 @@
+{
+  "catalog_complete_for_selected_services": true,
+  "records_by_path": {
+    "/v1/services": 1778,
+    "/v1/services/6F81-5844-456A/skus": 32873,
+    "/v1/services/95FF-2EF5-5EA1/skus": 1229,
+    "/v1/services/E505-1604-58F8/skus": 1795,
+    "/v1/services/149C-F9EC-3994/skus": 27
+  },
+  "unique_sku_count": 35924,
+  "target_candidates": [
+    {
+      "name": "services/6F81-5844-456A/skus/0026-B8EB-D1EF",
+      "skuId": "0026-B8EB-D1EF",
+      "description": "Hyperdisk Balanced Storage Pools Standard IOPS - Oregon",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Storage",
+        "resourceGroup": "HDBSP",
+        "usageType": "OnDemand"
+      },
+      "regions": [
+        "us-west1"
+      ],
+      "pricingInfo": [
+        {
+          "summary": "",
+          "pricingExpression": {
+            "usageUnit": "mo",
+            "displayQuantity": 1,
+            "tieredRates": [
+              {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 5000000
+                }
+              }
+            ],
+            "usageUnitDescription": "month",
+            "baseUnit": "s",
+            "baseUnitDescription": "second",
+            "baseUnitConversionFactor": 2592000
+          },
+          "currencyConversionRate": 1,
+          "effectiveTime": "2026-09-13T07:00:00Z"
+        }
+      ]
+    },
+    {
+      "name": "services/6F81-5844-456A/skus/04E0-8D3A-222E",
+      "skuId": "04E0-8D3A-222E",
+      "description": "Commitment v1: G4 Ram in Oregon for 1 Year",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Compute",
+        "resourceGroup": "RAM",
+        "usageType": "Commit1Yr"
+      },
+      "regions": [
+        "us-west1"
+      ],
+      "pricingInfo": [
+        {
+          "summary": "",
+          "pricingExpression": {
+            "usageUnit": "GiBy.h",
+            "displayQuantity": 1,
+            "tieredRates": [
+              {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 4050000
+                }
+              }
+            ],
+            "usageUnitDescription": "gibibyte hour",
+            "baseUnit": "By.s",
+            "baseUnitDescription": "byte second",
+            "baseUnitConversionFactor": 3865470566400
+          },
+          "currencyConversionRate": 1,
+          "effectiveTime": "2026-09-13T07:00:00Z"
+        }
+      ]
+    },
+    {
+      "name": "services/6F81-5844-456A/skus/08C7-5885-15B7",
+      "skuId": "08C7-5885-15B7",
+      "description": "Hyperdisk Balanced Throughput Confidential Mode in Oregon",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Storage",
+        "resourceGroup": "SSD",
+        "usageType": "OnDemand"
+      },
+      "regions": [
+        "us-west1"
+      ],
+      "pricingInfo": [
+        {
+          "summary": "",
+          "pricingExpression": {
+            "usageUnit": "mo",
+            "displayQuantity": 1,
+            "tieredRates": [
+              {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 8000000
+                }
+              }
+            ],
+            "usageUnitDescription": "month",
+            "baseUnit": "s",
+            "baseUnitDescription": "second",
+            "baseUnitConversionFactor": 2592000
+          },
+          "currencyConversionRate": 1,
+          "effectiveTime": "2026-09-13T07:00:00Z"
+        }
+      ]
+    },
+    {
+      "name": "services/6F81-5844-456A/skus/11B2-3517-2171",
+      "skuId": "11B2-3517-2171",
+      "description": "Hyperdisk Balanced Storage Pools Advanced Throughput - Oregon",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Storage",
+        "resourceGroup": "HDBSP",
+        "usageType": "OnDemand"
+      },
+      "regions": [
+        "us-west1"
+      ],
+      "pricingInfo": [
+        {
+          "summary": "",
+          "pricingExpression": {
+            "usageUnit": "mo",
+            "displayQuantity": 1,
+            "tieredRates": [
+              {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 76000000
+                }
+              }
+            ],
+            "usageUnitDescription": "month",
+            "baseUnit": "s",
+            "baseUnitDescription": "second",
+            "baseUnitConversionFactor": 2592000
+          },
+          "currencyConversionRate": 1,
+          "effectiveTime": "2026-09-13T07:00:00Z"
+        }
+      ]
+    },
+    {
+      "name": "services/6F81-5844-456A/skus/12DE-B805-04A5",
+      "skuId": "12DE-B805-04A5",
+      "description": "Commitment v1: G4 Cpu in Oregon for 3 Years",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Compute",
+        "resourceGroup": "CPU",
+        "usageType": "Commit3Yr"
+      },
+      "regions": [
+        "us-west1"
+      ],
+      "pricingInfo": [
+        {
+          "summary": "",
+          "pricingExpression": {
+            "usageUnit": "h",
+            "displayQuantity": 1,
+            "tieredRates": [
+              {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 21520000
+                }
+              }
+            ],
+            "usageUnitDescription": "hour",
+            "baseUnit": "s",
+            "baseUnitDescription": "second",
+            "baseUnitConversionFactor": 3600
+          },
+          "currencyConversionRate": 1,
+          "effectiveTime": "2026-09-13T07:00:00Z"
+        }
+      ]
+    },
+    {
+      "name": "services/6F81-5844-456A/skus/148D-EA56-E19A",
+      "skuId": "148D-EA56-E19A",
+      "description": "Commitment v1: vGPU G4 Local SSD in Oregon for 3 Year",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Compute",
+        "resourceGroup": "GPU",
+        "usageType": "Commit3Yr"
+      },
+      "regions": [
+        "us-west1"
+      ],
+      "pricingInfo": [
+        {
+          "summary": "",
+          "pricingExpression": {
+            "usageUnit": "GiBy.mo",
+            "displayQuantity": 1,
+            "tieredRates": [
+              {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 0
+                }
+              }
+            ],
+            "usageUnitDescription": "gibibyte month",
+            "baseUnit": "By.s",
+            "baseUnitDescription": "byte second",
+            "baseUnitConversionFactor": 2783138807808000.0
+          },
+          "currencyConversionRate": 1,
+          "effectiveTime": "2026-09-13T07:00:00Z"
+        }
+      ]
+    },
+    {
+      "name": "services/6F81-5844-456A/skus/195F-2F04-CDFD",
+      "skuId": "195F-2F04-CDFD",
+      "description": "Spot Preemptible G4 Instance Core running in Oregon",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Compute",
+        "resourceGroup": "CPU",
+        "usageType": "Preemptible"
+      },
+      "regions": [
+        "us-west1"
+      ],
+      "pricingInfo": [
+        {
+          "summary": "",
+          "pricingExpression": {
+            "usageUnit": "h",
+            "displayQuantity": 1,
+            "tieredRates": [
+              {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 16640000
+                }
+              }
+            ],
+            "usageUnitDescription": "hour",
+            "baseUnit": "s",
+            "baseUnitDescription": "second",
+            "baseUnitConversionFactor": 3600
+          },
+          "currencyConversionRate": 1,
+          "effectiveTime": "2026-09-13T07:00:00Z"
+        }
+      ]
+    },
+    {
+      "name": "services/6F81-5844-456A/skus/1DE7-2C1A-CBEB",
+      "skuId": "1DE7-2C1A-CBEB",
+      "description": "RTX 6000 96GB attached to DWS Defined Duration VMs running in Oregon",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Compute",
+        "resourceGroup": "GPU",
+        "usageType": "OnDemand"
+      },
+      "regions": [
+        "us-west1"
+      ],
+      "pricingInfo": [
+        {
+          "summary": "",
+          "pricingExpression": {
+            "usageUnit": "h",
+            "displayQuantity": 1,
+            "tieredRates": [
+              {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 547830000
+                }
+              }
+            ],
+            "usageUnitDescription": "hour",
+            "baseUnit": "s",
+            "baseUnitDescription": "second",
+            "baseUnitConversionFactor": 3600
+          },
+          "currencyConversionRate": 1,
+          "effectiveTime": "2026-09-13T07:00:00Z"
+        }
+      ]
+    },
+    {
+      "name": "services/6F81-5844-456A/skus/1F8A-7AF5-811D",
+      "skuId": "1F8A-7AF5-811D",
+      "description": "Spot Preemptible vGPU G4 Instance Local SSD running in Oregon",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Compute",
+        "resourceGroup": "GPU",
+        "usageType": "Preemptible"
+      },
+      "regions": [
+        "us-west1"
+      ],
+      "pricingInfo": [
+        {
+          "summary": "",
+          "pricingExpression": {
+            "usageUnit": "GiBy.mo",
+            "displayQuantity": 1,
+            "tieredRates": [
+              {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 0
+                }
+              }
+            ],
+            "usageUnitDescription": "gibibyte month",
+            "baseUnit": "By.s",
+            "baseUnitDescription": "byte second",
+            "baseUnitConversionFactor": 2783138807808000.0
+          },
+          "currencyConversionRate": 1,
+          "effectiveTime": "2026-09-13T07:00:00Z"
+        }
+      ]
+    },
+    {
+      "name": "services/6F81-5844-456A/skus/2AC7-8540-FBFC",
+      "skuId": "2AC7-8540-FBFC",
+      "description": "Commitment v1: G4 Local SSD in Oregon for 1 Year",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Compute",
+        "resourceGroup": "LocalSSD",
+        "usageType": "Commit1Yr"
+      },
+      "regions": [
+        "us-west1"
+      ],
+      "pricingInfo": [
+        {
+          "summary": "",
+          "pricingExpression": {
+            "usageUnit": "GiBy.mo",
+            "displayQuantity": 1,
+            "tieredRates": [
+              {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 0
+                }
+              }
+            ],
+            "usageUnitDescription": "gibibyte month",
+            "baseUnit": "By.s",
+            "baseUnitDescription": "byte second",
+            "baseUnitConversionFactor": 2783138807808000.0
+          },
+          "currencyConversionRate": 1,
+          "effectiveTime": "2026-09-13T07:00:00Z"
+        }
+      ]
+    },
+    {
+      "name": "services/6F81-5844-456A/skus/3131-C050-37C1",
+      "skuId": "3131-C050-37C1",
+      "description": "Hyperdisk Balanced Storage Pools Standard Capacity - Oregon",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Storage",
+        "resourceGroup": "HDBSP",
+        "usageType": "OnDemand"
+      },
+      "regions": [
+        "us-west1"
+      ],
+      "pricingInfo": [
+        {
+          "summary": "",
+          "pricingExpression": {
+            "usageUnit": "GiBy.mo",
+            "displayQuantity": 1,
+            "tieredRates": [
+              {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 80000000
+                }
+              }
+            ],
+            "usageUnitDescription": "gibibyte month",
+            "baseUnit": "By.s",
+            "baseUnitDescription": "byte second",
+            "baseUnitConversionFactor": 2783138807808000.0
+          },
+          "currencyConversionRate": 1,
+          "effectiveTime": "2026-09-13T07:00:00Z"
+        }
+      ]
+    },
+    {
+      "name": "services/6F81-5844-456A/skus/35E6-AAE6-8283",
+      "skuId": "35E6-AAE6-8283",
+      "description": "DWS Defined Duration vGPU G4 Local SSD running in Oregon",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Compute",
+        "resourceGroup": "GPU",
+        "usageType": "OnDemand"
+      },
+      "regions": [
+        "us-west1"
+      ],
+      "pricingInfo": [
+        {
+          "summary": "",
+          "pricingExpression": {
+            "usageUnit": "GiBy.mo",
+            "displayQuantity": 1,
+            "tieredRates": [
+              {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 0
+                }
+              }
+            ],
+            "usageUnitDescription": "gibibyte month",
+            "baseUnit": "By.s",
+            "baseUnitDescription": "byte second",
+            "baseUnitConversionFactor": 2783138807808000.0
+          },
+          "currencyConversionRate": 1,
+          "effectiveTime": "2026-09-13T07:00:00Z"
+        }
+      ]
+    },
+    {
+      "name": "services/6F81-5844-456A/skus/3B6F-2FBA-B0C5",
+      "skuId": "3B6F-2FBA-B0C5",
+      "description": "DWS Defined Duration G4 Core running in Oregon",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Compute",
+        "resourceGroup": "CPU",
+        "usageType": "OnDemand"
+      },
+      "regions": [
+        "us-west1"
+      ],
+      "pricingInfo": [
+        {
+          "summary": "",
+          "pricingExpression": {
+            "usageUnit": "h",
+            "displayQuantity": 1,
+            "tieredRates": [
+              {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 24455000
+                }
+              }
+            ],
+            "usageUnitDescription": "hour",
+            "baseUnit": "s",
+            "baseUnitDescription": "second",
+            "baseUnitConversionFactor": 3600
+          },
+          "currencyConversionRate": 1,
+          "effectiveTime": "2026-09-13T07:00:00Z"
+        }
+      ]
+    },
+    {
+      "name": "services/6F81-5844-456A/skus/3D0B-169E-850D",
+      "skuId": "3D0B-169E-850D",
+      "description": "Hyperdisk Balanced Capacity Confidential Mode in Oregon",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Storage",
+        "resourceGroup": "SSD",
+        "usageType": "OnDemand"
+      },
+      "regions": [
+        "us-west1"
+      ],
+      "pricingInfo": [
+        {
+          "summary": "",
+          "pricingExpression": {
+            "usageUnit": "GiBy.mo",
+            "displayQuantity": 1,
+            "tieredRates": [
+              {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 16000000
+                }
+              }
+            ],
+            "usageUnitDescription": "gibibyte month",
+            "baseUnit": "By.s",
+            "baseUnitDescription": "byte second",
+            "baseUnitConversionFactor": 2783138807808000.0
+          },
+          "currencyConversionRate": 1,
+          "effectiveTime": "2026-09-13T07:00:00Z"
+        }
+      ]
+    },
+    {
+      "name": "services/6F81-5844-456A/skus/3E17-187F-187D",
+      "skuId": "3E17-187F-187D",
+      "description": "Hyperdisk Balanced Instant Snapshot data storage in Oregon",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Storage",
+        "resourceGroup": "SSD",
+        "usageType": "OnDemand"
+      },
+      "regions": [
+        "us-west1"
+      ],
+      "pricingInfo": [
+        {
+          "summary": "",
+          "pricingExpression": {
+            "usageUnit": "GiBy.mo",
+            "displayQuantity": 1,
+            "tieredRates": [
+              {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 80000000
+                }
+              }
+            ],
+            "usageUnitDescription": "gibibyte month",
+            "baseUnit": "By.s",
+            "baseUnitDescription": "byte second",
+            "baseUnitConversionFactor": 2783138807808000.0
+          },
+          "currencyConversionRate": 1,
+          "effectiveTime": "2026-09-13T07:00:00Z"
+        }
+      ]
+    },
+    {
+      "name": "services/6F81-5844-456A/skus/4742-1C3C-6E23",
+      "skuId": "4742-1C3C-6E23",
+      "description": "DWS Defined Duration G4 Ram running in Oregon",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Compute",
+        "resourceGroup": "RAM",
+        "usageType": "OnDemand"
+      },
+      "regions": [
+        "us-west1"
+      ],
+      "pricingInfo": [
+        {
+          "summary": "",
+          "pricingExpression": {
+            "usageUnit": "GiBy.h",
+            "displayQuantity": 1,
+            "tieredRates": [
+              {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 2935000
+                }
+              }
+            ],
+            "usageUnitDescription": "gibibyte hour",
+            "baseUnit": "By.s",
+            "baseUnitDescription": "byte second",
+            "baseUnitConversionFactor": 3865470566400
+          },
+          "currencyConversionRate": 1,
+          "effectiveTime": "2026-09-13T07:00:00Z"
+        }
+      ]
+    },
+    {
+      "name": "services/6F81-5844-456A/skus/48D9-4BD8-7CDC",
+      "skuId": "48D9-4BD8-7CDC",
+      "description": "Hyperdisk Balanced Storage Pools Standard Throughput - Oregon",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Storage",
+        "resourceGroup": "HDBSP",
+        "usageType": "OnDemand"
+      },
+      "regions": [
+        "us-west1"
+      ],
+      "pricingInfo": [
+        {
+          "summary": "",
+          "pricingExpression": {
+            "usageUnit": "mo",
+            "displayQuantity": 1,
+            "tieredRates": [
+              {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 40000000
+                }
+              }
+            ],
+            "usageUnitDescription": "month",
+            "baseUnit": "s",
+            "baseUnitDescription": "second",
+            "baseUnitConversionFactor": 2592000
+          },
+          "currencyConversionRate": 1,
+          "effectiveTime": "2026-09-13T07:00:00Z"
+        }
+      ]
+    },
+    {
+      "name": "services/6F81-5844-456A/skus/499B-9696-81DC",
+      "skuId": "499B-9696-81DC",
+      "description": "Hyperdisk Balanced Storage Pools Advanced Capacity - Oregon",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Storage",
+        "resourceGroup": "HDBSP",
+        "usageType": "OnDemand"
+      },
+      "regions": [
+        "us-west1"
+      ],
+      "pricingInfo": [
+        {
+          "summary": "",
+          "pricingExpression": {
+            "usageUnit": "GiBy.mo",
+            "displayQuantity": 1,
+            "tieredRates": [
+              {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 140000000
+                }
+              }
+            ],
+            "usageUnitDescription": "gibibyte month",
+            "baseUnit": "By.s",
+            "baseUnitDescription": "byte second",
+            "baseUnitConversionFactor": 2783138807808000.0
+          },
+          "currencyConversionRate": 1,
+          "effectiveTime": "2026-09-13T07:00:00Z"
+        }
+      ]
+    },
+    {
+      "name": "services/6F81-5844-456A/skus/56CC-5367-43E6",
+      "skuId": "56CC-5367-43E6",
+      "description": "Hyperdisk Balanced IOPS in Oregon",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Storage",
+        "resourceGroup": "SSD",
+        "usageType": "OnDemand"
+      },
+      "regions": [
+        "us-west1"
+      ],
+      "pricingInfo": [
+        {
+          "summary": "",
+          "pricingExpression": {
+            "usageUnit": "mo",
+            "displayQuantity": 1,
+            "tieredRates": [
+              {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 5000000
+                }
+              }
+            ],
+            "usageUnitDescription": "month",
+            "baseUnit": "s",
+            "baseUnitDescription": "second",
+            "baseUnitConversionFactor": 2592000
+          },
+          "currencyConversionRate": 1,
+          "effectiveTime": "2026-09-13T07:00:00Z"
+        }
+      ]
+    },
+    {
+      "name": "services/6F81-5844-456A/skus/6070-CD93-39BC",
+      "skuId": "6070-CD93-39BC",
+      "description": "Commitment v1: RTX 6000 96GB running in Oregon for 1 Year",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Compute",
+        "resourceGroup": "GPU",
+        "usageType": "Commit1Yr"
+      },
+      "regions": [
+        "us-west1"
+      ],
+      "pricingInfo": [
+        {
+          "summary": "",
+          "pricingExpression": {
+            "usageUnit": "h",
+            "displayQuantity": 1,
+            "tieredRates": [
+              {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 756000000
+                }
+              }
+            ],
+            "usageUnitDescription": "hour",
+            "baseUnit": "s",
+            "baseUnitDescription": "second",
+            "baseUnitConversionFactor": 3600
+          },
+          "currencyConversionRate": 1,
+          "effectiveTime": "2026-09-13T07:00:00Z"
+        }
+      ]
+    },
+    {
+      "name": "services/6F81-5844-456A/skus/667B-4C8B-7339",
+      "skuId": "667B-4C8B-7339",
+      "description": "Commitment v1: RTX 6000 96GB running in Oregon for 3 Years",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Compute",
+        "resourceGroup": "GPU",
+        "usageType": "Commit3Yr"
+      },
+      "regions": [
+        "us-west1"
+      ],
+      "pricingInfo": [
+        {
+          "summary": "",
+          "pricingExpression": {
+            "usageUnit": "h",
+            "displayQuantity": 1,
+            "tieredRates": [
+              {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 482090000
+                }
+              }
+            ],
+            "usageUnitDescription": "hour",
+            "baseUnit": "s",
+            "baseUnitDescription": "second",
+            "baseUnitConversionFactor": 3600
+          },
+          "currencyConversionRate": 1,
+          "effectiveTime": "2026-09-13T07:00:00Z"
+        }
+      ]
+    },
+    {
+      "name": "services/6F81-5844-456A/skus/6E3F-6819-5B7A",
+      "skuId": "6E3F-6819-5B7A",
+      "description": "Hyperdisk Balanced Throughput in Oregon",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Storage",
+        "resourceGroup": "SSD",
+        "usageType": "OnDemand"
+      },
+      "regions": [
+        "us-west1"
+      ],
+      "pricingInfo": [
+        {
+          "summary": "",
+          "pricingExpression": {
+            "usageUnit": "mo",
+            "displayQuantity": 1,
+            "tieredRates": [
+              {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 40000000
+                }
+              }
+            ],
+            "usageUnitDescription": "month",
+            "baseUnit": "s",
+            "baseUnitDescription": "second",
+            "baseUnitConversionFactor": 2592000
+          },
+          "currencyConversionRate": 1,
+          "effectiveTime": "2026-09-13T07:00:00Z"
+        }
+      ]
+    },
+    {
+      "name": "services/6F81-5844-456A/skus/71E1-FC7B-61C7",
+      "skuId": "71E1-FC7B-61C7",
+      "description": "Hyperdisk Balanced High Availability Capacity in Oregon",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Storage",
+        "resourceGroup": "SSD",
+        "usageType": "OnDemand"
+      },
+      "regions": [
+        "us-west1"
+      ],
+      "pricingInfo": [
+        {
+          "summary": "",
+          "pricingExpression": {
+            "usageUnit": "GiBy.mo",
+            "displayQuantity": 1,
+            "tieredRates": [
+              {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 160000000
+                }
+              }
+            ],
+            "usageUnitDescription": "gibibyte month",
+            "baseUnit": "By.s",
+            "baseUnitDescription": "byte second",
+            "baseUnitConversionFactor": 2783138807808000.0
+          },
+          "currencyConversionRate": 1,
+          "effectiveTime": "2026-09-13T07:00:00Z"
+        }
+      ]
+    },
+    {
+      "name": "services/6F81-5844-456A/skus/731F-CBBD-E910",
+      "skuId": "731F-CBBD-E910",
+      "description": "Hyperdisk Balanced High Availability Iops in Oregon",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Storage",
+        "resourceGroup": "SSD",
+        "usageType": "OnDemand"
+      },
+      "regions": [
+        "us-west1"
+      ],
+      "pricingInfo": [
+        {
+          "summary": "",
+          "pricingExpression": {
+            "usageUnit": "mo",
+            "displayQuantity": 1,
+            "tieredRates": [
+              {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 10000000
+                }
+              }
+            ],
+            "usageUnitDescription": "month",
+            "baseUnit": "s",
+            "baseUnitDescription": "second",
+            "baseUnitConversionFactor": 2592000
+          },
+          "currencyConversionRate": 1,
+          "effectiveTime": "2026-09-13T07:00:00Z"
+        }
+      ]
+    },
+    {
+      "name": "services/6F81-5844-456A/skus/7350-716F-1473",
+      "skuId": "7350-716F-1473",
+      "description": "Asynchronous Replication Protection - Hyperdisk Balanced Throughput in Oregon",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Storage",
+        "resourceGroup": "SSD",
+        "usageType": "OnDemand"
+      },
+      "regions": [
+        "us-west1"
+      ],
+      "pricingInfo": [
+        {
+          "summary": "",
+          "pricingExpression": {
+            "usageUnit": "mo",
+            "displayQuantity": 1,
+            "tieredRates": [
+              {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 16000000
+                }
+              }
+            ],
+            "usageUnitDescription": "month",
+            "baseUnit": "s",
+            "baseUnitDescription": "second",
+            "baseUnitConversionFactor": 2592000
+          },
+          "currencyConversionRate": 1,
+          "effectiveTime": "2026-09-13T07:00:00Z"
+        }
+      ]
+    },
+    {
+      "name": "services/6F81-5844-456A/skus/73C5-0031-0BF3",
+      "skuId": "73C5-0031-0BF3",
+      "description": "RTX 6000 96GB running in Oregon",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Compute",
+        "resourceGroup": "GPU",
+        "usageType": "OnDemand"
+      },
+      "regions": [
+        "us-west1"
+      ],
+      "pricingInfo": [
+        {
+          "summary": "",
+          "pricingExpression": {
+            "usageUnit": "h",
+            "displayQuantity": 1,
+            "tieredRates": [
+              {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "1",
+                  "nanos": 95650000
+                }
+              }
+            ],
+            "usageUnitDescription": "hour",
+            "baseUnit": "s",
+            "baseUnitDescription": "second",
+            "baseUnitConversionFactor": 3600
+          },
+          "currencyConversionRate": 1,
+          "effectiveTime": "2026-09-13T07:00:00Z"
+        }
+      ]
+    },
+    {
+      "name": "services/6F81-5844-456A/skus/994E-229C-9A7B",
+      "skuId": "994E-229C-9A7B",
+      "description": "Commitment v1: G4 Cpu in Oregon for 1 Year",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Compute",
+        "resourceGroup": "CPU",
+        "usageType": "Commit1Yr"
+      },
+      "regions": [
+        "us-west1"
+      ],
+      "pricingInfo": [
+        {
+          "summary": "",
+          "pricingExpression": {
+            "usageUnit": "h",
+            "displayQuantity": 1,
+            "tieredRates": [
+              {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 33750000
+                }
+              }
+            ],
+            "usageUnitDescription": "hour",
+            "baseUnit": "s",
+            "baseUnitDescription": "second",
+            "baseUnitConversionFactor": 3600
+          },
+          "currencyConversionRate": 1,
+          "effectiveTime": "2026-09-13T07:00:00Z"
+        }
+      ]
+    },
+    {
+      "name": "services/6F81-5844-456A/skus/9DE0-52D3-F51A",
+      "skuId": "9DE0-52D3-F51A",
+      "description": "Commitment v1: G4 Ram in Oregon for 3 Years",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Compute",
+        "resourceGroup": "RAM",
+        "usageType": "Commit3Yr"
+      },
+      "regions": [
+        "us-west1"
+      ],
+      "pricingInfo": [
+        {
+          "summary": "",
+          "pricingExpression": {
+            "usageUnit": "GiBy.h",
+            "displayQuantity": 1,
+            "tieredRates": [
+              {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 2580000
+                }
+              }
+            ],
+            "usageUnitDescription": "gibibyte hour",
+            "baseUnit": "By.s",
+            "baseUnitDescription": "byte second",
+            "baseUnitConversionFactor": 3865470566400
+          },
+          "currencyConversionRate": 1,
+          "effectiveTime": "2026-09-13T07:00:00Z"
+        }
+      ]
+    },
+    {
+      "name": "services/6F81-5844-456A/skus/9F43-AF95-1FE5",
+      "skuId": "9F43-AF95-1FE5",
+      "description": "Commitment v1: G4 Local SSD in Oregon for 3 Years",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Compute",
+        "resourceGroup": "LocalSSD",
+        "usageType": "Commit3Yr"
+      },
+      "regions": [
+        "us-west1"
+      ],
+      "pricingInfo": [
+        {
+          "summary": "",
+          "pricingExpression": {
+            "usageUnit": "GiBy.mo",
+            "displayQuantity": 1,
+            "tieredRates": [
+              {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 0
+                }
+              }
+            ],
+            "usageUnitDescription": "gibibyte month",
+            "baseUnit": "By.s",
+            "baseUnitDescription": "byte second",
+            "baseUnitConversionFactor": 2783138807808000.0
+          },
+          "currencyConversionRate": 1,
+          "effectiveTime": "2026-09-13T07:00:00Z"
+        }
+      ]
+    },
+    {
+      "name": "services/6F81-5844-456A/skus/A222-30F8-84C7",
+      "skuId": "A222-30F8-84C7",
+      "description": "RTX 6000 96GB attached to Spot Preemptible VMs running in Oregon",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Compute",
+        "resourceGroup": "GPU",
+        "usageType": "Preemptible"
+      },
+      "regions": [
+        "us-west1"
+      ],
+      "pricingInfo": [
+        {
+          "summary": "",
+          "pricingExpression": {
+            "usageUnit": "h",
+            "displayQuantity": 1,
+            "tieredRates": [
+              {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 357000000
+                }
+              }
+            ],
+            "usageUnitDescription": "hour",
+            "baseUnit": "s",
+            "baseUnitDescription": "second",
+            "baseUnitConversionFactor": 3600
+          },
+          "currencyConversionRate": 1,
+          "effectiveTime": "2026-09-13T07:00:00Z"
+        }
+      ]
+    },
+    {
+      "name": "services/6F81-5844-456A/skus/A36E-7315-8862",
+      "skuId": "A36E-7315-8862",
+      "description": "G4 Instance Core running in Oregon",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Compute",
+        "resourceGroup": "CPU",
+        "usageType": "OnDemand"
+      },
+      "regions": [
+        "us-west1"
+      ],
+      "pricingInfo": [
+        {
+          "summary": "",
+          "pricingExpression": {
+            "usageUnit": "h",
+            "displayQuantity": 1,
+            "tieredRates": [
+              {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 48910000
+                }
+              }
+            ],
+            "usageUnitDescription": "hour",
+            "baseUnit": "s",
+            "baseUnitDescription": "second",
+            "baseUnitConversionFactor": 3600
+          },
+          "currencyConversionRate": 1,
+          "effectiveTime": "2026-09-13T07:00:00Z"
+        }
+      ]
+    },
+    {
+      "name": "services/6F81-5844-456A/skus/BDD9-17AB-F93F",
+      "skuId": "BDD9-17AB-F93F",
+      "description": "Asynchronous Replication Protection - Hyperdisk Balanced High Availability Throughput in Oregon",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Storage",
+        "resourceGroup": "SSD",
+        "usageType": "OnDemand"
+      },
+      "regions": [
+        "us-west1"
+      ],
+      "pricingInfo": [
+        {
+          "summary": "",
+          "pricingExpression": {
+            "usageUnit": "mo",
+            "displayQuantity": 1,
+            "tieredRates": [
+              {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 32000000
+                }
+              }
+            ],
+            "usageUnitDescription": "month",
+            "baseUnit": "s",
+            "baseUnitDescription": "second",
+            "baseUnitConversionFactor": 2592000
+          },
+          "currencyConversionRate": 1,
+          "effectiveTime": "2026-09-13T07:00:00Z"
+        }
+      ]
+    },
+    {
+      "name": "services/6F81-5844-456A/skus/C05B-A57C-59AE",
+      "skuId": "C05B-A57C-59AE",
+      "description": "Commitment v1: vGPU G4 Local SSD in Oregon for 1 Year",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Compute",
+        "resourceGroup": "GPU",
+        "usageType": "Commit1Yr"
+      },
+      "regions": [
+        "us-west1"
+      ],
+      "pricingInfo": [
+        {
+          "summary": "",
+          "pricingExpression": {
+            "usageUnit": "GiBy.mo",
+            "displayQuantity": 1,
+            "tieredRates": [
+              {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 0
+                }
+              }
+            ],
+            "usageUnitDescription": "gibibyte month",
+            "baseUnit": "By.s",
+            "baseUnitDescription": "byte second",
+            "baseUnitConversionFactor": 2783138807808000.0
+          },
+          "currencyConversionRate": 1,
+          "effectiveTime": "2026-09-13T07:00:00Z"
+        }
+      ]
+    },
+    {
+      "name": "services/6F81-5844-456A/skus/C566-5B7E-28AA",
+      "skuId": "C566-5B7E-28AA",
+      "description": "G4 Instance Ram running in Oregon",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Compute",
+        "resourceGroup": "RAM",
+        "usageType": "OnDemand"
+      },
+      "regions": [
+        "us-west1"
+      ],
+      "pricingInfo": [
+        {
+          "summary": "",
+          "pricingExpression": {
+            "usageUnit": "GiBy.h",
+            "displayQuantity": 1,
+            "tieredRates": [
+              {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 5870000
+                }
+              }
+            ],
+            "usageUnitDescription": "gibibyte hour",
+            "baseUnit": "By.s",
+            "baseUnitDescription": "byte second",
+            "baseUnitConversionFactor": 3865470566400
+          },
+          "currencyConversionRate": 1,
+          "effectiveTime": "2026-09-13T07:00:00Z"
+        }
+      ]
+    },
+    {
+      "name": "services/6F81-5844-456A/skus/CC29-696B-4BC4",
+      "skuId": "CC29-696B-4BC4",
+      "description": "Hyperdisk Balanced High Availability Instant Snapshot data storage in Oregon",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Storage",
+        "resourceGroup": "SSD",
+        "usageType": "OnDemand"
+      },
+      "regions": [
+        "us-west1"
+      ],
+      "pricingInfo": [
+        {
+          "summary": "",
+          "pricingExpression": {
+            "usageUnit": "GiBy.mo",
+            "displayQuantity": 1,
+            "tieredRates": [
+              {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 160000000
+                }
+              }
+            ],
+            "usageUnitDescription": "gibibyte month",
+            "baseUnit": "By.s",
+            "baseUnitDescription": "byte second",
+            "baseUnitConversionFactor": 2783138807808000.0
+          },
+          "currencyConversionRate": 1,
+          "effectiveTime": "2026-09-13T07:00:00Z"
+        }
+      ]
+    },
+    {
+      "name": "services/6F81-5844-456A/skus/D62E-390A-076B",
+      "skuId": "D62E-390A-076B",
+      "description": "Hyperdisk Balanced IOPS Confidential Mode in Oregon",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Storage",
+        "resourceGroup": "SSD",
+        "usageType": "OnDemand"
+      },
+      "regions": [
+        "us-west1"
+      ],
+      "pricingInfo": [
+        {
+          "summary": "",
+          "pricingExpression": {
+            "usageUnit": "mo",
+            "displayQuantity": 1,
+            "tieredRates": [
+              {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 1000000
+                }
+              }
+            ],
+            "usageUnitDescription": "month",
+            "baseUnit": "s",
+            "baseUnitDescription": "second",
+            "baseUnitConversionFactor": 2592000
+          },
+          "currencyConversionRate": 1,
+          "effectiveTime": "2026-09-13T07:00:00Z"
+        }
+      ]
+    },
+    {
+      "name": "services/6F81-5844-456A/skus/D890-7A77-D2D2",
+      "skuId": "D890-7A77-D2D2",
+      "description": "Asynchronous Replication Protection - Hyperdisk Balanced Capacity in Oregon",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Storage",
+        "resourceGroup": "SSD",
+        "usageType": "OnDemand"
+      },
+      "regions": [
+        "us-west1"
+      ],
+      "pricingInfo": [
+        {
+          "summary": "",
+          "pricingExpression": {
+            "usageUnit": "GiBy.mo",
+            "displayQuantity": 1,
+            "tieredRates": [
+              {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 32000000
+                }
+              }
+            ],
+            "usageUnitDescription": "gibibyte month",
+            "baseUnit": "By.s",
+            "baseUnitDescription": "byte second",
+            "baseUnitConversionFactor": 2783138807808000.0
+          },
+          "currencyConversionRate": 1,
+          "effectiveTime": "2026-09-13T07:00:00Z"
+        }
+      ]
+    },
+    {
+      "name": "services/6F81-5844-456A/skus/DB38-25BC-09F7",
+      "skuId": "DB38-25BC-09F7",
+      "description": "Hyperdisk Balanced Storage Pools Advanced IOPS - Oregon",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Storage",
+        "resourceGroup": "HDBSP",
+        "usageType": "OnDemand"
+      },
+      "regions": [
+        "us-west1"
+      ],
+      "pricingInfo": [
+        {
+          "summary": "",
+          "pricingExpression": {
+            "usageUnit": "mo",
+            "displayQuantity": 1,
+            "tieredRates": [
+              {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 9500000
+                }
+              }
+            ],
+            "usageUnitDescription": "month",
+            "baseUnit": "s",
+            "baseUnitDescription": "second",
+            "baseUnitConversionFactor": 2592000
+          },
+          "currencyConversionRate": 1,
+          "effectiveTime": "2026-09-13T07:00:00Z"
+        }
+      ]
+    },
+    {
+      "name": "services/6F81-5844-456A/skus/E342-BD37-1725",
+      "skuId": "E342-BD37-1725",
+      "description": "Spot Preemptible G4 Instance Ram running in Oregon",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Compute",
+        "resourceGroup": "RAM",
+        "usageType": "Preemptible"
+      },
+      "regions": [
+        "us-west1"
+      ],
+      "pricingInfo": [
+        {
+          "summary": "",
+          "pricingExpression": {
+            "usageUnit": "GiBy.h",
+            "displayQuantity": 1,
+            "tieredRates": [
+              {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 1998000
+                }
+              }
+            ],
+            "usageUnitDescription": "gibibyte hour",
+            "baseUnit": "By.s",
+            "baseUnitDescription": "byte second",
+            "baseUnitConversionFactor": 3865470566400
+          },
+          "currencyConversionRate": 1,
+          "effectiveTime": "2026-09-13T07:00:00Z"
+        }
+      ]
+    },
+    {
+      "name": "services/6F81-5844-456A/skus/E917-4171-722C",
+      "skuId": "E917-4171-722C",
+      "description": "Hyperdisk Balanced Capacity in Oregon",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Storage",
+        "resourceGroup": "SSD",
+        "usageType": "OnDemand"
+      },
+      "regions": [
+        "us-west1"
+      ],
+      "pricingInfo": [
+        {
+          "summary": "",
+          "pricingExpression": {
+            "usageUnit": "GiBy.mo",
+            "displayQuantity": 1,
+            "tieredRates": [
+              {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 80000000
+                }
+              }
+            ],
+            "usageUnitDescription": "gibibyte month",
+            "baseUnit": "By.s",
+            "baseUnitDescription": "byte second",
+            "baseUnitConversionFactor": 2783138807808000.0
+          },
+          "currencyConversionRate": 1,
+          "effectiveTime": "2026-09-13T07:00:00Z"
+        }
+      ]
+    },
+    {
+      "name": "services/6F81-5844-456A/skus/EA59-CA52-79C4",
+      "skuId": "EA59-CA52-79C4",
+      "description": "Spot Preemptible G4 Instance Local SSD running in Oregon",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Compute",
+        "resourceGroup": "LocalSSD",
+        "usageType": "Preemptible"
+      },
+      "regions": [
+        "us-west1"
+      ],
+      "pricingInfo": [
+        {
+          "summary": "",
+          "pricingExpression": {
+            "usageUnit": "GiBy.mo",
+            "displayQuantity": 1,
+            "tieredRates": [
+              {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 0
+                }
+              }
+            ],
+            "usageUnitDescription": "gibibyte month",
+            "baseUnit": "By.s",
+            "baseUnitDescription": "byte second",
+            "baseUnitConversionFactor": 2783138807808000.0
+          },
+          "currencyConversionRate": 1,
+          "effectiveTime": "2026-09-13T07:00:00Z"
+        }
+      ]
+    },
+    {
+      "name": "services/6F81-5844-456A/skus/EB96-F37D-DC81",
+      "skuId": "EB96-F37D-DC81",
+      "description": "Hyperdisk Balanced High Availability Throughput in Oregon",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Storage",
+        "resourceGroup": "SSD",
+        "usageType": "OnDemand"
+      },
+      "regions": [
+        "us-west1"
+      ],
+      "pricingInfo": [
+        {
+          "summary": "",
+          "pricingExpression": {
+            "usageUnit": "mo",
+            "displayQuantity": 1,
+            "tieredRates": [
+              {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 80000000
+                }
+              }
+            ],
+            "usageUnitDescription": "month",
+            "baseUnit": "s",
+            "baseUnitDescription": "second",
+            "baseUnitConversionFactor": 2592000
+          },
+          "currencyConversionRate": 1,
+          "effectiveTime": "2026-09-13T07:00:00Z"
+        }
+      ]
+    },
+    {
+      "name": "services/6F81-5844-456A/skus/EEBB-26EA-C7F6",
+      "skuId": "EEBB-26EA-C7F6",
+      "description": "Asynchronous Replication Protection - Hyperdisk Balanced High Availability IOPS in Oregon",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Storage",
+        "resourceGroup": "SSD",
+        "usageType": "OnDemand"
+      },
+      "regions": [
+        "us-west1"
+      ],
+      "pricingInfo": [
+        {
+          "summary": "",
+          "pricingExpression": {
+            "usageUnit": "mo",
+            "displayQuantity": 1,
+            "tieredRates": [
+              {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 4000000
+                }
+              }
+            ],
+            "usageUnitDescription": "month",
+            "baseUnit": "s",
+            "baseUnitDescription": "second",
+            "baseUnitConversionFactor": 2592000
+          },
+          "currencyConversionRate": 1,
+          "effectiveTime": "2026-09-13T07:00:00Z"
+        }
+      ]
+    },
+    {
+      "name": "services/6F81-5844-456A/skus/F3C3-1C2E-0CD5",
+      "skuId": "F3C3-1C2E-0CD5",
+      "description": "vGPU G4 Instance Local SSD running in Oregon",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Compute",
+        "resourceGroup": "GPU",
+        "usageType": "OnDemand"
+      },
+      "regions": [
+        "us-west1"
+      ],
+      "pricingInfo": [
+        {
+          "summary": "",
+          "pricingExpression": {
+            "usageUnit": "GiBy.mo",
+            "displayQuantity": 1,
+            "tieredRates": [
+              {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 0
+                }
+              }
+            ],
+            "usageUnitDescription": "gibibyte month",
+            "baseUnit": "By.s",
+            "baseUnitDescription": "byte second",
+            "baseUnitConversionFactor": 2783138807808000.0
+          },
+          "currencyConversionRate": 1,
+          "effectiveTime": "2026-09-13T07:00:00Z"
+        }
+      ]
+    },
+    {
+      "name": "services/6F81-5844-456A/skus/F688-6974-D60E",
+      "skuId": "F688-6974-D60E",
+      "description": "Asynchronous Replication Protection - Hyperdisk Balanced High Availability Capacity in Oregon",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Storage",
+        "resourceGroup": "SSD",
+        "usageType": "OnDemand"
+      },
+      "regions": [
+        "us-west1"
+      ],
+      "pricingInfo": [
+        {
+          "summary": "",
+          "pricingExpression": {
+            "usageUnit": "GiBy.mo",
+            "displayQuantity": 1,
+            "tieredRates": [
+              {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 64000000
+                }
+              }
+            ],
+            "usageUnitDescription": "gibibyte month",
+            "baseUnit": "By.s",
+            "baseUnitDescription": "byte second",
+            "baseUnitConversionFactor": 2783138807808000.0
+          },
+          "currencyConversionRate": 1,
+          "effectiveTime": "2026-09-13T07:00:00Z"
+        }
+      ]
+    },
+    {
+      "name": "services/6F81-5844-456A/skus/FC94-13C6-4468",
+      "skuId": "FC94-13C6-4468",
+      "description": "G4 Instance Local SSD running in Oregon",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Compute",
+        "resourceGroup": "LocalSSD",
+        "usageType": "OnDemand"
+      },
+      "regions": [
+        "us-west1"
+      ],
+      "pricingInfo": [
+        {
+          "summary": "",
+          "pricingExpression": {
+            "usageUnit": "GiBy.mo",
+            "displayQuantity": 1,
+            "tieredRates": [
+              {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 0
+                }
+              }
+            ],
+            "usageUnitDescription": "gibibyte month",
+            "baseUnit": "By.s",
+            "baseUnitDescription": "byte second",
+            "baseUnitConversionFactor": 2783138807808000.0
+          },
+          "currencyConversionRate": 1,
+          "effectiveTime": "2026-09-13T07:00:00Z"
+        }
+      ]
+    },
+    {
+      "name": "services/6F81-5844-456A/skus/FF01-0D3F-705D",
+      "skuId": "FF01-0D3F-705D",
+      "description": "Asynchronous Replication Protection - Hyperdisk Balanced IOPS in Oregon",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Storage",
+        "resourceGroup": "SSD",
+        "usageType": "OnDemand"
+      },
+      "regions": [
+        "us-west1"
+      ],
+      "pricingInfo": [
+        {
+          "summary": "",
+          "pricingExpression": {
+            "usageUnit": "mo",
+            "displayQuantity": 1,
+            "tieredRates": [
+              {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 2000000
+                }
+              }
+            ],
+            "usageUnitDescription": "month",
+            "baseUnit": "s",
+            "baseUnitDescription": "second",
+            "baseUnitConversionFactor": 2592000
+          },
+          "currencyConversionRate": 1,
+          "effectiveTime": "2026-09-13T07:00:00Z"
+        }
+      ]
+    }
+  ]
+}

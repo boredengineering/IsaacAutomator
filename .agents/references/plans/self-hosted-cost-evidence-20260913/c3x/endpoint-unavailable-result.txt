@@ -1,0 +1,3 @@
+c3x: estimating: azurerm_key_vault.public_price_trial: dimension "operations": rate: evaluating "price(\"operations\")": price("operations"): looking up operations: upstream http://isaac-cost-c3x-proxy:4001/graphql returned 502:  (1:1)
+ | price("operations")
+ | ^

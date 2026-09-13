@@ -1,0 +1,8 @@
+{
+  "command": "go test -mod=readonly -race -short -count=1 ./...",
+  "result": {
+    "output": "?   \tgithub.com/c3xdev/c3x-pricing-api/catalog\t[no test files]\nok  \tgithub.com/c3xdev/c3x-pricing-api/cmd/gcp-catalog-probe\t1.006s\nok  \tgithub.com/c3xdev/c3x-pricing-api/cmd/server\t1.012s\nok  \tgithub.com/c3xdev/c3x-pricing-api/internal/config\t1.006s\nok  \tgithub.com/c3xdev/c3x-pricing-api/internal/db\t1.006s\nok  \tgithub.com/c3xdev/c3x-pricing-api/internal/graphql\t1.006s\nok  \tgithub.com/c3xdev/c3x-pricing-api/internal/scraper\t1.011s\nok  \tgithub.com/c3xdev/c3x-pricing-api/internal/server\t1.042s",
+    "exit_code": 0,
+    "error": null
+  }
+}

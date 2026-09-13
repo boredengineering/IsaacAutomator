@@ -1,0 +1,676 @@
+{
+  "public_sources": [
+    {
+      "key": "g4_specs",
+      "url": "https://cloud.google.com/compute/docs/accelerator-optimized-machines",
+      "final_url": "https://docs.cloud.google.com/compute/docs/accelerator-optimized-machines",
+      "retrieved_at": "2026-09-13T17:18:32.503113+00:00",
+      "sha256": "6220039d00b27213bbb55d4f7fcb6dd7c46741db9ef6d084f05502f74384e296",
+      "text_path": "/tmp/isaac-gcp-cost-validation/reference/g4_specs.txt",
+      "bytes": 498807,
+      "citation_registration": "[1] https://cloud.google.com/compute/docs/accelerator-optimized-machines",
+      "quotes": [
+        {
+          "start_line": 2669,
+          "end_line": 2678,
+          "text": "Attached NVIDIA RTX PRO 6000 GPUs\nMachine type\nvCPU count1\nInstance memory (GB)\nMaximum Titanium SSD supported (GiB)2\nPhysical NIC count\nMaximum network bandwidth (Gbps)3\nGPU count\nGPU memory4\n(GB GDDR7)"
+        },
+        {
+          "start_line": 2703,
+          "end_line": 2710,
+          "text": "g4-standard-48\n48\n180\n1,500\n1\n50\n1\n96"
+        },
+        {
+          "start_line": 2727,
+          "end_line": 2746,
+          "text": "g4-standard-384\n384\n1,440\n12,000\n2\n400\n8\n768\n1A vCPU is implemented as a single hardware hyper-thread on one of\nthe available CPU platforms.\n2You can add Titanium SSD disks when creating a G4 instance. For the number of disks\nyou can attach, see\nMachine types that require you to choose a number of Local SSD disks.\n3Maximum egress bandwidth cannot exceed the number given. Actual\negress bandwidth depends on the destination IP address and other factors.\nSee Network bandwidth.\n4GPU memory is the memory on a GPU device that can be used for\ntemporary storage of data. It is separate from the instance's memory and is\nspecifically designed to handle the higher bandwidth demands of your\ngraphics-intensive workloads."
+        },
+        {
+          "start_line": 2751,
+          "end_line": 2758,
+          "text": "You don't receive sustained\nuse discounts and\nflexible committed use\ndiscounts for instances that use a G4 machine type.\nYou can only use a G4 machine type in certain regions\nand zones.\nYou can't use Persistent Disk (regional or zonal)\non an instance that uses a G4 machine type."
+        }
+      ]
+    },
+    {
+      "key": "flex",
+      "url": "https://cloud.google.com/compute/docs/instances/about-flex-start-vms",
+      "final_url": "https://docs.cloud.google.com/compute/docs/instances/about-flex-start-vms",
+      "retrieved_at": "2026-09-13T17:18:32.018585+00:00",
+      "sha256": "b9840af940003b458a8a86d242c98eafb29fde6b7fe2308a80d22457299f3b23",
+      "text_path": "/tmp/isaac-gcp-cost-validation/reference/flex.txt",
+      "bytes": 372552,
+      "citation_registration": "[4] https://cloud.google.com/compute/docs/instances/about-flex-start-vms",
+      "quotes": [
+        {
+          "start_line": 1139,
+          "end_line": 1153,
+          "text": "Flex-start VM limited run duration\nWhen you create a Flex-start VM, you must specify the following:\nThe VM run duration: you must specify how long the VMs can run. The run\nduration can be up to seven days. If your workload completes before the VMs'\nrun duration ends, then you can stop or delete the standalone VMs, or delete\nthe VMs in a MIG to avoid unnecessary costs.\nThe VM termination action: you must choose whether\nCompute Engine automatically stops or deletes the VMs at the end of\ntheir run duration. For Flex-start VMs in a MIG, you can only\nspecify to delete VMs at the end of their run duration.\nCaution: After Compute Engine stops a VM, you keep incurring charges\nfor any resources that are attached to the VM, such as disks or IP\naddresses. To avoid unnecessary costs, detach and delete any resources that\nyou no longer need, or delete the VM. For more information, see the\npricing for a VM's uptime."
+        },
+        {
+          "start_line": 1177,
+          "end_line": 1180,
+          "text": "Pricing\nFor Flex-start VMs, you pay as you go (PAYG). For more\ninformation, see\nDWS pricing."
+        }
+      ]
+    },
+    {
+      "key": "disk_pricing",
+      "url": "https://cloud.google.com/compute/disks-image-pricing",
+      "final_url": "https://cloud.google.com/compute/disks-image-pricing",
+      "retrieved_at": "2026-09-13T17:18:32.200803+00:00",
+      "sha256": "5fe747645e082f6def830e426da6244c26d904c8153f9ad92e6907fec415d5ee",
+      "text_path": "/tmp/isaac-gcp-cost-validation/reference/disk_pricing.txt",
+      "bytes": 3866810,
+      "citation_registration": "[5] https://cloud.google.com/compute/disks-image-pricing",
+      "quotes": [
+        {
+          "start_line": 270,
+          "end_line": 275,
+          "text": "Persistent Disk and Hyperdisk pricing\nStandard, SSD, and balanced Persistent Disks are priced by the amount of provisioned space per disk. For these disk types, I/O operations are included in the price for provisioned space. Since disk performance grows linearly with the size of your disk, consider your I/O needs when choosing the size of your disk.\nYou are billed for the total provisioned capacity of your Hyperdisk volumes until you delete them. You are charged per GiB per month. Additionally, you are billed for the following:\nHyperdisk Balanced and Hyperdisk Balanced High Availability charge a monthly rate for the provisioned IOPS and provisioned throughput (in MBps) in excess of the baseline values of 3,000 IOPS and 140 MBps throughput.\nHyperdisk Extreme charges a monthly rate based on the provisioned IOPS.\nHyperdisk Throughput charges a monthly rate based on the provisioned throughput (in MBps)."
+        }
+      ]
+    },
+    {
+      "key": "hyperdisk",
+      "url": "https://cloud.google.com/compute/docs/disks/hyperdisks",
+      "final_url": "https://docs.cloud.google.com/compute/docs/disks/hyperdisks",
+      "retrieved_at": "2026-09-13T17:18:32.575518+00:00",
+      "sha256": "d243cd1b29e34fbdeff8a17c8149b8298947dba1f1b290e233b3a31127932f5c",
+      "text_path": "/tmp/isaac-gcp-cost-validation/reference/hyperdisk.txt",
+      "bytes": 429215,
+      "citation_registration": "[6] https://cloud.google.com/compute/docs/disks/hyperdisks",
+      "quotes": [
+        {
+          "start_line": 1645,
+          "end_line": 1655,
+          "text": "Hyperdisk volumes until you delete them. Charges incur even if\nthe volume isn't attached to any instances or if the instance is suspended or\nstopped. You are charged per GiB per month. Additionally, you are billed for the\nfollowing:\nHyperdisk Balanced charges a monthly rate for the provisioned IOPS and provisioned\nthroughput (in MiB/s) in excess of the baseline values of\n3,000 IOPS and\n140 MiB/s throughput.\nHyperdisk Extreme charges a monthly rate based on the provisioned IOPS.\nHyperdisk ML charges a monthly rate based on the provisioned throughput\n(in MiB/s)."
+        }
+      ]
+    },
+    {
+      "key": "nat",
+      "url": "https://cloud.google.com/nat/pricing",
+      "final_url": "https://cloud.google.com/nat/pricing",
+      "retrieved_at": "2026-09-13T17:18:32.529460+00:00",
+      "sha256": "e6afa507cd8643fdffbc3f8e262428e984ea1978c4b2e960100bfd0eae9d1b66",
+      "text_path": "/tmp/isaac-gcp-cost-validation/reference/nat.txt",
+      "bytes": 2202399,
+      "citation_registration": "[7] https://cloud.google.com/nat/pricing",
+      "quotes": [
+        {
+          "start_line": 5,
+          "end_line": 28,
+          "text": "Public NAT\nFor Public NAT, the total cost for running a NAT gateway and running traffic through it includes the hourly cost for the NAT gateway plus all the following additional costs:\nThe cost per GiB of data that is processed by the gateway\nThe hourly cost for the external IP addresses used by the gateway\nThe data transfer out costs for any traffic leaving the network\nPublic NAT pricing is based on the following usage:\nAn hourly price for the NAT gateway that is based on the number of virtual machine (VM) instances that are using the gateway. The per-hour rate is capped at 32 VM instances. Gateways that are serving instances beyond the maximum number are charged at the maximum per-hour rate.\nGoogle Cloud counts VM instances that get a NAT assignment as using the gateway. The NAT gateway performs source NAT (SNAT) for data transfer traffic from resources that don't have external IP addresses, and destination NAT (DNAT) for ingress packets that arrive as responses to outbound packets.\nA per-GiB cost for data transfer that is processed by the gateway. The data processing price is the same across all regions. Data transfer costs to send traffic from the VM out of the network also apply.\nAn hourly price for each static or ephemeral external IP address that is used by a NAT gateway.\nHourlyHourly\nMonthlyMonthly\nNumber of assigned VM instances\nPrice per hour for NAT gateway\nPrice per GiB processed, inbound and outbound data transfer\nPrice per hour for a static or an ephemeral external IP address used by a NAT gateway\nUp to 32 VM instances\n$0.0014 * the number of VM instances that are using the gateway\n$0.045\n$0.005\nMore than 32 VM instances\n$0.044\n$0.045\n$0.005"
+        },
+        {
+          "start_line": 70,
+          "end_line": 88,
+          "text": "SKU groups - NAT gateway\nVariant\nSKU name\nSKU ID\nPublic NAT\nNetworking Cloud NAT IP usage\n8515-9425-D2CE\nPublic NAT\nNetworking Cloud NAT data processing\n015F-5732-FFF0\nPublic NAT\nNetworking Cloud NAT gateway uptime\n32E2-4EFC-EF9F\nPrivate NAT\nNetworking Private NAT data processing\n6B7A-B4EC-BCA5\nPrivate NAT\nNetworking Private NAT gateway uptime\nAAF7-1D17-BFC4"
+        }
+      ]
+    },
+    {
+      "key": "gcs",
+      "url": "https://cloud.google.com/storage/pricing",
+      "final_url": "https://cloud.google.com/storage/pricing",
+      "retrieved_at": "2026-09-13T17:18:32.469981+00:00",
+      "sha256": "b19e86f8c7311238c69b01388ba03961c6555a05231cfa863cf89902b4e5a008",
+      "text_path": "/tmp/isaac-gcp-cost-validation/reference/gcs.txt",
+      "bytes": 2678502,
+      "citation_registration": "[8] https://cloud.google.com/storage/pricing",
+      "quotes": [
+        {
+          "start_line": 195,
+          "end_line": 215,
+          "text": "Operation charges\nOperation charges apply when you perform operations within Cloud Storage. An operation is an action that makes changes to or requests information about resources such as buckets and objects in Cloud Storage.\nOperations are divided into three categories: Class A, Class B, and free. See below for a breakdown of which operations fall into each class.\nFor buckets located in a single region:\nStorage Class1\nClass A operations, flat namespace\n(per 1,000 operations)\nClass A operations, hierarchical namespace\n(per 1,000 operations)\nClass B operations, flat namespace\n(per 1,000 operations)\nClass B operations, hierarchical namespace\n(per 1,000 operations)\nFree operations\nStandard storage\n$0.005\n$0.0065\n$0.0004\n$0.0005\nFree\nNearline Storage and Durable Reduced Availability (DRA) storage"
+        },
+        {
+          "start_line": 801,
+          "end_line": 813,
+          "text": "Cloud Storage Always Free usage limits\nAs part of the Google Cloud Free Tier, Cloud Storage provides resources that are free to use up to specific limits. These usage limits are available both during and after the free trial period. If you are no longer in the free trial period, usage beyond these Always Free limits is charged according to the pricing tables above.\nResource\nMonthly Free Usage Limits1\nStandard storage\n5 GB-months\nClass A Operations\n5,000\nClass B Operations\n50,000\nData transfer\n100 GB from North America to each Google Cloud Data transfer destination (Australia and China excluded)\n1Cloud Storage Always Free quotas apply to usage in US-WEST1, US-CENTRAL1, and US-EAST1 regions. Usage is aggregated across these 3 regions. Always Free quotas do not apply to Rapid Storage class. Always Free is subject to change. Please see our FAQ for eligibility requirements and other restrictions."
+        }
+      ]
+    },
+    {
+      "key": "registry",
+      "url": "https://cloud.google.com/artifact-registry/pricing",
+      "final_url": "https://cloud.google.com/artifact-registry/pricing",
+      "retrieved_at": "2026-09-13T17:18:32.601040+00:00",
+      "sha256": "85bc4bf9519190ce9afe364e27833fb6a771954cc836627be3d7d5fa520dbc60",
+      "text_path": "/tmp/isaac-gcp-cost-validation/reference/registry.txt",
+      "bytes": 2201103,
+      "citation_registration": "[9] https://cloud.google.com/artifact-registry/pricing",
+      "quotes": [
+        {
+          "start_line": 15,
+          "end_line": 30,
+          "text": "Pricing applies to billing accounts, not individual Google Cloud projects. For example, if your billing account is attached to multiple projects running Artifact Registry, the limit for the storage free tier is for total usage across all the attached projects.\nYou can use the Google Cloud Pricing Calculator to estimate the cost of using Artifact Registry.\nIf you pay in a currency other than USD, the prices listed in your currency on Cloud Platform SKUs apply.\nStorage\nStorage costs apply to the at-rest storage of your artifacts in Artifact Registry repositories. The following pricing applies to repositories that are in Preview or that are generally available:\nHourlyHourly\nMonthlyMonthly\nItem\nPrice (USD)\nArtifact Registry Storage\n0 gibibyte month to 0.5 gibibyte month\n$0.00 (Free) / 1 gibibyte hour, per 1 month / account\n0.5 gibibyte month and above\n$0.000136986 / 1 gibibyte hour, per 1 month / account\nThe pricing is the same for both regional and multi-regional repositories.\nData transfer"
+        }
+      ]
+    },
+    {
+      "key": "catalog_schema",
+      "url": "https://cloud.google.com/billing/docs/reference/rest/v1/services.skus/list",
+      "final_url": "https://docs.cloud.google.com/billing/docs/reference/rest/v1/services.skus/list",
+      "retrieved_at": "2026-09-13T17:18:32.838696+00:00",
+      "sha256": "4c04e830b1934a93ce3b41e649f3efc43a48364d57679fcffff7cdf6d479b7c3",
+      "text_path": "/tmp/isaac-gcp-cost-validation/reference/catalog_schema.txt",
+      "bytes": 213660,
+      "citation_registration": "[10] https://cloud.google.com/billing/docs/reference/rest/v1/services.skus/list",
+      "quotes": [
+        {
+          "start_line": 486,
+          "end_line": 488,
+          "text": "effectiveTime\nstring (Timestamp format)\nThe timestamp from which this pricing was effective within the requested time range. This is guaranteed to be greater than or equal to the startTime field in the request and less than the endTime field in the request. If a time range was not specified in the request this field will be equivalent to a time within the last 12 hours, indicating the latest pricing info."
+        },
+        {
+          "start_line": 522,
+          "end_line": 541,
+          "text": "string\nThe short hand for unit of usage this pricing is specified in. Example: usageUnit of \"GiBy\" means that usage is specified in \"Gibi Byte\".\ndisplayQuantity\nnumber\nThe recommended quantity of units for displaying pricing info. When displaying pricing info it is recommended to display: (unitPrice * displayQuantity) per displayQuantity usageUnit. This field does not affect the pricing formula and is for display purposes only. Example: If the unitPrice is \"0.0001 USD\", the usageUnit is \"GB\" and the displayQuantity is \"1000\" then the recommended way of displaying the pricing info is \"0.10 USD per 1000 GB\"\ntieredRates[]\nobject (TierRate)\nThe list of tiered rates for this pricing. The total cost is computed by applying each of the tiered rates on usage. This repeated list is sorted by ascending order of startUsageAmount.\nusageUnitDescription\nstring\nThe unit of usage in human readable form. Example: \"gibi byte\".\nbaseUnit\nstring\nThe base unit for the SKU which is the unit used in usage exports. Example: \"By\"\nbaseUnitDescription\nstring\nThe base unit in human readable form. Example: \"byte\".\nbaseUnitConversionFactor\nnumber\nConversion factor for converting from price per usageUnit to price per baseUnit, and startUsageAmount to startUsageAmount in baseUnit. unitPrice / baseUnitConversionFactor = price per baseUnit. startUsageAmount * baseUnitConversionFactor = startUsageAmount in baseUnit."
+        }
+      ]
+    },
+    {
+      "key": "dws_current",
+      "url": "https://cloud.google.com/products/dws/pricing",
+      "final_url": "https://cloud.google.com/products/dws/pricing",
+      "retrieved_at": "2026-09-13T17:19:07.508513+00:00",
+      "sha256": "0e8ef12fd424923d93393471d4b3da7a1ce9dceee9f22bd33aabaef2274c469d",
+      "text_path": "/tmp/isaac-gcp-cost-validation/reference/dws_current.txt",
+      "bytes": 2226734,
+      "citation_registration": "[11] https://cloud.google.com/products/dws/pricing",
+      "quotes": [
+        {
+          "start_line": 3,
+          "end_line": 12,
+          "text": "Flex-start and Calendar Mode prices are scheduled to be updated in November 2026.\nDynamic Workload Scheduler pricing\nDynamic Workload Scheduler (DWS) is a resource management and capacity scheduling platform designed for AI Hypercomputer. Dynamic Workload Scheduler provides a cost optimized consumption option for Google Cloud TPUs and NVIDIA GPUs. Dynamic Workload Scheduler is also integrated in many of your preferred Google Cloud AI/ML services: Compute Engine Managed Instance Groups, Google Kubernetes Engine, Gemini Enterprise Agent Platform, Batch, and more.\nLearn about Flex-start\nLearn about Calendar mode\nHow DWS pricing works\nDWS is variably priced and prices are updated periodically. You pay the price that is in effect when your instances are running. To compare DWS prices to on-demand and commitment rates, visit the Compute Engine pricing page.\nPrices listed are exclusive of applicable taxes and duties, and do not reflect any enterprise negotiated pricing. To view your account\u2019s specific pricing history, you can export your Cloud Billing data to BigQuery.\nPricing components\nDynamic Workload Scheduler Flex-start VMs are charged based on usage, in the same way as on-demand instances. A bill is sent out at the end of each billing cycle, providing a sum of Google Cloud charges. Calendar mode VMs are tied to a reservation in which you pay for the full duration the VMs are reserved for. Prices on this page are listed in U.S. dollars (USD). Disk size and machine type memory are listed in gigabytes (GB), where 1 GB is 2^30 bytes."
+        },
+        {
+          "start_line": 116,
+          "end_line": 139,
+          "text": "g4-standard-48\n1\n48\n180 GB\n1,500 GiB\n$2.25 / 1 hour\ng4-standard-96\n2\n96\n360 GB\n3,000 GiB\n$4.5 / 1 hour\ng4-standard-192\n4\n192\n720 GB\n6,000 GiB\n$9 / 1 hour\ng4-standard-384\n8\n384\n1,440 GB\n12,000 GiB\n$18 / 1 hour"
+        }
+      ]
+    },
+    {
+      "key": "accelerator_pricing",
+      "url": "https://cloud.google.com/products/compute/pricing/accelerator-optimized",
+      "final_url": "https://cloud.google.com/products/compute/pricing/accelerator-optimized",
+      "retrieved_at": "2026-09-13T17:19:31.274571+00:00",
+      "sha256": "30cea7256ad277cf1df3f99898a45a0cc9acb0eb2e279f4a10e2433a33e9b14f",
+      "text_path": "/tmp/isaac-gcp-cost-validation/reference/accelerator_pricing.txt",
+      "bytes": 5878425,
+      "citation_registration": "[13] https://cloud.google.com/products/compute/pricing/accelerator-optimized",
+      "quotes": [
+        {
+          "start_line": 10,
+          "end_line": 14,
+          "text": "GPU-accelerated machines pricing\nAccelerator-optimized VMs that have pre-attached GPUs are optimized for massively parallelized CUDA compute workloads, such as machine learning (ML) and high performance computing (HPC).\nThe GPU-accelerated machines are billed for their attached GPUs, predefined vCPU, memory, and bundled Local SSD storage (if applicable).\nThe total cost of running each GPU-accelerated machine type is shown in the following tables. For VMs that have custom memory options available, the default memory value is used in the calculation. These machine types are not eligible for sustained use discounts or flexible committed use discounts.\nDWS Prices are variable, but are updated infrequently. You pay the price that is in effect when your instances are running. See Flex-start documentation and Calendar mode documentation to learn more."
+        },
+        {
+          "start_line": 234,
+          "end_line": 251,
+          "text": "Machine type\nGPU\nComponents\nPrice (USD)\n*info\nConsumption model ID:\n7754-699E-0EBF\nCompute Flexible CUD - 1 Year* (USD)info\nConsumption model ID:\nD97B-0795-975B\nCompute Flexible CUD - 3 Year* (USD)info\nConsumption model ID:\n70D7-D1AB-12A4\nDWS Flex-start price (USD)\nDWS Calendar Mode price (USD)\nCurrent Spot pricing (USD)\nCompute Resource CUDs - 1 Year (USD)\nCompute Resource CUDs - 3 Year (USD)"
+        },
+        {
+          "start_line": 294,
+          "end_line": 306,
+          "text": "g4-standard-48\nNVIDIA RTX PRO 6000\nGPUs: 1\nvCPUs: 48\nMemory: 180GiB\n$4.49993 / 1 hour\n$3.7799412 / 1 hour\n$2.6099594 / 1 hour\n$2.2500 / 1 hour\nN/A\n$1.71848 / 1 hour\n$3.105 / 1 hour\n$1.97945 / 1 hour"
+        },
+        {
+          "start_line": 333,
+          "end_line": 345,
+          "text": "g4-standard-384\nNVIDIA RTX PRO 6000\nGPUs: 8\nvCPUs: 384\nMemory: 1440GiB\n$35.99944 / 1 hour\n$30.2395296 / 1 hour\n$20.8796752 / 1 hour\n$18.0000 / 1 hour\nN/A\n$13.74784 / 1 hour\n$24.84 / 1 hour\n$15.8356 / 1 hour"
+        }
+      ]
+    },
+    {
+      "key": "hyperdisk_balanced",
+      "url": "https://cloud.google.com/compute/docs/disks/hd-types/hyperdisk-balanced",
+      "final_url": "https://docs.cloud.google.com/compute/docs/disks/hd-types/hyperdisk-balanced",
+      "retrieved_at": "2026-09-13T17:22:15.729676+00:00",
+      "sha256": "bf9ad7dfbbf38f0eff84d8bf411ddf9c4626d259f1c202e2e0cec6bd75cc86de",
+      "text_path": "/tmp/isaac-gcp-cost-validation/reference/hyperdisk_balanced.txt",
+      "bytes": 413315,
+      "citation_registration": "[14] https://cloud.google.com/compute/docs/disks/hd-types/hyperdisk-balanced",
+      "quotes": [
+        {
+          "start_line": 1204,
+          "end_line": 1229,
+          "text": "Default size, IOPS, and throughput values\nIf you don't specify a size, IOPS, or throughput value when you create a Hyperdisk Balanced\nvolume, Compute Engine assigns default values.\nThe default size for Hyperdisk Balanced volumes is 100 GiB.\nThe default IOPS and throughput are based on the following formulas, where\nx is the volume's size in GiB.\nDefault IOPS:\nVolumes 6 GiB or less: 500xIOPS\nVolumes between 6 GiB and 26.666667 TiB: 6x + 3,000\nIOPS\nVolumes larger than 26.666667 TiB: 160,000 IOPS\nDefault throughput:\nVolumes 6 GiB or less: 140 MiB/s\nVolumes larger than 6 GiB: MIN (2,400, (1.5x + 140)) MiB/s\nImportant: A Hyperdisk volume\ncan't reach its provisioned performance unless you attach it to a compute instance\nthat supports that level of performance, or higher. For detailed performance\nlimits for all supported instances by machine type, see\nPerformance limits when attached to an instance.\nBaseline performance\nHyperdisk Balanced volumes include baseline, or free performance. The first 3,000 IOPS and\n140 MiB/s of throughput that you provision for a volume are free.\nPerformance you provision\nabove the baseline amounts is billable performance,\nand is not free. If you provision a volume with 5,000 IOPS, you're billed for\n2,000 IOPS. Similar principles apply to throughput."
+        }
+      ]
+    },
+    {
+      "key": "ai_consumption",
+      "url": "https://cloud.google.com/ai-hypercomputer/docs/consumption-models",
+      "final_url": "https://docs.cloud.google.com/ai-hypercomputer/docs/consumption-models",
+      "retrieved_at": "2026-09-13T17:23:11.861974+00:00",
+      "sha256": "dad82a74692e2d45205c3634b74b5f058ca4daf71e5debe6bfad64f0ea4bffd3",
+      "text_path": "/tmp/isaac-gcp-cost-validation/reference/ai_consumption.txt",
+      "bytes": 171233,
+      "citation_registration": "[17] https://cloud.google.com/ai-hypercomputer/docs/consumption-models",
+      "quotes": [
+        {
+          "start_line": 378,
+          "end_line": 389,
+          "text": "Model fine-tuning\nHigh performance computing (HPC) simulation\nBatch inference\nKey characteristics\nProvisioning model: Flex-start.\nBroad hardware support: request any clustered GPU\nmachine type, except A4X Max and A4X.\nLatency optimization: apply a compact placement policy to standalone VMs to\nminimize network latency.\nCost efficiency: receive a discount of up to 53% on vCPUs, memory, GPUs,\nand Local SSD disks for A4, A3, A2, and G4 machine series. Standard on-demand rates apply to\nother supported series. For more information, see Flex-start pricing."
+        }
+      ]
+    },
+    {
+      "key": "6F81-5844-456A",
+      "url": "https://cloudbilling.googleapis.com/v1/services/6F81-5844-456A/skus",
+      "citation_registration": "[18] https://cloudbilling.googleapis.com/v1/services/6F81-5844-456A/skus",
+      "source": "parent archived unmodified Catalog pages, hash checked",
+      "text_path": "/tmp/isaac-gcp-cost-validation/reference/6F81-5844-456A_selected_raw.txt",
+      "selected_sku_ids": [
+        "A36E-7315-8862",
+        "C566-5B7E-28AA",
+        "73C5-0031-0BF3",
+        "3B6F-2FBA-B0C5",
+        "4742-1C3C-6E23",
+        "1DE7-2C1A-CBEB",
+        "E917-4171-722C",
+        "56CC-5367-43E6",
+        "6E3F-6819-5B7A",
+        "FC94-13C6-4468"
+      ],
+      "quotes": [
+        {
+          "text": "G4 Instance Core running in Oregon"
+        },
+        {
+          "text": "G4 Instance Ram running in Oregon"
+        },
+        {
+          "text": "RTX 6000 96GB running in Oregon"
+        },
+        {
+          "text": "DWS Defined Duration G4 Core running in Oregon"
+        },
+        {
+          "text": "DWS Defined Duration G4 Ram running in Oregon"
+        },
+        {
+          "text": "RTX 6000 96GB attached to DWS Defined Duration VMs running in Oregon"
+        },
+        {
+          "text": "Hyperdisk Balanced Capacity in Oregon"
+        },
+        {
+          "text": "Hyperdisk Balanced IOPS in Oregon"
+        },
+        {
+          "text": "Hyperdisk Balanced Throughput in Oregon"
+        },
+        {
+          "text": "G4 Instance Local SSD running in Oregon"
+        }
+      ]
+    },
+    {
+      "key": "E505-1604-58F8",
+      "url": "https://cloudbilling.googleapis.com/v1/services/E505-1604-58F8/skus",
+      "citation_registration": "[19] https://cloudbilling.googleapis.com/v1/services/E505-1604-58F8/skus",
+      "source": "parent archived unmodified Catalog pages, hash checked",
+      "text_path": "/tmp/isaac-gcp-cost-validation/reference/E505-1604-58F8_selected_raw.txt",
+      "selected_sku_ids": [
+        "32E2-4EFC-EF9F",
+        "015F-5732-FFF0",
+        "8515-9425-D2CE"
+      ],
+      "quotes": [
+        {
+          "text": "Networking Cloud Nat Gateway Uptime"
+        },
+        {
+          "text": "Networking Cloud Nat Data Processing"
+        },
+        {
+          "text": "Networking Cloud NAT IP Usage"
+        }
+      ]
+    },
+    {
+      "key": "95FF-2EF5-5EA1",
+      "url": "https://cloudbilling.googleapis.com/v1/services/95FF-2EF5-5EA1/skus",
+      "citation_registration": "[20] https://cloudbilling.googleapis.com/v1/services/95FF-2EF5-5EA1/skus",
+      "source": "parent archived unmodified Catalog pages, hash checked",
+      "text_path": "/tmp/isaac-gcp-cost-validation/reference/95FF-2EF5-5EA1_selected_raw.txt",
+      "selected_sku_ids": [
+        "E5F0-6A5D-7BAD",
+        "4DBF-185F-A415",
+        "7870-010B-2763"
+      ],
+      "quotes": [
+        {
+          "text": "Standard Storage US Regional"
+        },
+        {
+          "text": "Regional Standard Class A Operations"
+        },
+        {
+          "text": "Regional Standard Class B Operations"
+        }
+      ]
+    },
+    {
+      "key": "149C-F9EC-3994",
+      "url": "https://cloudbilling.googleapis.com/v1/services/149C-F9EC-3994/skus",
+      "citation_registration": "[21] https://cloudbilling.googleapis.com/v1/services/149C-F9EC-3994/skus",
+      "source": "parent archived unmodified Catalog pages, hash checked",
+      "text_path": "/tmp/isaac-gcp-cost-validation/reference/149C-F9EC-3994_selected_raw.txt",
+      "selected_sku_ids": [
+        "8502-299A-ABAF"
+      ],
+      "quotes": [
+        {
+          "text": "Artifact Registry Storage"
+        }
+      ]
+    }
+  ],
+  "local_source_evidence": [
+    {
+      "path": "/tmp/isaac-c3x-oauth-parent/replay/internal/scraper/gcp.go",
+      "sha256": "8118acba127119cddcfe6bd78075b1342225cdb331c3e35f0939aff12b8bc5e3",
+      "extracts": [
+        {
+          "start_line": 248,
+          "end_line": 282,
+          "text": "type gcpSKU struct {\n\tSKUID          string      `json:\"skuId\"`\n\tName           string      `json:\"name\"`\n\tDescription    string      `json:\"description\"`\n\tCategory       gcpCategory `json:\"category\"`\n\tServiceRegions []string    `json:\"serviceRegions\"`\n\tPricingInfo    []gcpPrice  `json:\"pricingInfo\"`\n}\n\ntype gcpCategory struct {\n\tServiceDisplayName string `json:\"serviceDisplayName\"`\n\tResourceFamily     string `json:\"resourceFamily\"`\n\tResourceGroup      string `json:\"resourceGroup\"`\n\tUsageType          string `json:\"usageType\"`\n}\n\ntype gcpPrice struct {\n\tPricingExpression gcpPricingExpression `json:\"pricingExpression\"`\n}\n\ntype gcpPricingExpression struct {\n\tUsageUnit   string          `json:\"usageUnit\"`\n\tTieredRates []gcpTieredRate `json:\"tieredRates\"`\n}\n\ntype gcpTieredRate struct {\n\tStartUsageAmount float64      `json:\"startUsageAmount\"`\n\tUnitPrice        gcpUnitPrice `json:\"unitPrice\"`\n}\n\ntype gcpUnitPrice struct {\n\tCurrencyCode string `json:\"currencyCode\"`\n\tUnits        string `json:\"units\"`\n\tNanos        int64  `json:\"nanos\"`\n}"
+        },
+        {
+          "start_line": 308,
+          "end_line": 369,
+          "text": "func (s *GCPScraper) transformSKU(sku gcpSKU) []db.Product {\n\tvar products []db.Product\n\n\tif len(sku.PricingInfo) == 0 {\n\t\treturn nil\n\t}\n\n\tpricing := sku.PricingInfo[0]\n\tpurchaseOption := sku.Category.UsageType // OnDemand, Preemptible, Commit1Yr, Commit3Yr\n\n\tfor _, region := range sku.ServiceRegions {\n\t\t// Remap GCP service names to match CLI expectations. The CLI queries\n\t\t// networking products (forwarding rules, NAT) under \"Compute Engine\"\n\t\t// but the GCP Billing API returns them under \"Networking\".\n\t\tserviceName := normalizeGCPServiceName(sku.Category.ServiceDisplayName)\n\t\tprodHash := ProductHash(\"gcp\", region, serviceName, sku.SKUID)\n\n\t\tproduct := db.Product{\n\t\t\tProductHash:   prodHash,\n\t\t\tSKU:           sku.SKUID,\n\t\t\tVendorName:    \"gcp\",\n\t\t\tRegion:        region,\n\t\t\tService:       serviceName,\n\t\t\tProductFamily: sku.Category.ResourceFamily,\n\t\t\tAttributes: map[string]string{\n\t\t\t\t\"description\":   sku.Description,\n\t\t\t\t\"resourceGroup\": sku.Category.ResourceGroup,\n\t\t\t},\n\t\t\tPrices: []db.Price{},\n\t\t}\n\n\t\ttiers := pricing.PricingExpression.TieredRates\n\t\tfor i, tier := range tiers {\n\t\t\t// L5: Parse Units as int64 for precision, then combine with Nanos\n\t\t\tvar unitVal int64\n\t\t\tif tier.UnitPrice.Units != \"\" && tier.UnitPrice.Units != \"0\" {\n\t\t\t\tif v, err := strconv.ParseInt(tier.UnitPrice.Units, 10, 64); err == nil {\n\t\t\t\t\tunitVal = v\n\t\t\t\t}\n\t\t\t}\n\t\t\tusd := float64(unitVal) + float64(tier.UnitPrice.Nanos)/1e9\n\n\t\t\t// L6: Use strconv.FormatFloat for clean string representation\n\t\t\tstartUsage := strconv.FormatFloat(tier.StartUsageAmount, 'f', -1, 64)\n\n\t\t\t// Compute endUsageAmount from the next tier's startUsageAmount\n\t\t\tendUsage := \"\"\n\t\t\tif i+1 < len(tiers) {\n\t\t\t\tendUsage = strconv.FormatFloat(tiers[i+1].StartUsageAmount, 'f', -1, 64)\n\t\t\t}\n\n\t\t\tpriceH := PriceHash(prodHash, purchaseOption, pricing.PricingExpression.UsageUnit, startUsage, sku.Description, \"\", \"\", \"\")\n\n\t\t\tproduct.Prices = append(product.Prices, db.Price{\n\t\t\t\tPriceHash:        priceH,\n\t\t\t\tPurchaseOption:   purchaseOption,\n\t\t\t\tUnit:             pricing.PricingExpression.UsageUnit,\n\t\t\t\tUSD:              fmt.Sprintf(\"%.10f\", usd),\n\t\t\t\tStartUsageAmount: startUsage,\n\t\t\t\tEndUsageAmount:   endUsage,\n\t\t\t\tDescription:      sku.Description,\n\t\t\t})"
+        },
+        {
+          "start_line": 380,
+          "end_line": 448,
+          "text": "// GCP predefined machine type specs: family \u2192 map[machineType \u2192 {cpus, ramGB}]\nvar gcpMachineTypes = map[string]map[string][2]float64{\n\t\"n1\": {\n\t\t\"n1-standard-1\": {1, 3.75}, \"n1-standard-2\": {2, 7.5}, \"n1-standard-4\": {4, 15},\n\t\t\"n1-standard-8\": {8, 30}, \"n1-standard-16\": {16, 60}, \"n1-standard-32\": {32, 120},\n\t\t\"n1-standard-64\": {64, 240}, \"n1-standard-96\": {96, 360},\n\t\t\"n1-highmem-2\": {2, 13}, \"n1-highmem-4\": {4, 26}, \"n1-highmem-8\": {8, 52},\n\t\t\"n1-highmem-16\": {16, 104}, \"n1-highmem-32\": {32, 208}, \"n1-highmem-64\": {64, 416}, \"n1-highmem-96\": {96, 624},\n\t\t\"n1-highcpu-2\": {2, 1.8}, \"n1-highcpu-4\": {4, 3.6}, \"n1-highcpu-8\": {8, 7.2},\n\t\t\"n1-highcpu-16\": {16, 14.4}, \"n1-highcpu-32\": {32, 28.8}, \"n1-highcpu-64\": {64, 57.6}, \"n1-highcpu-96\": {96, 86.4},\n\t},\n\t\"n2\": {\n\t\t\"n2-standard-2\": {2, 8}, \"n2-standard-4\": {4, 16}, \"n2-standard-8\": {8, 32},\n\t\t\"n2-standard-16\": {16, 64}, \"n2-standard-32\": {32, 128}, \"n2-standard-48\": {48, 192},\n\t\t\"n2-standard-64\": {64, 256}, \"n2-standard-80\": {80, 320}, \"n2-standard-96\": {96, 384}, \"n2-standard-128\": {128, 512},\n\t\t\"n2-highmem-2\": {2, 16}, \"n2-highmem-4\": {4, 32}, \"n2-highmem-8\": {8, 64},\n\t\t\"n2-highmem-16\": {16, 128}, \"n2-highmem-32\": {32, 256}, \"n2-highmem-48\": {48, 384},\n\t\t\"n2-highmem-64\": {64, 512}, \"n2-highmem-80\": {80, 640}, \"n2-highmem-96\": {96, 768}, \"n2-highmem-128\": {128, 864},\n\t\t\"n2-highcpu-2\": {2, 2}, \"n2-highcpu-4\": {4, 4}, \"n2-highcpu-8\": {8, 8},\n\t\t\"n2-highcpu-16\": {16, 16}, \"n2-highcpu-32\": {32, 32}, \"n2-highcpu-48\": {48, 48},\n\t\t\"n2-highcpu-64\": {64, 64}, \"n2-highcpu-80\": {80, 80}, \"n2-highcpu-96\": {96, 96},\n\t},\n\t\"e2\": {\n\t\t\"e2-micro\": {0.25, 1}, \"e2-small\": {0.5, 2}, \"e2-medium\": {1, 4},\n\t\t\"e2-standard-2\": {2, 8}, \"e2-standard-4\": {4, 16}, \"e2-standard-8\": {8, 32},\n\t\t\"e2-standard-16\": {16, 64}, \"e2-standard-32\": {32, 128},\n\t\t\"e2-highmem-2\": {2, 16}, \"e2-highmem-4\": {4, 32}, \"e2-highmem-8\": {8, 64}, \"e2-highmem-16\": {16, 128},\n\t\t\"e2-highcpu-2\": {2, 2}, \"e2-highcpu-4\": {4, 4}, \"e2-highcpu-8\": {8, 8},\n\t\t\"e2-highcpu-16\": {16, 16}, \"e2-highcpu-32\": {32, 32},\n\t},\n\t\"n2d\": {\n\t\t\"n2d-standard-2\": {2, 8}, \"n2d-standard-4\": {4, 16}, \"n2d-standard-8\": {8, 32},\n\t\t\"n2d-standard-16\": {16, 64}, \"n2d-standard-32\": {32, 128}, \"n2d-standard-48\": {48, 192},\n\t\t\"n2d-standard-64\": {64, 256}, \"n2d-standard-80\": {80, 320}, \"n2d-standard-96\": {96, 384},\n\t\t\"n2d-standard-128\": {128, 512}, \"n2d-standard-224\": {224, 896},\n\t\t\"n2d-highmem-2\": {2, 16}, \"n2d-highmem-4\": {4, 32}, \"n2d-highmem-8\": {8, 64},\n\t\t\"n2d-highmem-16\": {16, 128}, \"n2d-highmem-32\": {32, 256}, \"n2d-highmem-48\": {48, 384},\n\t\t\"n2d-highmem-64\": {64, 512}, \"n2d-highmem-80\": {80, 640}, \"n2d-highmem-96\": {96, 768},\n\t\t\"n2d-highcpu-2\": {2, 2}, \"n2d-highcpu-4\": {4, 4}, \"n2d-highcpu-8\": {8, 8},\n\t\t\"n2d-highcpu-16\": {16, 16}, \"n2d-highcpu-32\": {32, 32}, \"n2d-highcpu-48\": {48, 48},\n\t\t\"n2d-highcpu-64\": {64, 64}, \"n2d-highcpu-80\": {80, 80}, \"n2d-highcpu-96\": {96, 96},\n\t\t\"n2d-highcpu-128\": {128, 128}, \"n2d-highcpu-224\": {224, 224},\n\t},\n\t\"c2\": {\n\t\t\"c2-standard-4\": {4, 16}, \"c2-standard-8\": {8, 32}, \"c2-standard-16\": {16, 64},\n\t\t\"c2-standard-30\": {30, 120}, \"c2-standard-60\": {60, 240},\n\t},\n\t\"c2d\": {\n\t\t\"c2d-standard-2\": {2, 8}, \"c2d-standard-4\": {4, 16}, \"c2d-standard-8\": {8, 32},\n\t\t\"c2d-standard-16\": {16, 64}, \"c2d-standard-32\": {32, 128}, \"c2d-standard-56\": {56, 224},\n\t\t\"c2d-standard-112\": {112, 448},\n\t\t\"c2d-highmem-2\":    {2, 16}, \"c2d-highmem-4\": {4, 32}, \"c2d-highmem-8\": {8, 64},\n\t\t\"c2d-highmem-16\": {16, 128}, \"c2d-highmem-32\": {32, 256}, \"c2d-highmem-56\": {56, 448},\n\t\t\"c2d-highmem-112\": {112, 896},\n\t\t\"c2d-highcpu-2\":   {2, 2}, \"c2d-highcpu-4\": {4, 4}, \"c2d-highcpu-8\": {8, 8},\n\t\t\"c2d-highcpu-16\": {16, 16}, \"c2d-highcpu-32\": {32, 32}, \"c2d-highcpu-56\": {56, 56},\n\t\t\"c2d-highcpu-112\": {112, 112},\n\t},\n\t\"t2d\": {\n\t\t\"t2d-standard-1\": {1, 4}, \"t2d-standard-2\": {2, 8}, \"t2d-standard-4\": {4, 16},\n\t\t\"t2d-standard-8\": {8, 32}, \"t2d-standard-16\": {16, 64}, \"t2d-standard-32\": {32, 128},\n\t\t\"t2d-standard-48\": {48, 192}, \"t2d-standard-60\": {60, 240},\n\t},\n\t\"t2a\": {\n\t\t\"t2a-standard-1\": {1, 4}, \"t2a-standard-2\": {2, 8}, \"t2a-standard-4\": {4, 16},\n\t\t\"t2a-standard-8\": {8, 32}, \"t2a-standard-16\": {16, 64}, \"t2a-standard-32\": {32, 128},\n\t\t\"t2a-standard-48\": {48, 192},\n\t},\n}"
+        },
+        {
+          "start_line": 450,
+          "end_line": 473,
+          "text": "// CPU/RAM description patterns for each family.\n// L10: These are substring-based matches. If multiple SKUs match (e.g. with and\n// without SUD), the map-overwrite behavior means last match wins, which in practice\n// gives the non-SUD price (correct for on-demand estimation).\nvar gcpFamilyCPUPatterns = map[string]string{\n\t\"n1\":  \"N1 Predefined Instance Core\",\n\t\"n2\":  \"N2 Instance Core\",\n\t\"n2d\": \"N2D AMD Instance Core\",\n\t\"e2\":  \"E2 Instance Core\",\n\t\"c2\":  \"Compute optimized Core\",\n\t\"c2d\": \"C2D AMD Instance Core\",\n\t\"t2d\": \"T2D AMD Instance Core\",\n\t\"t2a\": \"T2A Arm Instance Core\",\n}\nvar gcpFamilyRAMPatterns = map[string]string{\n\t\"n1\":  \"N1 Predefined Instance Ram\",\n\t\"n2\":  \"N2 Instance Ram\",\n\t\"n2d\": \"N2D AMD Instance Ram\",\n\t\"e2\":  \"E2 Instance Ram\",\n\t\"c2\":  \"Compute optimized Ram\",\n\t\"c2d\": \"C2D AMD Instance Ram\",\n\t\"t2d\": \"T2D AMD Instance Ram\",\n\t\"t2a\": \"T2A Arm Instance Ram\",\n}"
+        },
+        {
+          "start_line": 525,
+          "end_line": 576,
+          "text": "func indexCPURAMPrices(products []db.Product) (\n\tcpuPrices map[string]map[priceKey]float64,\n\tramPrices map[string]map[priceKey]float64,\n) {\n\tcpuPrices = map[string]map[priceKey]float64{}\n\tramPrices = map[string]map[priceKey]float64{}\n\n\tfor _, p := range products {\n\t\tif p.Service != \"Compute Engine\" {\n\t\t\tcontinue\n\t\t}\n\t\tdesc := p.Attributes[\"description\"]\n\t\tif strings.Contains(desc, \"SUD\") || strings.Contains(desc, \"Commitment\") {\n\t\t\tcontinue\n\t\t}\n\n\t\tfor family, pattern := range gcpFamilyCPUPatterns {\n\t\t\tif strings.Contains(desc, pattern) {\n\t\t\t\tif cpuPrices[family] == nil {\n\t\t\t\t\tcpuPrices[family] = map[priceKey]float64{}\n\t\t\t\t}\n\t\t\t\tfor _, price := range p.Prices {\n\t\t\t\t\tif price.USD != \"0.0000000000\" {\n\t\t\t\t\t\tif v, err := strconv.ParseFloat(price.USD, 64); err == nil {\n\t\t\t\t\t\t\tk := priceKey{p.Region, price.PurchaseOption}\n\t\t\t\t\t\t\tif existing, ok := cpuPrices[family][k]; !ok || v < existing {\n\t\t\t\t\t\t\t\tcpuPrices[family][k] = v\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t\tfor family, pattern := range gcpFamilyRAMPatterns {\n\t\t\tif strings.Contains(desc, pattern) {\n\t\t\t\tif ramPrices[family] == nil {\n\t\t\t\t\tramPrices[family] = map[priceKey]float64{}\n\t\t\t\t}\n\t\t\t\tfor _, price := range p.Prices {\n\t\t\t\t\tif price.USD != \"0.0000000000\" {\n\t\t\t\t\t\tif v, err := strconv.ParseFloat(price.USD, 64); err == nil {\n\t\t\t\t\t\t\tk := priceKey{p.Region, price.PurchaseOption}\n\t\t\t\t\t\t\tif existing, ok := ramPrices[family][k]; !ok || v < existing {\n\t\t\t\t\t\t\t\tramPrices[family][k] = v\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\treturn"
+        },
+        {
+          "start_line": 617,
+          "end_line": 632,
+          "text": "\t\t\t\tfor pKey, cpuPrice := range cpuMap {\n\t\t\t\t\tif pKey.region != key.region {\n\t\t\t\t\t\tcontinue\n\t\t\t\t\t}\n\t\t\t\t\tramPrice, ok := ramMap[pKey]\n\t\t\t\t\tif !ok {\n\t\t\t\t\t\tcontinue\n\t\t\t\t\t}\n\t\t\t\t\ttotalPrice := cpuPrice*cpus + ramPrice*ramGB\n\t\t\t\t\tpriceH := PriceHash(prodHash, pKey.purchaseOption, \"h\", \"0\", machineType, \"\", \"\", \"\")\n\t\t\t\t\tproduct.Prices = append(product.Prices, db.Price{\n\t\t\t\t\t\tPriceHash:      priceH,\n\t\t\t\t\t\tPurchaseOption: pKey.purchaseOption,\n\t\t\t\t\t\tUnit:           \"h\",\n\t\t\t\t\t\tUSD:            fmt.Sprintf(\"%.10f\", totalPrice),\n\t\t\t\t\t\tDescription:    fmt.Sprintf(\"%s in %s\", machineType, key.region),"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/isaac-selfhost-trials/c3x/c3x/resources/gcp/google_compute_instance.toml",
+      "sha256": "1a0b678b4d2d260301a3c413fc6d0f173c6126855db10ebcea0702cbfb7a1ff4",
+      "extracts": [
+        {
+          "start_line": 14,
+          "end_line": 19,
+          "text": "[mappings.machine]\nservice        = \"Compute Engine\"\nproduct_family = \"Compute Instance\"\nattribute_filters = [\n  { key = \"machineType\", expr = 'default(machine_type, \"e2-medium\")' },\n]"
+        },
+        {
+          "start_line": 35,
+          "end_line": 55,
+          "text": "[mappings.boot_disk]\nservice        = \"Compute Engine\"\nproduct_family = \"Storage\"\nattribute_filters = [\n  { key = \"description\", expr = '''\n      default(boot_disk_initialize_params_type, \"pd-standard\") == \"pd-ssd\" ? \"SSD backed PD Capacity\" :\n      default(boot_disk_initialize_params_type, \"pd-standard\") == \"pd-balanced\" ? \"Balanced PD Capacity\" :\n                                                                                  \"Storage PD Capacity\"\n  ''' },\n]\n\n[mappings.gpu]\nservice        = \"Compute Engine\"\nproduct_family = \"Compute\"\nattribute_filters = [\n  { key = \"description\", expr = '''\n      default(guest_accelerator_type, \"nvidia-tesla-t4\") == \"nvidia-l4\" ?\n        \"Nvidia L4 GPU running in Americas\" :\n        \"Nvidia Tesla T4 GPU running in Americas\"\n  ''' },\n]"
+        },
+        {
+          "start_line": 64,
+          "end_line": 102,
+          "text": "[[dimensions]]\nid       = \"compute\"\nlabel    = \"Instance (on-demand)\"\nunit     = \"hours\"\nwhen     = '!(default(machine_type, \"e2-medium\") startsWith \"custom\")'\nquantity = \"monthly_hours()\"\nrate     = 'price(\"machine\")'\n\n[[dimensions]]\nid       = \"custom_vcpu\"\nlabel    = \"Custom machine vCPU\"\nunit     = \"vCPU-hours\"\nwhen     = 'default(machine_type, \"e2-medium\") startsWith \"custom\"'\nquantity = \"default(vcpu_count, 2) * monthly_hours()\"\nrate     = 'price(\"custom_core\")'\n\n[[dimensions]]\nid       = \"custom_ram\"\nlabel    = \"Custom machine RAM\"\nunit     = \"GiB-hours\"\nwhen     = 'default(machine_type, \"e2-medium\") startsWith \"custom\"'\nquantity = \"default(memory_gb, 4) * monthly_hours()\"\nrate     = 'price(\"custom_ram\")'\n\n[[dimensions]]\nid       = \"boot_disk\"\nlabel    = \"Boot disk\"\nunit     = \"GB-month\"\nwhen     = \"default(boot_disk_initialize_params_size, 0) > 0\"\nquantity = \"default(boot_disk_initialize_params_size, 10)\"\nrate     = 'price(\"boot_disk\")'\n\n[[dimensions]]\nid       = \"gpu\"\nlabel    = \"GPU accelerators\"\nunit     = \"GPU-hours\"\nwhen     = \"default(guest_accelerator_count, 0) > 0\"\nquantity = \"default(guest_accelerator_count, 0) * monthly_hours()\"\nrate     = 'price(\"gpu\")'"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/isaac-selfhost-trials/c3x/c3x/resources/gcp/google_compute_router_nat.toml",
+      "sha256": "7472eed86a5f5d1d051a9462d89b9bd173ee92f7835437f2b679b338c30703ee",
+      "extracts": [
+        {
+          "start_line": 5,
+          "end_line": 20,
+          "text": "# Cloud NAT gateway: $0.0014/hr per VM ($0.044/VM-month). Data processed:\n# $0.045/GB. Use published rates.\n\n[[dimensions]]\nid       = \"gateway_hours\"\nlabel    = \"NAT gateway VM-hours\"\nunit     = \"VM-hours\"\nquantity = \"default(active_vms, 1) * monthly_hours()\"\nrate     = \"0.0014\"\n\n[[dimensions]]\nid       = \"data_processed\"\nlabel    = \"Data processed\"\nunit     = \"GB\"\nquantity = \"default(monthly_data_processed_gb, 0)\"\nrate     = \"0.045\""
+        }
+      ]
+    },
+    {
+      "path": "/tmp/isaac-selfhost-trials/c3x/c3x/resources/gcp/google_storage_bucket.toml",
+      "sha256": "9fc1d385571a03c107c3d9e3a2997cbd30f9993a3276913a201ba012d77a614b",
+      "extracts": [
+        {
+          "start_line": 5,
+          "end_line": 17,
+          "text": "[mappings.bucket_standard]\nservice        = \"Cloud Storage\"\nproduct_family = \"Storage\"\nattribute_filters = [\n  { key = \"description\", const = \"Standard Storage US Regional\" },\n]\n\n[[dimensions]]\nid       = \"storage\"\nlabel    = \"Standard Storage (US Regional)\"\nunit     = \"GB-month\"\nquantity = \"default(monthly_storage_gb, 0)\"\nrate     = 'price(\"bucket_standard\")'"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/isaac-selfhost-trials/c3x/c3x/resources/gcp/google_artifact_registry_repository.toml",
+      "sha256": "68bcc6f35ceddcd77dbea101fd5c1cb51945a0fe99d3a43dadb0198cbba6867d",
+      "extracts": [
+        {
+          "start_line": 5,
+          "end_line": 21,
+          "text": "# Artifact Registry storage: $0.10/GB-month after the 0.5 GB free tier.\n\n[mappings.storage]\nservice        = \"Artifact Registry\"\nproduct_family = \"ApplicationServices\"\nregion          = \"global\"\npurchase_option = \"any\"\nattribute_filters = [\n  { key = \"description\", const = \"Artifact Registry Storage\" },\n]\n\n[[dimensions]]\nid       = \"storage\"\nlabel    = \"Repository storage\"\nunit     = \"GB-month\"\nquantity = \"default(monthly_storage_gb, 0)\"\nrate     = 'price(\"storage\")'"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/isaac-selfhost-trials/c3x/c3x/internal/pricing/http.go",
+      "sha256": "9594a20f42da646f3600834e62643498bd0f5b27557b7d86c1d54bc07063d90a",
+      "extracts": [
+        {
+          "start_line": 219,
+          "end_line": 252,
+          "text": "\t// limit:50 (not 1): some product families return multiple\n\t// variants where only one has the desired purchaseOption (e.g.\n\t// EC2 Dedicated Host has separate products for No-Upfront-RI and\n\t// On-Demand; limit:1 may land on the variant with empty\n\t// on_demand prices). The max-non-zero picker then chooses across\n\t// the returned products. 50 stays well under the upstream's\n\t// 5000-product cap and keeps the response small for the common\n\t// case where filters already narrow to 1.\n\tb.WriteString(`},limit:50){prices`)\n\t// PurchaseOption \"any\" is a catalog-side sentinel meaning the\n\t// upstream's prices for this product carry no purchaseOption\n\t// label, so we omit that filter clause entirely. Without it the\n\t// subfield filter would match zero rows and the rate would be 0.\n\tincludePO := q.PurchaseOption != \"\" && q.PurchaseOption != \"any\"\n\tif includePO || q.Unit != \"\" {\n\t\tb.WriteString(`(filter:{`)\n\t\tfirst := true\n\t\tif includePO {\n\t\t\tb.WriteString(`purchaseOption:\"`)\n\t\t\tb.WriteString(escape(q.PurchaseOption))\n\t\t\tb.WriteString(`\"`)\n\t\t\tfirst = false\n\t\t}\n\t\tif q.Unit != \"\" {\n\t\t\tif !first {\n\t\t\t\tb.WriteString(\",\")\n\t\t\t}\n\t\t\tb.WriteString(`unit:\"`)\n\t\t\tb.WriteString(escape(q.Unit))\n\t\t\tb.WriteString(`\"`)\n\t\t}\n\t\tb.WriteString(`})`)\n\t}\n\tb.WriteString(`{USD unit}}}`)"
+        },
+        {
+          "start_line": 272,
+          "end_line": 312,
+          "text": "// pickNonZeroPrice walks the (products, prices) tree and returns the\n// **largest** non-zero USD value, or zero if every price was zero.\n//\n// Why max and not first: tiered services (CloudFront data transfer,\n// S3 requests) return several prices per product \u2014 typically a mix\n// of committed-tier rates (cheaper) and on-demand tier rates (more\n// expensive). Picking \"first non-zero\" landed on whichever the\n// upstream put first, which historically meant the cheapest\n// committed rate \u2014 silently understating cost by 3\u20134\u00d7. Picking the\n// maximum non-zero is the conservative choice: it surfaces the\n// first-tier on-demand rate a brand-new workload actually pays.\n//\n// Single-rate products (most resources) are unaffected: max of one\n// value is that value. Free-tier patterns like SNS ($0 free, then\n// $0.0000006 paid) still work: the zero is skipped and the paid rate\n// wins.\nfunc pickNonZeroPrice(data *graphqlData) (decimal.Decimal, error) {\n\tif data == nil {\n\t\treturn decimal.Zero, nil\n\t}\n\tmaxNonZero := decimal.Zero\n\thaveNonZero := false\n\tfor _, p := range data.Products {\n\t\tfor _, price := range p.Prices {\n\t\t\tif price.USD == \"\" {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\td, err := decimal.NewFromString(price.USD)\n\t\t\tif err != nil {\n\t\t\t\treturn decimal.Zero, fmt.Errorf(\"invalid price %q: %w\", price.USD, err)\n\t\t\t}\n\t\t\tif d.IsZero() {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\tif !haveNonZero || d.GreaterThan(maxNonZero) {\n\t\t\t\tmaxNonZero = d\n\t\t\t\thaveNonZero = true\n\t\t\t}\n\t\t}\n\t}\n\treturn maxNonZero, nil"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/isaac-selfhost-trials/c3x/c3x/internal/pricing/purchaseoption.go",
+      "sha256": "8c61b26ef89f3100907d6ef8d209c4c2c68ccfd8924fc6727ca44a73cc4561c9",
+      "extracts": [
+        {
+          "start_line": 8,
+          "end_line": 18,
+          "text": "func DefaultPurchaseOption(provider string) string {\n\tswitch provider {\n\tcase \"aws\":\n\t\treturn \"on_demand\"\n\tcase \"azure\":\n\t\treturn \"Consumption\"\n\tcase \"gcp\":\n\t\treturn \"OnDemand\"\n\tdefault:\n\t\treturn \"\"\n\t}"
+        }
+      ]
+    },
+    {
+      "path": "/tmp/isaac-selfhost-trials/c3x/c3x/internal/expr/functions.go",
+      "sha256": "924c1bb388b976e1c774b1146cb89b7c1d2fb5eb392ce13f0ee10226b18c0da0",
+      "extracts": [
+        {
+          "start_line": 68,
+          "end_line": 78,
+          "text": "\t\t},\n\n\t\t// monthly_hours() \u2192 the hours-per-month constant (730). Catalog\n\t\t// authors use this for any hourly-billed quantity so the constant\n\t\t// is named, not magic.\n\t\t\"monthly_hours\": func() int {\n\t\t\treturn MonthlyHours\n\t\t},\n\n\t\t// sum_field(blocks, \"size\") \u2192 sums a numeric field across a\n\t\t// repeated Terraform block (`ebs_block_device` appears once"
+        }
+      ]
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/configs/cost/infracost-usage.example.yml",
+      "sha256": "36e43fd058e002e66dbc52730d1fff963887c1b757d373a07799ca7d1f16a7f8",
+      "extracts": [
+        {
+          "start_line": 1,
+          "end_line": 18,
+          "text": "# Public synthetic MONTHLY baseline, not measured usage or a budget.\n# Compute, NAT and retained storage have separate quantities/lifetimes.\n# Transfer, KMS/secrets, log retention, additional disks and snapshots are not\n# fully covered here. Do not interpret undeclared/unsupported costs as free.\nversion: \"0.1\"\nresource_usage:\n  google_compute_instance.workstation:\n    monthly_hrs: 730\n  google_compute_router_nat.private:\n    assigned_vms: 1\n    monthly_data_processed_gb: 100\n  google_storage_bucket.state_example:\n    storage_gb: 1\n    monthly_class_a_operations: 100\n    monthly_class_b_operations: 100\n    monthly_data_retrieval_gb: 0\n  google_artifact_registry_repository.images:\n    storage_gb: 10"
+        }
+      ]
+    }
+  ],
+  "archive_verification": {
+    "unique_skus": 35924,
+    "all_pages_sha256_matched": true,
+    "all_manifest_record_counts_matched": true,
+    "all_service_pagination_terminated": true,
+    "counts_by_api_path": {
+      "/v1/services": 1778,
+      "/v1/services/6F81-5844-456A/skus": 32873,
+      "/v1/services/95FF-2EF5-5EA1/skus": 1229,
+      "/v1/services/E505-1604-58F8/skus": 1795,
+      "/v1/services/149C-F9EC-3994/skus": 27
+    },
+    "pages": [
+      {
+        "bytes": 98750,
+        "file": "001.json.gz",
+        "kind": "services",
+        "path": "/v1/services",
+        "records": 500,
+        "retrieved_at": "2026-09-13T17:19:13Z",
+        "sha256": "4b44f52a81e59341ebb58408b19659b0181b2014fb005d9f1271a9be1c0c3343",
+        "status": 200
+      },
+      {
+        "bytes": 99097,
+        "file": "002.json.gz",
+        "kind": "services",
+        "path": "/v1/services",
+        "records": 500,
+        "retrieved_at": "2026-09-13T17:19:13Z",
+        "sha256": "e35195c36c38aa8d5c7f7e9e5cdf397f525df172ebe5651ba45f663585862e44",
+        "status": 200
+      },
+      {
+        "bytes": 98161,
+        "file": "003.json.gz",
+        "kind": "services",
+        "path": "/v1/services",
+        "records": 500,
+        "retrieved_at": "2026-09-13T17:19:13Z",
+        "sha256": "27122a4c18327e6292aad94c39c1c8e3008ba2578000492a11e494d9a2562648",
+        "status": 200
+      },
+      {
+        "bytes": 55076,
+        "file": "004.json.gz",
+        "kind": "services",
+        "path": "/v1/services",
+        "records": 278,
+        "retrieved_at": "2026-09-13T17:19:13Z",
+        "sha256": "070b433a1a7b113db101699539306d147d850c572bc9ac99f9567a57f37fd0da",
+        "status": 200
+      },
+      {
+        "bytes": 6715524,
+        "file": "005.json.gz",
+        "kind": "skus",
+        "path": "/v1/services/6F81-5844-456A/skus",
+        "records": 5000,
+        "retrieved_at": "2026-09-13T17:19:14Z",
+        "sha256": "c47b1f6a770bbf950e702ed1561e02e2bdda2b98beb6115630bab6b43ec771c3",
+        "status": 200
+      },
+      {
+        "bytes": 6706632,
+        "file": "006.json.gz",
+        "kind": "skus",
+        "path": "/v1/services/6F81-5844-456A/skus",
+        "records": 5000,
+        "retrieved_at": "2026-09-13T17:19:15Z",
+        "sha256": "5554525fa9f5119a22e49f33ef8bcdf26e12f25c2db708399b4121b8356de2b7",
+        "status": 200
+      },
+      {
+        "bytes": 6704998,
+        "file": "007.json.gz",
+        "kind": "skus",
+        "path": "/v1/services/6F81-5844-456A/skus",
+        "records": 5000,
+        "retrieved_at": "2026-09-13T17:19:15Z",
+        "sha256": "d6837d02903e416f1085e18cb9dd67f54bb65186e67bb16b1d5071a4fd3e40f2",
+        "status": 200
+      },
+      {
+        "bytes": 6723836,
+        "file": "008.json.gz",
+        "kind": "skus",
+        "path": "/v1/services/6F81-5844-456A/skus",
+        "records": 5000,
+        "retrieved_at": "2026-09-13T17:19:16Z",
+        "sha256": "4b5438249a5d3a3ed42be5993cb6a233d3d846f1dc0ee79e2e3aeb3acba17a95",
+        "status": 200
+      },
+      {
+        "bytes": 6709866,
+        "file": "009.json.gz",
+        "kind": "skus",
+        "path": "/v1/services/6F81-5844-456A/skus",
+        "records": 5000,
+        "retrieved_at": "2026-09-13T17:19:17Z",
+        "sha256": "6c16cdf657d094be4b5814efff49170a38b9ce5b5c9e67ef88b5d83734c641e3",
+        "status": 200
+      },
+      {
+        "bytes": 6713272,
+        "file": "010.json.gz",
+        "kind": "skus",
+        "path": "/v1/services/6F81-5844-456A/skus",
+        "records": 5000,
+        "retrieved_at": "2026-09-13T17:19:18Z",
+        "sha256": "08513b4019af2c9f7e855e071714668ac99fbb97fe8e53451674b7a1d197d19c",
+        "status": 200
+      },
+      {
+        "bytes": 3852090,
+        "file": "011.json.gz",
+        "kind": "skus",
+        "path": "/v1/services/6F81-5844-456A/skus",
+        "records": 2873,
+        "retrieved_at": "2026-09-13T17:19:19Z",
+        "sha256": "0f49ac61764381822aa194249ad925e41f331b0533dce7c3048c8f006e98ee1d",
+        "status": 200
+      },
+      {
+        "bytes": 1635800,
+        "file": "012.json.gz",
+        "kind": "skus",
+        "path": "/v1/services/95FF-2EF5-5EA1/skus",
+        "records": 1229,
+        "retrieved_at": "2026-09-13T17:19:19Z",
+        "sha256": "840250d4c8249b18ad675f57f792ab6e9d31a1fb10b59265c9228c251f2cf43d",
+        "status": 200
+      },
+      {
+        "bytes": 2496264,
+        "file": "013.json.gz",
+        "kind": "skus",
+        "path": "/v1/services/E505-1604-58F8/skus",
+        "records": 1795,
+        "retrieved_at": "2026-09-13T17:19:19Z",
+        "sha256": "2eaf36b5dc2a58b3285b6c847ef3b94dd1221bb88e1e5d989d6a59e10a660307",
+        "status": 200
+      },
+      {
+        "bytes": 46296,
+        "file": "014.json.gz",
+        "kind": "skus",
+        "path": "/v1/services/149C-F9EC-3994/skus",
+        "records": 27,
+        "retrieved_at": "2026-09-13T17:19:19Z",
+        "sha256": "8ac2d9c92e596c23c8c4ad1604d4bd049293d10e862059da2fe98ae314b430e9",
+        "status": 200
+      }
+    ]
+  },
+  "public_regional_tables_file": "public_regional_tables.json",
+  "notes": [
+    "Default rendered region is Iowa; Oregon values were extracted from explicitly Oregon-labelled embedded JSON tables, with raw paths and rows preserved.",
+    "DWS search returned no usable text; no source explicitly equating the Catalog phrase DWS Defined Duration to Flex-start was retrieved."
+  ]
+}

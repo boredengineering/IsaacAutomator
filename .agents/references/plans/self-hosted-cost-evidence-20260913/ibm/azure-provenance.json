@@ -1,0 +1,8 @@
+{
+  "url": "https://prices.azure.com/api/retail/prices?%24filter=serviceName+eq+%27Virtual+Machines%27+and+armRegionName+eq+%27eastus%27+and+armSkuName+eq+%27Standard_D2s_v3%27+and+priceType+eq+%27Consumption%27",
+  "retrieved_at": "2026-09-13T03:04:57.191410+00:00",
+  "sha256": "03a440ec88fde044ce8d8b9dd38e592c8fe1c61cfe875cc8f3ace515d5f903d4",
+  "item_count": 6,
+  "source": "Microsoft Azure Retail Prices API",
+  "synthetic": false
+}

@@ -1,0 +1,117 @@
+{
+  "audit": "Independent read-only evidence audit of three self-hosted pricing trials",
+  "passed": true,
+  "passed_meaning": "The proposed bounded conclusions are honest and supported, subject to the explicit wording qualifications below. This is an evidence-audit pass, NOT approval of an estimator replacement or production adoption.",
+  "approved_replacement": false,
+  "g4_adoption_approved": false,
+  "method": {
+    "scope": "Archived receipts, native output, vendor responses, harnesses, source checkouts, historical process logs, independently recomputed arithmetic and hashes, and current scoped read-only Docker listings.",
+    "workspace": "/workspaces/IsaacAutomator",
+    "rebuilt_or_reran_trials": false,
+    "cloud_or_auth_calls": false,
+    "repository_changes": false,
+    "vendor_refetched": false,
+    "limitation": "Vendor provenance is corroborated against the archived official-API response bytes, recorded retrieval metadata and import code, not independently re-fetched or cryptographically vendor-attested. Runtime claims describe the recorded trials; only cleanup listings were checked live. No full dependency/security/license audit was performed."
+  },
+  "findings": [
+    {
+      "id": "c3x-real-quote",
+      "candidate": "C3X",
+      "supported": true,
+      "conclusion": "Genuine narrow self-hosted Azure-priced quote via the C3X CLI, local pricing API and PostgreSQL is supported; this does not mean the Microsoft Azure CLI was used.",
+      "detail": "An added test harness calls the unchanged upstream Azure scrapeService for Key Vault and UpsertProducts. It imported 832 real vendor-normalized records. The archived eastus Standard Operations vendor record and imported product both carry USD 0.03 per 10K operations. The native C3X estimate with explicit --region eastus, --no-cache, --no-remote-modules and USD reports USD 0.30 for 100000 monthly operations. No synthetic price seeding was found in this path.",
+      "evidencefiles": ["c3x/receipt.json", "c3x/commands.jsonl", "c3x/actual-azure-quote-explicit-region.json", "c3x/azure-public-raw.json", "c3x/azure-public-provenance.json", "c3x/azure-key-vault-products.json", "c3x/database-counts.txt", "c3x/c3x-pricing-api/internal/scraper/trial_import_test.go", "c3x/extra_checks.py"]
+    },
+    {
+      "id": "c3x-local-routing",
+      "candidate": "C3X",
+      "supported": true,
+      "conclusion": "External-egress denial is supported for the quote-serving path, not the earlier build/import stage.",
+      "detail": "Recorded Docker internal-network evidence and CLI DNS/direct-IP failures support the isolation claim. The proxy implementation forwards without pricing logic to the local API. There are 26 JSON request records, including /catalog, all targeting the local API, plus three non-JSON proxy failure lines. Stopping the local API makes the explicit-region Azure estimate exit 1 with proxy HTTP 502 rather than return a fallback quote. Build dependencies and the prior import container had egress.",
+      "qualification": "Say all 26 recorded requests targeted the local API, not all 26 were successfully forwarded: the deliberate API-down test produced three failed forwarding attempts. The proxy logs requests, not response bodies/statuses, and does not alone prove every returned value or every network packet.",
+      "evidencefiles": ["c3x/receipt.json", "c3x/commands.jsonl", "c3x/http-routing.jsonl", "c3x/audit-proxy.go", "c3x/endpoint-unavailable-result.txt", "c3x/served-catalog.json"]
+    },
+    {
+      "id": "c3x-reject-g4",
+      "candidate": "C3X",
+      "supported": true,
+      "conclusion": "NOT a G4/Flex replacement or fail-closed estimator.",
+      "detail": "All four original fixture-directory inputs fail because no .tf files are found. Separate derived HCL runs exit 0 but give zero compute/disk/GPU rates labeled live, with only the static NAT charge contributing USD 1.02. The audited Flex run queries OnDemand; unsupported GPU and disk mappings fall through to Tesla T4 and Storage PD Capacity. The backend machine-type synthesis whitelist excludes G4. GCP scraping was blocked by missing GCP_API_KEY and the trial database contained only Azure Key Vault products. Therefore zero G4 results are missing-price failures, not valid G4 prices; runtime alone does not distinguish missing G4 from the entirely absent GCP catalog, but source inspection independently confirms the G4 whitelist gap.",
+      "evidencefiles": ["c3x/fixture-results.json", "c3x/derived-fixture-results.json", "c3x/g4-standard-384-flex_start.hcl-result.txt", "c3x/g4-standard-384-standard.hcl-result.txt", "c3x/g4-standard-48-flex_start.hcl-result.txt", "c3x/g4-standard-48-standard.hcl-result.txt", "c3x/g4-audited-quote.json", "c3x/unknown-machine-quote.json", "c3x/http-routing.jsonl", "c3x/gcp-auth-blocker.txt", "c3x/database-counts.txt", "c3x/c3x-pricing-api/internal/scraper/gcp.go", "c3x/c3x/resources/gcp/google_compute_instance.toml"]
+    },
+    {
+      "id": "terracost-synthetic-library",
+      "candidate": "TerraCost",
+      "supported": true,
+      "conclusion": "Native library and example feasibility with real MySQL, but synthetic prices and synthetic exported-plan-shaped inputs only; no verified real-price estimate.",
+      "detail": "The driver explicitly seeds SYNTHETIC-NOT-VENDOR products at USD 1.25/hour and invokes unchanged native estimation. Four missing-G4 cases return total 0 with nil total error but invalid resources and Compute: product not found. Four synthetic-G4-seeded cases return USD 912.50. Controls with no GPU, one GPU and eight GPUs plus Flex remain identical single-Compute costs; all six ancillary resource addresses are skipped for G4 fixtures. The unchanged example prints 0 -> 0 and exits 0. Native tests were genuinely run, but are not evidence of live vendor price correctness.",
+      "evidencefiles": ["terracost/receipt.json", "terracost/commands.jsonl", "terracost/estimation.log", "terracost/example-missing-g4.log", "terracost/tests.jsonl", "terracost/source/trialcmd/main.go", "terracost/source/google/trial_g4_test.go"]
+    },
+    {
+      "id": "terracost-license-and-coverage",
+      "candidate": "TerraCost",
+      "supported": true,
+      "conclusion": "MIT root license does not eliminate the BSL Terraform dependency caveat; native local-fixture ingestion did not produce G4 products.",
+      "detail": "The root go.mod directly requires github.com/hashicorp/terraform and replaces it with github.com/cycloidio/terraform v1.13.5-cy. The archived LICENSE was copied from that exact module version and says Business Source License 1.1. This is a downstream licensing review flag, not a claim that all internal production use is forbidden; the text includes an Additional Use Grant. The added local-HTTP ingestion test used repository SKU fixture data and two synthetic G4 machine entries, emitted 1777 entries / 72 supported machine products / zero G4, and passed. It was not live GCP ingestion.",
+      "evidencefiles": ["terracost/source/LICENSE", "terracost/source/go.mod", "terracost/terraform-fork-LICENSE", "terracost/commands.jsonl", "terracost/source/google/trial_g4_test.go", "terracost/tests.jsonl"]
+    },
+    {
+      "id": "ibm-partial-backend",
+      "candidate": "IBM-Cloud/infracost-cloud-pricing-api",
+      "supported": true,
+      "conclusion": "Patched build and real Azure local-price backend lookup through an import harness only; native initialization remains broken and estimator compatibility is unverified.",
+      "detail": "Historical process logs corroborate the unavailable IBM logger dependency in the upstream build and successful final patched image build. The five-file patch changes the Node/base image, logger import, TypeScript/Node types and three Promise<void> annotations, and matches the current checkout diff byte-for-byte. The import harness exposes the unchanged compiled upstream parseProduct and calls upsertProducts on six archived Azure vendor records. The local GraphQL result has one matching standard non-Windows D2s v3 meter at USD 0.096 per 1 Hour, Consumption. The native job:init chain calls data:download, whose source logs that functionality was removed and exits 1. This is not a native successful import/refresh workflow or an estimator quote.",
+      "qualification": "Use 'no verified estimator compatibility' rather than 'incompatible': no estimator client was exercised. IBM egress evidence consists of a Docker internal-network flag and a single HTTPS error-or-timeout probe; it is weaker than C3X's DNS plus direct-IP evidence and is not comprehensive packet-level proof. The native database-setup success/initialization exit is receipt-reported; the removed-download blocker is independently source-corroborated.",
+      "evidencefiles": ["ibm/receipt.json", "ibm/disposable.patch", "ibm/probes.json", "ibm/azure-vendor-response.json", "ibm/azure-provenance.json", "ibm/azure-local-query.json", "ibm/import-vendor.cjs", "ibm/source/package.json", "ibm/source/src/cmd/dataDownload.ts", "ibm/source/src/scrapers/azureRetail.ts", "ibm/internal-network.log", "ibm/external-egress-denied.log"]
+    }
+  ],
+  "source_verification": {
+    "c3x": {"commit": "21bc4dc26eb779b7ee18bd4cdcbb6986578b1703", "root_license": "Apache-2.0", "tracked_diff_empty": true, "status": "clean", "license_sha256": "7847bd606f7f0921a83a77c21a151c412b160d7c783a30251011690efdee440b"},
+    "c3x_pricing_api": {"commit": "cc58da98652a0ce9f8aac6d1f574d3578544d8c1", "root_license": "Apache-2.0", "tracked_diff_empty": true, "untracked_additions": ["internal/scraper/trial_import_test.go"], "license_sha256": "32b8f2c0a613403dcfe4bdf789320bbc5c4751149d97d1709437cb46e9bc07e1"},
+    "terracost": {"commit": "683308f82b404bb5ff74acee4bbbd89cc6aaeee2", "root_license": "MIT", "tracked_diff_empty": true, "untracked_additions": ["google/trial_g4_test.go", "trialcmd/"], "license_sha256": "b60a0dbe1d55f3ebb59e30e35f825a5cdab740e66a3ce14c8a361e46c23ccd83", "terraform_dependency_license": "BSL-1.1 with Additional Use Grant; downstream review required"},
+    "ibm": {"commit": "a02557a9daf623565f47b28f750b48ca4860ba69", "root_license": "Apache-2.0", "tracked_diff_empty": false, "changed_files": ["Dockerfile", "package.json", "src/config.ts", "src/scrapers/awsBulk.ts", "src/scrapers/gcpCatalog.ts"], "patch_matches_git_diff": true, "license_sha256": "de34de041a08b4396b411d3c173132bbcafe902f90307cca5cc00aae00ae6bad"},
+    "all_four_checkout_heads_match_receipts": true,
+    "qualification": "Commit HEAD and local diff/license bytes verified; no remote authenticity/signature check performed. Root licenses are not exhaustive dependency-license approval."
+  },
+  "independent_checks": {
+    "c3x_azure_math": {"expression": "100000 / 10000 * 0.03", "computed_usd": "0.30", "matches_quote": true, "matches_imported_vendor_rate": true},
+    "c3x_static_nat_math": {"expression": "730 * 0.0014", "unrounded_usd": "1.0220", "rounded_usd": "1.02", "not_a_g4_quote": true},
+    "terracost_synthetic_math": {"expression": "730 * 1.25", "computed_usd": "912.50", "real_vendor_price": false},
+    "terracost_counts": {"estimation_cases": 14, "passed_packages": 5, "packages_without_tests": 1, "passed_test_events_including_subtests": 68, "passed_top_level_tests": 25, "failures": 0, "matches_receipt": true},
+    "ibm_vendor_match": {"archived_items": 6, "matching_sku_records": 1, "hourly_usd": "0.096", "unit": "1 Hour", "purchase_option": "Consumption", "price_unit_and_purchase_option_match": true, "not_a_monthly_estimator_quote": true},
+    "hashes": {"c3x_two_binaries_match_receipt": true, "c3x_vendor_response_matches_provenance_sha256": true, "terracost_all_seven_artifact_hashes_match": true, "terracost_all_four_fixture_copy_hashes_match": true, "ibm_patch_matches_receipt_sha256": true, "ibm_vendor_response_matches_provenance_sha256": true}
+  },
+  "cleanup_verification": {
+    "method": "Current read-only docker ps -a, network ls, volume ls and image ls, filtered separately by each trial prefix; no inspect environment, no mutation or global prune.",
+    "prefixes": ["isaac-cost-c3x", "isaac-cost-terra", "isaac-cost-ibm"],
+    "successful_listing_commands": 12,
+    "remaining": {
+      "isaac-cost-c3x": {"containers": [], "networks": [], "volumes": [], "image_tags": []},
+      "isaac-cost-terra": {"containers": [], "networks": [], "volumes": [], "image_tags": []},
+      "isaac-cost-ibm": {"containers": [], "networks": [], "volumes": [], "image_tags": []}
+    },
+    "passed": true,
+    "qualification": "Confirms absence of trial-prefixed resources, not absence of all shared base images, build cache or unrelated resources. IBM explicitly retained shared base images/build cache."
+  },
+  "corrections_needed": [
+    "C3X: call it an Azure-priced quote from the C3X CLI -> API -> PostgreSQL, not a Microsoft Azure CLI trial; keep one-service import and import/build-egress exceptions explicit.",
+    "C3X: 'all recorded requests targeted local API' is accurate; 'all were successfully forwarded' overstates the proxy evidence because three deliberate API-down attempts failed.",
+    "IBM: estimator compatibility is unverified, not demonstrated incompatible. Backend lookup must not be labeled an estimator quote or successful native import.",
+    "TerraCost: say BSL Terraform dependency, including its Additional Use Grant, rather than imply a wholly permissive dependency stack or blanket production-use prohibition."
+  ],
+  "evidence_base_directory": "/tmp/isaac-selfhost-trials",
+  "evidencefiles": [
+    "c3x/receipt.json", "c3x/commands.jsonl", "c3x/actual-azure-quote-explicit-region.json", "c3x/azure-public-raw.json", "c3x/azure-public-provenance.json", "c3x/azure-key-vault-products.json", "c3x/database-counts.txt", "c3x/http-routing.jsonl", "c3x/audit-proxy.go", "c3x/extra_checks.py", "c3x/endpoint-unavailable-result.txt", "c3x/gcp-auth-blocker.txt", "c3x/served-catalog.json", "c3x/fixture-results.json", "c3x/derived-fixture-results.json", "c3x/g4-audited-quote.json", "c3x/unknown-machine-quote.json", "c3x/g4-standard-384-flex_start.hcl-result.txt", "c3x/g4-standard-384-standard.hcl-result.txt", "c3x/g4-standard-48-flex_start.hcl-result.txt", "c3x/g4-standard-48-standard.hcl-result.txt", "c3x/c3x/LICENSE", "c3x/c3x-pricing-api/LICENSE", "c3x/c3x-pricing-api/internal/scraper/trial_import_test.go", "c3x/c3x-pricing-api/internal/scraper/gcp.go", "c3x/c3x/resources/gcp/google_compute_instance.toml",
+    "terracost/receipt.json", "terracost/commands.jsonl", "terracost/estimation.log", "terracost/example-missing-g4.log", "terracost/tests.jsonl", "terracost/source/trialcmd/main.go", "terracost/source/google/trial_g4_test.go", "terracost/source/LICENSE", "terracost/source/go.mod", "terracost/terraform-fork-LICENSE",
+    "ibm/receipt.json", "ibm/disposable.patch", "ibm/probes.json", "ibm/azure-vendor-response.json", "ibm/azure-provenance.json", "ibm/azure-local-query.json", "ibm/import-vendor.cjs", "ibm/source/LICENSE", "ibm/source/package.json", "ibm/source/src/cmd/dataDownload.ts", "ibm/source/src/scrapers/azureRetail.ts", "ibm/internal-network.log", "ibm/external-egress-denied.log"
+  ],
+  "additional_runtime_evidence": [
+    {"type": "historical_process_log", "session_id": "proc_e152f6279dd9", "observed": "Upstream Docker build failed on npm E404 for @console/console-platform-log4js-utils@^4.1.0"},
+    {"type": "historical_process_log", "session_id": "proc_70e46707302e", "observed": "tsc/postbuild completed and isaac-cost-ibm-trial:patched image was exported"},
+    {"type": "current_read_only_tool_output", "observed": "All 12 scoped Docker listings exited 0 with empty stdout and stderr"}
+  ],
+  "audit_issues": [
+    "Bare python is unavailable; used python3.",
+    "C3X http-routing.jsonl contains three ordinary proxy error lines alongside 26 JSON records; parsing was adjusted to preserve this distinction."
+  ]
+}

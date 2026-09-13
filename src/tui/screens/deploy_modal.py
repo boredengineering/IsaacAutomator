@@ -11,6 +11,7 @@ from textual.widgets import Button, Checkbox, Input, Label, RadioButton, RadioSe
 import asyncio
 
 from src.tui.backend import load_backend_selection
+from src.tui.widgets.cost_estimate import CostEstimatePanel
 
 
 class DeployWorkstationModal(ModalScreen):
@@ -23,40 +24,40 @@ class DeployWorkstationModal(ModalScreen):
 
     CLOUD_GPUS = {
         "gcp": [
-            ("g2-standard-4 (1x NVIDIA L4 24GB, 4 vCPU, 16G RAM) ~$0.56/hr [Spot ~$0.20/hr]", "g2-standard-4"),
-            ("g2-standard-8 (1x NVIDIA L4 24GB, 8 vCPU, 32G RAM) ~$0.85/hr [Spot ~$0.29/hr] (Recommended)", "g2-standard-8"),
-            ("g2-standard-16 (1x NVIDIA L4 24GB, 16 vCPU, 64G RAM) ~$1.42/hr [Spot ~$0.48/hr]", "g2-standard-16"),
-            ("g2-standard-24 (2x NVIDIA L4 48GB, 24 vCPU, 96G RAM) ~$2.14/hr [Spot ~$0.73/hr]", "g2-standard-24"),
-            ("g2-standard-48 (4x NVIDIA L4 96GB, 48 vCPU, 192G RAM) ~$4.28/hr [Spot ~$1.46/hr]", "g2-standard-48"),
-            ("g2-standard-96 (8x NVIDIA L4 192GB, 96 vCPU, 384G RAM) ~$8.56/hr [Spot ~$2.92/hr]", "g2-standard-96"),
-            ("n1-standard-4 (1x Tesla T4 16GB, 4 vCPU, 15G RAM) ~$0.45/hr [Spot ~$0.15/hr]", "n1-standard-4"),
-            ("n1-standard-8 (1x Tesla T4 16GB, 8 vCPU, 30G RAM) ~$0.65/hr [Spot ~$0.22/hr]", "n1-standard-8"),
-            ("n1-standard-16 (2x Tesla T4 32GB, 16 vCPU, 60G RAM) ~$1.30/hr [Spot ~$0.44/hr]", "n1-standard-16"),
-            ("a2-highgpu-1g (1x A100 40GB SXM4, 12 vCPU, 85G RAM) ~$3.67/hr [Spot ~$1.10/hr]", "a2-highgpu-1g"),
-            ("a2-highgpu-2g (2x A100 80GB SXM4, 24 vCPU, 170G RAM) ~$7.34/hr [Spot ~$2.20/hr]", "a2-highgpu-2g"),
-            ("a2-highgpu-4g (4x A100 160GB SXM4, 48 vCPU, 340G RAM) ~$14.68/hr [Spot ~$4.40/hr]", "a2-highgpu-4g"),
-            ("a2-highgpu-8g (8x A100 320GB SXM4, 96 vCPU, 680G RAM) ~$29.36/hr [Spot ~$8.80/hr]", "a2-highgpu-8g"),
-            ("g4-standard-48 (1x RTX Pro 6000 48GB, 48 vCPU) ~$3.95/hr", "g4-standard-48"),
+            ("g2-standard-4 (1x NVIDIA L4 24GB, 4 vCPU, 16G RAM)", "g2-standard-4"),
+            ("g2-standard-8 (1x NVIDIA L4 24GB, 8 vCPU, 32G RAM) (Recommended)", "g2-standard-8"),
+            ("g2-standard-16 (1x NVIDIA L4 24GB, 16 vCPU, 64G RAM)", "g2-standard-16"),
+            ("g2-standard-24 (2x NVIDIA L4 48GB, 24 vCPU, 96G RAM)", "g2-standard-24"),
+            ("g2-standard-48 (4x NVIDIA L4 96GB, 48 vCPU, 192G RAM)", "g2-standard-48"),
+            ("g2-standard-96 (8x NVIDIA L4 192GB, 96 vCPU, 384G RAM)", "g2-standard-96"),
+            ("n1-standard-4 (1x Tesla T4 16GB, 4 vCPU, 15G RAM)", "n1-standard-4"),
+            ("n1-standard-8 (1x Tesla T4 16GB, 8 vCPU, 30G RAM)", "n1-standard-8"),
+            ("n1-standard-16 (2x Tesla T4 32GB, 16 vCPU, 60G RAM)", "n1-standard-16"),
+            ("a2-highgpu-1g (1x A100 40GB SXM4, 12 vCPU, 85G RAM)", "a2-highgpu-1g"),
+            ("a2-highgpu-2g (2x A100 80GB SXM4, 24 vCPU, 170G RAM)", "a2-highgpu-2g"),
+            ("a2-highgpu-4g (4x A100 160GB SXM4, 48 vCPU, 340G RAM)", "a2-highgpu-4g"),
+            ("a2-highgpu-8g (8x A100 320GB SXM4, 96 vCPU, 680G RAM)", "a2-highgpu-8g"),
+            ("g4-standard-48 (1x RTX Pro 6000 48GB, 48 vCPU)", "g4-standard-48"),
         ],
         "aws": [
-            ("g5.xlarge (1x NVIDIA A10G 24GB, 4 vCPU, 16G RAM) ~$1.01/hr [Spot ~$0.40/hr]", "g5.xlarge"),
-            ("g5.2xlarge (1x NVIDIA A10G 24GB, 8 vCPU, 32G RAM) ~$1.21/hr [Spot ~$0.48/hr] (Recommended)", "g5.2xlarge"),
-            ("g5.4xlarge (1x NVIDIA A10G 24GB, 16 vCPU, 64G RAM) ~$1.62/hr [Spot ~$0.65/hr]", "g5.4xlarge"),
-            ("g5.12xlarge (4x NVIDIA A10G 96GB, 48 vCPU, 192G RAM) ~$5.67/hr [Spot ~$2.27/hr]", "g5.12xlarge"),
-            ("g4dn.xlarge (1x NVIDIA T4 16GB, 4 vCPU, 16G RAM) ~$0.53/hr [Spot ~$0.21/hr]", "g4dn.xlarge"),
-            ("g4dn.2xlarge (1x NVIDIA T4 16GB, 8 vCPU, 32G RAM) ~$0.75/hr [Spot ~$0.30/hr]", "g4dn.2xlarge"),
-            ("p4d.24xlarge (8x NVIDIA A100 320GB, 96 vCPU, 1.1T RAM) ~$32.77/hr [Spot ~$13.11/hr]", "p4d.24xlarge"),
+            ("g5.xlarge (1x NVIDIA A10G 24GB, 4 vCPU, 16G RAM)", "g5.xlarge"),
+            ("g5.2xlarge (1x NVIDIA A10G 24GB, 8 vCPU, 32G RAM) (Recommended)", "g5.2xlarge"),
+            ("g5.4xlarge (1x NVIDIA A10G 24GB, 16 vCPU, 64G RAM)", "g5.4xlarge"),
+            ("g5.12xlarge (4x NVIDIA A10G 96GB, 48 vCPU, 192G RAM)", "g5.12xlarge"),
+            ("g4dn.xlarge (1x NVIDIA T4 16GB, 4 vCPU, 16G RAM)", "g4dn.xlarge"),
+            ("g4dn.2xlarge (1x NVIDIA T4 16GB, 8 vCPU, 32G RAM)", "g4dn.2xlarge"),
+            ("p4d.24xlarge (8x NVIDIA A100 320GB, 96 vCPU, 1.1T RAM)", "p4d.24xlarge"),
         ],
         "azure": [
-            ("Standard_NC4as_T4_v3 (1x Tesla T4 16GB, 4 vCPU, 28G RAM) ~$0.53/hr [Spot ~$0.16/hr]", "Standard_NC4as_T4_v3"),
-            ("Standard_NC8as_T4_v3 (1x Tesla T4 16GB, 8 vCPU, 56G RAM) ~$0.96/hr [Spot ~$0.29/hr]", "Standard_NC8as_T4_v3"),
-            ("Standard_NC16as_T4_v3 (2x Tesla T4 32GB, 16 vCPU, 110G RAM) ~$1.92/hr [Spot ~$0.58/hr]", "Standard_NC16as_T4_v3"),
-            ("Standard_NC64as_T4_v3 (4x Tesla T4 64GB, 64 vCPU, 440G RAM) ~$3.84/hr [Spot ~$1.15/hr]", "Standard_NC64as_T4_v3"),
-            ("Standard_ND96amsr_A100_v4 (8x A100 320GB, 96 vCPU) ~$27.20/hr [Spot ~$8.16/hr]", "Standard_ND96amsr_A100_v4"),
+            ("Standard_NC4as_T4_v3 (1x Tesla T4 16GB, 4 vCPU, 28G RAM)", "Standard_NC4as_T4_v3"),
+            ("Standard_NC8as_T4_v3 (1x Tesla T4 16GB, 8 vCPU, 56G RAM)", "Standard_NC8as_T4_v3"),
+            ("Standard_NC16as_T4_v3 (2x Tesla T4 32GB, 16 vCPU, 110G RAM)", "Standard_NC16as_T4_v3"),
+            ("Standard_NC64as_T4_v3 (4x Tesla T4 64GB, 64 vCPU, 440G RAM)", "Standard_NC64as_T4_v3"),
+            ("Standard_ND96amsr_A100_v4 (8x A100 320GB, 96 vCPU)", "Standard_ND96amsr_A100_v4"),
         ],
         "alicloud": [
-            ("ecs.gn7i-c8g1.2xlarge (1x NVIDIA A10 24GB, 8 vCPU, 31G RAM) ~$1.15/hr", "ecs.gn7i-c8g1.2xlarge"),
-            ("ecs.gn6v-c8g1.2xlarge (1x NVIDIA V100 16GB, 8 vCPU, 32G RAM) ~$2.20/hr", "ecs.gn6v-c8g1.2xlarge"),
+            ("ecs.gn7i-c8g1.2xlarge (1x NVIDIA A10 24GB, 8 vCPU, 31G RAM)", "ecs.gn7i-c8g1.2xlarge"),
+            ("ecs.gn6v-c8g1.2xlarge (1x NVIDIA V100 16GB, 8 vCPU, 32G RAM)", "ecs.gn6v-c8g1.2xlarge"),
         ],
     }
 
@@ -168,13 +169,13 @@ class DeployWorkstationModal(ModalScreen):
                 with RadioSet(id="deploy-scheduling-model"):
                     yield RadioButton("Standard On-Demand (Immediate launch, standard billing)", value=True, id="rb-sched-standard")
                     yield RadioButton("GCP Flex-start (Dynamic Workload Scheduler, 7-day queued run, ./cycle-vm)", id="rb-sched-flex")
-                    yield RadioButton("Spot / Preemptible VM (60-91% discount, auto-backup & 30s watchdog)", id="rb-sched-spot")
+                    yield RadioButton("Spot / Preemptible VM (price not estimated, auto-backup & 30s watchdog)", id="rb-sched-spot")
 
                 yield Label("[bold white]6. Multi-Cloud Security Profile:[/]")
                 with RadioSet(id="deploy-profile-select"):
-                    yield RadioButton("Tier 1: Simple Mode ($0.00/mo, dynamic /32 IP whitelist)", value=True, id="rb-profile-simple")
+                    yield RadioButton("Tier 1: Simple Mode (dynamic /32 IP whitelist; cost not estimated)", value=True, id="rb-profile-simple")
                     yield RadioButton("Tier 2: Team Mode (local state unless explicitly selected below)", id="rb-profile-team")
-                    yield RadioButton("Tier 3: Enterprise ($35-$180/mo, Cloud NAT, CMEK, Zero-Trust IAP)", id="rb-profile-enterprise")
+                    yield RadioButton("Tier 3: Enterprise (Cloud NAT, CMEK, Zero-Trust IAP; cost not estimated)", id="rb-profile-enterprise")
                     from src.python.config import list_available_profiles
                     for custom_name, custom_meta in list_available_profiles().items():
                         if custom_name not in ("simple", "team", "enterprise"):
@@ -201,6 +202,7 @@ class DeployWorkstationModal(ModalScreen):
                     id="deploy-summary",
                     classes="box-panel"
                 )
+                yield CostEstimatePanel()
 
             with Horizontal(classes="modal-btn-bar"):
                 yield Button("Dry Run / Validate", id="btn-deploy-dryrun", variant="warning")
@@ -214,7 +216,7 @@ class DeployWorkstationModal(ModalScreen):
                 "\n[bold yellow]DWS Scheduling:[/] Queued allocation (up to 60m timeout) & 7-day max duration (managed via `./cycle-vm`)."
             )
         elif self.scheduling_model == "spot":
-            sched_badge = "[bold green]Spot Discount Active (~60-75% off compute)[/]"
+            sched_badge = "[bold green]Spot selected (price not estimated)[/]"
             resilience_str = (
                 "\n[bold green]Spot Resilience Pipeline:[/] Active 30s metadata watchdog (`preempt-listener`) & 10-min GCS backups enabled."
                 if self.selected_cloud == "gcp" else ""
@@ -223,11 +225,11 @@ class DeployWorkstationModal(ModalScreen):
             sched_badge = "[dim]Standard On-Demand Compute[/]"
             resilience_str = ""
 
-        prof_desc = "Simple Mode ($0.00/mo added infrastructure). Dynamic /32 IP lock."
+        prof_desc = "Simple Mode (cost not estimated). Dynamic /32 IP lock."
         if self.selected_profile == "team":
             prof_desc = "Team Mode. State backend is an independent explicit selection."
         elif self.selected_profile == "enterprise":
-            prof_desc = "Enterprise Mode ($35-$180/mo). Zero public IP, Cloud NAT, CMEK, IAP Zero-Trust."
+            prof_desc = "Enterprise Mode (cost not estimated). Zero public IP, Cloud NAT, CMEK, IAP Zero-Trust."
         elif self.selected_profile not in ("simple", "team", "enterprise"):
             prof_desc = f"Custom Profile '{self.selected_profile}'; saved backend intent is inherited unless overridden."
 
@@ -243,6 +245,8 @@ class DeployWorkstationModal(ModalScreen):
         )
 
     def update_summary(self) -> None:
+        if self.is_mounted:
+            self.query_one(CostEstimatePanel).mark_stale()
         try:
             summary = self.query_one("#deploy-summary", Static)
             summary.update(self.build_summary_text())
@@ -383,9 +387,13 @@ class DeployWorkstationModal(ModalScreen):
         self.dismiss(result)
 
     def on_input_changed(self, event: Input.Changed) -> None:
+        self.query_one(CostEstimatePanel).mark_stale()
         if event.input.id == "inp-backend-config":
             self.backend_config = event.value.strip()
             self.invalidate_backend_validation()
+
+    def on_checkbox_changed(self, event: Checkbox.Changed) -> None:
+        self.query_one(CostEstimatePanel).mark_stale()
 
     def on_mount(self) -> None:
         self.start_backend_validation()
@@ -403,7 +411,7 @@ class DeployWorkstationModal(ModalScreen):
         self.start_backend_validation()
 
     def start_backend_validation(self) -> None:
-        self.backend_worker = self.run_worker(self.validate_backend(), group="backend-validation", exclusive=True)
+        self.backend_worker = self.run_worker(self.validate_backend, group="backend-validation", exclusive=True)
 
     async def validate_backend(self) -> None:
         snapshot = (self.selected_cloud, self.selected_state_backend, self.backend_config, self.selected_profile)

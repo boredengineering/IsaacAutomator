@@ -1,0 +1,16 @@
+=== RUN   TestGCPADCRejectsInvalidTokens
+--- PASS: TestGCPADCRejectsInvalidTokens (0.00s)
+=== RUN   TestGCPMissingKeyDoesNotDiscoverADC
+--- PASS: TestGCPMissingKeyDoesNotDiscoverADC (0.00s)
+=== RUN   TestGCPADCFailureDoesNotFallback
+--- PASS: TestGCPADCFailureDoesNotFallback (0.00s)
+=== RUN   TestGCPADCDiscoveryCancellation
+--- PASS: TestGCPADCDiscoveryCancellation (0.00s)
+=== RUN   TestGCPADCRefreshAndConcurrentReuse
+--- PASS: TestGCPADCRefreshAndConcurrentReuse (0.00s)
+=== RUN   TestGCPADCCancellationDuringRefresh
+--- PASS: TestGCPADCCancellationDuringRefresh (0.00s)
+=== RUN   TestGCPCatalogCancellation
+--- PASS: TestGCPCatalogCancellation (0.00s)
+PASS
+ok  	github.com/c3xdev/c3x-pricing-api/internal/scraper	0.002s

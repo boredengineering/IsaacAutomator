@@ -1,0 +1,15 @@
+{
+  "checked_at": "2026-09-13T03:11:35.995583+00:00",
+  "remaining_trial_prefixed_resources": {
+    "containers": [],
+    "networks": [],
+    "volumes": [],
+    "image_tags": []
+  },
+  "scope": "only c3x/terra/ibm trial prefixes; shared base images/cache not pruned",
+  "c3x_original_fixture_count": 4,
+  "c3x_derived_fixture_count": 4,
+  "c3x_expected_azure_monthly_usd": "0.30",
+  "terracost_top_level_passes": 25,
+  "terracost_pass_events": 68
+}

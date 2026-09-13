@@ -1,0 +1,8 @@
+{
+  "command": "go build -mod=readonly -o /tmp/isaac-c3x-oauth-parent/c3x-pricing-api ./cmd/server",
+  "result": {
+    "output": "",
+    "exit_code": 0,
+    "error": null
+  }
+}

@@ -1,0 +1,9 @@
+=== RUN   TestGCPBoundedCatalogProbe
+    gcp_probe_test.go:15: bounded catalog probe is not implemented
+--- FAIL: TestGCPBoundedCatalogProbe (0.00s)
+=== RUN   TestGCPProbeStopsOnError
+    gcp_probe_test.go:36: bounded catalog probe is not implemented
+--- FAIL: TestGCPProbeStopsOnError (0.00s)
+FAIL
+FAIL	github.com/c3xdev/c3x-pricing-api/internal/scraper	0.002s
+FAIL

@@ -1,0 +1,182 @@
+[
+  {
+    "key": "g4_specs",
+    "url": "https://cloud.google.com/compute/docs/accelerator-optimized-machines",
+    "final_url": "https://docs.cloud.google.com/compute/docs/accelerator-optimized-machines",
+    "retrieved_at": "2026-09-13T17:18:32.503113+00:00",
+    "sha256": "6220039d00b27213bbb55d4f7fcb6dd7c46741db9ef6d084f05502f74384e296",
+    "text_path": "/tmp/isaac-gcp-cost-validation/reference/g4_specs.txt",
+    "bytes": 498807,
+    "citation_registration": "[1] https://cloud.google.com/compute/docs/accelerator-optimized-machines"
+  },
+  {
+    "key": "gpu_pricing",
+    "url": "https://cloud.google.com/compute/gpus-pricing",
+    "final_url": "https://cloud.google.com/products/compute/pricing",
+    "retrieved_at": "2026-09-13T17:18:32.254964+00:00",
+    "sha256": "7d76d211280e3e84747865481a4c78e13b25d352f3c9a415ad7f8c2c1ae1022d",
+    "text_path": "/tmp/isaac-gcp-cost-validation/reference/gpu_pricing.txt",
+    "bytes": 2271226,
+    "citation_registration": "[2] https://cloud.google.com/compute/gpus-pricing"
+  },
+  {
+    "key": "vm_pricing",
+    "url": "https://cloud.google.com/compute/all-pricing",
+    "final_url": "https://cloud.google.com/products/compute/pricing",
+    "retrieved_at": "2026-09-13T17:18:31.996735+00:00",
+    "sha256": "f80a2da958e6889e6e6b5d8d2445024e968682131075b9a8120e37407720f4e1",
+    "text_path": "/tmp/isaac-gcp-cost-validation/reference/vm_pricing.txt",
+    "bytes": 2271223,
+    "citation_registration": "[3] https://cloud.google.com/compute/all-pricing"
+  },
+  {
+    "key": "flex",
+    "url": "https://cloud.google.com/compute/docs/instances/about-flex-start-vms",
+    "final_url": "https://docs.cloud.google.com/compute/docs/instances/about-flex-start-vms",
+    "retrieved_at": "2026-09-13T17:18:32.018585+00:00",
+    "sha256": "b9840af940003b458a8a86d242c98eafb29fde6b7fe2308a80d22457299f3b23",
+    "text_path": "/tmp/isaac-gcp-cost-validation/reference/flex.txt",
+    "bytes": 372552,
+    "citation_registration": "[4] https://cloud.google.com/compute/docs/instances/about-flex-start-vms"
+  },
+  {
+    "key": "dws_pricing",
+    "url": "https://cloud.google.com/dynamic-workload-scheduler/pricing",
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "key": "disk_pricing",
+    "url": "https://cloud.google.com/compute/disks-image-pricing",
+    "final_url": "https://cloud.google.com/compute/disks-image-pricing",
+    "retrieved_at": "2026-09-13T17:18:32.200803+00:00",
+    "sha256": "5fe747645e082f6def830e426da6244c26d904c8153f9ad92e6907fec415d5ee",
+    "text_path": "/tmp/isaac-gcp-cost-validation/reference/disk_pricing.txt",
+    "bytes": 3866810,
+    "citation_registration": "[5] https://cloud.google.com/compute/disks-image-pricing"
+  },
+  {
+    "key": "hyperdisk",
+    "url": "https://cloud.google.com/compute/docs/disks/hyperdisks",
+    "final_url": "https://docs.cloud.google.com/compute/docs/disks/hyperdisks",
+    "retrieved_at": "2026-09-13T17:18:32.575518+00:00",
+    "sha256": "d243cd1b29e34fbdeff8a17c8149b8298947dba1f1b290e233b3a31127932f5c",
+    "text_path": "/tmp/isaac-gcp-cost-validation/reference/hyperdisk.txt",
+    "bytes": 429215,
+    "citation_registration": "[6] https://cloud.google.com/compute/docs/disks/hyperdisks"
+  },
+  {
+    "key": "nat",
+    "url": "https://cloud.google.com/nat/pricing",
+    "final_url": "https://cloud.google.com/nat/pricing",
+    "retrieved_at": "2026-09-13T17:18:32.529460+00:00",
+    "sha256": "e6afa507cd8643fdffbc3f8e262428e984ea1978c4b2e960100bfd0eae9d1b66",
+    "text_path": "/tmp/isaac-gcp-cost-validation/reference/nat.txt",
+    "bytes": 2202399,
+    "citation_registration": "[7] https://cloud.google.com/nat/pricing"
+  },
+  {
+    "key": "gcs",
+    "url": "https://cloud.google.com/storage/pricing",
+    "final_url": "https://cloud.google.com/storage/pricing",
+    "retrieved_at": "2026-09-13T17:18:32.469981+00:00",
+    "sha256": "b19e86f8c7311238c69b01388ba03961c6555a05231cfa863cf89902b4e5a008",
+    "text_path": "/tmp/isaac-gcp-cost-validation/reference/gcs.txt",
+    "bytes": 2678502,
+    "citation_registration": "[8] https://cloud.google.com/storage/pricing"
+  },
+  {
+    "key": "registry",
+    "url": "https://cloud.google.com/artifact-registry/pricing",
+    "final_url": "https://cloud.google.com/artifact-registry/pricing",
+    "retrieved_at": "2026-09-13T17:18:32.601040+00:00",
+    "sha256": "85bc4bf9519190ce9afe364e27833fb6a771954cc836627be3d7d5fa520dbc60",
+    "text_path": "/tmp/isaac-gcp-cost-validation/reference/registry.txt",
+    "bytes": 2201103,
+    "citation_registration": "[9] https://cloud.google.com/artifact-registry/pricing"
+  },
+  {
+    "key": "catalog_schema",
+    "url": "https://cloud.google.com/billing/docs/reference/rest/v1/services.skus/list",
+    "final_url": "https://docs.cloud.google.com/billing/docs/reference/rest/v1/services.skus/list",
+    "retrieved_at": "2026-09-13T17:18:32.838696+00:00",
+    "sha256": "4c04e830b1934a93ce3b41e649f3efc43a48364d57679fcffff7cdf6d479b7c3",
+    "text_path": "/tmp/isaac-gcp-cost-validation/reference/catalog_schema.txt",
+    "bytes": 213660,
+    "citation_registration": "[10] https://cloud.google.com/billing/docs/reference/rest/v1/services.skus/list"
+  },
+  {
+    "key": "dws_current",
+    "url": "https://cloud.google.com/products/dws/pricing",
+    "final_url": "https://cloud.google.com/products/dws/pricing",
+    "retrieved_at": "2026-09-13T17:19:07.508513+00:00",
+    "sha256": "0e8ef12fd424923d93393471d4b3da7a1ce9dceee9f22bd33aabaef2274c469d",
+    "text_path": "/tmp/isaac-gcp-cost-validation/reference/dws_current.txt",
+    "bytes": 2226734,
+    "citation_registration": "[11] https://cloud.google.com/products/dws/pricing"
+  },
+  {
+    "key": "instance_pricing",
+    "url": "https://cloud.google.com/compute/vm-instance-pricing",
+    "final_url": "https://cloud.google.com/products/compute/pricing",
+    "retrieved_at": "2026-09-13T17:19:07.454395+00:00",
+    "sha256": "cdb4556fbdb52fe64b09aaa0b7ddff85a4a828696f1f28c9479ffe7d285b22a8",
+    "text_path": "/tmp/isaac-gcp-cost-validation/reference/instance_pricing.txt",
+    "bytes": 2271223,
+    "citation_registration": "[12] https://cloud.google.com/compute/vm-instance-pricing"
+  },
+  {
+    "key": "accelerator_pricing",
+    "url": "https://cloud.google.com/products/compute/pricing/accelerator-optimized",
+    "final_url": "https://cloud.google.com/products/compute/pricing/accelerator-optimized",
+    "retrieved_at": "2026-09-13T17:19:31.274571+00:00",
+    "sha256": "30cea7256ad277cf1df3f99898a45a0cc9acb0eb2e279f4a10e2433a33e9b14f",
+    "text_path": "/tmp/isaac-gcp-cost-validation/reference/accelerator_pricing.txt",
+    "bytes": 5878425,
+    "citation_registration": "[13] https://cloud.google.com/products/compute/pricing/accelerator-optimized"
+  },
+  {
+    "key": "gcp_consumption",
+    "url": "https://cloud.google.com/compute/docs/instances/consumption-models",
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "key": "hyperdisk_balanced",
+    "url": "https://cloud.google.com/compute/docs/disks/hd-types/hyperdisk-balanced",
+    "final_url": "https://docs.cloud.google.com/compute/docs/disks/hd-types/hyperdisk-balanced",
+    "retrieved_at": "2026-09-13T17:22:15.729676+00:00",
+    "sha256": "bf9ad7dfbbf38f0eff84d8bf411ddf9c4626d259f1c202e2e0cec6bd75cc86de",
+    "text_path": "/tmp/isaac-gcp-cost-validation/reference/hyperdisk_balanced.txt",
+    "bytes": 413315,
+    "citation_registration": "[14] https://cloud.google.com/compute/docs/disks/hd-types/hyperdisk-balanced"
+  },
+  {
+    "key": "dws_search",
+    "url": "https://www.google.com/search?q=site%3Acloud.google.com+%22DWS%22+%22Defined+Duration%22+%22Flex%22",
+    "final_url": "https://www.google.com/search?q=site%3Acloud.google.com+%22DWS%22+%22Defined+Duration%22+%22Flex%22",
+    "retrieved_at": "2026-09-13T17:22:14.923446+00:00",
+    "sha256": "1dd61f6d6dcfd74041736e98d054e27f35359b88036a7cc61555e104bec3b9c0",
+    "text_path": "/tmp/isaac-gcp-cost-validation/reference/dws_search.txt",
+    "bytes": 92487,
+    "citation_registration": "[15] https://www.google.com/search?q=site%3Acloud.google.com+%22DWS%22+%22Defined+Duration%22+%22Flex%22"
+  },
+  {
+    "key": "provisioning_models",
+    "url": "https://cloud.google.com/compute/docs/instances/provisioning-models",
+    "final_url": "https://docs.cloud.google.com/compute/docs/instances/provisioning-models",
+    "retrieved_at": "2026-09-13T17:23:11.932462+00:00",
+    "sha256": "8ef6690426af3384f90d0e2998142db0daee38a84e4794146e03d18af407e548",
+    "text_path": "/tmp/isaac-gcp-cost-validation/reference/provisioning_models.txt",
+    "bytes": 380900,
+    "citation_registration": "[16] https://cloud.google.com/compute/docs/instances/provisioning-models"
+  },
+  {
+    "key": "ai_consumption",
+    "url": "https://cloud.google.com/ai-hypercomputer/docs/consumption-models",
+    "final_url": "https://docs.cloud.google.com/ai-hypercomputer/docs/consumption-models",
+    "retrieved_at": "2026-09-13T17:23:11.861974+00:00",
+    "sha256": "dad82a74692e2d45205c3634b74b5f058ca4daf71e5debe6bfad64f0ea4bffd3",
+    "text_path": "/tmp/isaac-gcp-cost-validation/reference/ai_consumption.txt",
+    "bytes": 171233,
+    "citation_registration": "[17] https://cloud.google.com/ai-hypercomputer/docs/consumption-models"
+  }
+]

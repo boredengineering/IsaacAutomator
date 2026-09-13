@@ -151,6 +151,38 @@ selector or the legacy installer's `--config` files. Cloud/installer/Packer
 consumption remains a separate implementation gate; `ready_for_apply` is false.
 See [the schema, field mapping and limits](configs/workstations/README.md).
 
+## Optional Cost Estimates (Infracost)
+
+`./cost` estimates explicitly selected public Terraform inputs without deploying.
+It shares normalized reports with the explicit Estimate/Refresh panels in
+isaac9s; missing or unsupported pricing is not replaced by hard-coded prices.
+
+```sh
+./cost --help
+./cost doctor --format json
+# After installing the pinned runtime and supplying authentication securely:
+./cost estimate --path configs/cost/fixtures/g4-standard-48-standard \
+  --usage-file configs/cost/infracost-usage.example.yml \
+  --region us-west1 --public-input --allow-pricing --format json
+```
+
+Optional controller packaging uses `./build --build-arg WITH_INFRACOST=1`.
+The default is disabled. Infracost 2.16.3 and its GCP parser/provider plugins are
+checksum-pinned; authentication uses `INFRACOST_CLI_AUTHENTICATION_TOKEN` through
+the environment, never build arguments or profile YAML. No automatic install,
+login, cloud plan or apply occurs during estimation.
+
+Current limits: flat public HCL/JSON inputs and public exported plan JSON only;
+private inputs, modules, profile/deployment binding and native binary plans are
+not supported. Flex-start pricing remains explicitly unverified/partial. Real
+authenticated G4 quote acceptance is still gated on credentials and actual
+responses. Monthly usage scenarios are not automatically short-run all-in budgets.
+
+See [setup, privacy, usage, comparison and verification](configs/cost/README.md)
+and [the executed verification receipt](configs/cost/VERIFICATION.md).
+For host-side isaac9s, install `requirements-tui.txt` into an isolated Python
+environment; pricing remains optional and never required to deploy.
+
 ## Development Environments
 
 ### Option A: VS Code DevContainer (Recommended)

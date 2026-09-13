@@ -1,0 +1,401 @@
+{
+  "trial": "C3X + c3x-pricing-api",
+  "result": "SELF_HOSTED_REAL_AZURE_QUOTE_VERIFIED; G4_REJECTED",
+  "completed_at": "2026-09-13T03:01:26.730299+00:00",
+  "workspace": "/tmp/isaac-selfhost-trials/c3x",
+  "sources": {
+    "c3x": {
+      "url": "https://github.com/c3xdev/c3x",
+      "sha": "21bc4dc26eb779b7ee18bd4cdcbb6986578b1703",
+      "license": "Apache-2.0",
+      "license_sha256": "7847bd606f7f0921a83a77c21a151c412b160d7c783a30251011690efdee440b",
+      "status": ""
+    },
+    "c3x-pricing-api": {
+      "url": "https://github.com/c3xdev/c3x-pricing-api",
+      "sha": "cc58da98652a0ce9f8aac6d1f574d3578544d8c1",
+      "license": "Apache-2.0",
+      "license_sha256": "32b8f2c0a613403dcfe4bdf789320bbc5c4751149d97d1709437cb46e9bc07e1",
+      "status": "?? internal/scraper/trial_import_test.go"
+    }
+  },
+  "production_patches": [],
+  "test_harness_additions": [
+    "c3x-pricing-api/internal/scraper/trial_import_test.go: calls unchanged upstream scrapeService(Key Vault) and UpsertProducts; avoids full multi-service scrape",
+    "audit-proxy.go: transparent HTTP recorder forwarding unchanged requests to real API, no pricing logic"
+  ],
+  "synthetic_prices_used": false,
+  "terraform_executed": false,
+  "cloud_provisioning": false,
+  "existing_credentials_used": false,
+  "initial_tool_error": "Bare python unavailable; used python3. First bind-mount build could not see files on remote daemon; switched to docker cp.",
+  "binary_sha256": {
+    "c3x-cli": "f581209021a621f084fec70264ad8d7bea82cc80aaf79b6cf0ca711ea25bc37e",
+    "pricing-api": "acf2641c805c5dc58c698d946d21b01958c75f249392dd28de81b2a85de2809c"
+  },
+  "configuration": {
+    "pricing_endpoint": "http://isaac-cost-c3x-api:4000/graphql",
+    "audited_endpoint": "http://isaac-cost-c3x-proxy:4001/graphql",
+    "catalog_rule": "cmd/c3x/catalog_client.go:35-42 derives /catalog from pricing endpoint ending /graphql; no second setting needed",
+    "catalog_failure_behavior": "Remote -> cached bundle -> embedded snapshot (not remote SaaS fallback)",
+    "price_chain": "No-cache HTTPSource; no --offline used; USD avoids external FX; --no-remote-modules",
+    "database": "PostgreSQL16, trust auth only on isolated internal network, tmpfs data, no published ports",
+    "public_import_url": "https://prices.azure.com/api/retail/prices?$filter=serviceName%20eq%20%27Key%20Vault%27",
+    "import_scope": "one service using production scraper via test harness; not complete cloud catalog",
+    "gcp_blocker": "GCP_API_KEY required; runtime scrape --vendor gcp exits1 without key"
+  },
+  "actual_quote": {
+    "accepted": true,
+    "vendor": "azure",
+    "service": "Key Vault",
+    "region": "eastus",
+    "catalog_products_imported": 832,
+    "monthly_operations": 100000,
+    "unit": "10K operations",
+    "unit_price_usd": "0.03",
+    "monthly_usd": "0.3",
+    "quote_file": "actual-azure-quote-explicit-region.json",
+    "public_provenance": {
+      "url": "https://prices.azure.com/api/retail/prices?%24filter=serviceName+eq+%27Key+Vault%27+and+armRegionName+eq+%27eastus%27+and+skuName+eq+%27Standard%27+and+meterName+eq+%27Operations%27",
+      "status": 200,
+      "sha256": "4c9af048ab886b439f65c3b9731ca0a85e0089bafe6495de3ea4c91b99d8b12b",
+      "authentication": "none",
+      "method": "GET"
+    },
+    "note": "Original Azure fixture location was not consumed as region; first run silently fell back from us-east-1 to eastus. Accepted re-run explicitly sets --region eastus."
+  },
+  "fixtures": {
+    "original_json": [
+      {
+        "fixture": "g4-standard-384-flex_start",
+        "exit_code": 1,
+        "output_file": "g4-standard-384-flex_start.result.txt"
+      },
+      {
+        "fixture": "g4-standard-384-standard",
+        "exit_code": 1,
+        "output_file": "g4-standard-384-standard.result.txt"
+      },
+      {
+        "fixture": "g4-standard-48-flex_start",
+        "exit_code": 1,
+        "output_file": "g4-standard-48-flex_start.result.txt"
+      },
+      {
+        "fixture": "g4-standard-48-standard",
+        "exit_code": 1,
+        "output_file": "g4-standard-48-standard.result.txt"
+      }
+    ],
+    "original_result": "all four exit1: no .tf files found",
+    "derived_hcl": [
+      {
+        "fixture": "g4-standard-384-flex_start",
+        "exit_code": 0,
+        "output_file": "g4-standard-384-flex_start.hcl-result.txt",
+        "accepted": false,
+        "project_total_reported": "1.02",
+        "instance_subtotal_reported": "0",
+        "line_items": [
+          {
+            "dimension": "compute",
+            "description": "Instance (on-demand)",
+            "unit": "hours",
+            "quantity": "730",
+            "unit_rate": "0",
+            "monthly_cost": "0",
+            "price_source": "live"
+          },
+          {
+            "dimension": "boot_disk",
+            "description": "Boot disk",
+            "unit": "GB-month",
+            "quantity": "255",
+            "unit_rate": "0",
+            "monthly_cost": "0",
+            "price_source": "live"
+          },
+          {
+            "dimension": "gpu",
+            "description": "GPU accelerators",
+            "unit": "GPU-hours",
+            "quantity": "5840",
+            "unit_rate": "0",
+            "monthly_cost": "0",
+            "price_source": "live"
+          }
+        ],
+        "reason": "Missing GCP prices are silently zero with price_source live; only static NAT charge remains"
+      },
+      {
+        "fixture": "g4-standard-384-standard",
+        "exit_code": 0,
+        "output_file": "g4-standard-384-standard.hcl-result.txt",
+        "accepted": false,
+        "project_total_reported": "1.02",
+        "instance_subtotal_reported": "0",
+        "line_items": [
+          {
+            "dimension": "compute",
+            "description": "Instance (on-demand)",
+            "unit": "hours",
+            "quantity": "730",
+            "unit_rate": "0",
+            "monthly_cost": "0",
+            "price_source": "live"
+          },
+          {
+            "dimension": "boot_disk",
+            "description": "Boot disk",
+            "unit": "GB-month",
+            "quantity": "255",
+            "unit_rate": "0",
+            "monthly_cost": "0",
+            "price_source": "live"
+          },
+          {
+            "dimension": "gpu",
+            "description": "GPU accelerators",
+            "unit": "GPU-hours",
+            "quantity": "5840",
+            "unit_rate": "0",
+            "monthly_cost": "0",
+            "price_source": "live"
+          }
+        ],
+        "reason": "Missing GCP prices are silently zero with price_source live; only static NAT charge remains"
+      },
+      {
+        "fixture": "g4-standard-48-flex_start",
+        "exit_code": 0,
+        "output_file": "g4-standard-48-flex_start.hcl-result.txt",
+        "accepted": false,
+        "project_total_reported": "1.02",
+        "instance_subtotal_reported": "0",
+        "line_items": [
+          {
+            "dimension": "compute",
+            "description": "Instance (on-demand)",
+            "unit": "hours",
+            "quantity": "730",
+            "unit_rate": "0",
+            "monthly_cost": "0",
+            "price_source": "live"
+          },
+          {
+            "dimension": "boot_disk",
+            "description": "Boot disk",
+            "unit": "GB-month",
+            "quantity": "255",
+            "unit_rate": "0",
+            "monthly_cost": "0",
+            "price_source": "live"
+          },
+          {
+            "dimension": "gpu",
+            "description": "GPU accelerators",
+            "unit": "GPU-hours",
+            "quantity": "730",
+            "unit_rate": "0",
+            "monthly_cost": "0",
+            "price_source": "live"
+          }
+        ],
+        "reason": "Missing GCP prices are silently zero with price_source live; only static NAT charge remains"
+      },
+      {
+        "fixture": "g4-standard-48-standard",
+        "exit_code": 0,
+        "output_file": "g4-standard-48-standard.hcl-result.txt",
+        "accepted": false,
+        "project_total_reported": "1.02",
+        "instance_subtotal_reported": "0",
+        "line_items": [
+          {
+            "dimension": "compute",
+            "description": "Instance (on-demand)",
+            "unit": "hours",
+            "quantity": "730",
+            "unit_rate": "0",
+            "monthly_cost": "0",
+            "price_source": "live"
+          },
+          {
+            "dimension": "boot_disk",
+            "description": "Boot disk",
+            "unit": "GB-month",
+            "quantity": "255",
+            "unit_rate": "0",
+            "monthly_cost": "0",
+            "price_source": "live"
+          },
+          {
+            "dimension": "gpu",
+            "description": "GPU accelerators",
+            "unit": "GPU-hours",
+            "quantity": "730",
+            "unit_rate": "0",
+            "monthly_cost": "0",
+            "price_source": "live"
+          }
+        ],
+        "reason": "Missing GCP prices are silently zero with price_source live; only static NAT charge remains"
+      }
+    ],
+    "derivation": "convert_and_test.py preserves JSON attributes and nested resource blocks in separate generated HCL copies; no edits to original repository fixtures"
+  },
+  "g4_findings": [
+    "Machine synthesis whitelist internal/scraper/gcp.go:385-452 contains n1,n2,e2,n2d,c2,c2d,t2d,t2a; no g4",
+    "Flex scheduling ignored: audited Flex fixture queries OnDemand",
+    "RTX PRO 6000 falls through catalog GPU expression to Nvidia Tesla T4 GPU running in Americas",
+    "hyperdisk-balanced falls through catalog disk expression to Storage PD Capacity",
+    "HTTPSource silently retries missing regional prices in reference region: gcp us-central1, azure eastus, aws us-east-1",
+    "Unknown machine and missing G4 return exit0, zero VM subtotal, price_source live; FAIL-CLOSED REQUIREMENT FAILED; no accepted G4 quote"
+  ],
+  "network_proof": {
+    "docker_network_internal": true,
+    "cli_external_dns_test": "pricing.c3x.dev bad address, exit1",
+    "cli_external_ip_test": "1.1.1.1 Network unreachable, exit1",
+    "recorded_requests": 26,
+    "all_forwarded_to_local_api": true,
+    "catalog_get_observed": true,
+    "log": "http-routing.jsonl",
+    "api_unavailable_test": "Stopped actual pricing API; Azure estimate fails at local proxy502; no fallback quote",
+    "egress_only": "build dependencies and completed import container had egress; API/CLI/proxy/DB internal only"
+  },
+  "served_catalog": {
+    "schema_version": "1",
+    "hash": "1d3f5317196d20ec6cb10a30db310a35beb5a7d309be527abb6322cef237e871",
+    "count": 444
+  },
+  "runtime": [
+    {
+      "name": "isaac-cost-c3x-build",
+      "id": "ef03446da936cba9e28ab220a9e42a61aa8480ffde0f001e0892ca73e8672374",
+      "image_id": "sha256:ce864e7223ac17b1775e6fd0b4c0db580c2eb50e7953a427916379e4b92a1628",
+      "labels": {
+        "isaac-cost-c3x-trial": "true"
+      },
+      "cpu_limit": 2000000000,
+      "memory_limit": 3221225472,
+      "networks": [
+        "bridge"
+      ],
+      "mounts": [],
+      "port_bindings": {}
+    },
+    {
+      "name": "isaac-cost-c3x-db",
+      "id": "edd31d1107bd0721b12551f29a4f75ee6e99f5e37b8c6e0aba702cf361a4279c",
+      "image_id": "sha256:cf78e76683b9ca8c5733cbbdce6c9262b45b6767934dd0a95e671f9a0fc20685",
+      "labels": {
+        "isaac-cost-c3x-trial": "true"
+      },
+      "cpu_limit": 1000000000,
+      "memory_limit": 536870912,
+      "networks": [
+        "isaac-cost-c3x-internal"
+      ],
+      "mounts": [],
+      "port_bindings": {}
+    },
+    {
+      "name": "isaac-cost-c3x-api",
+      "id": "e534fc704db2d44ec9c68d7523789b6e4e102676a96e17dcda02bc6340f78e17",
+      "image_id": "sha256:ce864e7223ac17b1775e6fd0b4c0db580c2eb50e7953a427916379e4b92a1628",
+      "labels": {
+        "isaac-cost-c3x-trial": "true"
+      },
+      "cpu_limit": 1000000000,
+      "memory_limit": 268435456,
+      "networks": [
+        "isaac-cost-c3x-internal"
+      ],
+      "mounts": [],
+      "port_bindings": {}
+    },
+    {
+      "name": "isaac-cost-c3x-import",
+      "id": "ba15554735ec124ba7f9b690064992dd7643b9711ab82525eb5b2adf4813190c",
+      "image_id": "sha256:f445b0cd686457513e0f77d564583cdceaa9a9bdfae273b288de472533621863",
+      "labels": {
+        "isaac-cost-c3x-trial": "true"
+      },
+      "cpu_limit": 2000000000,
+      "memory_limit": 2147483648,
+      "networks": [
+        "isaac-cost-c3x-import-egress",
+        "isaac-cost-c3x-internal"
+      ],
+      "mounts": [],
+      "port_bindings": {}
+    },
+    {
+      "name": "isaac-cost-c3x-cli",
+      "id": "6f43d4f282a13aababab65c89e08c2ed731d5a68641eaf53b9a5539ae3d3e14e",
+      "image_id": "sha256:ce864e7223ac17b1775e6fd0b4c0db580c2eb50e7953a427916379e4b92a1628",
+      "labels": {
+        "isaac-cost-c3x-trial": "true"
+      },
+      "cpu_limit": 1000000000,
+      "memory_limit": 536870912,
+      "networks": [
+        "isaac-cost-c3x-internal"
+      ],
+      "mounts": [],
+      "port_bindings": {}
+    },
+    {
+      "name": "isaac-cost-c3x-proxy",
+      "id": "26604b6a0c91c4873e2ecdbd0ce60e36eb363d84fc1c4b6574c3c1ac45a034be",
+      "image_id": "sha256:f445b0cd686457513e0f77d564583cdceaa9a9bdfae273b288de472533621863",
+      "labels": {
+        "isaac-cost-c3x-trial": "true"
+      },
+      "cpu_limit": 1000000000,
+      "memory_limit": 536870912,
+      "networks": [
+        "isaac-cost-c3x-internal"
+      ],
+      "mounts": [],
+      "port_bindings": {}
+    }
+  ],
+  "cleanup": {
+    "commands": [
+      {
+        "command": "docker rm -f isaac-cost-c3x-build isaac-cost-c3x-db isaac-cost-c3x-api isaac-cost-c3x-import isaac-cost-c3x-cli isaac-cost-c3x-proxy",
+        "exit_code": 0,
+        "output": "isaac-cost-c3x-build\nisaac-cost-c3x-db\nisaac-cost-c3x-api\nisaac-cost-c3x-import\nisaac-cost-c3x-cli\nisaac-cost-c3x-proxy\n"
+      },
+      {
+        "command": "docker network rm isaac-cost-c3x-internal isaac-cost-c3x-import-egress",
+        "exit_code": 0,
+        "output": "isaac-cost-c3x-internal\nisaac-cost-c3x-import-egress\n"
+      },
+      {
+        "command": "docker image rm isaac-cost-c3x-built:trial isaac-cost-c3x-go:trial isaac-cost-c3x-postgres:trial",
+        "exit_code": 0,
+        "output": "Untagged: isaac-cost-c3x-built:trial\nDeleted: sha256:f445b0cd686457513e0f77d564583cdceaa9a9bdfae273b288de472533621863\nUntagged: isaac-cost-c3x-go:trial\nUntagged: isaac-cost-c3x-postgres:trial\n"
+      },
+      {
+        "command": "docker image rm golang:1.26-alpine",
+        "exit_code": 0,
+        "output": "Untagged: golang:1.26-alpine\nDeleted: sha256:ce864e7223ac17b1775e6fd0b4c0db580c2eb50e7953a427916379e4b92a1628\n"
+      },
+      {
+        "command": "docker image rm postgres:16-alpine",
+        "exit_code": 0,
+        "output": "Untagged: postgres:16-alpine\nDeleted: sha256:cf78e76683b9ca8c5733cbbdce6c9262b45b6767934dd0a95e671f9a0fc20685\n"
+      }
+    ],
+    "remaining_prefixed_resources": {
+      "containers": [],
+      "networks": [],
+      "volumes": [],
+      "image_tags": []
+    },
+    "verified_absent": true
+  },
+  "archival_note": "Condensed from raw trial receipt; verbose command bodies omitted. Paths in upstream receipt are trial-relative, not all artifacts archived. See parent manifest for exact preserved files. No reproducible full installer is claimed."
+}

@@ -1,0 +1,12 @@
+=== RUN   TestGCPAuthEnvironment
+=== RUN   TestGCPAuthEnvironment/#00
+=== RUN   TestGCPAuthEnvironment/adc
+=== RUN   TestGCPAuthEnvironment/api_key
+=== RUN   TestGCPAuthEnvironment/invalid
+--- PASS: TestGCPAuthEnvironment (0.00s)
+    --- PASS: TestGCPAuthEnvironment/#00 (0.00s)
+    --- PASS: TestGCPAuthEnvironment/adc (0.00s)
+    --- PASS: TestGCPAuthEnvironment/api_key (0.00s)
+    --- PASS: TestGCPAuthEnvironment/invalid (0.00s)
+PASS
+ok  	github.com/c3xdev/c3x-pricing-api/internal/config	0.001s

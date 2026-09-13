@@ -1,0 +1,17 @@
+=== RUN   TestGCPAuthEnvironment
+=== RUN   TestGCPAuthEnvironment/#00
+    gcp_auth_test.go:17: GCP auth config missing; mode=<nil> quota=<nil>
+=== RUN   TestGCPAuthEnvironment/adc
+    gcp_auth_test.go:17: GCP auth config missing; mode=<nil> quota=<nil>
+=== RUN   TestGCPAuthEnvironment/api_key
+    gcp_auth_test.go:17: GCP auth config missing; mode=<nil> quota=<nil>
+=== RUN   TestGCPAuthEnvironment/invalid
+    gcp_auth_test.go:17: GCP auth config missing; mode=<nil> quota=<nil>
+--- FAIL: TestGCPAuthEnvironment (0.00s)
+    --- FAIL: TestGCPAuthEnvironment/#00 (0.00s)
+    --- FAIL: TestGCPAuthEnvironment/adc (0.00s)
+    --- FAIL: TestGCPAuthEnvironment/api_key (0.00s)
+    --- FAIL: TestGCPAuthEnvironment/invalid (0.00s)
+FAIL
+FAIL	github.com/c3xdev/c3x-pricing-api/internal/config	0.001s
+FAIL

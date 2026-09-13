@@ -1,0 +1,1443 @@
+diff --git a/.env.example b/.env.example
+index 3034759..e0f2ebe 100644
+--- a/.env.example
++++ b/.env.example
+@@ -8,6 +8,10 @@ DATABASE_URL=postgres://c3x:change-me-to-a-strong-password@localhost:5432/c3x_pr
+ # Optional
+ API_KEY=
+ GCP_API_KEY=
++# api_key (default) or adc. ADC must already be provisioned for this runtime.
++GCP_AUTH_MODE=api_key
++# Optional quota project header; not inferred from gcloud or ADC JSON.
++GCP_QUOTA_PROJECT=
+ PORT=4000
+ LOG_LEVEL=info
+ 
+diff --git a/README.md b/README.md
+index cd2c09d..373ad12 100644
+--- a/README.md
++++ b/README.md
+@@ -69,7 +69,9 @@ table.
+ | `DATABASE_URL` | *required* | PostgreSQL connection string |
+ | `PORT` | `4000` | HTTP server port |
+ | `API_KEY` | *(empty)* | API key for authentication. Empty = no auth. |
+-| `GCP_API_KEY` | *(empty)* | Google Cloud API key for scraping GCP prices |
++| `GCP_API_KEY` | *(empty)* | Google Cloud API key; required only in `api_key` mode |
++| `GCP_AUTH_MODE` | `api_key` | Explicit `api_key` or `adc`; see [GCP authentication](docs/gcp-auth.md) |
++| `GCP_QUOTA_PROJECT` | *(empty)* | Optional `X-Goog-User-Project` quota/billing project identifier |
+ | `SCRAPE_CONCURRENCY` | `4` | Global concurrent scrape workers |
+ | `SCRAPE_CONCURRENCY_AWS` | `0` | AWS-specific override (0 = inherit global) |
+ | `SCRAPE_CONCURRENCY_AZURE` | `8` | Azure-specific override |
+diff --git a/cmd/server/main.go b/cmd/server/main.go
+index df07a35..8a2c88c 100644
+--- a/cmd/server/main.go
++++ b/cmd/server/main.go
+@@ -101,9 +101,19 @@ func scrapeCmd() *cobra.Command {
+ 		Short: "Scrape cloud pricing data",
+ 		RunE: func(cmd *cobra.Command, args []string) error {
+ 			cfg := config.Load()
+-			ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
++			ctx, cancel := signal.NotifyContext(cmd.Context(), os.Interrupt, syscall.SIGTERM)
+ 			defer cancel()
+ 
++			// Validate auth and acquire the initial refreshable ADC token before DB
++			// connection/migrations. Keep this scraper and context for the full run.
++			var gcpScraper *scraper.GCPScraper
++			if vendor == "gcp" || vendor == "all" {
++				gcpScraper = scraper.NewGCPScraper(cfg)
++				if err := gcpScraper.Preflight(ctx); err != nil {
++					return err
++				}
++			}
++
+ 			database, err := db.New(ctx, cfg.DatabaseURL)
+ 			if err != nil {
+ 				return fmt.Errorf("failed to connect to database: %w", err)
+@@ -114,11 +124,6 @@ func scrapeCmd() *cobra.Command {
+ 				return fmt.Errorf("failed to run migrations: %w", err)
+ 			}
+ 
+-			// O31: Validate GCP API key early before starting any scraping
+-			if (vendor == "gcp" || vendor == "all") && cfg.GCPAPIKey == "" {
+-				return fmt.Errorf("GCP_API_KEY is required for GCP scraping, set it in your .env file")
+-			}
+-
+ 			var scrapers []scraper.Scraper
+ 
+ 			switch vendor {
+@@ -127,12 +132,12 @@ func scrapeCmd() *cobra.Command {
+ 			case "azure":
+ 				scrapers = append(scrapers, scraper.NewAzureScraper(cfg))
+ 			case "gcp":
+-				scrapers = append(scrapers, scraper.NewGCPScraper(cfg))
++				scrapers = append(scrapers, gcpScraper)
+ 			case "all":
+ 				scrapers = append(scrapers,
+ 					scraper.NewAWSScraper(cfg),
+ 					scraper.NewAzureScraper(cfg),
+-					scraper.NewGCPScraper(cfg),
++					gcpScraper,
+ 				)
+ 			default:
+ 				return fmt.Errorf("unknown vendor: %s (use aws, azure, gcp, or all)", vendor)
+diff --git a/deploy/compose/docker-compose.scraper.yml b/deploy/compose/docker-compose.scraper.yml
+index f3e5d2b..4970158 100644
+--- a/deploy/compose/docker-compose.scraper.yml
++++ b/deploy/compose/docker-compose.scraper.yml
+@@ -21,6 +21,8 @@ services:
+     environment:
+       DATABASE_URL: "postgres://${POSTGRES_USER:-c3x}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-c3x_pricing}?sslmode=disable"
+       GCP_API_KEY: "${GCP_API_KEY:-}"
++      GCP_AUTH_MODE: "${GCP_AUTH_MODE:-api_key}"
++      GCP_QUOTA_PROJECT: "${GCP_QUOTA_PROJECT:-}"
+       SCRAPE_CONCURRENCY: "${SCRAPE_CONCURRENCY:-4}"
+     depends_on:
+       db:
+diff --git a/docker-compose.yml b/docker-compose.yml
+index 8cb31ed..778d388 100644
+--- a/docker-compose.yml
++++ b/docker-compose.yml
+@@ -25,6 +25,8 @@ services:
+       DATABASE_URL: "postgres://${POSTGRES_USER:-c3x}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-c3x_pricing}?sslmode=disable"
+       API_KEY: ${API_KEY:-}
+       GCP_API_KEY: ${GCP_API_KEY:-}
++      GCP_AUTH_MODE: ${GCP_AUTH_MODE:-api_key}
++      GCP_QUOTA_PROJECT: ${GCP_QUOTA_PROJECT:-}
+       SCRAPE_CONCURRENCY: ${SCRAPE_CONCURRENCY:-4}
+       MAX_BATCH_SIZE: ${MAX_BATCH_SIZE:-500}
+     ports:
+diff --git a/docs/provider-quirks.md b/docs/provider-quirks.md
+index 3955ed3..c8d4029 100644
+--- a/docs/provider-quirks.md
++++ b/docs/provider-quirks.md
+@@ -63,9 +63,10 @@ Endpoint: `https://prices.azure.com/api/retail/prices?$filter=serviceName eq '
+ **Source:** Cloud Billing Catalog API.
+ Endpoint: `https://cloudbilling.googleapis.com/v1/services/<id>/skus`
+ 
+-- ⚠ **Requires an API key.** Free tier is generous; create one in the Google
+-  Cloud Console. Without `GCP_API_KEY`, `scrape --vendor gcp` fails fast (we
+-  check at command boundary, not deep inside the HTTP call).
++- ⚠ **Requires explicit authentication.** Default `GCP_AUTH_MODE=api_key`
++  requires `GCP_API_KEY`; optional `GCP_AUTH_MODE=adc` uses refreshable Application
++  Default Credentials without a key fallback. Auth is preflighted before DB work.
++  See [GCP authentication](gcp-auth.md) for quota projects and the bounded probe.
+ - ⚠ **`Units` is a decimal string**, not a JSON number, to preserve precision.
+   🔧 Parse as `int64` and combine with `Nanos` (int64): `units + nanos/1e9`.
+ - ⚠ **Sustained Use Discount (SUD) and Committed Use Discount (CUD) prices
+diff --git a/go.mod b/go.mod
+index 6123b52..de293ea 100644
+--- a/go.mod
++++ b/go.mod
+@@ -14,11 +14,13 @@ require (
+ 	go.opentelemetry.io/otel v1.44.0
+ 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.44.0
+ 	go.opentelemetry.io/otel/sdk v1.44.0
++	golang.org/x/oauth2 v0.36.0
+ 	golang.org/x/sync v0.22.0
+ 	golang.org/x/time v0.15.0
+ )
+ 
+ require (
++	cloud.google.com/go/compute/metadata v0.9.0 // indirect
+ 	dario.cat/mergo v1.0.2 // indirect
+ 	github.com/Azure/go-ansiterm v0.0.0-20250102033503-faa5f7b0171c // indirect
+ 	github.com/Microsoft/go-winio v0.6.2 // indirect
+diff --git a/go.sum b/go.sum
+index 113f582..9515c3d 100644
+--- a/go.sum
++++ b/go.sum
+@@ -1,3 +1,5 @@
++cloud.google.com/go/compute/metadata v0.9.0 h1:pDUj4QMoPejqq20dK0Pg2N4yG9zIkYGdBtwLoEkH9Zs=
++cloud.google.com/go/compute/metadata v0.9.0/go.mod h1:E0bWwX5wTnLPedCKqk3pJmVgCBSM6qQI1yTBdEb3C10=
+ dario.cat/mergo v1.0.2 h1:85+piFYR1tMbRrLcDwR18y4UKJ3aH1Tbzi24VRW1TK8=
+ dario.cat/mergo v1.0.2/go.mod h1:E/hbnu0NxMFBjpMIE34DRGLWqDy0g5FuKDhCb31ngxA=
+ github.com/AdaLogics/go-fuzz-headers v0.0.0-20240806141605-e8a1dd7889d6 h1:He8afgbRMd7mFxO99hRNu+6tazq8nFF9lIwo9JFroBk=
+@@ -179,6 +181,8 @@ golang.org/x/crypto v0.51.0 h1:IBPXwPfKxY7cWQZ38ZCIRPI50YLeevDLlLnyC5wRGTI=
+ golang.org/x/crypto v0.51.0/go.mod h1:8AdwkbraGNABw2kOX6YFPs3WM22XqI4EXEd8g+x7Oc8=
+ golang.org/x/net v0.55.0 h1:bcvxaJn3e1U6InsFWt1JUq1aSjnRxLzT2rtD2KfkDF8=
+ golang.org/x/net v0.55.0/go.mod h1:L5U2KuzuOe1lY7Z+aWVIKK6qEeJXnXV9yzGA+WCHJww=
++golang.org/x/oauth2 v0.36.0 h1:peZ/1z27fi9hUOFCAZaHyrpWG5lwe0RJEEEeH0ThlIs=
++golang.org/x/oauth2 v0.36.0/go.mod h1:YDBUJMTkDnJS+A4BP4eZBjCqtokkg1hODuPjwiGPO7Q=
+ golang.org/x/sync v0.22.0 h1:SZjpbeLmrCk4xhRSZFNZW5gFUeCeFgjekvI/+gfScek=
+ golang.org/x/sync v0.22.0/go.mod h1:9xrNwdLfx4jkKbNva9FpL6vEN7evnE43NNNJQ2LF3+0=
+ golang.org/x/sys v0.0.0-20190916202348-b4ddaad3f8a3/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
+diff --git a/internal/config/config.go b/internal/config/config.go
+index 21f41d7..ba0668c 100644
+--- a/internal/config/config.go
++++ b/internal/config/config.go
+@@ -13,6 +13,8 @@ type Config struct {
+ 	DatabaseURL       string
+ 	APIKey            string
+ 	GCPAPIKey         string
++	GCPAuthMode       string
++	GCPQuotaProject   string
+ 	ScrapeConcurrency int
+ 	// ScrapeConcurrencyAWS/Azure/GCP optionally override ScrapeConcurrency on a
+ 	// per-vendor basis. Useful because vendor APIs have very different fan-out
+@@ -64,6 +66,8 @@ func Load() *Config {
+ 		APIKey:                 getEnv("API_KEY", ""),
+ 		GCPAPIKey:              getEnv("GCP_API_KEY", ""),
+ 		ScrapeConcurrency:      getEnvInt("SCRAPE_CONCURRENCY", 4),
++		GCPAuthMode:            getEnv("GCP_AUTH_MODE", "api_key"),
++		GCPQuotaProject:        getEnv("GCP_QUOTA_PROJECT", ""),
+ 		ScrapeConcurrencyAWS:   getEnvInt("SCRAPE_CONCURRENCY_AWS", 0),
+ 		ScrapeConcurrencyAzure: getEnvInt("SCRAPE_CONCURRENCY_AZURE", 8),
+ 		ScrapeConcurrencyGCP:   getEnvInt("SCRAPE_CONCURRENCY_GCP", 0),
+diff --git a/internal/scraper/gcp.go b/internal/scraper/gcp.go
+index 49a305b..ed4e783 100644
+--- a/internal/scraper/gcp.go
++++ b/internal/scraper/gcp.go
+@@ -2,9 +2,9 @@ package scraper
+ 
+ import (
+ 	"context"
+-	"encoding/json"
++	"errors"
+ 	"fmt"
+-	"io"
++
+ 	"log/slog"
+ 	"net/http"
+ 	"net/url"
+@@ -16,6 +16,7 @@ import (
+ 
+ 	"github.com/c3xdev/c3x-pricing-api/internal/config"
+ 	"github.com/c3xdev/c3x-pricing-api/internal/db"
++	"golang.org/x/oauth2"
+ 	"golang.org/x/sync/errgroup"
+ )
+ 
+@@ -61,21 +62,23 @@ var gcpDiscoverableServices = []string{
+ }
+ 
+ type GCPScraper struct {
+-	cfg            *config.Config
+-	client         *http.Client
+-	failedServices int64
++	cfg             *config.Config
++	client          *http.Client
++	failedServices  int64
++	findTokenSource func(context.Context, string) (oauth2.TokenSource, error)
++	auth            gcpAuth
+ }
+ 
+ func NewGCPScraper(cfg *config.Config) *GCPScraper {
+-	return &GCPScraper{cfg: cfg, client: &http.Client{Timeout: 120 * time.Second}}
++	return &GCPScraper{cfg: cfg, client: &http.Client{Timeout: 120 * time.Second}, findTokenSource: defaultGCPTokenSource}
+ }
+ 
+ func (s *GCPScraper) Name() string          { return "GCP" }
+ func (s *GCPScraper) FailedServices() int64 { return atomic.LoadInt64(&s.failedServices) }
+ 
+ func (s *GCPScraper) ScrapeWithHandler(ctx context.Context, handler ProductHandler) error {
+-	if s.cfg.GCPAPIKey == "" {
+-		return fmt.Errorf("GCP_API_KEY is required for GCP scraping")
++	if err := s.Preflight(ctx); err != nil {
++		return err
+ 	}
+ 
+ 	concurrency := s.cfg.ConcurrencyForVendor("gcp")
+@@ -88,6 +91,9 @@ func (s *GCPScraper) ScrapeWithHandler(ctx context.Context, handler ProductHandl
+ 	// a renamed service shouldn't abort the whole scrape).
+ 	resolved, err := s.resolveDiscoverableServices(ctx)
+ 	if err != nil {
++		if isGCPAuthFailure(err) || ctx.Err() != nil {
++			return err
++		}
+ 		slog.Warn("service discovery failed; proceeding with hard-coded services only",
+ 			"vendor", "gcp", "error", err)
+ 		resolved = nil
+@@ -118,6 +124,9 @@ func (s *GCPScraper) ScrapeWithHandler(ctx context.Context, handler ProductHandl
+ 					return gctx.Err()
+ 				}
+ 				atomic.AddInt64(&s.failedServices, 1)
++				if isGCPAuthFailure(err) {
++					return err
++				}
+ 				slog.Warn("scrape failed", "vendor", "gcp", "service", serviceName, "error", err)
+ 				return nil
+ 			}
+@@ -179,20 +188,7 @@ func (s *GCPScraper) resolveDiscoverableServices(ctx context.Context) (map[strin
+ 		if pageToken != "" {
+ 			listURL += "&pageToken=" + pageToken
+ 		}
+-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, listURL, nil)
+-		if err != nil {
+-			return out, err
+-		}
+-		req.Header.Set("X-Goog-Api-Key", s.cfg.GCPAPIKey)
+-		resp, err := s.client.Do(req)
+-		if err != nil {
+-			return out, err
+-		}
+-		body, _ := io.ReadAll(resp.Body)
+-		_ = resp.Body.Close()
+-		if resp.StatusCode != http.StatusOK {
+-			return out, fmt.Errorf("GCP services list HTTP %d: %s", resp.StatusCode, string(body))
+-		}
++
+ 		var page struct {
+ 			Services []struct {
+ 				ServiceID   string `json:"serviceId"`
+@@ -200,8 +196,8 @@ func (s *GCPScraper) resolveDiscoverableServices(ctx context.Context) (map[strin
+ 			} `json:"services"`
+ 			NextPageToken string `json:"nextPageToken"`
+ 		}
+-		if err := json.Unmarshal(body, &page); err != nil {
+-			return out, fmt.Errorf("decode GCP services list: %w", err)
++		if err := s.catalogJSON(ctx, listURL, &page); err != nil {
++			return out, err
+ 		}
+ 		for _, svc := range page.Services {
+ 			if _, ok := want[strings.ToLower(svc.DisplayName)]; ok {
+@@ -486,48 +482,25 @@ func (s *GCPScraper) fetchGCPPage(ctx context.Context, serviceID, pageToken stri
+ 			reqURL += "&pageToken=" + url.QueryEscape(pageToken)
+ 		}
+ 
+-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
+-		if err != nil {
+-			return nil, fmt.Errorf("create request: %w", err)
++		var skuResp gcpSKUListResponse
++		err := s.catalogJSON(ctx, reqURL, &skuResp)
++		if err == nil {
++			return &skuResp, nil
+ 		}
+-		req.Header.Set("X-Goog-Api-Key", s.cfg.GCPAPIKey)
+-
+-		resp, err := s.client.Do(req)
+-		if err != nil {
+-			if attempt < maxRetries-1 {
+-				slog.Warn("GCP network error, retrying", "service_id", serviceID, "attempt", attempt+1, "error", err)
+-				select {
+-				case <-time.After(time.Duration(1<<uint(attempt)) * 2 * time.Second):
+-				case <-ctx.Done():
+-					return nil, ctx.Err()
+-				}
+-				continue
+-			}
+-			return nil, fmt.Errorf("fetch after %d retries: %w", maxRetries, err)
++		if ctx.Err() != nil {
++			return nil, ctx.Err()
+ 		}
+-
+-		if resp.StatusCode != http.StatusOK {
+-			body, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
+-			_ = resp.Body.Close()
+-			if attempt < maxRetries-1 && (resp.StatusCode == 429 || resp.StatusCode >= 500) {
+-				slog.Warn("GCP HTTP error, retrying", "service_id", serviceID, "status", resp.StatusCode, "attempt", attempt+1)
+-				select {
+-				case <-time.After(time.Duration(1<<uint(attempt)) * 2 * time.Second):
+-				case <-ctx.Done():
+-					return nil, ctx.Err()
+-				}
+-				continue
+-			}
+-			return nil, fmt.Errorf("HTTP %d: %s", resp.StatusCode, string(body))
++		var status *gcpHTTPError
++		retryable := errors.Is(err, errGCPCatalogRequest) || (errors.As(err, &status) && (status.status == 429 || status.status >= 500))
++		if !retryable || attempt == maxRetries-1 {
++			return nil, err
+ 		}
+-
+-		var skuResp gcpSKUListResponse
+-		if err := json.NewDecoder(io.LimitReader(resp.Body, 100*1024*1024)).Decode(&skuResp); err != nil {
+-			_ = resp.Body.Close()
+-			return nil, fmt.Errorf("decode response: %w", err)
++		slog.Warn("GCP catalog request retrying", "attempt", attempt+1, "error", err)
++		select {
++		case <-time.After(time.Duration(1<<uint(attempt)) * 2 * time.Second):
++		case <-ctx.Done():
++			return nil, ctx.Err()
+ 		}
+-		_ = resp.Body.Close()
+-		return &skuResp, nil
+ 	}
+ 	return nil, fmt.Errorf("max retries exceeded")
+ }
+diff --git a/cmd/gcp-catalog-probe/main.go b/cmd/gcp-catalog-probe/main.go
+new file mode 100644
+index 0000000..96bc249
+--- /dev/null
++++ b/cmd/gcp-catalog-probe/main.go
+@@ -0,0 +1,43 @@
++package main
++
++import (
++	"context"
++	"encoding/json"
++	"errors"
++	"fmt"
++	"io"
++	"os"
++	"os/signal"
++	"syscall"
++
++	"github.com/c3xdev/c3x-pricing-api/internal/config"
++	"github.com/c3xdev/c3x-pricing-api/internal/scraper"
++)
++
++func main() {
++	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
++	defer cancel()
++	// The closure is not invoked until --live is explicitly supplied.
++	err := run(ctx, os.Args[1:], os.Stdout, func(ctx context.Context) (int, int, error) {
++		return scraper.NewGCPScraper(config.Load()).ProbeCatalog(ctx)
++	})
++	if err != nil {
++		fmt.Fprintln(os.Stderr, err)
++		os.Exit(1)
++	}
++}
++
++func run(ctx context.Context, args []string, out io.Writer, probe func(context.Context) (int, int, error)) error {
++	if len(args) != 1 || args[0] != "--live" {
++		return errors.New("opt-in required: gcp-catalog-probe --live (two read-only catalog requests)")
++	}
++	services, skus, err := probe(ctx)
++	if err != nil {
++		return err
++	}
++	return json.NewEncoder(out).Encode(struct {
++		Status   string `json:"status"`
++		Services int    `json:"services"`
++		SKUs     int    `json:"compute_engine_skus"`
++	}{"ok", services, skus})
++}
+diff --git a/cmd/gcp-catalog-probe/main_test.go b/cmd/gcp-catalog-probe/main_test.go
+new file mode 100644
+index 0000000..b84570f
+--- /dev/null
++++ b/cmd/gcp-catalog-probe/main_test.go
+@@ -0,0 +1,36 @@
++package main
++
++import (
++	"bytes"
++	"context"
++	"errors"
++	"strings"
++	"testing"
++)
++
++func TestProbeRequiresExplicitOptIn(t *testing.T) {
++	for _, args := range [][]string{nil, {"--unknown-sensitive"}, {"--live", "extra"}} {
++		var out bytes.Buffer
++		err := run(context.Background(), args, &out, func(context.Context) (int, int, error) { t.Fatal("probe ran without opt-in"); return 0, 0, nil })
++		if err == nil || !strings.Contains(err.Error(), "--live") || strings.Contains(err.Error(), "sensitive") || out.Len() != 0 {
++			t.Fatalf("unsafe opt-in result: %v", err)
++		}
++	}
++}
++
++func TestProbePrintsOnlyCounts(t *testing.T) {
++	var out bytes.Buffer
++	err := run(context.Background(), []string{"--live"}, &out, func(context.Context) (int, int, error) { return 1, 1, nil })
++	if err != nil || out.String() != "{\"status\":\"ok\",\"services\":1,\"compute_engine_skus\":1}\n" {
++		t.Fatalf("unexpected result: %s %v", out.String(), err)
++	}
++}
++
++func TestProbeFailureHasNoSuccessOutput(t *testing.T) {
++	var out bytes.Buffer
++	want := errors.New("GCP catalog HTTP 403")
++	err := run(context.Background(), []string{"--live"}, &out, func(context.Context) (int, int, error) { return 1, 0, want })
++	if !errors.Is(err, want) || out.Len() != 0 {
++		t.Fatalf("error lost/false success: %s %v", out.String(), err)
++	}
++}
+diff --git a/cmd/server/gcp_auth_test.go b/cmd/server/gcp_auth_test.go
+new file mode 100644
+index 0000000..b42c9dd
+--- /dev/null
++++ b/cmd/server/gcp_auth_test.go
+@@ -0,0 +1,30 @@
++package main
++
++import (
++	"context"
++	"strings"
++	"testing"
++)
++
++func TestScrapeGCPAuthBeforeDatabase(t *testing.T) {
++	for _, vendor := range []string{"gcp", "all"} {
++		for _, mode := range []string{"api_key", "invalid-sensitive"} {
++			t.Run(vendor+"/"+mode, func(t *testing.T) {
++				t.Setenv("GCP_AUTH_MODE", mode)
++				t.Setenv("GCP_API_KEY", "")
++				t.Setenv("GCP_QUOTA_PROJECT", "")
++				t.Setenv("DATABASE_URL", "://invalid")
++				cmd := scrapeCmd()
++				cmd.SetArgs([]string{"--vendor", vendor})
++				err := cmd.ExecuteContext(context.Background())
++				want := "GCP_API_KEY"
++				if mode != "api_key" {
++					want = "GCP_AUTH_MODE"
++				}
++				if err == nil || !strings.Contains(err.Error(), want) || strings.Contains(err.Error(), "sensitive") {
++					t.Fatalf("auth must fail before DB: %v", err)
++				}
++			})
++		}
++	}
++}
+diff --git a/docs/gcp-auth.md b/docs/gcp-auth.md
+new file mode 100644
+index 0000000..2db3a52
+--- /dev/null
++++ b/docs/gcp-auth.md
+@@ -0,0 +1,95 @@
++# GCP catalog authentication
++
++Authentication is selected explicitly and is independent of the API server's own `API_KEY`.
++
++| Setting | Behavior |
++| --- | --- |
++| `GCP_AUTH_MODE=api_key` (default, including an unset/empty value) | Requires `GCP_API_KEY`; sends only `X-Goog-Api-Key`, never discovers ADC. Existing key-based deployments keep working. |
++| `GCP_AUTH_MODE=adc` | Uses `golang.org/x/oauth2/google.DefaultTokenSource` and a cached, refreshable OAuth token source. Ignores `GCP_API_KEY`, even when ADC fails. |
++| `GCP_QUOTA_PROJECT` (optional) | Sends `X-Goog-User-Project` on both services and SKU calls. Set explicitly when the credential requires a consumer/quota project. Not inferred from gcloud, credential JSON, or a token. Empty means no quota header. Values are validated before any request. |
++
++Other modes fail with a redacted configuration error. The importer requests
++`https://www.googleapis.com/auth/cloud-billing.readonly`, an accepted Cloud Billing
++Catalog scope. Existing user ADC must already have suitable consent/scopes; the
++application cannot broaden an existing refresh token's grant. Broader existing
++`cloud-platform` grants can also authorize catalog reads. Google may require
++Cloud Billing API access and `serviceusage.services.use` on the quota project;
++this application does not enable APIs or modify IAM.
++
++ADC uses Google's standard discovery (configured credential file, provisioned local
++ADC, or an attached identity). Only explicitly choose ADC in a runtime provisioned
++with trusted credentials/configuration. The application does not invoke `gcloud`,
++perform login, copy credentials, or offer a static bearer-token environment variable.
++The SDK owns credential discovery/token exchange; OAuth token requests necessarily
++use Google's auth endpoints or the trusted ADC configuration, not the catalog origin.
++
++## Usage
++
++With ADC already provisioned for this runtime:
++
++```sh
++GCP_AUTH_MODE=adc GCP_QUOTA_PROJECT=my-quota-project ./c3x-pricing-api scrape --vendor gcp
++```
++
++`--vendor all` also honors ADC. Key validation/ADC token acquisition occurs before
++DB connection and migrations; remote API permission/quota errors can only be known
++when the catalog is called. The scraper reuses the preflight source and its full
++scrape-lifetime context for refresh. Initialize a fresh scraper per scrape/probe;
++do not reuse a scraper after its lifetime context is canceled. Worker cancellation
++stops waiting promptly; at most one SDK token acquisition is in flight per scraper.
++SDK OAuth HTTP calls have a 30-second timeout; catalog HTTP calls retain 120 seconds.
++
++Both Compose examples forward the mode/quota settings but intentionally do not
++mount credentials. Operators must provision a suitable identity in the runtime.
++Kubernetes and GitHub Actions examples retain their existing API-key defaults;
++ADC deployments must explicitly add their own identity provisioning and mode/quota
++environment settings. No host home or credential directory is mounted by default.
++
++## Bounded, opt-in probe (no database)
++
++```sh
++go build -o gcp-catalog-probe ./cmd/gcp-catalog-probe
++GCP_AUTH_MODE=adc GCP_QUOTA_PROJECT=my-quota-project ./gcp-catalog-probe --live
++```
++
++The explicit `--live` gate is required. The probe calls the production catalog
++helper once for `services?pageSize=1` and once for Compute Engine
++`services/6F81-5844-456A/skus?pageSize=1`. There are no retries, pagination, database
++operations or product transformations. An overall 60-second deadline applies.
++Successful JSON reports only status and the two counts; errors return nonzero.
++It is a connectivity/auth check, not a catalog-completeness or mapping test.
++`GCPScraper.ProbeCatalog(ctx)` exposes the same bounded operation to Go callers.
++
++## Security and failure semantics
++
++- Catalog credentials are added only after validating the exact origin
++  `https://cloudbilling.googleapis.com` (no custom host/port, userinfo or fragment).
++  Both API-key and ADC requests reject all redirects, including same-origin ones.
++  SDK OAuth HTTP also rejects redirects.
++- Catalog HTTP errors expose only status codes. OAuth/discovery, transport,
++  response-body read and JSON decode errors are redacted; raw remote bodies,
++  headers, URLs, tokens and keys are not returned/logged by the auth/request helpers.
++- ADC acquisition/refresh errors and catalog HTTP 400/401/403 abort the scrape;
++  they cannot be reported as a successful empty import. HTTP 400 is conservatively
++  fatal because Google can use it for an invalid API key. Existing partial-failure
++  behavior for unrelated service errors and bounded SKU retries for network,
++  429 and 5xx errors remain.
++- This change does not alter G4, Flex, Hyperdisk or any product mapping.
++
++## Offline validation
++
++```sh
++go test -short -count=1 ./...
++go test -race -short -count=1 ./...
++go vet ./...
++go build -o c3x-pricing-api ./cmd/server
++```
++
++New tests inject token-source factories and fake `http.RoundTripper`s. They do not
++read ADC files, invoke gcloud, or call the live catalog/token endpoints. Coverage
++includes both endpoint headers, explicit mode selection/no fallback, preflight
++before DB parsing, official OAuth refresh and concurrent cache reuse, lifetime and
++worker cancellation, invalid tokens/quota headers, origin/redirect confinement,
++redacted errors, fatal auth statuses, and the bounded opt-in probe.
++Live ADC verification is a separate operator-controlled step; no test automatically
++uses local credentials. DB integration-tag tests are outside this auth change.
+diff --git a/internal/config/gcp_auth_test.go b/internal/config/gcp_auth_test.go
+new file mode 100644
+index 0000000..4ce2afb
+--- /dev/null
++++ b/internal/config/gcp_auth_test.go
+@@ -0,0 +1,25 @@
++package config
++
++import (
++	"encoding/json"
++	"testing"
++)
++
++func TestGCPAuthEnvironment(t *testing.T) {
++	for _, mode := range []string{"", "adc", "api_key", "invalid"} {
++		t.Run(mode, func(t *testing.T) {
++			t.Setenv("GCP_AUTH_MODE", mode)
++			t.Setenv("GCP_QUOTA_PROJECT", "quota-project")
++			data, _ := json.Marshal(Load())
++			var got map[string]any
++			_ = json.Unmarshal(data, &got)
++			want := mode
++			if want == "" {
++				want = "api_key"
++			}
++			if got["GCPAuthMode"] != want || got["GCPQuotaProject"] != "quota-project" {
++				t.Fatalf("GCP auth config missing; mode=%v quota=%v", got["GCPAuthMode"], got["GCPQuotaProject"])
++			}
++		})
++	}
++}
+diff --git a/internal/scraper/gcp_auth.go b/internal/scraper/gcp_auth.go
+new file mode 100644
+index 0000000..fa379ce
+--- /dev/null
++++ b/internal/scraper/gcp_auth.go
+@@ -0,0 +1,162 @@
++package scraper
++
++import (
++	"context"
++	"errors"
++	"net/http"
++	"net/url"
++	"regexp"
++	"sync"
++	"time"
++
++	"golang.org/x/oauth2"
++	"golang.org/x/oauth2/google"
++)
++
++const gcpCatalogScope = "https://www.googleapis.com/auth/cloud-billing.readonly"
++
++var errGCPAuth = errors.New("GCP ADC authentication failed; configure valid Application Default Credentials")
++var errGCPCatalogRequest = errors.New("GCP catalog request failed")
++
++var gcpQuotaProjectPattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$`)
++var gcpCredentialPattern = regexp.MustCompile(`^[!-~]+$`)
++
++func rejectGCPRedirect(*http.Request, []*http.Request) error {
++	return errors.New("GCP redirects are not permitted")
++}
++
++// gcpAuth is initialized once per scraper. Its context must live for the entire
++// scrape (including refreshes), not just the first catalog HTTP request.
++type gcpAuth struct {
++	mu      sync.Mutex
++	source  oauth2.TokenSource
++	pending *gcpTokenCall
++}
++
++type gcpTokenCall struct {
++	done  chan struct{}
++	token *oauth2.Token
++	err   error
++}
++
++func defaultGCPTokenSource(ctx context.Context, scope string) (oauth2.TokenSource, error) {
++	// The SDK owns ADC discovery and refresh. Do not call gcloud or fall back to a key.
++	ctx = context.WithValue(ctx, oauth2.HTTPClient, &http.Client{Timeout: 30 * time.Second, CheckRedirect: rejectGCPRedirect})
++	return google.DefaultTokenSource(ctx, scope)
++}
++
++// Preflight validates the selected mode and obtains an initial ADC token before
++// callers start database work. Reuse the scraper with this same live context.
++func (s *GCPScraper) Preflight(ctx context.Context) error {
++	if err := ctx.Err(); err != nil {
++		return err
++	}
++	if s.cfg.GCPQuotaProject != "" && !gcpQuotaProjectPattern.MatchString(s.cfg.GCPQuotaProject) {
++		return errors.New("GCP_QUOTA_PROJECT must be a valid project identifier")
++	}
++	switch s.cfg.GCPAuthMode {
++	case "", "api_key":
++		if s.cfg.GCPAPIKey == "" {
++			return errors.New("GCP_API_KEY is required when GCP_AUTH_MODE=api_key")
++		}
++		return nil
++	case "adc":
++	default:
++		return errors.New("GCP_AUTH_MODE must be api_key or adc")
++	}
++	_, err := s.adcToken(ctx)
++	return err
++}
++
++// At most one SDK discovery/refresh is in flight per scraper. A canceled worker
++// stops waiting promptly without canceling the source's scrape-lifetime context
++// or spawning an unbounded number of detached refreshes. SDK HTTP is bounded.
++func (s *GCPScraper) adcToken(ctx context.Context) (*oauth2.Token, error) {
++	if ctx.Err() != nil {
++		return nil, ctx.Err()
++	}
++	s.auth.mu.Lock()
++	call := s.auth.pending
++	if call == nil {
++		call = &gcpTokenCall{done: make(chan struct{})}
++		s.auth.pending = call
++		go func() {
++			call.token, call.err = s.loadADCToken(ctx)
++			s.auth.mu.Lock()
++			s.auth.pending = nil
++			close(call.done)
++			s.auth.mu.Unlock()
++		}()
++	}
++	s.auth.mu.Unlock()
++	select {
++	case <-ctx.Done():
++		return nil, ctx.Err()
++	case <-call.done:
++		if ctx.Err() != nil {
++			return nil, ctx.Err()
++		}
++		return call.token, call.err
++	}
++}
++
++// Only the single in-flight worker accesses/initializes source here.
++func (s *GCPScraper) loadADCToken(ctx context.Context) (*oauth2.Token, error) {
++	if s.auth.source == nil {
++		source, err := s.findTokenSource(ctx, gcpCatalogScope)
++		if ctx.Err() != nil {
++			return nil, ctx.Err()
++		}
++		if err != nil || source == nil {
++			return nil, errGCPAuth
++		}
++		s.auth.source = oauth2.ReuseTokenSource(nil, source)
++	}
++	token, err := s.auth.source.Token()
++	if err != nil || !token.Valid() || !gcpCredentialPattern.MatchString(token.AccessToken) {
++		return nil, errGCPAuth
++	}
++	return token, nil
++}
++
++func (s *GCPScraper) catalogRequest(ctx context.Context, target string) (*http.Response, error) {
++	// Validate before even discovering credentials. No configurable origin, ports,
++	// userinfo, fragments or redirects are allowed for credential-bearing calls.
++	u, err := url.Parse(target)
++	if err != nil || u.Scheme != "https" || u.Host != "cloudbilling.googleapis.com" || u.User != nil || u.Fragment != "" || u.Opaque != "" {
++		return nil, errors.New("GCP catalog destination is not permitted")
++	}
++	if err := s.Preflight(ctx); err != nil {
++		return nil, err
++	}
++	req, err := http.NewRequestWithContext(ctx, http.MethodGet, target, nil)
++	if err != nil {
++		return nil, errors.New("GCP catalog request invalid")
++	}
++	if s.cfg.GCPAuthMode == "adc" {
++		token, err := s.adcToken(ctx)
++		if err != nil {
++			return nil, err
++		}
++		req.Header.Set("Authorization", "Bearer "+token.AccessToken)
++	} else {
++		req.Header.Set("X-Goog-Api-Key", s.cfg.GCPAPIKey)
++	}
++	if s.cfg.GCPQuotaProject != "" {
++		req.Header.Set("X-Goog-User-Project", s.cfg.GCPQuotaProject)
++	}
++	client := *s.client
++	client.CheckRedirect = rejectGCPRedirect
++	resp, err := client.Do(req)
++	if err != nil {
++		if ctx.Err() != nil {
++			return nil, ctx.Err()
++		}
++		return nil, errGCPCatalogRequest
++	}
++	if resp.StatusCode >= 300 && resp.StatusCode < 400 {
++		resp.Body.Close()
++		return nil, errors.New("GCP catalog redirects are not permitted")
++	}
++	return resp, nil
++}
+diff --git a/internal/scraper/gcp_auth_test.go b/internal/scraper/gcp_auth_test.go
+new file mode 100644
+index 0000000..8f935e9
+--- /dev/null
++++ b/internal/scraper/gcp_auth_test.go
+@@ -0,0 +1,112 @@
++package scraper
++
++import (
++	"context"
++	"io"
++	"net/http"
++	"strings"
++	"testing"
++
++	"github.com/c3xdev/c3x-pricing-api/internal/config"
++	"golang.org/x/oauth2"
++)
++
++func testAuthenticatedScraper(mode string) *GCPScraper {
++	s := NewGCPScraper(&config.Config{GCPAuthMode: mode, GCPAPIKey: "test-key", GCPQuotaProject: "quota-project"})
++	s.findTokenSource = func(context.Context, string) (oauth2.TokenSource, error) {
++		return oauth2.StaticTokenSource(&oauth2.Token{AccessToken: "test-token"}), nil
++	}
++	return s
++}
++
++type catalogTransport func(*http.Request) (*http.Response, error)
++
++func (f catalogTransport) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
++func catalogResponse(status int, body string) *http.Response {
++	return &http.Response{StatusCode: status, Header: make(http.Header), Body: io.NopCloser(strings.NewReader(body))}
++}
++func TestGCPInvalidModeDoesNotScrape(t *testing.T) {
++	s := NewGCPScraper(&config.Config{GCPAPIKey: "test-key-sensitive", GCPAuthMode: "invalid-sensitive"})
++	calls := 0
++	s.client.Transport = catalogTransport(func(r *http.Request) (*http.Response, error) {
++		calls++
++		return catalogResponse(200, `{}`), nil
++	})
++	_, err := s.Scrape(context.Background())
++	if err == nil || !strings.Contains(err.Error(), "GCP_AUTH_MODE") || strings.Contains(err.Error(), "sensitive") {
++		t.Fatalf("expected safe invalid mode error, got %v", err)
++	}
++	if calls != 0 {
++		t.Fatalf("invalid mode made %d catalog calls", calls)
++	}
++}
++
++// Injecting a source keeps this suite entirely independent of ADC files/metadata.
++func TestGCPADCOnBothCatalogEndpoints(t *testing.T) {
++	s := NewGCPScraper(&config.Config{GCPAuthMode: "adc", GCPAPIKey: "must-not-fallback", GCPQuotaProject: "quota-project"})
++	s.findTokenSource = func(ctx context.Context, scope string) (oauth2.TokenSource, error) {
++		if scope != "https://www.googleapis.com/auth/cloud-billing.readonly" {
++			t.Fatalf("wrong scope %q", scope)
++		}
++		return oauth2.StaticTokenSource(&oauth2.Token{AccessToken: "test-oauth-sensitive"}), nil
++	}
++	services, skus := 0, 0
++	s.client.Transport = catalogTransport(func(r *http.Request) (*http.Response, error) {
++		if r.Header.Get("Authorization") != "Bearer test-oauth-sensitive" || r.Header.Get("X-Goog-Api-Key") != "" || r.Header.Get("X-Goog-User-Project") != "quota-project" {
++			t.Error("incorrect ADC headers")
++		}
++		if strings.HasSuffix(r.URL.Path, "/skus") {
++			skus++
++		} else {
++			services++
++		}
++		return catalogResponse(200, `{}`), nil
++	})
++	if _, err := s.Scrape(context.Background()); err != nil {
++		t.Fatal(err)
++	}
++	if services != 1 || skus != len(gcpServices) {
++		t.Fatalf("calls services=%d skus=%d", services, skus)
++	}
++}
++
++func TestGCPAPIKeyPreservedOnBothEndpoints(t *testing.T) {
++	for _, mode := range []string{"", "api_key"} {
++		s := testAuthenticatedScraper(mode)
++		s.findTokenSource = func(context.Context, string) (oauth2.TokenSource, error) {
++			t.Error("key mode discovered ADC")
++			return nil, nil
++		}
++		calls := 0
++		s.client.Transport = catalogTransport(func(r *http.Request) (*http.Response, error) {
++			calls++
++			if r.Header.Get("X-Goog-Api-Key") != "test-key" || r.Header.Get("Authorization") != "" || r.Header.Get("X-Goog-User-Project") != "quota-project" || r.URL.Query().Get("key") != "" {
++				t.Error("API key behavior changed")
++			}
++			return catalogResponse(200, `{}`), nil
++		})
++		if _, err := s.resolveDiscoverableServices(context.Background()); err != nil {
++			t.Fatal(err)
++		}
++		if _, err := s.fetchGCPPage(context.Background(), "test-service", ""); err != nil {
++			t.Fatal(err)
++		}
++		if calls != 2 {
++			t.Fatalf("calls=%d", calls)
++		}
++	}
++}
++
++func TestGCPServicesErrorRedacted(t *testing.T) {
++	s := NewGCPScraper(&config.Config{GCPAPIKey: "test-key-sensitive"})
++	s.client.Transport = catalogTransport(func(r *http.Request) (*http.Response, error) {
++		if r.Header.Get("X-Goog-Api-Key") != "test-key-sensitive" {
++			t.Error("API key header lost")
++		}
++		return catalogResponse(403, "test-key-sensitive response-secret"), nil
++	})
++	_, err := s.resolveDiscoverableServices(context.Background())
++	if err == nil || strings.Contains(err.Error(), "sensitive") || strings.Contains(err.Error(), "response-secret") {
++		t.Fatalf("expected redacted non-success error, got %v", err)
++	}
++}
+diff --git a/internal/scraper/gcp_catalog.go b/internal/scraper/gcp_catalog.go
+new file mode 100644
+index 0000000..2c93eda
+--- /dev/null
++++ b/internal/scraper/gcp_catalog.go
+@@ -0,0 +1,40 @@
++package scraper
++
++import (
++	"context"
++	"encoding/json"
++	"errors"
++	"fmt"
++	"io"
++	"net/http"
++)
++
++type gcpHTTPError struct{ status int }
++
++func (e *gcpHTTPError) Error() string { return fmt.Sprintf("GCP catalog HTTP %d", e.status) }
++
++func isGCPAuthFailure(err error) bool {
++	var status *gcpHTTPError
++	// Google can report invalid API keys as HTTP 400. Fail closed for all 400s,
++	// without parsing or exposing Google's diagnostic body.
++	return errors.Is(err, errGCPAuth) || (errors.As(err, &status) && (status.status == 400 || status.status == 401 || status.status == 403))
++}
++
++// Never expose remote error bodies, headers, request URLs or decoder errors.
++func (s *GCPScraper) catalogJSON(ctx context.Context, target string, out any) error {
++	resp, err := s.catalogRequest(ctx, target)
++	if err != nil {
++		return err
++	}
++	defer resp.Body.Close()
++	if resp.StatusCode != http.StatusOK {
++		return &gcpHTTPError{status: resp.StatusCode}
++	}
++	if err := json.NewDecoder(io.LimitReader(resp.Body, 100*1024*1024)).Decode(out); err != nil {
++		if ctx.Err() != nil {
++			return ctx.Err()
++		}
++		return errors.New("GCP catalog response invalid")
++	}
++	return nil
++}
+diff --git a/internal/scraper/gcp_errors_test.go b/internal/scraper/gcp_errors_test.go
+new file mode 100644
+index 0000000..ec2479c
+--- /dev/null
++++ b/internal/scraper/gcp_errors_test.go
+@@ -0,0 +1,68 @@
++package scraper
++
++import (
++	"context"
++	"errors"
++	"net/http"
++	"strings"
++	"testing"
++)
++
++func TestGCPAuthFailureNotSwallowed(t *testing.T) {
++	for _, endpoint := range []string{"services", "skus"} {
++		for _, status := range []int{400, 401, 403} {
++			t.Run(endpoint+http.StatusText(status), func(t *testing.T) {
++				s := testAuthenticatedScraper("api_key")
++				s.client.Transport = catalogTransport(func(r *http.Request) (*http.Response, error) {
++					if endpoint == "services" || strings.HasSuffix(r.URL.Path, "/skus") {
++						return catalogResponse(status, "sensitive-body"), nil
++					}
++					return catalogResponse(200, `{}`), nil
++				})
++				_, err := s.Scrape(context.Background())
++				if err == nil || strings.Contains(err.Error(), "sensitive") {
++					t.Fatalf("auth error swallowed or leaked: %v", err)
++				}
++			})
++		}
++	}
++}
++
++func TestGCPResponseErrorsRedacted(t *testing.T) {
++	for _, endpoint := range []string{"services", "skus"} {
++		for _, kind := range []string{"status", "json", "read"} {
++			t.Run(endpoint+"/"+kind, func(t *testing.T) {
++				s := testAuthenticatedScraper("api_key")
++				s.client.Transport = catalogTransport(func(r *http.Request) (*http.Response, error) {
++					switch kind {
++					case "status":
++						return catalogResponse(403, "sensitive-response-body"), nil
++					case "json":
++						return catalogResponse(200, `sensitive-invalid-json`), nil
++					default:
++						resp := catalogResponse(200, "")
++						resp.Body = failingCatalogBody{}
++						return resp, nil
++					}
++				})
++				var err error
++				if endpoint == "services" {
++					_, err = s.resolveDiscoverableServices(context.Background())
++				} else {
++					_, err = s.fetchGCPPage(context.Background(), "test-service", "")
++				}
++				if err == nil || strings.Contains(err.Error(), "sensitive") {
++					t.Fatalf("response error swallowed/leaked: %v", err)
++				}
++				if kind != "status" && err.Error() != "GCP catalog response invalid" {
++					t.Fatalf("expected fully sanitized decoding/read error, got %v", err)
++				}
++			})
++		}
++	}
++}
++
++type failingCatalogBody struct{}
++
++func (failingCatalogBody) Read([]byte) (int, error) { return 0, errors.New("sensitive-read-error") }
++func (failingCatalogBody) Close() error             { return nil }
+diff --git a/internal/scraper/gcp_probe.go b/internal/scraper/gcp_probe.go
+new file mode 100644
+index 0000000..1232b4d
+--- /dev/null
++++ b/internal/scraper/gcp_probe.go
+@@ -0,0 +1,32 @@
++package scraper
++
++import (
++	"context"
++	"time"
++)
++
++// ProbeCatalog makes at most two catalog calls (no retries/pagination), using
++// exactly the same auth/origin/response helpers as the importer. It does not
++// touch a DB or transform products. Only counts escape the response boundary.
++func (s *GCPScraper) ProbeCatalog(ctx context.Context) (services, skus int, err error) {
++	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
++	defer cancel()
++	if err = s.Preflight(ctx); err != nil {
++		return
++	}
++	var servicePage struct {
++		Services []struct{} `json:"services"`
++	}
++	if err = s.catalogJSON(ctx, gcpBaseURL+"/services?pageSize=1", &servicePage); err != nil {
++		return
++	}
++	services = len(servicePage.Services)
++	var skuPage struct {
++		SKUs []struct{} `json:"skus"`
++	}
++	if err = s.catalogJSON(ctx, gcpBaseURL+"/services/6F81-5844-456A/skus?pageSize=1", &skuPage); err != nil {
++		return
++	}
++	skus = len(skuPage.SKUs)
++	return
++}
+diff --git a/internal/scraper/gcp_probe_test.go b/internal/scraper/gcp_probe_test.go
+new file mode 100644
+index 0000000..92339ea
+--- /dev/null
++++ b/internal/scraper/gcp_probe_test.go
+@@ -0,0 +1,64 @@
++package scraper
++
++import (
++	"context"
++	"net/http"
++	"strings"
++	"testing"
++)
++
++type boundedCatalogProbe interface {
++	ProbeCatalog(context.Context) (int, int, error)
++}
++
++func TestGCPBoundedCatalogProbe(t *testing.T) {
++	s := testAuthenticatedScraper("adc")
++	probe, ok := any(s).(boundedCatalogProbe)
++	if !ok {
++		t.Fatal("bounded catalog probe is not implemented")
++	}
++	calls := 0
++	s.client.Transport = catalogTransport(func(r *http.Request) (*http.Response, error) {
++		calls++
++		if calls > 2 {
++			t.Fatal("probe followed pagination or retried")
++		}
++		if r.Header.Get("Authorization") != "Bearer test-token" || r.Header.Get("X-Goog-User-Project") != "quota-project" {
++			t.Error("probe did not use production auth")
++		}
++		if r.URL.Query().Get("pageSize") != "1" || r.URL.Query().Get("pageToken") != "" {
++			t.Error("probe request not bounded")
++		}
++		if calls == 1 {
++			if r.URL.Path != "/v1/services" {
++				t.Error("wrong services path")
++			}
++			return catalogResponse(200, `{"services":[{"serviceId":"test"}],"nextPageToken":"ignored"}`), nil
++		}
++		if r.URL.Path != "/v1/services/6F81-5844-456A/skus" {
++			t.Error("wrong Compute Engine path")
++		}
++		return catalogResponse(200, `{"skus":[{"skuId":"test"}],"nextPageToken":"ignored"}`), nil
++	})
++	services, skus, err := probe.ProbeCatalog(context.Background())
++	if err != nil || services != 1 || skus != 1 || calls != 2 {
++		t.Fatalf("probe result: services=%d skus=%d calls=%d err=%v", services, skus, calls, err)
++	}
++}
++
++func TestGCPProbeStopsOnError(t *testing.T) {
++	s := testAuthenticatedScraper("api_key")
++	probe, ok := any(s).(boundedCatalogProbe)
++	if !ok {
++		t.Fatal("bounded catalog probe is not implemented")
++	}
++	calls := 0
++	s.client.Transport = catalogTransport(func(r *http.Request) (*http.Response, error) {
++		calls++
++		return catalogResponse(403, "sensitive-body"), nil
++	})
++	_, _, err := probe.ProbeCatalog(context.Background())
++	if err == nil || strings.Contains(err.Error(), "sensitive") || calls != 1 {
++		t.Fatalf("unbounded/unsafe failed probe: calls=%d err=%v", calls, err)
++	}
++}
+diff --git a/internal/scraper/gcp_refresh_test.go b/internal/scraper/gcp_refresh_test.go
+new file mode 100644
+index 0000000..44afd6f
+--- /dev/null
++++ b/internal/scraper/gcp_refresh_test.go
+@@ -0,0 +1,234 @@
++package scraper
++
++import (
++	"context"
++	"errors"
++	"fmt"
++	"net/http"
++	"strings"
++	"sync"
++	"sync/atomic"
++	"testing"
++	"time"
++
++	"github.com/c3xdev/c3x-pricing-api/internal/config"
++	"golang.org/x/oauth2"
++)
++
++type catalogTokenFunc func() (*oauth2.Token, error)
++
++func (f catalogTokenFunc) Token() (*oauth2.Token, error) { return f() }
++
++func TestGCPADCRejectsInvalidTokens(t *testing.T) {
++	for _, token := range []*oauth2.Token{{}, {AccessToken: "sensitive", Expiry: time.Now().Add(-time.Hour)}, {AccessToken: "sensitive\r\nInjected: value"}} {
++		s := testAuthenticatedScraper("adc")
++		s.findTokenSource = func(context.Context, string) (oauth2.TokenSource, error) {
++			return catalogTokenFunc(func() (*oauth2.Token, error) { return token, nil }), nil
++		}
++		if err := s.Preflight(context.Background()); !errors.Is(err, errGCPAuth) || strings.Contains(err.Error(), "sensitive") {
++			t.Fatalf("invalid token accepted or leaked: %v", err)
++		}
++	}
++}
++
++func TestGCPMissingKeyDoesNotDiscoverADC(t *testing.T) {
++	for _, mode := range []string{"", "api_key"} {
++		s := NewGCPScraper(&config.Config{GCPAuthMode: mode})
++		s.findTokenSource = func(context.Context, string) (oauth2.TokenSource, error) {
++			t.Fatal("API key mode consulted ADC")
++			return nil, nil
++		}
++		if err := s.Preflight(context.Background()); err == nil || !strings.Contains(err.Error(), "GCP_API_KEY") {
++			t.Fatalf("missing key not rejected: %v", err)
++		}
++	}
++}
++
++func TestGCPADCFailureDoesNotFallback(t *testing.T) {
++	for _, stage := range []string{"discovery", "refresh"} {
++		s := testAuthenticatedScraper("adc") // deliberately also has a key
++		s.findTokenSource = func(context.Context, string) (oauth2.TokenSource, error) {
++			if stage == "discovery" {
++				return nil, errors.New("sensitive-file-path-oauth-body")
++			}
++			return catalogTokenFunc(func() (*oauth2.Token, error) { return nil, errors.New("sensitive-refresh-body") }), nil
++		}
++		s.client.Transport = catalogTransport(func(*http.Request) (*http.Response, error) { t.Fatal("ADC failure fell back to key"); return nil, nil })
++		if _, err := s.Scrape(context.Background()); !errors.Is(err, errGCPAuth) || strings.Contains(err.Error(), "sensitive") {
++			t.Fatalf("unsafe auth error: %v", err)
++		}
++	}
++}
++
++func TestGCPADCDiscoveryCancellation(t *testing.T) {
++	ctx, cancel := context.WithCancel(context.Background())
++	defer cancel()
++	s := testAuthenticatedScraper("adc")
++	s.findTokenSource = func(ctx context.Context, _ string) (oauth2.TokenSource, error) { cancel(); return nil, ctx.Err() }
++	if err := s.Preflight(ctx); !errors.Is(err, context.Canceled) {
++		t.Fatalf("lost discovery cancellation: %v", err)
++	}
++}
++
++func TestGCPADCRefreshAndConcurrentReuse(t *testing.T) {
++	ctx, cancel := context.WithCancel(context.Background())
++	defer cancel()
++	s := testAuthenticatedScraper("adc")
++	var refreshes atomic.Int32
++	s.findTokenSource = func(lifetime context.Context, _ string) (oauth2.TokenSource, error) {
++		if lifetime != ctx {
++			t.Error("source was not bound to scrape lifetime")
++		}
++		// Exercise the official refresh implementation with a fake HTTP transport.
++		oauthClient := &http.Client{CheckRedirect: rejectGCPRedirect, Transport: catalogTransport(func(r *http.Request) (*http.Response, error) {
++			n := refreshes.Add(1)
++			if r.URL.String() != "https://oauth2.googleapis.com/token" || r.Method != http.MethodPost {
++				t.Error("wrong refresh request")
++			}
++			resp := catalogResponse(200, fmt.Sprintf(`{"access_token":"fake-refreshed-%d","token_type":"Bearer","expires_in":3600}`, n))
++			resp.Header.Set("Content-Type", "application/json")
++			return resp, nil
++		})}
++		tokenCtx := context.WithValue(lifetime, oauth2.HTTPClient, oauthClient)
++		cfg := &oauth2.Config{ClientID: "fake-client", Endpoint: oauth2.Endpoint{TokenURL: "https://oauth2.googleapis.com/token", AuthStyle: oauth2.AuthStyleInParams}}
++		return cfg.TokenSource(tokenCtx, &oauth2.Token{RefreshToken: "fake-refresh"}), nil
++	}
++	if err := s.Preflight(ctx); err != nil {
++		t.Fatal(err)
++	}
++	first, err := s.auth.source.Token()
++	if err != nil {
++		t.Fatal(err)
++	}
++	first.Expiry = time.Now().Add(-time.Hour) // expire before starting concurrent requests
++	s.client.Transport = catalogTransport(func(r *http.Request) (*http.Response, error) {
++		if r.Header.Get("Authorization") != "Bearer fake-refreshed-2" {
++			t.Error("expired token reused")
++		}
++		return catalogResponse(200, `{}`), nil
++	})
++	var wg sync.WaitGroup
++	for i := 0; i < 8; i++ {
++		wg.Add(1)
++		go func() {
++			defer wg.Done()
++			resp, err := s.catalogRequest(ctx, gcpBaseURL+"/services")
++			if err != nil {
++				t.Error(err)
++				return
++			}
++			resp.Body.Close()
++		}()
++	}
++	wg.Wait()
++	if n := refreshes.Load(); n != 2 {
++		t.Fatalf("refreshes=%d, expected cached initial + one refresh", n)
++	}
++}
++
++func TestGCPADCCancellationDuringRefresh(t *testing.T) {
++	ctx, cancel := context.WithCancel(context.Background())
++	defer cancel()
++	started := make(chan struct{})
++	s := testAuthenticatedScraper("adc")
++	s.findTokenSource = func(lifetime context.Context, _ string) (oauth2.TokenSource, error) {
++		return catalogTokenFunc(func() (*oauth2.Token, error) {
++			close(started)
++			<-lifetime.Done()
++			return nil, errors.New("sensitive-canceled-refresh")
++		}), nil
++	}
++	done := make(chan error, 1)
++	go func() { done <- s.Preflight(ctx) }()
++	<-started
++	cancel()
++	select {
++	case err := <-done:
++		if !errors.Is(err, context.Canceled) {
++			t.Fatalf("lost refresh cancellation: %v", err)
++		}
++	case <-time.After(time.Second):
++		t.Fatal("refresh did not cancel")
++	}
++}
++
++func TestGCPChildCancellationDuringSharedRefresh(t *testing.T) {
++	root, cancelRoot := context.WithCancel(context.Background())
++	defer cancelRoot()
++	child, cancelChild := context.WithCancel(root)
++	defer cancelChild()
++	started, release := make(chan struct{}), make(chan struct{})
++	s := testAuthenticatedScraper("adc")
++	first := &oauth2.Token{AccessToken: "first", Expiry: time.Now().Add(time.Hour)}
++	count := 0
++	s.findTokenSource = func(lifetime context.Context, _ string) (oauth2.TokenSource, error) {
++		if lifetime != root {
++			t.Error("refresh source did not retain root context")
++		}
++		return catalogTokenFunc(func() (*oauth2.Token, error) {
++			count++
++			if count == 1 {
++				return first, nil
++			}
++			close(started)
++			<-release
++			return &oauth2.Token{AccessToken: "second"}, nil
++		}), nil
++	}
++	if err := s.Preflight(root); err != nil {
++		t.Fatal(err)
++	}
++	first.Expiry = time.Now().Add(-time.Hour)
++	done := make(chan error, 1)
++	go func() { done <- s.Preflight(child) }()
++	<-started
++	cancelChild()
++	select {
++	case err := <-done:
++		if !errors.Is(err, context.Canceled) {
++			t.Errorf("lost child cancellation: %v", err)
++		}
++		close(release)
++	case <-time.After(200 * time.Millisecond):
++		close(release)
++		<-done
++		t.Fatal("child cancellation waited for unrelated root-context refresh")
++	}
++}
++
++func TestGCPOAuthRefreshRedirectRedacted(t *testing.T) {
++	s := testAuthenticatedScraper("adc")
++	calls := 0
++	s.findTokenSource = func(ctx context.Context, _ string) (oauth2.TokenSource, error) {
++		client := &http.Client{CheckRedirect: rejectGCPRedirect, Transport: catalogTransport(func(r *http.Request) (*http.Response, error) {
++			calls++
++			if calls > 1 {
++				t.Error("OAuth redirect followed")
++			}
++			resp := catalogResponse(302, "sensitive-refresh-body")
++			resp.Header.Set("Location", "https://evil.example/sensitive-refresh-token")
++			return resp, nil
++		})}
++		ctx = context.WithValue(ctx, oauth2.HTTPClient, client)
++		cfg := &oauth2.Config{ClientID: "fake-client", Endpoint: oauth2.Endpoint{TokenURL: "https://oauth2.googleapis.com/token", AuthStyle: oauth2.AuthStyleInParams}}
++		return cfg.TokenSource(ctx, &oauth2.Token{RefreshToken: "fake-refresh"}), nil
++	}
++	err := s.Preflight(context.Background())
++	if !errors.Is(err, errGCPAuth) || strings.Contains(err.Error(), "sensitive") || calls != 1 {
++		t.Fatalf("unsafe OAuth redirect: calls=%d err=%v", calls, err)
++	}
++}
++
++func TestGCPCatalogCancellation(t *testing.T) {
++	ctx, cancel := context.WithCancel(context.Background())
++	defer cancel()
++	s := testAuthenticatedScraper("adc")
++	s.client.Transport = catalogTransport(func(r *http.Request) (*http.Response, error) {
++		cancel()
++		<-r.Context().Done()
++		return nil, errors.New("sensitive-request-error")
++	})
++	if _, err := s.catalogRequest(ctx, gcpBaseURL+"/services"); !errors.Is(err, context.Canceled) {
++		t.Fatalf("lost HTTP cancellation: %v", err)
++	}
++}
+diff --git a/internal/scraper/gcp_security_test.go b/internal/scraper/gcp_security_test.go
+new file mode 100644
+index 0000000..ba4d89b
+--- /dev/null
++++ b/internal/scraper/gcp_security_test.go
+@@ -0,0 +1,68 @@
++package scraper
++
++import (
++	"context"
++	"errors"
++	"net/http"
++	"strings"
++	"testing"
++
++	"github.com/c3xdev/c3x-pricing-api/internal/config"
++)
++
++func TestGCPCatalogOriginAndRedirects(t *testing.T) {
++	for _, mode := range []string{"api_key", "adc"} {
++		for _, target := range []string{"http://cloudbilling.googleapis.com/v1/services", "https://evil.example/v1/services", "https://cloudbilling.googleapis.com.evil.example/v1/services", "https://cloudbilling.googleapis.com:443/v1/services", "https://user@cloudbilling.googleapis.com/v1/services", "https://cloudbilling.googleapis.com/v1/services#fragment"} {
++			t.Run(mode+"/"+target, func(t *testing.T) {
++				s := testAuthenticatedScraper(mode)
++				calls := 0
++				s.client.Transport = catalogTransport(func(r *http.Request) (*http.Response, error) { calls++; return catalogResponse(200, `{}`), nil })
++				resp, err := s.catalogRequest(context.Background(), target)
++				if resp != nil {
++					resp.Body.Close()
++				}
++				if err == nil || calls != 0 {
++					t.Fatalf("unsafe origin accepted: error=%v calls=%d", err, calls)
++				}
++			})
++		}
++		for _, location := range []string{"https://evil.example/secret", "http://cloudbilling.googleapis.com/secret", "https://cloudbilling.googleapis.com/secret"} {
++			t.Run(mode+"/redirect/"+location, func(t *testing.T) {
++				s := testAuthenticatedScraper(mode)
++				calls := 0
++				s.client.Transport = catalogTransport(func(r *http.Request) (*http.Response, error) {
++					calls++
++					if calls > 1 {
++						return catalogResponse(200, `{}`), nil
++					}
++					resp := catalogResponse(302, "sensitive-body")
++					resp.Header.Set("Location", location)
++					return resp, nil
++				})
++				resp, err := s.catalogRequest(context.Background(), gcpBaseURL+"/services")
++				if resp != nil {
++					resp.Body.Close()
++				}
++				if err == nil || calls != 1 {
++					t.Fatalf("redirect followed: error=%v calls=%d", err, calls)
++				}
++			})
++		}
++	}
++}
++
++func TestGCPCatalogTransportErrorRedacted(t *testing.T) {
++	s := testAuthenticatedScraper("adc")
++	s.client.Transport = catalogTransport(func(r *http.Request) (*http.Response, error) { return nil, errors.New("sensitive-token-and-headers") })
++	_, err := s.catalogRequest(context.Background(), gcpBaseURL+"/services")
++	if err == nil || strings.Contains(err.Error(), "sensitive") {
++		t.Fatalf("transport error not redacted: %v", err)
++	}
++}
++
++func TestGCPQuotaHeaderInjectionRejected(t *testing.T) {
++	s := NewGCPScraper(&config.Config{GCPAPIKey: "test-key", GCPQuotaProject: "project\r\nInjected: sensitive"})
++	if err := s.Preflight(context.Background()); err == nil || strings.Contains(err.Error(), "sensitive") {
++		t.Fatalf("bad quota accepted/leaked: %v", err)
++	}
++}

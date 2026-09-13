@@ -1,0 +1,8 @@
+=== RUN   TestProbeRequiresExplicitOptIn
+--- PASS: TestProbeRequiresExplicitOptIn (0.00s)
+=== RUN   TestProbePrintsOnlyCounts
+--- PASS: TestProbePrintsOnlyCounts (0.00s)
+=== RUN   TestProbeFailureHasNoSuccessOutput
+--- PASS: TestProbeFailureHasNoSuccessOutput (0.00s)
+PASS
+ok  	github.com/c3xdev/c3x-pricing-api/cmd/gcp-catalog-probe	0.002s

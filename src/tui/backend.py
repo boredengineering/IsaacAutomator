@@ -481,7 +481,7 @@ class WorkstationBackend:
         subsystems.append({
             "name": "Security Profile",
             "status": "PASS",
-            "details": "Tier 1: Simple Mode (Auto /32 IP Whitelist, $0 Added Cost)",
+            "details": "Tier 1: Simple Mode (Auto /32 IP Whitelist, cost not estimated)",
             "category": "Security"
         })
 

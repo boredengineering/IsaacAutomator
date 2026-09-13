@@ -1,0 +1,66 @@
+[
+  {
+    "name": "health",
+    "argv": [
+      "docker",
+      "exec",
+      "isaac-cost-ibm-api",
+      "curl",
+      "--fail",
+      "--max-time",
+      "10",
+      "http://127.0.0.1:4000/health"
+    ],
+    "exit_code": 0,
+    "stdout": "{\"status\":\"success\",\"region\":\"local\",\"hostname\":\"93d1a15cb4c6\",\"version\":\"local\"}",
+    "stderr": "  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current\n                                 Dload  Upload   Total   Spent    Left  Speed\n\n  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0\n100    81  100    81    0     0   7938      0 --:--:-- --:--:-- --:--:--  8100\n"
+  },
+  {
+    "name": "empty-gcp-query",
+    "argv": [
+      "docker",
+      "exec",
+      "isaac-cost-ibm-api",
+      "curl",
+      "--fail",
+      "--max-time",
+      "10",
+      "-H",
+      "Content-Type: application/json",
+      "--data",
+      "{\"query\": \"{ products(filter: {vendorName: \\\"gcp\\\", service: \\\"Compute Engine\\\", region: \\\"us-west1\\\"}) { sku prices { USD unit } } }\"}",
+      "http://127.0.0.1:4000/graphql"
+    ],
+    "exit_code": 0,
+    "stdout": "{\"data\":{\"products\":[]}}\n",
+    "stderr": "  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current\n                                 Dload  Upload   Total   Spent    Left  Speed\n\n  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0\n100   160  100    25  100   135   1182   6387 --:--:-- --:--:-- --:--:--  7619\n"
+  },
+  {
+    "name": "external-egress-denied",
+    "argv": [
+      "docker",
+      "exec",
+      "isaac-cost-ibm-api",
+      "node",
+      "-e",
+      "require('https').get('https://pricing.api.infracost.io',()=>process.exit(5)).on('error',()=>process.exit(0)).setTimeout(4000,function(){this.destroy();process.exit(0)})"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "internal-network",
+    "argv": [
+      "docker",
+      "network",
+      "inspect",
+      "isaac-cost-ibm-net",
+      "--format",
+      "{{.Internal}}"
+    ],
+    "exit_code": 0,
+    "stdout": "true\n",
+    "stderr": ""
+  }
+]

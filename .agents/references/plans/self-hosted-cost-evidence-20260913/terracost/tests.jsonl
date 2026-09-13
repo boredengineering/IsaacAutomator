@@ -1,0 +1,296 @@
+{"Time":"2026-09-13T03:01:26.733158704Z","Action":"start","Package":"github.com/cycloidio/terracost/cost"}
+{"Time":"2026-09-13T03:01:26.739637945Z","Action":"run","Package":"github.com/cycloidio/terracost/cost","Test":"TestComponentDiff_PriorCost"}
+{"Time":"2026-09-13T03:01:26.739659395Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestComponentDiff_PriorCost","Output":"=== RUN   TestComponentDiff_PriorCost\n"}
+{"Time":"2026-09-13T03:01:26.739690804Z","Action":"run","Package":"github.com/cycloidio/terracost/cost","Test":"TestComponentDiff_PriorCost/WithNilComponent"}
+{"Time":"2026-09-13T03:01:26.739693179Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestComponentDiff_PriorCost/WithNilComponent","Output":"=== RUN   TestComponentDiff_PriorCost/WithNilComponent\n"}
+{"Time":"2026-09-13T03:01:26.739697898Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestComponentDiff_PriorCost/WithNilComponent","Output":"--- PASS: TestComponentDiff_PriorCost/WithNilComponent (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.739700442Z","Action":"pass","Package":"github.com/cycloidio/terracost/cost","Test":"TestComponentDiff_PriorCost/WithNilComponent","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.739704851Z","Action":"run","Package":"github.com/cycloidio/terracost/cost","Test":"TestComponentDiff_PriorCost/WithValue"}
+{"Time":"2026-09-13T03:01:26.739705872Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestComponentDiff_PriorCost/WithValue","Output":"=== RUN   TestComponentDiff_PriorCost/WithValue\n"}
+{"Time":"2026-09-13T03:01:26.739708197Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestComponentDiff_PriorCost/WithValue","Output":"--- PASS: TestComponentDiff_PriorCost/WithValue (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.73970974Z","Action":"pass","Package":"github.com/cycloidio/terracost/cost","Test":"TestComponentDiff_PriorCost/WithValue","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.739712695Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestComponentDiff_PriorCost","Output":"--- PASS: TestComponentDiff_PriorCost (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.739714328Z","Action":"pass","Package":"github.com/cycloidio/terracost/cost","Test":"TestComponentDiff_PriorCost","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.739715541Z","Action":"run","Package":"github.com/cycloidio/terracost/cost","Test":"TestComponentDiff_PlannedCost"}
+{"Time":"2026-09-13T03:01:26.739716532Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestComponentDiff_PlannedCost","Output":"=== RUN   TestComponentDiff_PlannedCost\n"}
+{"Time":"2026-09-13T03:01:26.739718005Z","Action":"run","Package":"github.com/cycloidio/terracost/cost","Test":"TestComponentDiff_PlannedCost/WithNilComponent"}
+{"Time":"2026-09-13T03:01:26.73972046Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestComponentDiff_PlannedCost/WithNilComponent","Output":"=== RUN   TestComponentDiff_PlannedCost/WithNilComponent\n"}
+{"Time":"2026-09-13T03:01:26.739722023Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestComponentDiff_PlannedCost/WithNilComponent","Output":"--- PASS: TestComponentDiff_PlannedCost/WithNilComponent (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.73972612Z","Action":"pass","Package":"github.com/cycloidio/terracost/cost","Test":"TestComponentDiff_PlannedCost/WithNilComponent","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.739727603Z","Action":"run","Package":"github.com/cycloidio/terracost/cost","Test":"TestComponentDiff_PlannedCost/WithValue"}
+{"Time":"2026-09-13T03:01:26.739728625Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestComponentDiff_PlannedCost/WithValue","Output":"=== RUN   TestComponentDiff_PlannedCost/WithValue\n"}
+{"Time":"2026-09-13T03:01:26.739729978Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestComponentDiff_PlannedCost/WithValue","Output":"--- PASS: TestComponentDiff_PlannedCost/WithValue (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.73973127Z","Action":"pass","Package":"github.com/cycloidio/terracost/cost","Test":"TestComponentDiff_PlannedCost/WithValue","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.739732452Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestComponentDiff_PlannedCost","Output":"--- PASS: TestComponentDiff_PlannedCost (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.739734025Z","Action":"pass","Package":"github.com/cycloidio/terracost/cost","Test":"TestComponentDiff_PlannedCost","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.739735979Z","Action":"run","Package":"github.com/cycloidio/terracost/cost","Test":"TestComponentDiff_Valid"}
+{"Time":"2026-09-13T03:01:26.739737211Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestComponentDiff_Valid","Output":"=== RUN   TestComponentDiff_Valid\n"}
+{"Time":"2026-09-13T03:01:26.739738664Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestComponentDiff_Valid","Output":"--- PASS: TestComponentDiff_Valid (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.739744144Z","Action":"pass","Package":"github.com/cycloidio/terracost/cost","Test":"TestComponentDiff_Valid","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.739745567Z","Action":"run","Package":"github.com/cycloidio/terracost/cost","Test":"TestNewHourly"}
+{"Time":"2026-09-13T03:01:26.739746679Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestNewHourly","Output":"=== RUN   TestNewHourly\n"}
+{"Time":"2026-09-13T03:01:26.739748562Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestNewHourly","Output":"--- PASS: TestNewHourly (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.739750466Z","Action":"pass","Package":"github.com/cycloidio/terracost/cost","Test":"TestNewHourly","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.739752179Z","Action":"run","Package":"github.com/cycloidio/terracost/cost","Test":"TestNewMonthly"}
+{"Time":"2026-09-13T03:01:26.739754253Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestNewMonthly","Output":"=== RUN   TestNewMonthly\n"}
+{"Time":"2026-09-13T03:01:26.739755896Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestNewMonthly","Output":"--- PASS: TestNewMonthly (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.739757209Z","Action":"pass","Package":"github.com/cycloidio/terracost/cost","Test":"TestNewMonthly","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.739758481Z","Action":"run","Package":"github.com/cycloidio/terracost/cost","Test":"TestCost_Hourly"}
+{"Time":"2026-09-13T03:01:26.739759633Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestCost_Hourly","Output":"=== RUN   TestCost_Hourly\n"}
+{"Time":"2026-09-13T03:01:26.739769121Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestCost_Hourly","Output":"--- PASS: TestCost_Hourly (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.739770193Z","Action":"pass","Package":"github.com/cycloidio/terracost/cost","Test":"TestCost_Hourly","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.739771776Z","Action":"run","Package":"github.com/cycloidio/terracost/cost","Test":"TestCost_Monthly"}
+{"Time":"2026-09-13T03:01:26.739773128Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestCost_Monthly","Output":"=== RUN   TestCost_Monthly\n"}
+{"Time":"2026-09-13T03:01:26.739780542Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestCost_Monthly","Output":"--- PASS: TestCost_Monthly (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.739782065Z","Action":"pass","Package":"github.com/cycloidio/terracost/cost","Test":"TestCost_Monthly","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.739783257Z","Action":"run","Package":"github.com/cycloidio/terracost/cost","Test":"TestCost_Add"}
+{"Time":"2026-09-13T03:01:26.739784059Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestCost_Add","Output":"=== RUN   TestCost_Add\n"}
+{"Time":"2026-09-13T03:01:26.739792274Z","Action":"run","Package":"github.com/cycloidio/terracost/cost","Test":"TestCost_Add/Success"}
+{"Time":"2026-09-13T03:01:26.739793426Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestCost_Add/Success","Output":"=== RUN   TestCost_Add/Success\n"}
+{"Time":"2026-09-13T03:01:26.739800419Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestCost_Add/Success","Output":"--- PASS: TestCost_Add/Success (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.739802063Z","Action":"pass","Package":"github.com/cycloidio/terracost/cost","Test":"TestCost_Add/Success","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.739805018Z","Action":"run","Package":"github.com/cycloidio/terracost/cost","Test":"TestCost_Add/CurrencyMismatch"}
+{"Time":"2026-09-13T03:01:26.739806341Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestCost_Add/CurrencyMismatch","Output":"=== RUN   TestCost_Add/CurrencyMismatch\n"}
+{"Time":"2026-09-13T03:01:26.739813825Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestCost_Add/CurrencyMismatch","Output":"--- PASS: TestCost_Add/CurrencyMismatch (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.739815337Z","Action":"pass","Package":"github.com/cycloidio/terracost/cost","Test":"TestCost_Add/CurrencyMismatch","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.73981668Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestCost_Add","Output":"--- PASS: TestCost_Add (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.739819966Z","Action":"pass","Package":"github.com/cycloidio/terracost/cost","Test":"TestCost_Add","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.73982187Z","Action":"run","Package":"github.com/cycloidio/terracost/cost","Test":"TestCost_MulDecimal"}
+{"Time":"2026-09-13T03:01:26.739822882Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestCost_MulDecimal","Output":"=== RUN   TestCost_MulDecimal\n"}
+{"Time":"2026-09-13T03:01:26.739830105Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestCost_MulDecimal","Output":"--- PASS: TestCost_MulDecimal (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.739831858Z","Action":"pass","Package":"github.com/cycloidio/terracost/cost","Test":"TestCost_MulDecimal","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.739833441Z","Action":"run","Package":"github.com/cycloidio/terracost/cost","Test":"TestPlan_ResourceDifferences"}
+{"Time":"2026-09-13T03:01:26.739834343Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestPlan_ResourceDifferences","Output":"=== RUN   TestPlan_ResourceDifferences\n"}
+{"Time":"2026-09-13T03:01:26.739841226Z","Action":"run","Package":"github.com/cycloidio/terracost/cost","Test":"TestPlan_ResourceDifferences/OnlyPrior"}
+{"Time":"2026-09-13T03:01:26.739842639Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestPlan_ResourceDifferences/OnlyPrior","Output":"=== RUN   TestPlan_ResourceDifferences/OnlyPrior\n"}
+{"Time":"2026-09-13T03:01:26.739907971Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestPlan_ResourceDifferences/OnlyPrior","Output":"--- PASS: TestPlan_ResourceDifferences/OnlyPrior (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.739909995Z","Action":"pass","Package":"github.com/cycloidio/terracost/cost","Test":"TestPlan_ResourceDifferences/OnlyPrior","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.739911668Z","Action":"run","Package":"github.com/cycloidio/terracost/cost","Test":"TestPlan_ResourceDifferences/OnlyPlanned"}
+{"Time":"2026-09-13T03:01:26.739912589Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestPlan_ResourceDifferences/OnlyPlanned","Output":"=== RUN   TestPlan_ResourceDifferences/OnlyPlanned\n"}
+{"Time":"2026-09-13T03:01:26.739931315Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestPlan_ResourceDifferences/OnlyPlanned","Output":"--- PASS: TestPlan_ResourceDifferences/OnlyPlanned (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.739933629Z","Action":"pass","Package":"github.com/cycloidio/terracost/cost","Test":"TestPlan_ResourceDifferences/OnlyPlanned","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.739942636Z","Action":"run","Package":"github.com/cycloidio/terracost/cost","Test":"TestPlan_ResourceDifferences/PriorAndPlanned"}
+{"Time":"2026-09-13T03:01:26.739944299Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestPlan_ResourceDifferences/PriorAndPlanned","Output":"=== RUN   TestPlan_ResourceDifferences/PriorAndPlanned\n"}
+{"Time":"2026-09-13T03:01:26.739966821Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestPlan_ResourceDifferences/PriorAndPlanned","Output":"--- PASS: TestPlan_ResourceDifferences/PriorAndPlanned (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.739968424Z","Action":"pass","Package":"github.com/cycloidio/terracost/cost","Test":"TestPlan_ResourceDifferences/PriorAndPlanned","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.739970358Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestPlan_ResourceDifferences","Output":"--- PASS: TestPlan_ResourceDifferences (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.73997173Z","Action":"pass","Package":"github.com/cycloidio/terracost/cost","Test":"TestPlan_ResourceDifferences","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.739972973Z","Action":"run","Package":"github.com/cycloidio/terracost/cost","Test":"TestPlan_SkippedAddresses"}
+{"Time":"2026-09-13T03:01:26.739974515Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestPlan_SkippedAddresses","Output":"=== RUN   TestPlan_SkippedAddresses\n"}
+{"Time":"2026-09-13T03:01:26.739975948Z","Action":"run","Package":"github.com/cycloidio/terracost/cost","Test":"TestPlan_SkippedAddresses/OnlyPrior"}
+{"Time":"2026-09-13T03:01:26.73997711Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestPlan_SkippedAddresses/OnlyPrior","Output":"=== RUN   TestPlan_SkippedAddresses/OnlyPrior\n"}
+{"Time":"2026-09-13T03:01:26.739986728Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestPlan_SkippedAddresses/OnlyPrior","Output":"--- PASS: TestPlan_SkippedAddresses/OnlyPrior (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.739988131Z","Action":"pass","Package":"github.com/cycloidio/terracost/cost","Test":"TestPlan_SkippedAddresses/OnlyPrior","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.739990045Z","Action":"run","Package":"github.com/cycloidio/terracost/cost","Test":"TestPlan_SkippedAddresses/OnlyPlanned"}
+{"Time":"2026-09-13T03:01:26.739990946Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestPlan_SkippedAddresses/OnlyPlanned","Output":"=== RUN   TestPlan_SkippedAddresses/OnlyPlanned\n"}
+{"Time":"2026-09-13T03:01:26.739997769Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestPlan_SkippedAddresses/OnlyPlanned","Output":"--- PASS: TestPlan_SkippedAddresses/OnlyPlanned (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.739999302Z","Action":"pass","Package":"github.com/cycloidio/terracost/cost","Test":"TestPlan_SkippedAddresses/OnlyPlanned","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.740000574Z","Action":"run","Package":"github.com/cycloidio/terracost/cost","Test":"TestPlan_SkippedAddresses/PriorAndPlanned"}
+{"Time":"2026-09-13T03:01:26.740002478Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestPlan_SkippedAddresses/PriorAndPlanned","Output":"=== RUN   TestPlan_SkippedAddresses/PriorAndPlanned\n"}
+{"Time":"2026-09-13T03:01:26.740013288Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestPlan_SkippedAddresses/PriorAndPlanned","Output":"--- PASS: TestPlan_SkippedAddresses/PriorAndPlanned (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.740014711Z","Action":"pass","Package":"github.com/cycloidio/terracost/cost","Test":"TestPlan_SkippedAddresses/PriorAndPlanned","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.740016815Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestPlan_SkippedAddresses","Output":"--- PASS: TestPlan_SkippedAddresses (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.740018468Z","Action":"pass","Package":"github.com/cycloidio/terracost/cost","Test":"TestPlan_SkippedAddresses","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.74001956Z","Action":"run","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Errors"}
+{"Time":"2026-09-13T03:01:26.740021083Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Errors","Output":"=== RUN   TestResourceDiff_Errors\n"}
+{"Time":"2026-09-13T03:01:26.740030831Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Errors","Output":"--- PASS: TestResourceDiff_Errors (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.740032254Z","Action":"pass","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Errors","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.740033716Z","Action":"run","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Valid"}
+{"Time":"2026-09-13T03:01:26.740034748Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Valid","Output":"=== RUN   TestResourceDiff_Valid\n"}
+{"Time":"2026-09-13T03:01:26.740039667Z","Action":"run","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Valid/BothNil"}
+{"Time":"2026-09-13T03:01:26.740041431Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Valid/BothNil","Output":"=== RUN   TestResourceDiff_Valid/BothNil\n"}
+{"Time":"2026-09-13T03:01:26.740045158Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Valid/BothNil","Output":"--- PASS: TestResourceDiff_Valid/BothNil (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.74004665Z","Action":"pass","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Valid/BothNil","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.740048193Z","Action":"run","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Valid/BothCorrect"}
+{"Time":"2026-09-13T03:01:26.740049095Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Valid/BothCorrect","Output":"=== RUN   TestResourceDiff_Valid/BothCorrect\n"}
+{"Time":"2026-09-13T03:01:26.740050648Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Valid/BothCorrect","Output":"--- PASS: TestResourceDiff_Valid/BothCorrect (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.74005194Z","Action":"pass","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Valid/BothCorrect","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.740053373Z","Action":"run","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Valid/BrokenPrior"}
+{"Time":"2026-09-13T03:01:26.740054585Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Valid/BrokenPrior","Output":"=== RUN   TestResourceDiff_Valid/BrokenPrior\n"}
+{"Time":"2026-09-13T03:01:26.740055978Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Valid/BrokenPrior","Output":"--- PASS: TestResourceDiff_Valid/BrokenPrior (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.740057621Z","Action":"pass","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Valid/BrokenPrior","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.740058883Z","Action":"run","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Valid/BrokenPlanned"}
+{"Time":"2026-09-13T03:01:26.740060236Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Valid/BrokenPlanned","Output":"=== RUN   TestResourceDiff_Valid/BrokenPlanned\n"}
+{"Time":"2026-09-13T03:01:26.74006236Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Valid/BrokenPlanned","Output":"--- PASS: TestResourceDiff_Valid/BrokenPlanned (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.740064053Z","Action":"pass","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Valid/BrokenPlanned","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.740065897Z","Action":"run","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Valid/BothBroken"}
+{"Time":"2026-09-13T03:01:26.740067109Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Valid/BothBroken","Output":"=== RUN   TestResourceDiff_Valid/BothBroken\n"}
+{"Time":"2026-09-13T03:01:26.740069253Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Valid/BothBroken","Output":"--- PASS: TestResourceDiff_Valid/BothBroken (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.740071126Z","Action":"pass","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Valid/BothBroken","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.74007305Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Valid","Output":"--- PASS: TestResourceDiff_Valid (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.740076617Z","Action":"pass","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Valid","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.740077849Z","Action":"run","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Cost"}
+{"Time":"2026-09-13T03:01:26.740080033Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Cost","Output":"=== RUN   TestResourceDiff_Cost\n"}
+{"Time":"2026-09-13T03:01:26.740081937Z","Action":"run","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Cost/Success"}
+{"Time":"2026-09-13T03:01:26.740084081Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Cost/Success","Output":"=== RUN   TestResourceDiff_Cost/Success\n"}
+{"Time":"2026-09-13T03:01:26.740090312Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Cost/Success","Output":"--- PASS: TestResourceDiff_Cost/Success (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.740092436Z","Action":"pass","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Cost/Success","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.74009433Z","Action":"run","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Cost/PriorWithError"}
+{"Time":"2026-09-13T03:01:26.740095652Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Cost/PriorWithError","Output":"=== RUN   TestResourceDiff_Cost/PriorWithError\n"}
+{"Time":"2026-09-13T03:01:26.740101764Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Cost/PriorWithError","Output":"--- PASS: TestResourceDiff_Cost/PriorWithError (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.740103818Z","Action":"pass","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Cost/PriorWithError","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.740106442Z","Action":"run","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Cost/PlannedWithError"}
+{"Time":"2026-09-13T03:01:26.740107845Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Cost/PlannedWithError","Output":"=== RUN   TestResourceDiff_Cost/PlannedWithError\n"}
+{"Time":"2026-09-13T03:01:26.740113736Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Cost/PlannedWithError","Output":"--- PASS: TestResourceDiff_Cost/PlannedWithError (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.74011575Z","Action":"pass","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Cost/PlannedWithError","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.740117683Z","Action":"run","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Cost/PriorCurrencyMismatch"}
+{"Time":"2026-09-13T03:01:26.740119116Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Cost/PriorCurrencyMismatch","Output":"=== RUN   TestResourceDiff_Cost/PriorCurrencyMismatch\n"}
+{"Time":"2026-09-13T03:01:26.740127662Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Cost/PriorCurrencyMismatch","Output":"--- PASS: TestResourceDiff_Cost/PriorCurrencyMismatch (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.740130027Z","Action":"pass","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Cost/PriorCurrencyMismatch","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.74013199Z","Action":"run","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Cost/PlannedCurrencyMismatch"}
+{"Time":"2026-09-13T03:01:26.740133503Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Cost/PlannedCurrencyMismatch","Output":"=== RUN   TestResourceDiff_Cost/PlannedCurrencyMismatch\n"}
+{"Time":"2026-09-13T03:01:26.740138422Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Cost/PlannedCurrencyMismatch","Output":"--- PASS: TestResourceDiff_Cost/PlannedCurrencyMismatch (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.740140005Z","Action":"pass","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Cost/PlannedCurrencyMismatch","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.740141428Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Cost","Output":"--- PASS: TestResourceDiff_Cost (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.740142911Z","Action":"pass","Package":"github.com/cycloidio/terracost/cost","Test":"TestResourceDiff_Cost","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.740144263Z","Action":"run","Package":"github.com/cycloidio/terracost/cost","Test":"TestNewState"}
+{"Time":"2026-09-13T03:01:26.740145606Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestNewState","Output":"=== RUN   TestNewState\n"}
+{"Time":"2026-09-13T03:01:26.740151878Z","Action":"run","Package":"github.com/cycloidio/terracost/cost","Test":"TestNewState/Success"}
+{"Time":"2026-09-13T03:01:26.740153881Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestNewState/Success","Output":"=== RUN   TestNewState/Success\n"}
+{"Time":"2026-09-13T03:01:26.740220215Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestNewState/Success","Output":"--- PASS: TestNewState/Success (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.740221949Z","Action":"pass","Package":"github.com/cycloidio/terracost/cost","Test":"TestNewState/Success","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.740223061Z","Action":"run","Package":"github.com/cycloidio/terracost/cost","Test":"TestNewState/ProductRepositoryFailure"}
+{"Time":"2026-09-13T03:01:26.740223852Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestNewState/ProductRepositoryFailure","Output":"=== RUN   TestNewState/ProductRepositoryFailure\n"}
+{"Time":"2026-09-13T03:01:26.740251704Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestNewState/ProductRepositoryFailure","Output":"--- PASS: TestNewState/ProductRepositoryFailure (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.740253247Z","Action":"pass","Package":"github.com/cycloidio/terracost/cost","Test":"TestNewState/ProductRepositoryFailure","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.74025492Z","Action":"run","Package":"github.com/cycloidio/terracost/cost","Test":"TestNewState/PriceRepositoryFailure"}
+{"Time":"2026-09-13T03:01:26.740256473Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestNewState/PriceRepositoryFailure","Output":"=== RUN   TestNewState/PriceRepositoryFailure\n"}
+{"Time":"2026-09-13T03:01:26.740280408Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestNewState/PriceRepositoryFailure","Output":"--- PASS: TestNewState/PriceRepositoryFailure (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.740281871Z","Action":"pass","Package":"github.com/cycloidio/terracost/cost","Test":"TestNewState/PriceRepositoryFailure","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.740283394Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestNewState","Output":"--- PASS: TestNewState (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.740284796Z","Action":"pass","Package":"github.com/cycloidio/terracost/cost","Test":"TestNewState","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.740286459Z","Action":"run","Package":"github.com/cycloidio/terracost/cost","Test":"TestState_Cost"}
+{"Time":"2026-09-13T03:01:26.740288393Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestState_Cost","Output":"=== RUN   TestState_Cost\n"}
+{"Time":"2026-09-13T03:01:26.740290527Z","Action":"run","Package":"github.com/cycloidio/terracost/cost","Test":"TestState_Cost/Success"}
+{"Time":"2026-09-13T03:01:26.74029208Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestState_Cost/Success","Output":"=== RUN   TestState_Cost/Success\n"}
+{"Time":"2026-09-13T03:01:26.740294384Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestState_Cost/Success","Output":"--- PASS: TestState_Cost/Success (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.740296879Z","Action":"pass","Package":"github.com/cycloidio/terracost/cost","Test":"TestState_Cost/Success","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.740298562Z","Action":"run","Package":"github.com/cycloidio/terracost/cost","Test":"TestState_Cost/ComponentCostMismatch"}
+{"Time":"2026-09-13T03:01:26.740299764Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestState_Cost/ComponentCostMismatch","Output":"=== RUN   TestState_Cost/ComponentCostMismatch\n"}
+{"Time":"2026-09-13T03:01:26.740311536Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestState_Cost/ComponentCostMismatch","Output":"--- PASS: TestState_Cost/ComponentCostMismatch (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.74031329Z","Action":"pass","Package":"github.com/cycloidio/terracost/cost","Test":"TestState_Cost/ComponentCostMismatch","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.740316656Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Test":"TestState_Cost","Output":"--- PASS: TestState_Cost (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.740317928Z","Action":"pass","Package":"github.com/cycloidio/terracost/cost","Test":"TestState_Cost","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.740319361Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Output":"PASS\n"}
+{"Time":"2026-09-13T03:01:26.740835327Z","Action":"output","Package":"github.com/cycloidio/terracost/cost","Output":"ok  \tgithub.com/cycloidio/terracost/cost\t0.008s\n"}
+{"Time":"2026-09-13T03:01:26.74084764Z","Action":"pass","Package":"github.com/cycloidio/terracost/cost","Elapsed":0.008}
+{"Time":"2026-09-13T03:01:26.950526547Z","Action":"start","Package":"github.com/cycloidio/terracost/mysql"}
+{"Time":"2026-09-13T03:01:26.951967836Z","Action":"run","Package":"github.com/cycloidio/terracost/mysql","Test":"TestPriceRepository_FilterByProduct"}
+{"Time":"2026-09-13T03:01:26.951982483Z","Action":"output","Package":"github.com/cycloidio/terracost/mysql","Test":"TestPriceRepository_FilterByProduct","Output":"=== RUN   TestPriceRepository_FilterByProduct\n"}
+{"Time":"2026-09-13T03:01:26.952001499Z","Action":"run","Package":"github.com/cycloidio/terracost/mysql","Test":"TestPriceRepository_FilterByProduct/NoFilters"}
+{"Time":"2026-09-13T03:01:26.952004113Z","Action":"output","Package":"github.com/cycloidio/terracost/mysql","Test":"TestPriceRepository_FilterByProduct/NoFilters","Output":"=== RUN   TestPriceRepository_FilterByProduct/NoFilters\n"}
+{"Time":"2026-09-13T03:01:26.952047264Z","Action":"output","Package":"github.com/cycloidio/terracost/mysql","Test":"TestPriceRepository_FilterByProduct/NoFilters","Output":"--- PASS: TestPriceRepository_FilterByProduct/NoFilters (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.952058666Z","Action":"pass","Package":"github.com/cycloidio/terracost/mysql","Test":"TestPriceRepository_FilterByProduct/NoFilters","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.952065368Z","Action":"run","Package":"github.com/cycloidio/terracost/mysql","Test":"TestPriceRepository_FilterByProduct/ColumnFilters"}
+{"Time":"2026-09-13T03:01:26.95206661Z","Action":"output","Package":"github.com/cycloidio/terracost/mysql","Test":"TestPriceRepository_FilterByProduct/ColumnFilters","Output":"=== RUN   TestPriceRepository_FilterByProduct/ColumnFilters\n"}
+{"Time":"2026-09-13T03:01:26.952069847Z","Action":"output","Package":"github.com/cycloidio/terracost/mysql","Test":"TestPriceRepository_FilterByProduct/ColumnFilters","Output":"--- PASS: TestPriceRepository_FilterByProduct/ColumnFilters (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.952072602Z","Action":"pass","Package":"github.com/cycloidio/terracost/mysql","Test":"TestPriceRepository_FilterByProduct/ColumnFilters","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.952074826Z","Action":"run","Package":"github.com/cycloidio/terracost/mysql","Test":"TestPriceRepository_FilterByProduct/AttributeFilters"}
+{"Time":"2026-09-13T03:01:26.952075868Z","Action":"output","Package":"github.com/cycloidio/terracost/mysql","Test":"TestPriceRepository_FilterByProduct/AttributeFilters","Output":"=== RUN   TestPriceRepository_FilterByProduct/AttributeFilters\n"}
+{"Time":"2026-09-13T03:01:26.952106195Z","Action":"output","Package":"github.com/cycloidio/terracost/mysql","Test":"TestPriceRepository_FilterByProduct/AttributeFilters","Output":"--- PASS: TestPriceRepository_FilterByProduct/AttributeFilters (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.952116434Z","Action":"pass","Package":"github.com/cycloidio/terracost/mysql","Test":"TestPriceRepository_FilterByProduct/AttributeFilters","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.952121894Z","Action":"output","Package":"github.com/cycloidio/terracost/mysql","Test":"TestPriceRepository_FilterByProduct","Output":"--- PASS: TestPriceRepository_FilterByProduct (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.952124659Z","Action":"pass","Package":"github.com/cycloidio/terracost/mysql","Test":"TestPriceRepository_FilterByProduct","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.952126022Z","Action":"run","Package":"github.com/cycloidio/terracost/mysql","Test":"TestProductRepository_FindByVendorAndSKU"}
+{"Time":"2026-09-13T03:01:26.952127024Z","Action":"output","Package":"github.com/cycloidio/terracost/mysql","Test":"TestProductRepository_FindByVendorAndSKU","Output":"=== RUN   TestProductRepository_FindByVendorAndSKU\n"}
+{"Time":"2026-09-13T03:01:26.95213021Z","Action":"output","Package":"github.com/cycloidio/terracost/mysql","Test":"TestProductRepository_FindByVendorAndSKU","Output":"--- PASS: TestProductRepository_FindByVendorAndSKU (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.952132063Z","Action":"pass","Package":"github.com/cycloidio/terracost/mysql","Test":"TestProductRepository_FindByVendorAndSKU","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.952135359Z","Action":"run","Package":"github.com/cycloidio/terracost/mysql","Test":"TestProductRepository_Filter"}
+{"Time":"2026-09-13T03:01:26.952137313Z","Action":"output","Package":"github.com/cycloidio/terracost/mysql","Test":"TestProductRepository_Filter","Output":"=== RUN   TestProductRepository_Filter\n"}
+{"Time":"2026-09-13T03:01:26.952139687Z","Action":"run","Package":"github.com/cycloidio/terracost/mysql","Test":"TestProductRepository_Filter/NoFilters"}
+{"Time":"2026-09-13T03:01:26.95214104Z","Action":"output","Package":"github.com/cycloidio/terracost/mysql","Test":"TestProductRepository_Filter/NoFilters","Output":"=== RUN   TestProductRepository_Filter/NoFilters\n"}
+{"Time":"2026-09-13T03:01:26.952156609Z","Action":"output","Package":"github.com/cycloidio/terracost/mysql","Test":"TestProductRepository_Filter/NoFilters","Output":"--- PASS: TestProductRepository_Filter/NoFilters (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.952159534Z","Action":"pass","Package":"github.com/cycloidio/terracost/mysql","Test":"TestProductRepository_Filter/NoFilters","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.952160937Z","Action":"run","Package":"github.com/cycloidio/terracost/mysql","Test":"TestProductRepository_Filter/ColumnFilters"}
+{"Time":"2026-09-13T03:01:26.95216257Z","Action":"output","Package":"github.com/cycloidio/terracost/mysql","Test":"TestProductRepository_Filter/ColumnFilters","Output":"=== RUN   TestProductRepository_Filter/ColumnFilters\n"}
+{"Time":"2026-09-13T03:01:26.952186816Z","Action":"output","Package":"github.com/cycloidio/terracost/mysql","Test":"TestProductRepository_Filter/ColumnFilters","Output":"--- PASS: TestProductRepository_Filter/ColumnFilters (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.952188388Z","Action":"pass","Package":"github.com/cycloidio/terracost/mysql","Test":"TestProductRepository_Filter/ColumnFilters","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.952190152Z","Action":"run","Package":"github.com/cycloidio/terracost/mysql","Test":"TestProductRepository_Filter/AttributeFilters"}
+{"Time":"2026-09-13T03:01:26.952191564Z","Action":"output","Package":"github.com/cycloidio/terracost/mysql","Test":"TestProductRepository_Filter/AttributeFilters","Output":"=== RUN   TestProductRepository_Filter/AttributeFilters\n"}
+{"Time":"2026-09-13T03:01:26.9522214Z","Action":"output","Package":"github.com/cycloidio/terracost/mysql","Test":"TestProductRepository_Filter/AttributeFilters","Output":"--- PASS: TestProductRepository_Filter/AttributeFilters (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.952222823Z","Action":"pass","Package":"github.com/cycloidio/terracost/mysql","Test":"TestProductRepository_Filter/AttributeFilters","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.952224055Z","Action":"output","Package":"github.com/cycloidio/terracost/mysql","Test":"TestProductRepository_Filter","Output":"--- PASS: TestProductRepository_Filter (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.952225558Z","Action":"pass","Package":"github.com/cycloidio/terracost/mysql","Test":"TestProductRepository_Filter","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.95222658Z","Action":"run","Package":"github.com/cycloidio/terracost/mysql","Test":"TestProductRepository_Upsert"}
+{"Time":"2026-09-13T03:01:26.952227522Z","Action":"output","Package":"github.com/cycloidio/terracost/mysql","Test":"TestProductRepository_Upsert","Output":"=== RUN   TestProductRepository_Upsert\n"}
+{"Time":"2026-09-13T03:01:26.952252468Z","Action":"output","Package":"github.com/cycloidio/terracost/mysql","Test":"TestProductRepository_Upsert","Output":"--- PASS: TestProductRepository_Upsert (0.00s)\n"}
+{"Time":"2026-09-13T03:01:26.952253561Z","Action":"pass","Package":"github.com/cycloidio/terracost/mysql","Test":"TestProductRepository_Upsert","Elapsed":0}
+{"Time":"2026-09-13T03:01:26.952255033Z","Action":"output","Package":"github.com/cycloidio/terracost/mysql","Output":"PASS\n"}
+{"Time":"2026-09-13T03:01:26.952419852Z","Action":"output","Package":"github.com/cycloidio/terracost/mysql","Output":"ok  \tgithub.com/cycloidio/terracost/mysql\t0.002s\n"}
+{"Time":"2026-09-13T03:01:26.952429119Z","Action":"pass","Package":"github.com/cycloidio/terracost/mysql","Elapsed":0.002}
+{"Time":"2026-09-13T03:01:27.013616091Z","Action":"start","Package":"github.com/cycloidio/terracost/price"}
+{"Time":"2026-09-13T03:01:27.015053001Z","Action":"run","Package":"github.com/cycloidio/terracost/price","Test":"TestAdd"}
+{"Time":"2026-09-13T03:01:27.015072939Z","Action":"output","Package":"github.com/cycloidio/terracost/price","Test":"TestAdd","Output":"=== RUN   TestAdd\n"}
+{"Time":"2026-09-13T03:01:27.015091694Z","Action":"run","Package":"github.com/cycloidio/terracost/price","Test":"TestAdd/Success"}
+{"Time":"2026-09-13T03:01:27.015093447Z","Action":"output","Package":"github.com/cycloidio/terracost/price","Test":"TestAdd/Success","Output":"=== RUN   TestAdd/Success\n"}
+{"Time":"2026-09-13T03:01:27.015098286Z","Action":"output","Package":"github.com/cycloidio/terracost/price","Test":"TestAdd/Success","Output":"--- PASS: TestAdd/Success (0.00s)\n"}
+{"Time":"2026-09-13T03:01:27.015099949Z","Action":"pass","Package":"github.com/cycloidio/terracost/price","Test":"TestAdd/Success","Elapsed":0}
+{"Time":"2026-09-13T03:01:27.015103967Z","Action":"run","Package":"github.com/cycloidio/terracost/price","Test":"TestAdd/ErrMismatchingUnit"}
+{"Time":"2026-09-13T03:01:27.015105199Z","Action":"output","Package":"github.com/cycloidio/terracost/price","Test":"TestAdd/ErrMismatchingUnit","Output":"=== RUN   TestAdd/ErrMismatchingUnit\n"}
+{"Time":"2026-09-13T03:01:27.015106912Z","Action":"output","Package":"github.com/cycloidio/terracost/price","Test":"TestAdd/ErrMismatchingUnit","Output":"--- PASS: TestAdd/ErrMismatchingUnit (0.00s)\n"}
+{"Time":"2026-09-13T03:01:27.015108455Z","Action":"pass","Package":"github.com/cycloidio/terracost/price","Test":"TestAdd/ErrMismatchingUnit","Elapsed":0}
+{"Time":"2026-09-13T03:01:27.015109637Z","Action":"run","Package":"github.com/cycloidio/terracost/price","Test":"TestAdd/ErrMismatchingCurrency"}
+{"Time":"2026-09-13T03:01:27.01511081Z","Action":"output","Package":"github.com/cycloidio/terracost/price","Test":"TestAdd/ErrMismatchingCurrency","Output":"=== RUN   TestAdd/ErrMismatchingCurrency\n"}
+{"Time":"2026-09-13T03:01:27.015113655Z","Action":"output","Package":"github.com/cycloidio/terracost/price","Test":"TestAdd/ErrMismatchingCurrency","Output":"--- PASS: TestAdd/ErrMismatchingCurrency (0.00s)\n"}
+{"Time":"2026-09-13T03:01:27.015115158Z","Action":"pass","Package":"github.com/cycloidio/terracost/price","Test":"TestAdd/ErrMismatchingCurrency","Elapsed":0}
+{"Time":"2026-09-13T03:01:27.015116931Z","Action":"output","Package":"github.com/cycloidio/terracost/price","Test":"TestAdd","Output":"--- PASS: TestAdd (0.00s)\n"}
+{"Time":"2026-09-13T03:01:27.015118354Z","Action":"pass","Package":"github.com/cycloidio/terracost/price","Test":"TestAdd","Elapsed":0}
+{"Time":"2026-09-13T03:01:27.015119366Z","Action":"output","Package":"github.com/cycloidio/terracost/price","Output":"PASS\n"}
+{"Time":"2026-09-13T03:01:27.015251233Z","Action":"output","Package":"github.com/cycloidio/terracost/price","Output":"ok  \tgithub.com/cycloidio/terracost/price\t0.002s\n"}
+{"Time":"2026-09-13T03:01:27.015268004Z","Action":"pass","Package":"github.com/cycloidio/terracost/price","Elapsed":0.002}
+{"Time":"2026-09-13T03:01:27.094003262Z","Action":"start","Package":"github.com/cycloidio/terracost/usage"}
+{"Time":"2026-09-13T03:01:27.095167923Z","Action":"run","Package":"github.com/cycloidio/terracost/usage","Test":"TestGetUsage"}
+{"Time":"2026-09-13T03:01:27.095180176Z","Action":"output","Package":"github.com/cycloidio/terracost/usage","Test":"TestGetUsage","Output":"=== RUN   TestGetUsage\n"}
+{"Time":"2026-09-13T03:01:27.095204792Z","Action":"output","Package":"github.com/cycloidio/terracost/usage","Test":"TestGetUsage","Output":"--- PASS: TestGetUsage (0.00s)\n"}
+{"Time":"2026-09-13T03:01:27.095207056Z","Action":"pass","Package":"github.com/cycloidio/terracost/usage","Test":"TestGetUsage","Elapsed":0}
+{"Time":"2026-09-13T03:01:27.095211604Z","Action":"output","Package":"github.com/cycloidio/terracost/usage","Output":"PASS\n"}
+{"Time":"2026-09-13T03:01:27.095432919Z","Action":"output","Package":"github.com/cycloidio/terracost/usage","Output":"ok  \tgithub.com/cycloidio/terracost/usage\t0.001s\n"}
+{"Time":"2026-09-13T03:01:27.095440603Z","Action":"pass","Package":"github.com/cycloidio/terracost/usage","Elapsed":0.001}
+{"Time":"2026-09-13T03:01:28.308963572Z","Action":"start","Package":"github.com/cycloidio/terracost/google"}
+{"Time":"2026-09-13T03:01:28.30905338Z","Action":"start","Package":"github.com/cycloidio/terracost/google/terraform"}
+{"Time":"2026-09-13T03:01:28.309065954Z","Action":"output","Package":"github.com/cycloidio/terracost/google/terraform","Output":"?   \tgithub.com/cycloidio/terracost/google/terraform\t[no test files]\n"}
+{"Time":"2026-09-13T03:01:28.309072516Z","Action":"skip","Package":"github.com/cycloidio/terracost/google/terraform","Elapsed":0}
+{"Time":"2026-09-13T03:01:28.31512088Z","Action":"run","Package":"github.com/cycloidio/terracost/google","Test":"TestZoneToRegion"}
+{"Time":"2026-09-13T03:01:28.315129266Z","Action":"output","Package":"github.com/cycloidio/terracost/google","Test":"TestZoneToRegion","Output":"=== RUN   TestZoneToRegion\n"}
+{"Time":"2026-09-13T03:01:28.315152971Z","Action":"run","Package":"github.com/cycloidio/terracost/google","Test":"TestZoneToRegion/Success"}
+{"Time":"2026-09-13T03:01:28.315154563Z","Action":"output","Package":"github.com/cycloidio/terracost/google","Test":"TestZoneToRegion/Success","Output":"=== RUN   TestZoneToRegion/Success\n"}
+{"Time":"2026-09-13T03:01:28.315159903Z","Action":"output","Package":"github.com/cycloidio/terracost/google","Test":"TestZoneToRegion/Success","Output":"--- PASS: TestZoneToRegion/Success (0.00s)\n"}
+{"Time":"2026-09-13T03:01:28.315162168Z","Action":"pass","Package":"github.com/cycloidio/terracost/google","Test":"TestZoneToRegion/Success","Elapsed":0}
+{"Time":"2026-09-13T03:01:28.315166406Z","Action":"run","Package":"github.com/cycloidio/terracost/google","Test":"TestZoneToRegion/FailInvalidZone"}
+{"Time":"2026-09-13T03:01:28.315168249Z","Action":"output","Package":"github.com/cycloidio/terracost/google","Test":"TestZoneToRegion/FailInvalidZone","Output":"=== RUN   TestZoneToRegion/FailInvalidZone\n"}
+{"Time":"2026-09-13T03:01:28.315171796Z","Action":"output","Package":"github.com/cycloidio/terracost/google","Test":"TestZoneToRegion/FailInvalidZone","Output":"--- PASS: TestZoneToRegion/FailInvalidZone (0.00s)\n"}
+{"Time":"2026-09-13T03:01:28.315175843Z","Action":"pass","Package":"github.com/cycloidio/terracost/google","Test":"TestZoneToRegion/FailInvalidZone","Elapsed":0}
+{"Time":"2026-09-13T03:01:28.315177907Z","Action":"output","Package":"github.com/cycloidio/terracost/google","Test":"TestZoneToRegion","Output":"--- PASS: TestZoneToRegion (0.00s)\n"}
+{"Time":"2026-09-13T03:01:28.315179801Z","Action":"pass","Package":"github.com/cycloidio/terracost/google","Test":"TestZoneToRegion","Elapsed":0}
+{"Time":"2026-09-13T03:01:28.315181955Z","Action":"run","Package":"github.com/cycloidio/terracost/google","Test":"TestIngester"}
+{"Time":"2026-09-13T03:01:28.31518465Z","Action":"output","Package":"github.com/cycloidio/terracost/google","Test":"TestIngester","Output":"=== RUN   TestIngester\n"}
+{"Time":"2026-09-13T03:01:28.319245212Z","Action":"run","Package":"github.com/cycloidio/terracost/google","Test":"TestIngester/SuccessIngestAll"}
+{"Time":"2026-09-13T03:01:28.319252576Z","Action":"output","Package":"github.com/cycloidio/terracost/google","Test":"TestIngester/SuccessIngestAll","Output":"=== RUN   TestIngester/SuccessIngestAll\n"}
+{"Time":"2026-09-13T03:01:28.492832154Z","Action":"output","Package":"github.com/cycloidio/terracost/google","Test":"TestIngester/SuccessIngestAll","Output":"--- PASS: TestIngester/SuccessIngestAll (0.17s)\n"}
+{"Time":"2026-09-13T03:01:28.492860517Z","Action":"pass","Package":"github.com/cycloidio/terracost/google","Test":"TestIngester/SuccessIngestAll","Elapsed":0.17}
+{"Time":"2026-09-13T03:01:28.492883069Z","Action":"run","Package":"github.com/cycloidio/terracost/google","Test":"TestIngester/SuccessMinimal"}
+{"Time":"2026-09-13T03:01:28.492885874Z","Action":"output","Package":"github.com/cycloidio/terracost/google","Test":"TestIngester/SuccessMinimal","Output":"=== RUN   TestIngester/SuccessMinimal\n"}
+{"Time":"2026-09-13T03:01:28.663785394Z","Action":"output","Package":"github.com/cycloidio/terracost/google","Test":"TestIngester/SuccessMinimal","Output":"--- PASS: TestIngester/SuccessMinimal (0.17s)\n"}
+{"Time":"2026-09-13T03:01:28.663807174Z","Action":"pass","Package":"github.com/cycloidio/terracost/google","Test":"TestIngester/SuccessMinimal","Elapsed":0.17}
+{"Time":"2026-09-13T03:01:28.663814578Z","Action":"run","Package":"github.com/cycloidio/terracost/google","Test":"TestIngester/SuccessIngestSubset"}
+{"Time":"2026-09-13T03:01:28.663817173Z","Action":"output","Package":"github.com/cycloidio/terracost/google","Test":"TestIngester/SuccessIngestSubset","Output":"=== RUN   TestIngester/SuccessIngestSubset\n"}
+{"Time":"2026-09-13T03:01:28.835442421Z","Action":"output","Package":"github.com/cycloidio/terracost/google","Test":"TestIngester/SuccessIngestSubset","Output":"--- PASS: TestIngester/SuccessIngestSubset (0.17s)\n"}
+{"Time":"2026-09-13T03:01:28.835467879Z","Action":"pass","Package":"github.com/cycloidio/terracost/google","Test":"TestIngester/SuccessIngestSubset","Elapsed":0.17}
+{"Time":"2026-09-13T03:01:28.83547382Z","Action":"run","Package":"github.com/cycloidio/terracost/google","Test":"TestIngester/ErrNotSupportedService"}
+{"Time":"2026-09-13T03:01:28.835476385Z","Action":"output","Package":"github.com/cycloidio/terracost/google","Test":"TestIngester/ErrNotSupportedService","Output":"=== RUN   TestIngester/ErrNotSupportedService\n"}
+{"Time":"2026-09-13T03:01:28.835480673Z","Action":"output","Package":"github.com/cycloidio/terracost/google","Test":"TestIngester/ErrNotSupportedService","Output":"--- PASS: TestIngester/ErrNotSupportedService (0.00s)\n"}
+{"Time":"2026-09-13T03:01:28.835482316Z","Action":"pass","Package":"github.com/cycloidio/terracost/google","Test":"TestIngester/ErrNotSupportedService","Elapsed":0}
+{"Time":"2026-09-13T03:01:28.83548431Z","Action":"run","Package":"github.com/cycloidio/terracost/google","Test":"TestIngester/FailUnsupportedZone"}
+{"Time":"2026-09-13T03:01:28.835485732Z","Action":"output","Package":"github.com/cycloidio/terracost/google","Test":"TestIngester/FailUnsupportedZone","Output":"=== RUN   TestIngester/FailUnsupportedZone\n"}
+{"Time":"2026-09-13T03:01:28.835488237Z","Action":"output","Package":"github.com/cycloidio/terracost/google","Test":"TestIngester/FailUnsupportedZone","Output":"--- PASS: TestIngester/FailUnsupportedZone (0.00s)\n"}
+{"Time":"2026-09-13T03:01:28.835795442Z","Action":"pass","Package":"github.com/cycloidio/terracost/google","Test":"TestIngester/FailUnsupportedZone","Elapsed":0}
+{"Time":"2026-09-13T03:01:28.835927359Z","Action":"output","Package":"github.com/cycloidio/terracost/google","Test":"TestIngester","Output":"--- PASS: TestIngester (0.52s)\n"}
+{"Time":"2026-09-13T03:01:28.835934403Z","Action":"pass","Package":"github.com/cycloidio/terracost/google","Test":"TestIngester","Elapsed":0.52}
+{"Time":"2026-09-13T03:01:28.83593831Z","Action":"run","Package":"github.com/cycloidio/terracost/google","Test":"TestTrialG4MachineTypesAreSkipped"}
+{"Time":"2026-09-13T03:01:28.835940223Z","Action":"output","Package":"github.com/cycloidio/terracost/google","Test":"TestTrialG4MachineTypesAreSkipped","Output":"=== RUN   TestTrialG4MachineTypesAreSkipped\n"}
+{"Time":"2026-09-13T03:01:29.009028611Z","Action":"output","Package":"github.com/cycloidio/terracost/google","Test":"TestTrialG4MachineTypesAreSkipped","Output":"    trial_g4_test.go:10: Synthetic local API appended 2 G4 machine types: emitted total=1777 supported machines=72 G4=0\n"}
+{"Time":"2026-09-13T03:01:29.009067163Z","Action":"output","Package":"github.com/cycloidio/terracost/google","Test":"TestTrialG4MachineTypesAreSkipped","Output":"--- PASS: TestTrialG4MachineTypesAreSkipped (0.17s)\n"}
+{"Time":"2026-09-13T03:01:29.00907087Z","Action":"pass","Package":"github.com/cycloidio/terracost/google","Test":"TestTrialG4MachineTypesAreSkipped","Elapsed":0.17}
+{"Time":"2026-09-13T03:01:29.009075479Z","Action":"output","Package":"github.com/cycloidio/terracost/google","Output":"PASS\n"}
+{"Time":"2026-09-13T03:01:29.014029094Z","Action":"output","Package":"github.com/cycloidio/terracost/google","Output":"ok  \tgithub.com/cycloidio/terracost/google\t0.705s\n"}
+{"Time":"2026-09-13T03:01:29.014041697Z","Action":"pass","Package":"github.com/cycloidio/terracost/google","Elapsed":0.705}

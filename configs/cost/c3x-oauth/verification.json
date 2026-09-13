@@ -1,0 +1,58 @@
+{
+  "recorded_at_utc": "2026-09-13T17:03:57.575243+00:00",
+  "upstream": "https://github.com/c3xdev/c3x-pricing-api",
+  "base_commit": "cc58da98652a0ce9f8aac6d1f574d3578544d8c1",
+  "patch_sha256": "71cb0b8ef8f1ead3ee1f6a2132b63283e92ac5dd31de33c6a23c7f9c8fab5ab7",
+  "patch_replay": "applied to fresh pinned checkout; all 23 changed/new file hashes matched implementation manifest",
+  "replay_checkout": "/tmp/isaac-c3x-oauth-parent/replay",
+  "offline_checks": {
+    "replay-tests-text": {
+      "command": "go test -mod=readonly -short -count=1 ./...",
+      "exit_code": 0
+    },
+    "replay-race": {
+      "command": "go test -mod=readonly -race -short -count=1 ./...",
+      "exit_code": 0
+    },
+    "replay-vet": {
+      "command": "go vet -mod=readonly ./...",
+      "exit_code": 0
+    },
+    "replay-build-server": {
+      "command": "go build -mod=readonly -o /tmp/isaac-c3x-oauth-parent/c3x-pricing-api ./cmd/server",
+      "exit_code": 0
+    },
+    "replay-build-probe": {
+      "command": "go build -mod=readonly -o /tmp/isaac-c3x-oauth-parent/gcp-catalog-probe-final ./cmd/gcp-catalog-probe",
+      "exit_code": 0
+    }
+  },
+  "negative_probe_cases_passed": 5,
+  "live_probe": {
+    "binary": "/tmp/isaac-c3x-oauth-parent/gcp-catalog-probe-final",
+    "binary_sha256": "abaa89931c80f8496c3d39d2d8347eafc326e2e275f63f4fe72121567249ab26",
+    "auth_mode": "adc",
+    "quota_project": "cybernetic-renan",
+    "api_key_variables_removed": [
+      "GCP_API_KEY",
+      "GOOGLE_API_KEY"
+    ],
+    "args": [
+      "--live"
+    ],
+    "exit_code": 0,
+    "stdout": {
+      "status": "ok",
+      "services": 1,
+      "compute_engine_skus": 1
+    },
+    "catalog_requests_per_run": 2,
+    "pagination": false,
+    "database_used": false,
+    "credential_values_emitted_or_saved_by_harness": false
+  },
+  "scope": "OAuth Catalog authentication verified; full import, G4/Flex/Hyperdisk pricing and production engine integration NOT verified",
+  "cloud_or_iam_mutations": false,
+  "database_integration_build_tags_tested": false,
+  "committed_or_pushed": false
+}

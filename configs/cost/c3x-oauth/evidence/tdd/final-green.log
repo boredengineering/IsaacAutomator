@@ -1,0 +1,8 @@
+?   	github.com/c3xdev/c3x-pricing-api/catalog	[no test files]
+ok  	github.com/c3xdev/c3x-pricing-api/cmd/gcp-catalog-probe	0.002s
+ok  	github.com/c3xdev/c3x-pricing-api/cmd/server	0.003s
+ok  	github.com/c3xdev/c3x-pricing-api/internal/config	0.001s
+ok  	github.com/c3xdev/c3x-pricing-api/internal/db	0.001s
+ok  	github.com/c3xdev/c3x-pricing-api/internal/graphql	0.004s
+ok  	github.com/c3xdev/c3x-pricing-api/internal/scraper	0.003s
+ok  	github.com/c3xdev/c3x-pricing-api/internal/server	0.006s

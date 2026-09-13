@@ -1,0 +1,6 @@
+=== RUN   TestGCPChildCancellationDuringSharedRefresh
+    gcp_refresh_test.go:121: child cancellation waited for unrelated root-context refresh
+--- FAIL: TestGCPChildCancellationDuringSharedRefresh (0.20s)
+FAIL
+FAIL	github.com/c3xdev/c3x-pricing-api/internal/scraper	0.202s
+FAIL

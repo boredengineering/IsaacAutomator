@@ -1,0 +1,16 @@
+{
+  "data": {
+    "products": [
+      {
+        "sku": "DZH318Z0BQ50/Standard_D2s_v3/ae331802-83a5-4b9e-b287-85675f794e3d",
+        "prices": [
+          {
+            "USD": "0.096",
+            "unit": "1 Hour",
+            "purchaseOption": "Consumption"
+          }
+        ]
+      }
+    ]
+  }
+}

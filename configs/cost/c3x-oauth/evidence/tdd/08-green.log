@@ -1,0 +1,6 @@
+=== RUN   TestGCPBoundedCatalogProbe
+--- PASS: TestGCPBoundedCatalogProbe (0.00s)
+=== RUN   TestGCPProbeStopsOnError
+--- PASS: TestGCPProbeStopsOnError (0.00s)
+PASS
+ok  	github.com/c3xdev/c3x-pricing-api/internal/scraper	0.002s

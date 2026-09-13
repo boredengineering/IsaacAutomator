@@ -1,0 +1,9 @@
+{"time":"2026-09-13T03:00:12.20189478Z","level":"INFO","msg":"schema applied"}
+Error: GCP_API_KEY is required for GCP scraping, set it in your .env file
+Usage:
+  c3x-pricing-api scrape [flags]
+
+Flags:
+  -h, --help            help for scrape
+      --vendor string   Vendor to scrape: aws, azure, gcp, or all (default "all")
+

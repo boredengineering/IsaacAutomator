@@ -1,0 +1,202 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-09-12T23:42:09.023859+00:00",
+  "scope": "bounded public-input Infracost integration; NOT complete roadmap acceptance",
+  "tests": {
+    "suites": [
+      {
+        "suite": "backend_selection",
+        "exit_code": 0,
+        "tests": 5,
+        "skipped": 0
+      },
+      {
+        "suite": "backend_entrypoints",
+        "exit_code": 0,
+        "tests": 14,
+        "skipped": 0
+      },
+      {
+        "suite": "backend_runtime",
+        "exit_code": 0,
+        "tests": 7,
+        "skipped": 0
+      },
+      {
+        "suite": "terraform_runner",
+        "exit_code": 0,
+        "tests": 42,
+        "skipped": 0
+      },
+      {
+        "suite": "terraform_lifecycle",
+        "exit_code": 0,
+        "tests": 23,
+        "skipped": 0
+      },
+      {
+        "suite": "workstation_profile",
+        "exit_code": 0,
+        "tests": 11,
+        "skipped": 0
+      },
+      {
+        "suite": "workstation_profile_command",
+        "exit_code": 0,
+        "tests": 12,
+        "skipped": 0
+      },
+      {
+        "suite": "cost_estimate",
+        "python": "python3",
+        "exit_code": 0,
+        "tests": 34,
+        "skipped": 0
+      },
+      {
+        "suite": "cost_command",
+        "python": "python3",
+        "exit_code": 0,
+        "tests": 3,
+        "skipped": 0
+      },
+      {
+        "suite": "infracost_contract",
+        "python": "python3",
+        "exit_code": 0,
+        "tests": 4,
+        "skipped": 0
+      },
+      {
+        "suite": "infracost_packaging",
+        "python": "python3",
+        "exit_code": 0,
+        "tests": 16,
+        "skipped": 0
+      },
+      {
+        "suite": "cost_tui",
+        "python": "/tmp/isaac-task30-tui-venv/bin/python",
+        "exit_code": 0,
+        "tests": 15,
+        "skipped": 0
+      },
+      {
+        "suite": "terraform_tui",
+        "python": "/tmp/isaac-task30-tui-venv/bin/python",
+        "exit_code": 0,
+        "tests": 34,
+        "skipped": 0
+      },
+      {
+        "suite": "isaac9s_existing_full_app_guarded",
+        "tests": 1,
+        "skipped": 0,
+        "passed": true,
+        "exit_code": 0
+      }
+    ],
+    "total_tests": 221,
+    "total_skipped": 0,
+    "all_passed": true
+  },
+  "terraform_fixture_validation": [
+    {
+      "fixture": "g4-standard-384-flex_start",
+      "exit_code": 0,
+      "valid": true,
+      "errors": 0
+    },
+    {
+      "fixture": "g4-standard-384-standard",
+      "exit_code": 0,
+      "valid": true,
+      "errors": 0
+    },
+    {
+      "fixture": "g4-standard-48-flex_start",
+      "exit_code": 0,
+      "valid": true,
+      "errors": 0
+    },
+    {
+      "fixture": "g4-standard-48-standard",
+      "exit_code": 0,
+      "valid": true,
+      "errors": 0
+    }
+  ],
+  "cli_public_fixture_attempts": [
+    {
+      "fixture": "configs/cost/fixtures/g4-standard-48-standard",
+      "exit_code": 2,
+      "reason": "authentication_token_required",
+      "region_status": "verified_single",
+      "unknown_resources": 7,
+      "input_digest": "9c96a3b7c1ad0a4002f3afc158a55ec7e8a2dcf3ea7d2699ab183998a0e6c860"
+    },
+    {
+      "fixture": "configs/cost/fixtures/g4-standard-48-flex_start",
+      "exit_code": 2,
+      "reason": "authentication_token_required",
+      "region_status": "verified_single",
+      "unknown_resources": 7,
+      "input_digest": "7e9f80b2b28c9cf9f7f0d25103174b608d0709edc4134d02bc6303e68a90a76b"
+    },
+    {
+      "fixture": "configs/cost/fixtures/g4-standard-384-standard",
+      "exit_code": 2,
+      "reason": "authentication_token_required",
+      "region_status": "verified_single",
+      "unknown_resources": 7,
+      "input_digest": "84aea1c08793684e2f82d5edcfd0348dcad3606827a782e2490ebe18f49d1f94"
+    },
+    {
+      "fixture": "configs/cost/fixtures/g4-standard-384-flex_start",
+      "exit_code": 2,
+      "reason": "authentication_token_required",
+      "region_status": "verified_single",
+      "unknown_resources": 7,
+      "input_digest": "7d37b6a9679bfca211b6a014e9230b5756a2a09f1ba89227cd98e4b2e52b8cad"
+    }
+  ],
+  "authenticated_pricing": "blocked: INFRACOST_CLI_AUTHENTICATION_TOKEN absent; no quote obtained",
+  "docker_packaging_stage": {
+    "base": "python:3.10-slim",
+    "scope": "verbatim optional stage from product Dockerfile, not complete controller image",
+    "enabled_and_disabled_passed": true,
+    "runtime_network": "none",
+    "experiment_image_tags_deleted": true
+  },
+  "native_architecture_exercised": "linux-amd64",
+  "arm64": "archive and binary checksums verified; not natively executed",
+  "source_sha256": {
+    "cost": "476a58e9b7f6ad3c3483d2ecde38afdf779093672923de0a36a45ec8d016e813",
+    "scripts/install_infracost.py": "835966ed33a638c6f0fc717b9ac2cedb661118782f62b428b081087df561a378",
+    "configs/cost/runtime.json": "0fc23cc377f919ae720fc03ff7109165221b5f5ef761aaff7289ce4980f8bcd6",
+    "src/python/cost_estimate.py": "41b49025c81a2108d29f36a291a2e9d4f21f9d672e1c4a2005d85f875a8406ce",
+    "src/python/cost_command.py": "9e59a6a64bbe602924dfea00856ef6b753be2273bf3ef10b794e7f702795a9ca",
+    "src/tui/widgets/cost_estimate.py": "9cea4c6a6f0f435aa71f83164304ff80fd0e0a3d5f489fc1f20d5860bf407289",
+    "src/tui/screens/profiles.py": "00a59665b3a529a2e1881fd4f90b0b4aaad79f07e5be66a4e70e2d1189c55597",
+    "src/tui/screens/inspector.py": "e88dec4c5a6ccbca03737dee67a4478a6d6cb24a199ee51a4bdc472dab462de1",
+    "src/tui/screens/deploy_modal.py": "1956d71d24dabca9a911d37ebddc56cc54b6041127d3a37eea73e00a0fed2ec6",
+    "src/tui/app.py": "7b5c83cbe9002392b16bb5f56937e0f2563d4bb8e97648ff0a76465901d04f91",
+    "src/tui/backend.py": "a33d085b2ce9dfa7146dc1472d76358b3011155c0923224b5481bdd620694dae",
+    "src/tui/screens/workstations.py": "5fdc6cf80a8bad473c2b296c0374b9b96ea7849621667165c97a855697117b2f",
+    "requirements-tui.txt": "f43a1238b5dc8eb2599b0d823264909c3b1ad3b664fdc200353be77bcf7cfea5",
+    "Dockerfile": "220c95855960ff7f8d8f91560841203d1230379b660893ec1d03c489baea75be"
+  },
+  "review": {
+    "core": "passed final bounded review; core-review.json",
+    "packaging": "passed scoped review; deleg_9df15378",
+    "ui": "passed scoped re-review; deleg_59c79c6d task1"
+  },
+  "remaining_gates": [
+    "authenticated public G4/Flex pricing and SKU coverage",
+    "private input policy and production modules/variables",
+    "profile/deployment/native saved-plan binding",
+    "advanced lifetime, multi-stack ownership/allocation and attributed supplemental Flex pricing",
+    "complete optional controller image build and native ARM64 execution",
+    "paid GPU/IAP/robotics/deployment acceptance (outside this cost slice)"
+  ]
+}

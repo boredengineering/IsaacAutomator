@@ -1,0 +1,370 @@
+{
+  "passed_evidence_review": true,
+  "catalog_access_verified": true,
+  "scoped_import_verified": true,
+  "g4_estimation_accepted": false,
+  "verdict": "EVIDENCE_PASS_SCOPED_REAL_CATALOG_IMPORT; G4_ESTIMATION_FAIL",
+  "audit_time_utc": "2026-09-13T17:27:38.906336+00:00",
+  "scope": "Independent read-only review of captured real GCP Billing API data, scoped production normalization and local PostgreSQL import, served catalog definitions, actual recorded HTTP requests/responses, and 12 fixture executions. No cloud calls, credentials, deployments, code changes, or service mutations performed by this audit.",
+  "findings": [
+    {
+      "id": "capture_integrity",
+      "status": "pass",
+      "detail": "All 14 gzip payloads decompress and match manifest SHA-256, uncompressed byte counts and record counts. Four service-discovery pages end with an empty nextPageToken; Compute Engine has seven SKU pages ending empty, and each other service has one terminal SKU page. 35,924 unique SKU IDs; 48,655,662 uncompressed bytes. Source transport delegates to http.DefaultTransport and permits only HTTPS GET cloudbilling.googleapis.com, not a mock or fixture response. ADC opt-in, Preflight and production catalog functions are invoked. Authentication success is reviewed from preserved evidence, not reauthenticated by this auditor.",
+      "raw_sku_counts": {
+        "Compute Engine": 32873,
+        "Cloud Storage": 1229,
+        "Networking": 1795,
+        "Artifact Registry": 27
+      }
+    },
+    {
+      "id": "normalization_and_import",
+      "status": "pass",
+      "detail": "Independently matched every direct product to its raw SKU, region, normalized service, family, attributes, USD tier, usage boundaries, product hash and price hash. Independently recomputed every synthesized price from the production family/spec tables and CPU/RAM indexing logic. Exact allowed-region projection set matches all direct products. Trial importer decodes db.Product, runs real migrations, calls db.UpsertProducts and reads CountProducts; production upsert uses parameterized INSERT ... ON CONFLICT, not mock storage. Live read-only PostgreSQL SELECT compared every product identity field, attributes and complete price array against NDJSON: exact semantic equality for all rows. Capture/runtime copies of gcp.go, hash.go and queries.go are identical.",
+      "direct_products": 3507,
+      "direct_price_entries": 3883,
+      "production_synthesized_products": 280,
+      "production_derived_price_entries": 560,
+      "database_products": 3787,
+      "database_price_entries": 4443,
+      "duplicate_product_hashes": 0,
+      "input_sha256": "1e2577142527522a6dfe63e8a637d92f47cdd326f492ad6d90edc6a062a56dc0",
+      "region_counts": {
+        "global": 1533,
+        "us-west1": 1112,
+        "us": 28,
+        "us-east1": 1114
+      }
+    },
+    {
+      "id": "exact_case_coverage",
+      "status": "pass_for_execution_not_estimation",
+      "detail": "Verified manifest hashes against all four current repository JSON fixtures, staged JSON and derived HCL. Evaluated only setup.py projection functions in memory and reproduced exact HCL bytes, retaining machine type, RTX accelerator/count, Hyperdisk 255 GB and STANDARD/FLEX_START scheduling. Exact Cartesian coverage: g4-standard-48 and g4-standard-384 each STANDARD and FLEX_START, four original JSON attempts, four HCL attempts, four HCL plus supplied-usage attempts. fixture-results.json equals summary results; individual stdout/stderr corroborate outcomes and quote-analysis instance lines.",
+      "original_json": {
+        "cases": 4,
+        "rc_1": 4,
+        "error": "no .tf files found"
+      },
+      "derived_hcl": {
+        "cases": 4,
+        "rc_0": 4
+      },
+      "derived_hcl_with_usage": {
+        "cases": 4,
+        "rc_0": 4
+      }
+    },
+    {
+      "id": "actual_served_catalog_and_http",
+      "status": "pass",
+      "detail": "Read actual served-catalog.stdout, not merely CLI embedded definitions: 444 entries with server hash 1d3f5317196d20ec6cb10a30db310a35beb5a7d309be527abb6322cef237e871. Instance mapping recognizes only L4 versus default T4, and PD SSD/balanced versus default PD standard; compute rate uses machineType and monthly_hours(), with no Flex-specific mapping in this served instance definition. Recorder is a transparent httputil reverse proxy with response-body restoration, no price fabrication. All recorded requests forward to the owned API. 51 GraphQL requests: 48 successful response pairs from eight HCL quotes and three failed-control attempts without ModifyResponse records. Server hash is recorded, not independently reconstructed from its hashing algorithm.",
+      "graphql_requests": 51,
+      "successful_graphql_responses": 48,
+      "upstream": "http://isaac-gcp-verify-77e5e4c2-api:4000",
+      "served_entries": 444
+    },
+    {
+      "id": "missing_g4_zero",
+      "status": "fail",
+      "detail": "Zero G4 machineType products in NDJSON and live DB. Actual machine queries for both sizes return HTTP 200 products:[] in us-west1, then us-central1; quotes nevertheless mark compute rate 0 and cost 0 as price_source live in all eight HCL runs. Production machine family/spec tables lack G4 despite raw G4 CPU/RAM SKUs being present. us-central1 is outside this projected DB, so that fallback cannot demonstrate genuine alternative-region availability."
+    },
+    {
+      "id": "wrong_gpu_and_disk",
+      "status": "fail",
+      "detail": "Fixtures request nvidia-rtx-pro-6000 (1 or 8 GPUs) and hyperdisk-balanced (255 GB). All eight successful quote paths actually query T4 SKU description and Storage PD Capacity. Recorded responses supply real USD 0.35/h T4 and PD tiers 0/0.04 GiBy.mo; quotes choose 0.35 and 0.04, giving disk 10.2 and GPU 255.5 or 2044 monthly. Raw Oregon RTX 6000 96GB is 1.09565/h and Hyperdisk Balanced Capacity is 0.08/GiBy.mo, proving wrong SKU selection without relying on external reference docs.",
+      "raw_sku_evidence": [
+        {
+          "sku": "1DE7-2C1A-CBEB",
+          "description": "RTX 6000 96GB attached to DWS Defined Duration VMs running in Oregon",
+          "usage_type": "OnDemand",
+          "unit": "h",
+          "USD_tiers": [
+            "0.5478300000"
+          ]
+        },
+        {
+          "sku": "3B6F-2FBA-B0C5",
+          "description": "DWS Defined Duration G4 Core running in Oregon",
+          "usage_type": "OnDemand",
+          "unit": "h",
+          "USD_tiers": [
+            "0.0244550000"
+          ]
+        },
+        {
+          "sku": "4742-1C3C-6E23",
+          "description": "DWS Defined Duration G4 Ram running in Oregon",
+          "usage_type": "OnDemand",
+          "unit": "GiBy.h",
+          "USD_tiers": [
+            "0.0029350000"
+          ]
+        },
+        {
+          "sku": "73C5-0031-0BF3",
+          "description": "RTX 6000 96GB running in Oregon",
+          "usage_type": "OnDemand",
+          "unit": "h",
+          "USD_tiers": [
+            "1.0956500000"
+          ]
+        },
+        {
+          "sku": "88B8-C3ED-03F0",
+          "description": "Nvidia Tesla T4 GPU running in Americas",
+          "usage_type": "OnDemand",
+          "unit": "h",
+          "USD_tiers": [
+            "0.3500000000"
+          ]
+        },
+        {
+          "sku": "A36E-7315-8862",
+          "description": "G4 Instance Core running in Oregon",
+          "usage_type": "OnDemand",
+          "unit": "h",
+          "USD_tiers": [
+            "0.0489100000"
+          ]
+        },
+        {
+          "sku": "C566-5B7E-28AA",
+          "description": "G4 Instance Ram running in Oregon",
+          "usage_type": "OnDemand",
+          "unit": "GiBy.h",
+          "USD_tiers": [
+            "0.0058700000"
+          ]
+        },
+        {
+          "sku": "D973-5D65-BAB2",
+          "description": "Storage PD Capacity",
+          "usage_type": "OnDemand",
+          "unit": "GiBy.mo",
+          "USD_tiers": [
+            "0.0000000000",
+            "0.0400000000"
+          ]
+        },
+        {
+          "sku": "E917-4171-722C",
+          "description": "Hyperdisk Balanced Capacity in Oregon",
+          "usage_type": "OnDemand",
+          "unit": "GiBy.mo",
+          "USD_tiers": [
+            "0.0800000000"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "flex_and_time_horizon",
+      "status": "fail",
+      "detail": "STANDARD and FLEX_START produce identical instance line items and OnDemand machine queries at the same size/usage setting. FLEX_START max_run_duration is 3600 seconds in verified inputs; quotes use 730 hours, not one execution. Raw catalog contains distinct DWS Defined Duration G4 and RTX SKUs, also classified OnDemand: changing purchaseOption alone would not establish correct Flex pricing. No full corrected Flex estimate is asserted."
+    },
+    {
+      "id": "usage_consumption",
+      "status": "partial_fail",
+      "detail": "Supplied usage bytes match current repository public example. All four usage runs consume monthly_data_processed_gb=100, increasing NAT data quantity from 0 to 100 and static charge by 4.5. Bucket storage_gb=1 and repository storage_gb=10 leave quantities zero; served catalog requires monthly_storage_gb instead. This is initial Infracost-style usage-schema incompatibility, NOT evidence of an inherent GCS/Artifact Registry storage-pricing failure. Separate native-correct usage rechecks being performed by the parent are outside this completed run's acceptance evidence. Bucket operation inputs have no corresponding dimensions. NAT supplied assigned_vms differs from served active_vms; equal default 1 masks that mismatch. Compute monthly_hrs=730 equals default, so unchanged 730 quantity is not independent proof this key was consumed. NAT pricing is static in served definitions and output, not a catalog-backed live GCP NAT quote."
+    },
+    {
+      "id": "isolation_and_negative_control",
+      "status": "pass_with_limits",
+      "detail": "Historical before/after probes for API and CLI report DNS lookup failure for pricing.c3x.dev, registry.terraform.io and cloudbilling.googleapis.com and failed TCP to 1.1.1.1:443. Inspected helper confirms genuine bounded resolver/dial checks. Independent selected-field live Docker inspection finds exactly three owned containers on only the named internal network, no host-published ports, no bind/volume mounts, bounded CPU/memory. Recorded API-stop control exits 1 with upstream 502 instead of fabricated prices, then health restores. This auditor did not rerun network probes or stop/restart services."
+    },
+    {
+      "id": "parent_cleanup",
+      "status": "required_pending",
+      "detail": "At audit inspection all three trial containers are still running. Parent must remove only isaac-gcp-verify-77e5e4c2-cli, isaac-gcp-verify-77e5e4c2-api, isaac-gcp-verify-77e5e4c2-db and isaac-gcp-verify-77e5e4c2-net after reviews, verify absence and preserve evidence files. DB is disposable tmpfs by setup; no trial named volumes/bind mounts were found. Do not globally prune Docker resources or delete shared postgres image/Neo4j resources. Cleanup was not performed or claimed by this read-only audit."
+    }
+  ],
+  "caveats": [
+    "Evidence PASS means trustworthy scoped test evidence and real imported catalog data, NOT correct G4 estimates, production readiness or approval to create a dedicated C3X project.",
+    "Only four service SKU listings are fully paginated. Region projection is us-west1, us-east1, us, global and empty; actual output has no empty-region rows. This is not a full GCP catalog import.",
+    "The test uses a native ADC capture harness calling production scraper/normalizer functions, then offline NDJSON and a test importer calling production DB functions. It does not validate an unmodified scheduled GCP scrape-to-DB lifecycle, ongoing refresh/pruning or cloud-hosted deployment.",
+    "Synthesized products are production-derived CPU/RAM combinations, not raw Google machine SKUs and not invented manual test prices. Recomputing that algorithm verifies provenance, not its universal estimation correctness.",
+    "JSON is unsupported by this observed CLI directory parse path. Derived HCL is a test-only deterministic projection; its success is not support for original JSON input or proof of Terraform/provider execution.",
+    "Network probes cover selected DNS names and one IP/port, not an exhaustive firewall/host-reachability audit. Internal-network topology supports external-egress isolation but does not establish isolation from the host or all same-network services.",
+    "HTTP recorder lacks correlation IDs and timestamps. Sequential successful request/response pairs corroborate the matrix but are not independent per-case tracing. Its compressed /catalog response body is logged as lossy text; parsed served-catalog.stdout provides the readable actual API catalog. Failed reverse-proxy transport attempts lack response-body records.",
+    "No independent cloud reauthentication, TLS provenance attestation or official reference-doc comparison was performed. Official public-rate and SKU-to-Flex eligibility interpretation can be verified separately by the parent; raw SKU differences alone already reject these estimates.",
+    "The public usage fixture is a synthetic planning workload, not measured consumption. Additional transfer, logs, snapshots, operations and other unsupported charges must not be treated as free.",
+    "A setup/run harness writes unrestricted docker-inspect results into command logs. This audit deliberately avoided dumping those logs or environment values; reviewed topology and selected-field live inspection contain no credentials. The no-credential capture policy does not mean every harness log is generally safe for unrestricted publication."
+  ],
+  "verified_paths": [
+    "/tmp/isaac-gcp-cost-validation/capture/internal/scraper/gcp.go",
+    "/tmp/isaac-gcp-cost-validation/capture/internal/scraper/gcp_validation_test.go",
+    "/tmp/isaac-gcp-cost-validation/capture/internal/scraper/hash.go",
+    "/tmp/isaac-gcp-cost-validation/catalog/001.json.gz",
+    "/tmp/isaac-gcp-cost-validation/catalog/002.json.gz",
+    "/tmp/isaac-gcp-cost-validation/catalog/003.json.gz",
+    "/tmp/isaac-gcp-cost-validation/catalog/004.json.gz",
+    "/tmp/isaac-gcp-cost-validation/catalog/005.json.gz",
+    "/tmp/isaac-gcp-cost-validation/catalog/006.json.gz",
+    "/tmp/isaac-gcp-cost-validation/catalog/007.json.gz",
+    "/tmp/isaac-gcp-cost-validation/catalog/008.json.gz",
+    "/tmp/isaac-gcp-cost-validation/catalog/009.json.gz",
+    "/tmp/isaac-gcp-cost-validation/catalog/010.json.gz",
+    "/tmp/isaac-gcp-cost-validation/catalog/011.json.gz",
+    "/tmp/isaac-gcp-cost-validation/catalog/012.json.gz",
+    "/tmp/isaac-gcp-cost-validation/catalog/013.json.gz",
+    "/tmp/isaac-gcp-cost-validation/catalog/014.json.gz",
+    "/tmp/isaac-gcp-cost-validation/catalog/capture-summary.json",
+    "/tmp/isaac-gcp-cost-validation/catalog/products.ndjson",
+    "/tmp/isaac-gcp-cost-validation/runtime/api-source/cmd/trial-import/main.go",
+    "/tmp/isaac-gcp-cost-validation/runtime/api-source/cmd/trial-import/main_test.go",
+    "/tmp/isaac-gcp-cost-validation/runtime/api-source/internal/db/queries.go",
+    "/tmp/isaac-gcp-cost-validation/runtime/derived-hcl/g4-standard-384-flex_start/main.tf",
+    "/tmp/isaac-gcp-cost-validation/runtime/derived-hcl/g4-standard-384-standard/main.tf",
+    "/tmp/isaac-gcp-cost-validation/runtime/derived-hcl/g4-standard-48-flex_start/main.tf",
+    "/tmp/isaac-gcp-cost-validation/runtime/derived-hcl/g4-standard-48-standard/main.tf",
+    "/tmp/isaac-gcp-cost-validation/runtime/fixtures/g4-standard-384-flex_start/main.tf.json",
+    "/tmp/isaac-gcp-cost-validation/runtime/fixtures/g4-standard-384-standard/main.tf.json",
+    "/tmp/isaac-gcp-cost-validation/runtime/fixtures/g4-standard-48-flex_start/main.tf.json",
+    "/tmp/isaac-gcp-cost-validation/runtime/fixtures/g4-standard-48-standard/main.tf.json",
+    "/tmp/isaac-gcp-cost-validation/runtime/fixtures-manifest.json",
+    "/tmp/isaac-gcp-cost-validation/runtime/net-helper.go",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/api-isolation-after.stdout",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/api-isolation-before.stdout",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/cli-isolation-after.stdout",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/cli-isolation-before.stdout",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/database-counts.stdout",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/fixture-results.json",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/g4-standard-384-flex_start.hcl.stderr",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/g4-standard-384-flex_start.hcl.stdout",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/g4-standard-384-flex_start.hcl.usage.stderr",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/g4-standard-384-flex_start.hcl.usage.stdout",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/g4-standard-384-flex_start.tf-json.stderr",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/g4-standard-384-flex_start.tf-json.stdout",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/g4-standard-384-standard.hcl.stderr",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/g4-standard-384-standard.hcl.stdout",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/g4-standard-384-standard.hcl.usage.stderr",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/g4-standard-384-standard.hcl.usage.stdout",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/g4-standard-384-standard.tf-json.stderr",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/g4-standard-384-standard.tf-json.stdout",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/g4-standard-48-flex_start.hcl.stderr",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/g4-standard-48-flex_start.hcl.stdout",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/g4-standard-48-flex_start.hcl.usage.stderr",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/g4-standard-48-flex_start.hcl.usage.stdout",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/g4-standard-48-flex_start.tf-json.stderr",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/g4-standard-48-flex_start.tf-json.stdout",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/g4-standard-48-standard.hcl.stderr",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/g4-standard-48-standard.hcl.stdout",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/g4-standard-48-standard.hcl.usage.stderr",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/g4-standard-48-standard.hcl.usage.stdout",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/g4-standard-48-standard.tf-json.stderr",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/g4-standard-48-standard.tf-json.stdout",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/health-restored.stdout",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/http-routing.stdout",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/import.stdout",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/input-contract.json",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/no-price-api-stopped.stderr",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/quote-analysis.json",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/served-catalog.stdout",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/summary.json",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/topology.json",
+    "/tmp/isaac-gcp-cost-validation/runtime/run_acceptance.py",
+    "/tmp/isaac-gcp-cost-validation/runtime/setup-receipt.json",
+    "/tmp/isaac-gcp-cost-validation/runtime/setup.py",
+    "/tmp/isaac-gcp-cost-validation/runtime/usage.yml",
+    "/workspaces/IsaacAutomator/configs/cost/fixtures/g4-standard-384-flex_start/main.tf.json",
+    "/workspaces/IsaacAutomator/configs/cost/fixtures/g4-standard-384-standard/main.tf.json",
+    "/workspaces/IsaacAutomator/configs/cost/fixtures/g4-standard-48-flex_start/main.tf.json",
+    "/workspaces/IsaacAutomator/configs/cost/fixtures/g4-standard-48-standard/main.tf.json",
+    "/workspaces/IsaacAutomator/configs/cost/infracost-usage.example.yml"
+  ],
+  "evidence_file_sha256": {
+    "/tmp/isaac-gcp-cost-validation/capture/internal/scraper/gcp.go": "8118acba127119cddcfe6bd78075b1342225cdb331c3e35f0939aff12b8bc5e3",
+    "/tmp/isaac-gcp-cost-validation/capture/internal/scraper/gcp_validation_test.go": "b37f98ab3cdc06ab7b3245f1db3720dad06e4ec87a16373fcbbef6445aa0d372",
+    "/tmp/isaac-gcp-cost-validation/capture/internal/scraper/hash.go": "13617ccf678eeb60eed1698bc720cd415ec18fd97b6bbf77b138174372d5cc25",
+    "/tmp/isaac-gcp-cost-validation/catalog/001.json.gz": "9ac8096fc7ad29eaef69e40c6fa19c71bd64fd727726ae354b8b8fbb010629eb",
+    "/tmp/isaac-gcp-cost-validation/catalog/002.json.gz": "eb337b604199540e7ff2a50de466715180d1e405fcb2ec94bf6826caa70031bb",
+    "/tmp/isaac-gcp-cost-validation/catalog/003.json.gz": "a6159b32dc5371d96a8c63f7b4639701d09e58a550b8f6e408087a320b63b1e6",
+    "/tmp/isaac-gcp-cost-validation/catalog/004.json.gz": "14f51603bf8c1e46a31b05f5178b3b4b49534a9fa729ac209a8deab6736e70aa",
+    "/tmp/isaac-gcp-cost-validation/catalog/005.json.gz": "d9432fe2d91d3b43fd5796866e549cbfb2f5a603a17ec6760da973a730220680",
+    "/tmp/isaac-gcp-cost-validation/catalog/006.json.gz": "33481b8665badd49e09f085de001442a11bc110f84100fb4c820b47390f6d97d",
+    "/tmp/isaac-gcp-cost-validation/catalog/007.json.gz": "fdb890ddac9dfa51153022e9c31bbec2dbea44507590658a5a2d4ab655659269",
+    "/tmp/isaac-gcp-cost-validation/catalog/008.json.gz": "22c7a2486626ed2b90281e1ccf1026c28f9c933338bf3a7c1e49d53fa4ec7d1a",
+    "/tmp/isaac-gcp-cost-validation/catalog/009.json.gz": "26c2a58a3afa8c7ab9e2507562f2b0a0d79868c46c44ebfa3acdcf99452a85c8",
+    "/tmp/isaac-gcp-cost-validation/catalog/010.json.gz": "f71e3babe6a35528d28ace69742bb47f92066b539378ff6c85e6314afbeef05f",
+    "/tmp/isaac-gcp-cost-validation/catalog/011.json.gz": "e5351990b5ca5a01a92781c8a824d19d0f03e90bbd5b30e3767d5cfd4393b4c8",
+    "/tmp/isaac-gcp-cost-validation/catalog/012.json.gz": "9c781d8fde9e1c1a4d1b42bd01854f7a80e0b215d62a221f9e8d74c83336dffa",
+    "/tmp/isaac-gcp-cost-validation/catalog/013.json.gz": "f6f31e5d65247606d76528339d0134f6bf4b629df99527ff23be93906c91d645",
+    "/tmp/isaac-gcp-cost-validation/catalog/014.json.gz": "d889243678fe30f78830c22089840fa25e49e62b0caa390ac9f41aa95dd06dc6",
+    "/tmp/isaac-gcp-cost-validation/catalog/capture-summary.json": "50154a4c7ccfb4fa8de8af68f2c04b42647812ed48146fd7ffb06d66064e9d23",
+    "/tmp/isaac-gcp-cost-validation/catalog/products.ndjson": "1e2577142527522a6dfe63e8a637d92f47cdd326f492ad6d90edc6a062a56dc0",
+    "/tmp/isaac-gcp-cost-validation/runtime/api-source/cmd/trial-import/main.go": "6a8c897c3aa5c7910413284c0786ca5c293838b9ac6eb33905d2a5e3ce67fbac",
+    "/tmp/isaac-gcp-cost-validation/runtime/api-source/cmd/trial-import/main_test.go": "0d918c229252466c4652dc66681a9f8b097a815998621372866cf2f78b8a67a4",
+    "/tmp/isaac-gcp-cost-validation/runtime/api-source/internal/db/queries.go": "7d6fb9c515cc2357adf7b108d5a9481d980b84ed0b3152d703a64ebef64418ef",
+    "/tmp/isaac-gcp-cost-validation/runtime/derived-hcl/g4-standard-384-flex_start/main.tf": "f887cc706789ee3e199832e2a4a09b308979cd8b7cfd87879c1780ce715f048c",
+    "/tmp/isaac-gcp-cost-validation/runtime/derived-hcl/g4-standard-384-standard/main.tf": "15d0a80ae757c242921aa949bbf75fb48ed206c6118d2ddb4bb0672b448b0a9c",
+    "/tmp/isaac-gcp-cost-validation/runtime/derived-hcl/g4-standard-48-flex_start/main.tf": "5dae09ef47df0f4458a45ed7bc93cbaa0faae8a1d51bf7024f927b58e831bbf2",
+    "/tmp/isaac-gcp-cost-validation/runtime/derived-hcl/g4-standard-48-standard/main.tf": "ed61a51cf0e0637a09b9855a86a24f602928e09e05405efcedfe85294e53ff87",
+    "/tmp/isaac-gcp-cost-validation/runtime/fixtures/g4-standard-384-flex_start/main.tf.json": "06f3ee42e785dc7601f60a5d54581b591ec12206ee312f8906a68b309652c168",
+    "/tmp/isaac-gcp-cost-validation/runtime/fixtures/g4-standard-384-standard/main.tf.json": "838efc24a9ac789413e90f4f5504b811d19af432bf523430875a097b84bca5ad",
+    "/tmp/isaac-gcp-cost-validation/runtime/fixtures/g4-standard-48-flex_start/main.tf.json": "87ffb2bc400d7dc11bc0b53a479a7d0116b2b9aa957732391443c283836dd774",
+    "/tmp/isaac-gcp-cost-validation/runtime/fixtures/g4-standard-48-standard/main.tf.json": "f0e0fe3c12611d2d1754f7936aa4cebc0f758ebb4a88ac4d9b089b2ffedf6206",
+    "/tmp/isaac-gcp-cost-validation/runtime/fixtures-manifest.json": "8d11d4258a3cae6a551efc9602ba4f6243501e3c868d81efe164fcdec4def289",
+    "/tmp/isaac-gcp-cost-validation/runtime/net-helper.go": "16b1c4edc47467080256c2ebf68ecf784be44acfd0c2628f731423779feabb83",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/api-isolation-after.stdout": "b8f29f42b340c7764890b5258d08e95b471adbbb4ebc0ae3b23e7af58b62904b",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/api-isolation-before.stdout": "b8f29f42b340c7764890b5258d08e95b471adbbb4ebc0ae3b23e7af58b62904b",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/cli-isolation-after.stdout": "b8f29f42b340c7764890b5258d08e95b471adbbb4ebc0ae3b23e7af58b62904b",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/cli-isolation-before.stdout": "b8f29f42b340c7764890b5258d08e95b471adbbb4ebc0ae3b23e7af58b62904b",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/database-counts.stdout": "c2ffd9b08a8a37c8d71a8ed696a0cbdf4a919081e89bbd396750bf7805bfa40e",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/fixture-results.json": "238652dacc09fcaace389bdfe757cee43ae8fa3241911cb5137de5194f120001",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/g4-standard-384-flex_start.hcl.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/g4-standard-384-flex_start.hcl.stdout": "4bd38623b236e48090dd08a231df2fb0ea6126f9ba105da50ab97f93c590a49e",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/g4-standard-384-flex_start.hcl.usage.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/g4-standard-384-flex_start.hcl.usage.stdout": "b9c737e4a5f45975a317a8e6f231ea0c2a744bdb0d9aa6a5ce3e9e8613cbbb4e",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/g4-standard-384-flex_start.tf-json.stderr": "e9f4c35f5ad6242e97d64b0e04508869f972669ee77fe417cb009b5bcac350bf",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/g4-standard-384-flex_start.tf-json.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/g4-standard-384-standard.hcl.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/g4-standard-384-standard.hcl.stdout": "4bd38623b236e48090dd08a231df2fb0ea6126f9ba105da50ab97f93c590a49e",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/g4-standard-384-standard.hcl.usage.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/g4-standard-384-standard.hcl.usage.stdout": "b9c737e4a5f45975a317a8e6f231ea0c2a744bdb0d9aa6a5ce3e9e8613cbbb4e",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/g4-standard-384-standard.tf-json.stderr": "e7c83d1aff058295e88020a5927446261faa5a259f94d8a8272e9c47b5228846",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/g4-standard-384-standard.tf-json.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/g4-standard-48-flex_start.hcl.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/g4-standard-48-flex_start.hcl.stdout": "087c934c1f99135f91c67ccf3e4d3d3e2e8405050481b83f5edccfef2f9aebab",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/g4-standard-48-flex_start.hcl.usage.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/g4-standard-48-flex_start.hcl.usage.stdout": "e12ea614db1e1dd8db6a3827e05deeb806c834c4102fa366c7727195525ae017",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/g4-standard-48-flex_start.tf-json.stderr": "5e396c8e2fed8beb223f2ceb1978fefe7695d82be8220a1630a08741333a3030",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/g4-standard-48-flex_start.tf-json.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/g4-standard-48-standard.hcl.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/g4-standard-48-standard.hcl.stdout": "087c934c1f99135f91c67ccf3e4d3d3e2e8405050481b83f5edccfef2f9aebab",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/g4-standard-48-standard.hcl.usage.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/g4-standard-48-standard.hcl.usage.stdout": "e12ea614db1e1dd8db6a3827e05deeb806c834c4102fa366c7727195525ae017",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/g4-standard-48-standard.tf-json.stderr": "65ea81723bdc186cd37b14b19453ca0cfd079c4a55bb5818e4e5ab2dc24a3905",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/g4-standard-48-standard.tf-json.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/health-restored.stdout": "a29ee2b15c494311c52521766e44af56a3ad2248e7a8ab465e5206463c13d288",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/http-routing.stdout": "e69bf7c2bb350b802b12ce9611e169ad3ba8f725a72271569a1b9f7370f91297",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/import.stdout": "f6336d9d528c32fefec7984e740b2c8a68c3bd24711e4cfc3863247ee4c5e22a",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/input-contract.json": "3c9b0b341beba193642bb352ef7b82f5d6e110e34532597a2d5a6032ef59773b",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/no-price-api-stopped.stderr": "b9ede10329527179f238616f31ffee37a546a4b3dad554ae208b954294732735",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/quote-analysis.json": "68caf21fe57eac0dbe2847aa9c15e74b7b9231988824dbf6abe026a592abef97",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/served-catalog.stdout": "1944591980fb1a1fa4c5f231559108fec41066668532482e997400acafb9ce2e",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/summary.json": "ae4ead017467ca28cf0f31faaab145201133e4cad7349c1c6f24879346e654c3",
+    "/tmp/isaac-gcp-cost-validation/runtime/run-20260913T172059Z/topology.json": "fd79d8ebd108840a3c2927066f68829130ca4a0586db755912fd84d638c47a8e",
+    "/tmp/isaac-gcp-cost-validation/runtime/run_acceptance.py": "6f112e07859ee1dfa5208cb8d608093dcf13124941558b9d8969c43b78163bc8",
+    "/tmp/isaac-gcp-cost-validation/runtime/setup-receipt.json": "0dd84b53276ffa70eca6f63d6788e0a1158dc47dad49f48c5c7dddc3d8ac663e",
+    "/tmp/isaac-gcp-cost-validation/runtime/setup.py": "204f787f561b4e5354adcc6a84c9863b157314d6d20715bcbbd920a872d3ad8a",
+    "/tmp/isaac-gcp-cost-validation/runtime/usage.yml": "36e43fd058e002e66dbc52730d1fff963887c1b757d373a07799ca7d1f16a7f8",
+    "/workspaces/IsaacAutomator/configs/cost/fixtures/g4-standard-384-flex_start/main.tf.json": "06f3ee42e785dc7601f60a5d54581b591ec12206ee312f8906a68b309652c168",
+    "/workspaces/IsaacAutomator/configs/cost/fixtures/g4-standard-384-standard/main.tf.json": "838efc24a9ac789413e90f4f5504b811d19af432bf523430875a097b84bca5ad",
+    "/workspaces/IsaacAutomator/configs/cost/fixtures/g4-standard-48-flex_start/main.tf.json": "87ffb2bc400d7dc11bc0b53a479a7d0116b2b9aa957732391443c283836dd774",
+    "/workspaces/IsaacAutomator/configs/cost/fixtures/g4-standard-48-standard/main.tf.json": "f0e0fe3c12611d2d1754f7936aa4cebc0f758ebb4a88ac4d9b089b2ffedf6206",
+    "/workspaces/IsaacAutomator/configs/cost/infracost-usage.example.yml": "36e43fd058e002e66dbc52730d1fff963887c1b757d373a07799ca7d1f16a7f8"
+  },
+  "auditor_actions": {
+    "mutations": "Only final-audit.json created; no source, service or cloud mutation.",
+    "read_only_live_checks": [
+      "Owned Docker container selected-field inspection and internal network inspection",
+      "Owned PostgreSQL SELECT of product fields and JSON prices; exact comparison to catalog NDJSON"
+    ],
+    "minor_tool_issues_resolved": [
+      "Bare python unavailable; used python3.",
+      "One tool wrapper search parse failure; retried direct search.",
+      "Independent normalization verifier initially formatted large tier boundaries in exponential notation; corrected verifier to fixed-decimal format matching production, then all products/prices passed."
+    ]
+  }
+}

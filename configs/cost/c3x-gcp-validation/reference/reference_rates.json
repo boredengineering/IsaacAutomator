@@ -1,0 +1,2638 @@
+{
+  "source": "Actual archived Google Catalog pages; 17 explicitly named SKU IDs reviewed, no collision winner",
+  "selected_components": {
+    "standard_core": {
+      "skuId": "A36E-7315-8862",
+      "name": "services/6F81-5844-456A/skus/A36E-7315-8862",
+      "description": "G4 Instance Core running in Oregon",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Compute",
+        "resourceGroup": "CPU",
+        "usageType": "OnDemand"
+      },
+      "serviceRegions": [
+        "us-west1"
+      ],
+      "geoTaxonomy": {
+        "type": "REGIONAL",
+        "regions": [
+          "us-west1"
+        ]
+      },
+      "geographic_candidate_class": "exact_us-west1",
+      "search_tags": [
+        "g4_rtx"
+      ],
+      "pricing": [
+        {
+          "effectiveTime": "2026-09-13T07:00:00Z",
+          "summary": "",
+          "aggregationInfo": null,
+          "currencyConversionRate": 1,
+          "expression_metadata": {
+            "usageUnit": "h",
+            "displayQuantity": 1,
+            "usageUnitDescription": "hour",
+            "baseUnit": "s",
+            "baseUnitDescription": "second",
+            "baseUnitConversionFactor": 3600
+          },
+          "tiers": [
+            {
+              "startUsageAmount": 0,
+              "startUsageAmount_omitted_defaults_to_zero": false,
+              "decimal_unit_price": "0.04891",
+              "price_status": "decoded_protobuf_money",
+              "currencyCode": "USD",
+              "raw": {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 48910000
+                }
+              }
+            }
+          ],
+          "raw": {
+            "summary": "",
+            "pricingExpression": {
+              "usageUnit": "h",
+              "displayQuantity": 1,
+              "tieredRates": [
+                {
+                  "startUsageAmount": 0,
+                  "unitPrice": {
+                    "currencyCode": "USD",
+                    "units": "0",
+                    "nanos": 48910000
+                  }
+                }
+              ],
+              "usageUnitDescription": "hour",
+              "baseUnit": "s",
+              "baseUnitDescription": "second",
+              "baseUnitConversionFactor": 3600
+            },
+            "currencyConversionRate": 1,
+            "effectiveTime": "2026-09-13T07:00:00Z"
+          }
+        }
+      ],
+      "raw": {
+        "name": "services/6F81-5844-456A/skus/A36E-7315-8862",
+        "skuId": "A36E-7315-8862",
+        "description": "G4 Instance Core running in Oregon",
+        "category": {
+          "serviceDisplayName": "Compute Engine",
+          "resourceFamily": "Compute",
+          "resourceGroup": "CPU",
+          "usageType": "OnDemand"
+        },
+        "serviceRegions": [
+          "us-west1"
+        ],
+        "pricingInfo": [
+          {
+            "summary": "",
+            "pricingExpression": {
+              "usageUnit": "h",
+              "displayQuantity": 1,
+              "tieredRates": [
+                {
+                  "startUsageAmount": 0,
+                  "unitPrice": {
+                    "currencyCode": "USD",
+                    "units": "0",
+                    "nanos": 48910000
+                  }
+                }
+              ],
+              "usageUnitDescription": "hour",
+              "baseUnit": "s",
+              "baseUnitDescription": "second",
+              "baseUnitConversionFactor": 3600
+            },
+            "currencyConversionRate": 1,
+            "effectiveTime": "2026-09-13T07:00:00Z"
+          }
+        ],
+        "serviceProviderName": "Google",
+        "geoTaxonomy": {
+          "type": "REGIONAL",
+          "regions": [
+            "us-west1"
+          ]
+        }
+      },
+      "raw_variant_sha256": "a72cf3474ce8d65bbd2a2f606bcf8f914bd4210f241dfe1d3af756025844dad2",
+      "source_pages": [
+        "/tmp/isaac-gcp-cost-validation/catalog/009.json.gz"
+      ]
+    },
+    "standard_ram": {
+      "skuId": "C566-5B7E-28AA",
+      "name": "services/6F81-5844-456A/skus/C566-5B7E-28AA",
+      "description": "G4 Instance Ram running in Oregon",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Compute",
+        "resourceGroup": "RAM",
+        "usageType": "OnDemand"
+      },
+      "serviceRegions": [
+        "us-west1"
+      ],
+      "geoTaxonomy": {
+        "type": "REGIONAL",
+        "regions": [
+          "us-west1"
+        ]
+      },
+      "geographic_candidate_class": "exact_us-west1",
+      "search_tags": [
+        "g4_rtx"
+      ],
+      "pricing": [
+        {
+          "effectiveTime": "2026-09-13T07:00:00Z",
+          "summary": "",
+          "aggregationInfo": null,
+          "currencyConversionRate": 1,
+          "expression_metadata": {
+            "usageUnit": "GiBy.h",
+            "displayQuantity": 1,
+            "usageUnitDescription": "gibibyte hour",
+            "baseUnit": "By.s",
+            "baseUnitDescription": "byte second",
+            "baseUnitConversionFactor": 3865470566400
+          },
+          "tiers": [
+            {
+              "startUsageAmount": 0,
+              "startUsageAmount_omitted_defaults_to_zero": false,
+              "decimal_unit_price": "0.00587",
+              "price_status": "decoded_protobuf_money",
+              "currencyCode": "USD",
+              "raw": {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 5870000
+                }
+              }
+            }
+          ],
+          "raw": {
+            "summary": "",
+            "pricingExpression": {
+              "usageUnit": "GiBy.h",
+              "displayQuantity": 1,
+              "tieredRates": [
+                {
+                  "startUsageAmount": 0,
+                  "unitPrice": {
+                    "currencyCode": "USD",
+                    "units": "0",
+                    "nanos": 5870000
+                  }
+                }
+              ],
+              "usageUnitDescription": "gibibyte hour",
+              "baseUnit": "By.s",
+              "baseUnitDescription": "byte second",
+              "baseUnitConversionFactor": 3865470566400
+            },
+            "currencyConversionRate": 1,
+            "effectiveTime": "2026-09-13T07:00:00Z"
+          }
+        }
+      ],
+      "raw": {
+        "name": "services/6F81-5844-456A/skus/C566-5B7E-28AA",
+        "skuId": "C566-5B7E-28AA",
+        "description": "G4 Instance Ram running in Oregon",
+        "category": {
+          "serviceDisplayName": "Compute Engine",
+          "resourceFamily": "Compute",
+          "resourceGroup": "RAM",
+          "usageType": "OnDemand"
+        },
+        "serviceRegions": [
+          "us-west1"
+        ],
+        "pricingInfo": [
+          {
+            "summary": "",
+            "pricingExpression": {
+              "usageUnit": "GiBy.h",
+              "displayQuantity": 1,
+              "tieredRates": [
+                {
+                  "startUsageAmount": 0,
+                  "unitPrice": {
+                    "currencyCode": "USD",
+                    "units": "0",
+                    "nanos": 5870000
+                  }
+                }
+              ],
+              "usageUnitDescription": "gibibyte hour",
+              "baseUnit": "By.s",
+              "baseUnitDescription": "byte second",
+              "baseUnitConversionFactor": 3865470566400
+            },
+            "currencyConversionRate": 1,
+            "effectiveTime": "2026-09-13T07:00:00Z"
+          }
+        ],
+        "serviceProviderName": "Google",
+        "geoTaxonomy": {
+          "type": "REGIONAL",
+          "regions": [
+            "us-west1"
+          ]
+        }
+      },
+      "raw_variant_sha256": "6457c6f48c56e66799c47e8422e3849e6b12217dac2340dd23fa29bba7ebd5bc",
+      "source_pages": [
+        "/tmp/isaac-gcp-cost-validation/catalog/010.json.gz"
+      ]
+    },
+    "standard_gpu": {
+      "skuId": "73C5-0031-0BF3",
+      "name": "services/6F81-5844-456A/skus/73C5-0031-0BF3",
+      "description": "RTX 6000 96GB running in Oregon",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Compute",
+        "resourceGroup": "GPU",
+        "usageType": "OnDemand"
+      },
+      "serviceRegions": [
+        "us-west1"
+      ],
+      "geoTaxonomy": {
+        "type": "REGIONAL",
+        "regions": [
+          "us-west1"
+        ]
+      },
+      "geographic_candidate_class": "exact_us-west1",
+      "search_tags": [
+        "g4_rtx"
+      ],
+      "pricing": [
+        {
+          "effectiveTime": "2026-09-13T07:00:00Z",
+          "summary": "",
+          "aggregationInfo": null,
+          "currencyConversionRate": 1,
+          "expression_metadata": {
+            "usageUnit": "h",
+            "displayQuantity": 1,
+            "usageUnitDescription": "hour",
+            "baseUnit": "s",
+            "baseUnitDescription": "second",
+            "baseUnitConversionFactor": 3600
+          },
+          "tiers": [
+            {
+              "startUsageAmount": 0,
+              "startUsageAmount_omitted_defaults_to_zero": false,
+              "decimal_unit_price": "1.09565",
+              "price_status": "decoded_protobuf_money",
+              "currencyCode": "USD",
+              "raw": {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "1",
+                  "nanos": 95650000
+                }
+              }
+            }
+          ],
+          "raw": {
+            "summary": "",
+            "pricingExpression": {
+              "usageUnit": "h",
+              "displayQuantity": 1,
+              "tieredRates": [
+                {
+                  "startUsageAmount": 0,
+                  "unitPrice": {
+                    "currencyCode": "USD",
+                    "units": "1",
+                    "nanos": 95650000
+                  }
+                }
+              ],
+              "usageUnitDescription": "hour",
+              "baseUnit": "s",
+              "baseUnitDescription": "second",
+              "baseUnitConversionFactor": 3600
+            },
+            "currencyConversionRate": 1,
+            "effectiveTime": "2026-09-13T07:00:00Z"
+          }
+        }
+      ],
+      "raw": {
+        "name": "services/6F81-5844-456A/skus/73C5-0031-0BF3",
+        "skuId": "73C5-0031-0BF3",
+        "description": "RTX 6000 96GB running in Oregon",
+        "category": {
+          "serviceDisplayName": "Compute Engine",
+          "resourceFamily": "Compute",
+          "resourceGroup": "GPU",
+          "usageType": "OnDemand"
+        },
+        "serviceRegions": [
+          "us-west1"
+        ],
+        "pricingInfo": [
+          {
+            "summary": "",
+            "pricingExpression": {
+              "usageUnit": "h",
+              "displayQuantity": 1,
+              "tieredRates": [
+                {
+                  "startUsageAmount": 0,
+                  "unitPrice": {
+                    "currencyCode": "USD",
+                    "units": "1",
+                    "nanos": 95650000
+                  }
+                }
+              ],
+              "usageUnitDescription": "hour",
+              "baseUnit": "s",
+              "baseUnitDescription": "second",
+              "baseUnitConversionFactor": 3600
+            },
+            "currencyConversionRate": 1,
+            "effectiveTime": "2026-09-13T07:00:00Z"
+          }
+        ],
+        "serviceProviderName": "Google",
+        "geoTaxonomy": {
+          "type": "REGIONAL",
+          "regions": [
+            "us-west1"
+          ]
+        }
+      },
+      "raw_variant_sha256": "db928d488b4dea0caa61165e91bff04e6e012dbb27b4f665feec53a535262e68",
+      "source_pages": [
+        "/tmp/isaac-gcp-cost-validation/catalog/007.json.gz"
+      ]
+    },
+    "dws_defined_duration_core": {
+      "skuId": "3B6F-2FBA-B0C5",
+      "name": "services/6F81-5844-456A/skus/3B6F-2FBA-B0C5",
+      "description": "DWS Defined Duration G4 Core running in Oregon",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Compute",
+        "resourceGroup": "CPU",
+        "usageType": "OnDemand"
+      },
+      "serviceRegions": [
+        "us-west1"
+      ],
+      "geoTaxonomy": {
+        "type": "REGIONAL",
+        "regions": [
+          "us-west1"
+        ]
+      },
+      "geographic_candidate_class": "exact_us-west1",
+      "search_tags": [
+        "g4_rtx",
+        "flex_dws"
+      ],
+      "pricing": [
+        {
+          "effectiveTime": "2026-09-13T07:00:00Z",
+          "summary": "",
+          "aggregationInfo": null,
+          "currencyConversionRate": 1,
+          "expression_metadata": {
+            "usageUnit": "h",
+            "displayQuantity": 1,
+            "usageUnitDescription": "hour",
+            "baseUnit": "s",
+            "baseUnitDescription": "second",
+            "baseUnitConversionFactor": 3600
+          },
+          "tiers": [
+            {
+              "startUsageAmount": 0,
+              "startUsageAmount_omitted_defaults_to_zero": false,
+              "decimal_unit_price": "0.024455",
+              "price_status": "decoded_protobuf_money",
+              "currencyCode": "USD",
+              "raw": {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 24455000
+                }
+              }
+            }
+          ],
+          "raw": {
+            "summary": "",
+            "pricingExpression": {
+              "usageUnit": "h",
+              "displayQuantity": 1,
+              "tieredRates": [
+                {
+                  "startUsageAmount": 0,
+                  "unitPrice": {
+                    "currencyCode": "USD",
+                    "units": "0",
+                    "nanos": 24455000
+                  }
+                }
+              ],
+              "usageUnitDescription": "hour",
+              "baseUnit": "s",
+              "baseUnitDescription": "second",
+              "baseUnitConversionFactor": 3600
+            },
+            "currencyConversionRate": 1,
+            "effectiveTime": "2026-09-13T07:00:00Z"
+          }
+        }
+      ],
+      "raw": {
+        "name": "services/6F81-5844-456A/skus/3B6F-2FBA-B0C5",
+        "skuId": "3B6F-2FBA-B0C5",
+        "description": "DWS Defined Duration G4 Core running in Oregon",
+        "category": {
+          "serviceDisplayName": "Compute Engine",
+          "resourceFamily": "Compute",
+          "resourceGroup": "CPU",
+          "usageType": "OnDemand"
+        },
+        "serviceRegions": [
+          "us-west1"
+        ],
+        "pricingInfo": [
+          {
+            "summary": "",
+            "pricingExpression": {
+              "usageUnit": "h",
+              "displayQuantity": 1,
+              "tieredRates": [
+                {
+                  "startUsageAmount": 0,
+                  "unitPrice": {
+                    "currencyCode": "USD",
+                    "units": "0",
+                    "nanos": 24455000
+                  }
+                }
+              ],
+              "usageUnitDescription": "hour",
+              "baseUnit": "s",
+              "baseUnitDescription": "second",
+              "baseUnitConversionFactor": 3600
+            },
+            "currencyConversionRate": 1,
+            "effectiveTime": "2026-09-13T07:00:00Z"
+          }
+        ],
+        "serviceProviderName": "Google",
+        "geoTaxonomy": {
+          "type": "REGIONAL",
+          "regions": [
+            "us-west1"
+          ]
+        }
+      },
+      "raw_variant_sha256": "33417b4b5c76d5977a13142834848a5650ba34bdcbfadcbf0f7784e8be695fa6",
+      "source_pages": [
+        "/tmp/isaac-gcp-cost-validation/catalog/006.json.gz"
+      ]
+    },
+    "dws_defined_duration_ram": {
+      "skuId": "4742-1C3C-6E23",
+      "name": "services/6F81-5844-456A/skus/4742-1C3C-6E23",
+      "description": "DWS Defined Duration G4 Ram running in Oregon",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Compute",
+        "resourceGroup": "RAM",
+        "usageType": "OnDemand"
+      },
+      "serviceRegions": [
+        "us-west1"
+      ],
+      "geoTaxonomy": {
+        "type": "REGIONAL",
+        "regions": [
+          "us-west1"
+        ]
+      },
+      "geographic_candidate_class": "exact_us-west1",
+      "search_tags": [
+        "g4_rtx",
+        "flex_dws"
+      ],
+      "pricing": [
+        {
+          "effectiveTime": "2026-09-13T07:00:00Z",
+          "summary": "",
+          "aggregationInfo": null,
+          "currencyConversionRate": 1,
+          "expression_metadata": {
+            "usageUnit": "GiBy.h",
+            "displayQuantity": 1,
+            "usageUnitDescription": "gibibyte hour",
+            "baseUnit": "By.s",
+            "baseUnitDescription": "byte second",
+            "baseUnitConversionFactor": 3865470566400
+          },
+          "tiers": [
+            {
+              "startUsageAmount": 0,
+              "startUsageAmount_omitted_defaults_to_zero": false,
+              "decimal_unit_price": "0.002935",
+              "price_status": "decoded_protobuf_money",
+              "currencyCode": "USD",
+              "raw": {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 2935000
+                }
+              }
+            }
+          ],
+          "raw": {
+            "summary": "",
+            "pricingExpression": {
+              "usageUnit": "GiBy.h",
+              "displayQuantity": 1,
+              "tieredRates": [
+                {
+                  "startUsageAmount": 0,
+                  "unitPrice": {
+                    "currencyCode": "USD",
+                    "units": "0",
+                    "nanos": 2935000
+                  }
+                }
+              ],
+              "usageUnitDescription": "gibibyte hour",
+              "baseUnit": "By.s",
+              "baseUnitDescription": "byte second",
+              "baseUnitConversionFactor": 3865470566400
+            },
+            "currencyConversionRate": 1,
+            "effectiveTime": "2026-09-13T07:00:00Z"
+          }
+        }
+      ],
+      "raw": {
+        "name": "services/6F81-5844-456A/skus/4742-1C3C-6E23",
+        "skuId": "4742-1C3C-6E23",
+        "description": "DWS Defined Duration G4 Ram running in Oregon",
+        "category": {
+          "serviceDisplayName": "Compute Engine",
+          "resourceFamily": "Compute",
+          "resourceGroup": "RAM",
+          "usageType": "OnDemand"
+        },
+        "serviceRegions": [
+          "us-west1"
+        ],
+        "pricingInfo": [
+          {
+            "summary": "",
+            "pricingExpression": {
+              "usageUnit": "GiBy.h",
+              "displayQuantity": 1,
+              "tieredRates": [
+                {
+                  "startUsageAmount": 0,
+                  "unitPrice": {
+                    "currencyCode": "USD",
+                    "units": "0",
+                    "nanos": 2935000
+                  }
+                }
+              ],
+              "usageUnitDescription": "gibibyte hour",
+              "baseUnit": "By.s",
+              "baseUnitDescription": "byte second",
+              "baseUnitConversionFactor": 3865470566400
+            },
+            "currencyConversionRate": 1,
+            "effectiveTime": "2026-09-13T07:00:00Z"
+          }
+        ],
+        "serviceProviderName": "Google",
+        "geoTaxonomy": {
+          "type": "REGIONAL",
+          "regions": [
+            "us-west1"
+          ]
+        }
+      },
+      "raw_variant_sha256": "35d59b955b027aac8f888bc7a0d235684f6d548936a58a870edce7a77fbb70d6",
+      "source_pages": [
+        "/tmp/isaac-gcp-cost-validation/catalog/006.json.gz"
+      ]
+    },
+    "dws_defined_duration_gpu": {
+      "skuId": "1DE7-2C1A-CBEB",
+      "name": "services/6F81-5844-456A/skus/1DE7-2C1A-CBEB",
+      "description": "RTX 6000 96GB attached to DWS Defined Duration VMs running in Oregon",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Compute",
+        "resourceGroup": "GPU",
+        "usageType": "OnDemand"
+      },
+      "serviceRegions": [
+        "us-west1"
+      ],
+      "geoTaxonomy": {
+        "type": "REGIONAL",
+        "regions": [
+          "us-west1"
+        ]
+      },
+      "geographic_candidate_class": "exact_us-west1",
+      "search_tags": [
+        "g4_rtx",
+        "flex_dws"
+      ],
+      "pricing": [
+        {
+          "effectiveTime": "2026-09-13T07:00:00Z",
+          "summary": "",
+          "aggregationInfo": null,
+          "currencyConversionRate": 1,
+          "expression_metadata": {
+            "usageUnit": "h",
+            "displayQuantity": 1,
+            "usageUnitDescription": "hour",
+            "baseUnit": "s",
+            "baseUnitDescription": "second",
+            "baseUnitConversionFactor": 3600
+          },
+          "tiers": [
+            {
+              "startUsageAmount": 0,
+              "startUsageAmount_omitted_defaults_to_zero": false,
+              "decimal_unit_price": "0.54783",
+              "price_status": "decoded_protobuf_money",
+              "currencyCode": "USD",
+              "raw": {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 547830000
+                }
+              }
+            }
+          ],
+          "raw": {
+            "summary": "",
+            "pricingExpression": {
+              "usageUnit": "h",
+              "displayQuantity": 1,
+              "tieredRates": [
+                {
+                  "startUsageAmount": 0,
+                  "unitPrice": {
+                    "currencyCode": "USD",
+                    "units": "0",
+                    "nanos": 547830000
+                  }
+                }
+              ],
+              "usageUnitDescription": "hour",
+              "baseUnit": "s",
+              "baseUnitDescription": "second",
+              "baseUnitConversionFactor": 3600
+            },
+            "currencyConversionRate": 1,
+            "effectiveTime": "2026-09-13T07:00:00Z"
+          }
+        }
+      ],
+      "raw": {
+        "name": "services/6F81-5844-456A/skus/1DE7-2C1A-CBEB",
+        "skuId": "1DE7-2C1A-CBEB",
+        "description": "RTX 6000 96GB attached to DWS Defined Duration VMs running in Oregon",
+        "category": {
+          "serviceDisplayName": "Compute Engine",
+          "resourceFamily": "Compute",
+          "resourceGroup": "GPU",
+          "usageType": "OnDemand"
+        },
+        "serviceRegions": [
+          "us-west1"
+        ],
+        "pricingInfo": [
+          {
+            "summary": "",
+            "pricingExpression": {
+              "usageUnit": "h",
+              "displayQuantity": 1,
+              "tieredRates": [
+                {
+                  "startUsageAmount": 0,
+                  "unitPrice": {
+                    "currencyCode": "USD",
+                    "units": "0",
+                    "nanos": 547830000
+                  }
+                }
+              ],
+              "usageUnitDescription": "hour",
+              "baseUnit": "s",
+              "baseUnitDescription": "second",
+              "baseUnitConversionFactor": 3600
+            },
+            "currencyConversionRate": 1,
+            "effectiveTime": "2026-09-13T07:00:00Z"
+          }
+        ],
+        "serviceProviderName": "Google",
+        "geoTaxonomy": {
+          "type": "REGIONAL",
+          "regions": [
+            "us-west1"
+          ]
+        }
+      },
+      "raw_variant_sha256": "36d757b8e4c48bfe9ad6f0c08bb3c281e969bf45bf2f9036c3cc07e2407d8927",
+      "source_pages": [
+        "/tmp/isaac-gcp-cost-validation/catalog/005.json.gz"
+      ]
+    },
+    "hyperdisk_capacity": {
+      "skuId": "E917-4171-722C",
+      "name": "services/6F81-5844-456A/skus/E917-4171-722C",
+      "description": "Hyperdisk Balanced Capacity in Oregon",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Storage",
+        "resourceGroup": "SSD",
+        "usageType": "OnDemand"
+      },
+      "serviceRegions": [
+        "us-west1"
+      ],
+      "geoTaxonomy": {
+        "type": "REGIONAL",
+        "regions": [
+          "us-west1"
+        ]
+      },
+      "geographic_candidate_class": "exact_us-west1",
+      "search_tags": [
+        "hyperdisk"
+      ],
+      "pricing": [
+        {
+          "effectiveTime": "2026-09-13T07:00:00Z",
+          "summary": "",
+          "aggregationInfo": null,
+          "currencyConversionRate": 1,
+          "expression_metadata": {
+            "usageUnit": "GiBy.mo",
+            "displayQuantity": 1,
+            "usageUnitDescription": "gibibyte month",
+            "baseUnit": "By.s",
+            "baseUnitDescription": "byte second",
+            "baseUnitConversionFactor": "2.783138807808E+15"
+          },
+          "tiers": [
+            {
+              "startUsageAmount": 0,
+              "startUsageAmount_omitted_defaults_to_zero": false,
+              "decimal_unit_price": "0.08",
+              "price_status": "decoded_protobuf_money",
+              "currencyCode": "USD",
+              "raw": {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 80000000
+                }
+              }
+            }
+          ],
+          "raw": {
+            "summary": "",
+            "pricingExpression": {
+              "usageUnit": "GiBy.mo",
+              "displayQuantity": 1,
+              "tieredRates": [
+                {
+                  "startUsageAmount": 0,
+                  "unitPrice": {
+                    "currencyCode": "USD",
+                    "units": "0",
+                    "nanos": 80000000
+                  }
+                }
+              ],
+              "usageUnitDescription": "gibibyte month",
+              "baseUnit": "By.s",
+              "baseUnitDescription": "byte second",
+              "baseUnitConversionFactor": "2.783138807808E+15"
+            },
+            "currencyConversionRate": 1,
+            "effectiveTime": "2026-09-13T07:00:00Z"
+          }
+        }
+      ],
+      "raw": {
+        "name": "services/6F81-5844-456A/skus/E917-4171-722C",
+        "skuId": "E917-4171-722C",
+        "description": "Hyperdisk Balanced Capacity in Oregon",
+        "category": {
+          "serviceDisplayName": "Compute Engine",
+          "resourceFamily": "Storage",
+          "resourceGroup": "SSD",
+          "usageType": "OnDemand"
+        },
+        "serviceRegions": [
+          "us-west1"
+        ],
+        "pricingInfo": [
+          {
+            "summary": "",
+            "pricingExpression": {
+              "usageUnit": "GiBy.mo",
+              "displayQuantity": 1,
+              "tieredRates": [
+                {
+                  "startUsageAmount": 0,
+                  "unitPrice": {
+                    "currencyCode": "USD",
+                    "units": "0",
+                    "nanos": 80000000
+                  }
+                }
+              ],
+              "usageUnitDescription": "gibibyte month",
+              "baseUnit": "By.s",
+              "baseUnitDescription": "byte second",
+              "baseUnitConversionFactor": "2.783138807808E+15"
+            },
+            "currencyConversionRate": 1,
+            "effectiveTime": "2026-09-13T07:00:00Z"
+          }
+        ],
+        "serviceProviderName": "Google",
+        "geoTaxonomy": {
+          "type": "REGIONAL",
+          "regions": [
+            "us-west1"
+          ]
+        }
+      },
+      "raw_variant_sha256": "386f48d0135565a2bc4d0397f8e54b59d240fd083ae31074d50c4d35ef6bffdf",
+      "source_pages": [
+        "/tmp/isaac-gcp-cost-validation/catalog/010.json.gz"
+      ]
+    },
+    "hyperdisk_iops": {
+      "skuId": "56CC-5367-43E6",
+      "name": "services/6F81-5844-456A/skus/56CC-5367-43E6",
+      "description": "Hyperdisk Balanced IOPS in Oregon",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Storage",
+        "resourceGroup": "SSD",
+        "usageType": "OnDemand"
+      },
+      "serviceRegions": [
+        "us-west1"
+      ],
+      "geoTaxonomy": {
+        "type": "REGIONAL",
+        "regions": [
+          "us-west1"
+        ]
+      },
+      "geographic_candidate_class": "exact_us-west1",
+      "search_tags": [
+        "hyperdisk"
+      ],
+      "pricing": [
+        {
+          "effectiveTime": "2026-09-13T07:00:00Z",
+          "summary": "",
+          "aggregationInfo": null,
+          "currencyConversionRate": 1,
+          "expression_metadata": {
+            "usageUnit": "mo",
+            "displayQuantity": 1,
+            "usageUnitDescription": "month",
+            "baseUnit": "s",
+            "baseUnitDescription": "second",
+            "baseUnitConversionFactor": 2592000
+          },
+          "tiers": [
+            {
+              "startUsageAmount": 0,
+              "startUsageAmount_omitted_defaults_to_zero": false,
+              "decimal_unit_price": "0.005",
+              "price_status": "decoded_protobuf_money",
+              "currencyCode": "USD",
+              "raw": {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 5000000
+                }
+              }
+            }
+          ],
+          "raw": {
+            "summary": "",
+            "pricingExpression": {
+              "usageUnit": "mo",
+              "displayQuantity": 1,
+              "tieredRates": [
+                {
+                  "startUsageAmount": 0,
+                  "unitPrice": {
+                    "currencyCode": "USD",
+                    "units": "0",
+                    "nanos": 5000000
+                  }
+                }
+              ],
+              "usageUnitDescription": "month",
+              "baseUnit": "s",
+              "baseUnitDescription": "second",
+              "baseUnitConversionFactor": 2592000
+            },
+            "currencyConversionRate": 1,
+            "effectiveTime": "2026-09-13T07:00:00Z"
+          }
+        }
+      ],
+      "raw": {
+        "name": "services/6F81-5844-456A/skus/56CC-5367-43E6",
+        "skuId": "56CC-5367-43E6",
+        "description": "Hyperdisk Balanced IOPS in Oregon",
+        "category": {
+          "serviceDisplayName": "Compute Engine",
+          "resourceFamily": "Storage",
+          "resourceGroup": "SSD",
+          "usageType": "OnDemand"
+        },
+        "serviceRegions": [
+          "us-west1"
+        ],
+        "pricingInfo": [
+          {
+            "summary": "",
+            "pricingExpression": {
+              "usageUnit": "mo",
+              "displayQuantity": 1,
+              "tieredRates": [
+                {
+                  "startUsageAmount": 0,
+                  "unitPrice": {
+                    "currencyCode": "USD",
+                    "units": "0",
+                    "nanos": 5000000
+                  }
+                }
+              ],
+              "usageUnitDescription": "month",
+              "baseUnit": "s",
+              "baseUnitDescription": "second",
+              "baseUnitConversionFactor": 2592000
+            },
+            "currencyConversionRate": 1,
+            "effectiveTime": "2026-09-13T07:00:00Z"
+          }
+        ],
+        "serviceProviderName": "Google",
+        "geoTaxonomy": {
+          "type": "REGIONAL",
+          "regions": [
+            "us-west1"
+          ]
+        }
+      },
+      "raw_variant_sha256": "c0df0ee0ea4b6c15f4dedd65d1bd4f6412865ef782c6fc566cdbadbe0989baf5",
+      "source_pages": [
+        "/tmp/isaac-gcp-cost-validation/catalog/007.json.gz"
+      ]
+    },
+    "hyperdisk_throughput": {
+      "skuId": "6E3F-6819-5B7A",
+      "name": "services/6F81-5844-456A/skus/6E3F-6819-5B7A",
+      "description": "Hyperdisk Balanced Throughput in Oregon",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Storage",
+        "resourceGroup": "SSD",
+        "usageType": "OnDemand"
+      },
+      "serviceRegions": [
+        "us-west1"
+      ],
+      "geoTaxonomy": {
+        "type": "REGIONAL",
+        "regions": [
+          "us-west1"
+        ]
+      },
+      "geographic_candidate_class": "exact_us-west1",
+      "search_tags": [
+        "hyperdisk"
+      ],
+      "pricing": [
+        {
+          "effectiveTime": "2026-09-13T07:00:00Z",
+          "summary": "",
+          "aggregationInfo": null,
+          "currencyConversionRate": 1,
+          "expression_metadata": {
+            "usageUnit": "mo",
+            "displayQuantity": 1,
+            "usageUnitDescription": "month",
+            "baseUnit": "s",
+            "baseUnitDescription": "second",
+            "baseUnitConversionFactor": 2592000
+          },
+          "tiers": [
+            {
+              "startUsageAmount": 0,
+              "startUsageAmount_omitted_defaults_to_zero": false,
+              "decimal_unit_price": "0.04",
+              "price_status": "decoded_protobuf_money",
+              "currencyCode": "USD",
+              "raw": {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 40000000
+                }
+              }
+            }
+          ],
+          "raw": {
+            "summary": "",
+            "pricingExpression": {
+              "usageUnit": "mo",
+              "displayQuantity": 1,
+              "tieredRates": [
+                {
+                  "startUsageAmount": 0,
+                  "unitPrice": {
+                    "currencyCode": "USD",
+                    "units": "0",
+                    "nanos": 40000000
+                  }
+                }
+              ],
+              "usageUnitDescription": "month",
+              "baseUnit": "s",
+              "baseUnitDescription": "second",
+              "baseUnitConversionFactor": 2592000
+            },
+            "currencyConversionRate": 1,
+            "effectiveTime": "2026-09-13T07:00:00Z"
+          }
+        }
+      ],
+      "raw": {
+        "name": "services/6F81-5844-456A/skus/6E3F-6819-5B7A",
+        "skuId": "6E3F-6819-5B7A",
+        "description": "Hyperdisk Balanced Throughput in Oregon",
+        "category": {
+          "serviceDisplayName": "Compute Engine",
+          "resourceFamily": "Storage",
+          "resourceGroup": "SSD",
+          "usageType": "OnDemand"
+        },
+        "serviceRegions": [
+          "us-west1"
+        ],
+        "pricingInfo": [
+          {
+            "summary": "",
+            "pricingExpression": {
+              "usageUnit": "mo",
+              "displayQuantity": 1,
+              "tieredRates": [
+                {
+                  "startUsageAmount": 0,
+                  "unitPrice": {
+                    "currencyCode": "USD",
+                    "units": "0",
+                    "nanos": 40000000
+                  }
+                }
+              ],
+              "usageUnitDescription": "month",
+              "baseUnit": "s",
+              "baseUnitDescription": "second",
+              "baseUnitConversionFactor": 2592000
+            },
+            "currencyConversionRate": 1,
+            "effectiveTime": "2026-09-13T07:00:00Z"
+          }
+        ],
+        "serviceProviderName": "Google",
+        "geoTaxonomy": {
+          "type": "REGIONAL",
+          "regions": [
+            "us-west1"
+          ]
+        }
+      },
+      "raw_variant_sha256": "2d4bb64d07832f45afae56a8f545cef7f9656eb300a9cc8176eac08b649306be",
+      "source_pages": [
+        "/tmp/isaac-gcp-cost-validation/catalog/007.json.gz"
+      ]
+    },
+    "public_nat_vm_uptime": {
+      "skuId": "32E2-4EFC-EF9F",
+      "name": "services/E505-1604-58F8/skus/32E2-4EFC-EF9F",
+      "description": "Networking Cloud Nat Gateway Uptime",
+      "category": {
+        "serviceDisplayName": "Networking",
+        "resourceFamily": "Network",
+        "resourceGroup": "Nat",
+        "usageType": "OnDemand"
+      },
+      "serviceRegions": [
+        "global"
+      ],
+      "geoTaxonomy": {
+        "type": "GLOBAL",
+        "regions": []
+      },
+      "geographic_candidate_class": "global_candidate",
+      "search_tags": [
+        "nat"
+      ],
+      "pricing": [
+        {
+          "effectiveTime": "2026-09-13T07:00:00Z",
+          "summary": "",
+          "aggregationInfo": null,
+          "currencyConversionRate": 1,
+          "expression_metadata": {
+            "usageUnit": "h",
+            "displayQuantity": 1,
+            "usageUnitDescription": "hour",
+            "baseUnit": "s",
+            "baseUnitDescription": "second",
+            "baseUnitConversionFactor": 3600
+          },
+          "tiers": [
+            {
+              "startUsageAmount": 0,
+              "startUsageAmount_omitted_defaults_to_zero": false,
+              "decimal_unit_price": "0.0014",
+              "price_status": "decoded_protobuf_money",
+              "currencyCode": "USD",
+              "raw": {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 1400000
+                }
+              }
+            }
+          ],
+          "raw": {
+            "summary": "",
+            "pricingExpression": {
+              "usageUnit": "h",
+              "displayQuantity": 1,
+              "tieredRates": [
+                {
+                  "startUsageAmount": 0,
+                  "unitPrice": {
+                    "currencyCode": "USD",
+                    "units": "0",
+                    "nanos": 1400000
+                  }
+                }
+              ],
+              "usageUnitDescription": "hour",
+              "baseUnit": "s",
+              "baseUnitDescription": "second",
+              "baseUnitConversionFactor": 3600
+            },
+            "currencyConversionRate": 1,
+            "effectiveTime": "2026-09-13T07:00:00Z"
+          }
+        }
+      ],
+      "raw": {
+        "name": "services/E505-1604-58F8/skus/32E2-4EFC-EF9F",
+        "skuId": "32E2-4EFC-EF9F",
+        "description": "Networking Cloud Nat Gateway Uptime",
+        "category": {
+          "serviceDisplayName": "Networking",
+          "resourceFamily": "Network",
+          "resourceGroup": "Nat",
+          "usageType": "OnDemand"
+        },
+        "serviceRegions": [
+          "global"
+        ],
+        "pricingInfo": [
+          {
+            "summary": "",
+            "pricingExpression": {
+              "usageUnit": "h",
+              "displayQuantity": 1,
+              "tieredRates": [
+                {
+                  "startUsageAmount": 0,
+                  "unitPrice": {
+                    "currencyCode": "USD",
+                    "units": "0",
+                    "nanos": 1400000
+                  }
+                }
+              ],
+              "usageUnitDescription": "hour",
+              "baseUnit": "s",
+              "baseUnitDescription": "second",
+              "baseUnitConversionFactor": 3600
+            },
+            "currencyConversionRate": 1,
+            "effectiveTime": "2026-09-13T07:00:00Z"
+          }
+        ],
+        "serviceProviderName": "Google",
+        "geoTaxonomy": {
+          "type": "GLOBAL",
+          "regions": []
+        }
+      },
+      "raw_variant_sha256": "7e07a9c8c811a181ff6c29e3c2e406d52d3f3299f7a2508ee28d2a7a4c1b4015",
+      "source_pages": [
+        "/tmp/isaac-gcp-cost-validation/catalog/013.json.gz"
+      ]
+    },
+    "public_nat_processed": {
+      "skuId": "015F-5732-FFF0",
+      "name": "services/E505-1604-58F8/skus/015F-5732-FFF0",
+      "description": "Networking Cloud Nat Data Processing",
+      "category": {
+        "serviceDisplayName": "Networking",
+        "resourceFamily": "Network",
+        "resourceGroup": "Nat",
+        "usageType": "OnDemand"
+      },
+      "serviceRegions": [
+        "global"
+      ],
+      "geoTaxonomy": {
+        "type": "GLOBAL",
+        "regions": []
+      },
+      "geographic_candidate_class": "global_candidate",
+      "search_tags": [
+        "nat"
+      ],
+      "pricing": [
+        {
+          "effectiveTime": "2026-09-13T07:00:00Z",
+          "summary": "",
+          "aggregationInfo": null,
+          "currencyConversionRate": 1,
+          "expression_metadata": {
+            "usageUnit": "GiBy",
+            "displayQuantity": 1,
+            "usageUnitDescription": "gibibyte",
+            "baseUnit": "By",
+            "baseUnitDescription": "byte",
+            "baseUnitConversionFactor": 1073741824
+          },
+          "tiers": [
+            {
+              "startUsageAmount": 0,
+              "startUsageAmount_omitted_defaults_to_zero": false,
+              "decimal_unit_price": "0.045",
+              "price_status": "decoded_protobuf_money",
+              "currencyCode": "USD",
+              "raw": {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 45000000
+                }
+              }
+            }
+          ],
+          "raw": {
+            "summary": "",
+            "pricingExpression": {
+              "usageUnit": "GiBy",
+              "displayQuantity": 1,
+              "tieredRates": [
+                {
+                  "startUsageAmount": 0,
+                  "unitPrice": {
+                    "currencyCode": "USD",
+                    "units": "0",
+                    "nanos": 45000000
+                  }
+                }
+              ],
+              "usageUnitDescription": "gibibyte",
+              "baseUnit": "By",
+              "baseUnitDescription": "byte",
+              "baseUnitConversionFactor": 1073741824
+            },
+            "currencyConversionRate": 1,
+            "effectiveTime": "2026-09-13T07:00:00Z"
+          }
+        }
+      ],
+      "raw": {
+        "name": "services/E505-1604-58F8/skus/015F-5732-FFF0",
+        "skuId": "015F-5732-FFF0",
+        "description": "Networking Cloud Nat Data Processing",
+        "category": {
+          "serviceDisplayName": "Networking",
+          "resourceFamily": "Network",
+          "resourceGroup": "Nat",
+          "usageType": "OnDemand"
+        },
+        "serviceRegions": [
+          "global"
+        ],
+        "pricingInfo": [
+          {
+            "summary": "",
+            "pricingExpression": {
+              "usageUnit": "GiBy",
+              "displayQuantity": 1,
+              "tieredRates": [
+                {
+                  "startUsageAmount": 0,
+                  "unitPrice": {
+                    "currencyCode": "USD",
+                    "units": "0",
+                    "nanos": 45000000
+                  }
+                }
+              ],
+              "usageUnitDescription": "gibibyte",
+              "baseUnit": "By",
+              "baseUnitDescription": "byte",
+              "baseUnitConversionFactor": 1073741824
+            },
+            "currencyConversionRate": 1,
+            "effectiveTime": "2026-09-13T07:00:00Z"
+          }
+        ],
+        "serviceProviderName": "Google",
+        "geoTaxonomy": {
+          "type": "GLOBAL",
+          "regions": []
+        }
+      },
+      "raw_variant_sha256": "959c88189196297cdb70c2861594d448f28013a89717839610cf8670f356d64c",
+      "source_pages": [
+        "/tmp/isaac-gcp-cost-validation/catalog/013.json.gz"
+      ]
+    },
+    "public_nat_ip": {
+      "skuId": "8515-9425-D2CE",
+      "name": "services/E505-1604-58F8/skus/8515-9425-D2CE",
+      "description": "Networking Cloud NAT IP Usage",
+      "category": {
+        "serviceDisplayName": "Networking",
+        "resourceFamily": "Network",
+        "resourceGroup": "Nat",
+        "usageType": "OnDemand"
+      },
+      "serviceRegions": [
+        "global"
+      ],
+      "geoTaxonomy": {
+        "type": "GLOBAL",
+        "regions": []
+      },
+      "geographic_candidate_class": "global_candidate",
+      "search_tags": [
+        "nat",
+        "external_ip"
+      ],
+      "pricing": [
+        {
+          "effectiveTime": "2026-09-13T07:00:00Z",
+          "summary": "",
+          "aggregationInfo": null,
+          "currencyConversionRate": 1,
+          "expression_metadata": {
+            "usageUnit": "h",
+            "displayQuantity": 1,
+            "usageUnitDescription": "hour",
+            "baseUnit": "s",
+            "baseUnitDescription": "second",
+            "baseUnitConversionFactor": 3600
+          },
+          "tiers": [
+            {
+              "startUsageAmount": 0,
+              "startUsageAmount_omitted_defaults_to_zero": false,
+              "decimal_unit_price": "0.005",
+              "price_status": "decoded_protobuf_money",
+              "currencyCode": "USD",
+              "raw": {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 5000000
+                }
+              }
+            }
+          ],
+          "raw": {
+            "summary": "",
+            "pricingExpression": {
+              "usageUnit": "h",
+              "displayQuantity": 1,
+              "tieredRates": [
+                {
+                  "startUsageAmount": 0,
+                  "unitPrice": {
+                    "currencyCode": "USD",
+                    "units": "0",
+                    "nanos": 5000000
+                  }
+                }
+              ],
+              "usageUnitDescription": "hour",
+              "baseUnit": "s",
+              "baseUnitDescription": "second",
+              "baseUnitConversionFactor": 3600
+            },
+            "currencyConversionRate": 1,
+            "effectiveTime": "2026-09-13T07:00:00Z"
+          }
+        }
+      ],
+      "raw": {
+        "name": "services/E505-1604-58F8/skus/8515-9425-D2CE",
+        "skuId": "8515-9425-D2CE",
+        "description": "Networking Cloud NAT IP Usage",
+        "category": {
+          "serviceDisplayName": "Networking",
+          "resourceFamily": "Network",
+          "resourceGroup": "Nat",
+          "usageType": "OnDemand"
+        },
+        "serviceRegions": [
+          "global"
+        ],
+        "pricingInfo": [
+          {
+            "summary": "",
+            "pricingExpression": {
+              "usageUnit": "h",
+              "displayQuantity": 1,
+              "tieredRates": [
+                {
+                  "startUsageAmount": 0,
+                  "unitPrice": {
+                    "currencyCode": "USD",
+                    "units": "0",
+                    "nanos": 5000000
+                  }
+                }
+              ],
+              "usageUnitDescription": "hour",
+              "baseUnit": "s",
+              "baseUnitDescription": "second",
+              "baseUnitConversionFactor": 3600
+            },
+            "currencyConversionRate": 1,
+            "effectiveTime": "2026-09-13T07:00:00Z"
+          }
+        ],
+        "serviceProviderName": "Google",
+        "geoTaxonomy": {
+          "type": "GLOBAL",
+          "regions": []
+        }
+      },
+      "raw_variant_sha256": "6debd05aa16194582344e3527c4c3f0a62dadf867793f2177a9ffcaa218ef15c",
+      "source_pages": [
+        "/tmp/isaac-gcp-cost-validation/catalog/013.json.gz"
+      ]
+    },
+    "gcs_standard_regional": {
+      "skuId": "E5F0-6A5D-7BAD",
+      "name": "services/95FF-2EF5-5EA1/skus/E5F0-6A5D-7BAD",
+      "description": "Standard Storage US Regional",
+      "category": {
+        "serviceDisplayName": "Cloud Storage",
+        "resourceFamily": "Storage",
+        "resourceGroup": "RegionalStorage",
+        "usageType": "OnDemand"
+      },
+      "serviceRegions": [
+        "us-west1",
+        "us-central1",
+        "us-east1"
+      ],
+      "geoTaxonomy": {
+        "type": "MULTI_REGIONAL",
+        "regions": [
+          "us-west1",
+          "us-central1",
+          "us-east1"
+        ]
+      },
+      "geographic_candidate_class": "exact_us-west1",
+      "search_tags": [
+        "gcs"
+      ],
+      "pricing": [
+        {
+          "effectiveTime": "2026-09-13T07:00:00Z",
+          "summary": "",
+          "aggregationInfo": {
+            "aggregationLevel": "ACCOUNT",
+            "aggregationInterval": "MONTHLY",
+            "aggregationCount": 1
+          },
+          "currencyConversionRate": 1,
+          "expression_metadata": {
+            "usageUnit": "GiBy.mo",
+            "displayQuantity": 1,
+            "usageUnitDescription": "gibibyte month",
+            "baseUnit": "By.s",
+            "baseUnitDescription": "byte second",
+            "baseUnitConversionFactor": "2.783138807808E+15"
+          },
+          "tiers": [
+            {
+              "startUsageAmount": 0,
+              "startUsageAmount_omitted_defaults_to_zero": false,
+              "decimal_unit_price": "0",
+              "price_status": "decoded_protobuf_money",
+              "currencyCode": "USD",
+              "raw": {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 0
+                }
+              }
+            },
+            {
+              "startUsageAmount": 5,
+              "startUsageAmount_omitted_defaults_to_zero": false,
+              "decimal_unit_price": "0.02",
+              "price_status": "decoded_protobuf_money",
+              "currencyCode": "USD",
+              "raw": {
+                "startUsageAmount": 5,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 20000000
+                }
+              }
+            }
+          ],
+          "raw": {
+            "summary": "",
+            "pricingExpression": {
+              "usageUnit": "GiBy.mo",
+              "displayQuantity": 1,
+              "tieredRates": [
+                {
+                  "startUsageAmount": 0,
+                  "unitPrice": {
+                    "currencyCode": "USD",
+                    "units": "0",
+                    "nanos": 0
+                  }
+                },
+                {
+                  "startUsageAmount": 5,
+                  "unitPrice": {
+                    "currencyCode": "USD",
+                    "units": "0",
+                    "nanos": 20000000
+                  }
+                }
+              ],
+              "usageUnitDescription": "gibibyte month",
+              "baseUnit": "By.s",
+              "baseUnitDescription": "byte second",
+              "baseUnitConversionFactor": "2.783138807808E+15"
+            },
+            "aggregationInfo": {
+              "aggregationLevel": "ACCOUNT",
+              "aggregationInterval": "MONTHLY",
+              "aggregationCount": 1
+            },
+            "currencyConversionRate": 1,
+            "effectiveTime": "2026-09-13T07:00:00Z"
+          }
+        }
+      ],
+      "raw": {
+        "name": "services/95FF-2EF5-5EA1/skus/E5F0-6A5D-7BAD",
+        "skuId": "E5F0-6A5D-7BAD",
+        "description": "Standard Storage US Regional",
+        "category": {
+          "serviceDisplayName": "Cloud Storage",
+          "resourceFamily": "Storage",
+          "resourceGroup": "RegionalStorage",
+          "usageType": "OnDemand"
+        },
+        "serviceRegions": [
+          "us-west1",
+          "us-central1",
+          "us-east1"
+        ],
+        "pricingInfo": [
+          {
+            "summary": "",
+            "pricingExpression": {
+              "usageUnit": "GiBy.mo",
+              "displayQuantity": 1,
+              "tieredRates": [
+                {
+                  "startUsageAmount": 0,
+                  "unitPrice": {
+                    "currencyCode": "USD",
+                    "units": "0",
+                    "nanos": 0
+                  }
+                },
+                {
+                  "startUsageAmount": 5,
+                  "unitPrice": {
+                    "currencyCode": "USD",
+                    "units": "0",
+                    "nanos": 20000000
+                  }
+                }
+              ],
+              "usageUnitDescription": "gibibyte month",
+              "baseUnit": "By.s",
+              "baseUnitDescription": "byte second",
+              "baseUnitConversionFactor": "2.783138807808E+15"
+            },
+            "aggregationInfo": {
+              "aggregationLevel": "ACCOUNT",
+              "aggregationInterval": "MONTHLY",
+              "aggregationCount": 1
+            },
+            "currencyConversionRate": 1,
+            "effectiveTime": "2026-09-13T07:00:00Z"
+          }
+        ],
+        "serviceProviderName": "Google",
+        "geoTaxonomy": {
+          "type": "MULTI_REGIONAL",
+          "regions": [
+            "us-west1",
+            "us-central1",
+            "us-east1"
+          ]
+        }
+      },
+      "raw_variant_sha256": "740aec091a4829010fbee91e3c235c5060fe70071107e5cf798ab5864c9b45a3",
+      "source_pages": [
+        "/tmp/isaac-gcp-cost-validation/catalog/012.json.gz"
+      ]
+    },
+    "gcs_regional_class_a": {
+      "skuId": "4DBF-185F-A415",
+      "name": "services/95FF-2EF5-5EA1/skus/4DBF-185F-A415",
+      "description": "Regional Standard Class A Operations",
+      "category": {
+        "serviceDisplayName": "Cloud Storage",
+        "resourceFamily": "Storage",
+        "resourceGroup": "RegionalOps",
+        "usageType": "OnDemand"
+      },
+      "serviceRegions": [
+        "global"
+      ],
+      "geoTaxonomy": {
+        "type": "GLOBAL",
+        "regions": []
+      },
+      "geographic_candidate_class": "global_candidate",
+      "search_tags": [
+        "gcs"
+      ],
+      "pricing": [
+        {
+          "effectiveTime": "2026-09-13T07:00:00Z",
+          "summary": "",
+          "aggregationInfo": {
+            "aggregationLevel": "ACCOUNT",
+            "aggregationInterval": "MONTHLY",
+            "aggregationCount": 1
+          },
+          "currencyConversionRate": 1,
+          "expression_metadata": {
+            "usageUnit": "count",
+            "displayQuantity": 1000,
+            "usageUnitDescription": "count",
+            "baseUnit": "count",
+            "baseUnitDescription": "count",
+            "baseUnitConversionFactor": 1
+          },
+          "tiers": [
+            {
+              "startUsageAmount": 0,
+              "startUsageAmount_omitted_defaults_to_zero": false,
+              "decimal_unit_price": "0",
+              "price_status": "decoded_protobuf_money",
+              "currencyCode": "USD",
+              "raw": {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 0
+                }
+              }
+            },
+            {
+              "startUsageAmount": 5000,
+              "startUsageAmount_omitted_defaults_to_zero": false,
+              "decimal_unit_price": "0.000005",
+              "price_status": "decoded_protobuf_money",
+              "currencyCode": "USD",
+              "raw": {
+                "startUsageAmount": 5000,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 5000
+                }
+              }
+            }
+          ],
+          "raw": {
+            "summary": "",
+            "pricingExpression": {
+              "usageUnit": "count",
+              "displayQuantity": 1000,
+              "tieredRates": [
+                {
+                  "startUsageAmount": 0,
+                  "unitPrice": {
+                    "currencyCode": "USD",
+                    "units": "0",
+                    "nanos": 0
+                  }
+                },
+                {
+                  "startUsageAmount": 5000,
+                  "unitPrice": {
+                    "currencyCode": "USD",
+                    "units": "0",
+                    "nanos": 5000
+                  }
+                }
+              ],
+              "usageUnitDescription": "count",
+              "baseUnit": "count",
+              "baseUnitDescription": "count",
+              "baseUnitConversionFactor": 1
+            },
+            "aggregationInfo": {
+              "aggregationLevel": "ACCOUNT",
+              "aggregationInterval": "MONTHLY",
+              "aggregationCount": 1
+            },
+            "currencyConversionRate": 1,
+            "effectiveTime": "2026-09-13T07:00:00Z"
+          }
+        }
+      ],
+      "raw": {
+        "name": "services/95FF-2EF5-5EA1/skus/4DBF-185F-A415",
+        "skuId": "4DBF-185F-A415",
+        "description": "Regional Standard Class A Operations",
+        "category": {
+          "serviceDisplayName": "Cloud Storage",
+          "resourceFamily": "Storage",
+          "resourceGroup": "RegionalOps",
+          "usageType": "OnDemand"
+        },
+        "serviceRegions": [
+          "global"
+        ],
+        "pricingInfo": [
+          {
+            "summary": "",
+            "pricingExpression": {
+              "usageUnit": "count",
+              "displayQuantity": 1000,
+              "tieredRates": [
+                {
+                  "startUsageAmount": 0,
+                  "unitPrice": {
+                    "currencyCode": "USD",
+                    "units": "0",
+                    "nanos": 0
+                  }
+                },
+                {
+                  "startUsageAmount": 5000,
+                  "unitPrice": {
+                    "currencyCode": "USD",
+                    "units": "0",
+                    "nanos": 5000
+                  }
+                }
+              ],
+              "usageUnitDescription": "count",
+              "baseUnit": "count",
+              "baseUnitDescription": "count",
+              "baseUnitConversionFactor": 1
+            },
+            "aggregationInfo": {
+              "aggregationLevel": "ACCOUNT",
+              "aggregationInterval": "MONTHLY",
+              "aggregationCount": 1
+            },
+            "currencyConversionRate": 1,
+            "effectiveTime": "2026-09-13T07:00:00Z"
+          }
+        ],
+        "serviceProviderName": "Google",
+        "geoTaxonomy": {
+          "type": "GLOBAL",
+          "regions": []
+        }
+      },
+      "raw_variant_sha256": "4d9bf3dd3cdbe1c8206a220d09c1b8d3b653365a1a756ffb60fe049212d84c80",
+      "source_pages": [
+        "/tmp/isaac-gcp-cost-validation/catalog/012.json.gz"
+      ]
+    },
+    "gcs_regional_class_b": {
+      "skuId": "7870-010B-2763",
+      "name": "services/95FF-2EF5-5EA1/skus/7870-010B-2763",
+      "description": "Regional Standard Class B Operations",
+      "category": {
+        "serviceDisplayName": "Cloud Storage",
+        "resourceFamily": "Storage",
+        "resourceGroup": "RegionalOps",
+        "usageType": "OnDemand"
+      },
+      "serviceRegions": [
+        "global"
+      ],
+      "geoTaxonomy": {
+        "type": "GLOBAL",
+        "regions": []
+      },
+      "geographic_candidate_class": "global_candidate",
+      "search_tags": [
+        "gcs"
+      ],
+      "pricing": [
+        {
+          "effectiveTime": "2026-09-13T07:00:00Z",
+          "summary": "",
+          "aggregationInfo": {
+            "aggregationLevel": "ACCOUNT",
+            "aggregationInterval": "MONTHLY",
+            "aggregationCount": 1
+          },
+          "currencyConversionRate": 1,
+          "expression_metadata": {
+            "usageUnit": "count",
+            "displayQuantity": 1000,
+            "usageUnitDescription": "count",
+            "baseUnit": "count",
+            "baseUnitDescription": "count",
+            "baseUnitConversionFactor": 1
+          },
+          "tiers": [
+            {
+              "startUsageAmount": 0,
+              "startUsageAmount_omitted_defaults_to_zero": false,
+              "decimal_unit_price": "0",
+              "price_status": "decoded_protobuf_money",
+              "currencyCode": "USD",
+              "raw": {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 0
+                }
+              }
+            },
+            {
+              "startUsageAmount": 50000,
+              "startUsageAmount_omitted_defaults_to_zero": false,
+              "decimal_unit_price": "0.0000004",
+              "price_status": "decoded_protobuf_money",
+              "currencyCode": "USD",
+              "raw": {
+                "startUsageAmount": 50000,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 400
+                }
+              }
+            }
+          ],
+          "raw": {
+            "summary": "",
+            "pricingExpression": {
+              "usageUnit": "count",
+              "displayQuantity": 1000,
+              "tieredRates": [
+                {
+                  "startUsageAmount": 0,
+                  "unitPrice": {
+                    "currencyCode": "USD",
+                    "units": "0",
+                    "nanos": 0
+                  }
+                },
+                {
+                  "startUsageAmount": 50000,
+                  "unitPrice": {
+                    "currencyCode": "USD",
+                    "units": "0",
+                    "nanos": 400
+                  }
+                }
+              ],
+              "usageUnitDescription": "count",
+              "baseUnit": "count",
+              "baseUnitDescription": "count",
+              "baseUnitConversionFactor": 1
+            },
+            "aggregationInfo": {
+              "aggregationLevel": "ACCOUNT",
+              "aggregationInterval": "MONTHLY",
+              "aggregationCount": 1
+            },
+            "currencyConversionRate": 1,
+            "effectiveTime": "2026-09-13T07:00:00Z"
+          }
+        }
+      ],
+      "raw": {
+        "name": "services/95FF-2EF5-5EA1/skus/7870-010B-2763",
+        "skuId": "7870-010B-2763",
+        "description": "Regional Standard Class B Operations",
+        "category": {
+          "serviceDisplayName": "Cloud Storage",
+          "resourceFamily": "Storage",
+          "resourceGroup": "RegionalOps",
+          "usageType": "OnDemand"
+        },
+        "serviceRegions": [
+          "global"
+        ],
+        "pricingInfo": [
+          {
+            "summary": "",
+            "pricingExpression": {
+              "usageUnit": "count",
+              "displayQuantity": 1000,
+              "tieredRates": [
+                {
+                  "startUsageAmount": 0,
+                  "unitPrice": {
+                    "currencyCode": "USD",
+                    "units": "0",
+                    "nanos": 0
+                  }
+                },
+                {
+                  "startUsageAmount": 50000,
+                  "unitPrice": {
+                    "currencyCode": "USD",
+                    "units": "0",
+                    "nanos": 400
+                  }
+                }
+              ],
+              "usageUnitDescription": "count",
+              "baseUnit": "count",
+              "baseUnitDescription": "count",
+              "baseUnitConversionFactor": 1
+            },
+            "aggregationInfo": {
+              "aggregationLevel": "ACCOUNT",
+              "aggregationInterval": "MONTHLY",
+              "aggregationCount": 1
+            },
+            "currencyConversionRate": 1,
+            "effectiveTime": "2026-09-13T07:00:00Z"
+          }
+        ],
+        "serviceProviderName": "Google",
+        "geoTaxonomy": {
+          "type": "GLOBAL",
+          "regions": []
+        }
+      },
+      "raw_variant_sha256": "e0498db01917d4817a36a86e6b3f4e5d9d6c66d121743f7ec7767fb11599d222",
+      "source_pages": [
+        "/tmp/isaac-gcp-cost-validation/catalog/012.json.gz"
+      ]
+    },
+    "artifact_registry_storage": {
+      "skuId": "8502-299A-ABAF",
+      "name": "services/149C-F9EC-3994/skus/8502-299A-ABAF",
+      "description": "Artifact Registry Storage",
+      "category": {
+        "serviceDisplayName": "Artifact Registry",
+        "resourceFamily": "ApplicationServices",
+        "resourceGroup": "Storage",
+        "usageType": "OnDemand"
+      },
+      "serviceRegions": [
+        "global"
+      ],
+      "geoTaxonomy": {
+        "type": "GLOBAL",
+        "regions": []
+      },
+      "geographic_candidate_class": "global_candidate",
+      "search_tags": [
+        "registry"
+      ],
+      "pricing": [
+        {
+          "effectiveTime": "2026-09-13T07:00:00Z",
+          "summary": "",
+          "aggregationInfo": {
+            "aggregationLevel": "ACCOUNT",
+            "aggregationInterval": "MONTHLY",
+            "aggregationCount": 1
+          },
+          "currencyConversionRate": 1,
+          "expression_metadata": {
+            "usageUnit": "GiBy.mo",
+            "displayQuantity": 1,
+            "usageUnitDescription": "gibibyte month",
+            "baseUnit": "By.s",
+            "baseUnitDescription": "byte second",
+            "baseUnitConversionFactor": "2.783138807808E+15"
+          },
+          "tiers": [
+            {
+              "startUsageAmount": 0,
+              "startUsageAmount_omitted_defaults_to_zero": false,
+              "decimal_unit_price": "0",
+              "price_status": "decoded_protobuf_money",
+              "currencyCode": "USD",
+              "raw": {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 0
+                }
+              }
+            },
+            {
+              "startUsageAmount": "0.5",
+              "startUsageAmount_omitted_defaults_to_zero": false,
+              "decimal_unit_price": "0.1",
+              "price_status": "decoded_protobuf_money",
+              "currencyCode": "USD",
+              "raw": {
+                "startUsageAmount": "0.5",
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 100000000
+                }
+              }
+            }
+          ],
+          "raw": {
+            "summary": "",
+            "pricingExpression": {
+              "usageUnit": "GiBy.mo",
+              "displayQuantity": 1,
+              "tieredRates": [
+                {
+                  "startUsageAmount": 0,
+                  "unitPrice": {
+                    "currencyCode": "USD",
+                    "units": "0",
+                    "nanos": 0
+                  }
+                },
+                {
+                  "startUsageAmount": "0.5",
+                  "unitPrice": {
+                    "currencyCode": "USD",
+                    "units": "0",
+                    "nanos": 100000000
+                  }
+                }
+              ],
+              "usageUnitDescription": "gibibyte month",
+              "baseUnit": "By.s",
+              "baseUnitDescription": "byte second",
+              "baseUnitConversionFactor": "2.783138807808E+15"
+            },
+            "aggregationInfo": {
+              "aggregationLevel": "ACCOUNT",
+              "aggregationInterval": "MONTHLY",
+              "aggregationCount": 1
+            },
+            "currencyConversionRate": 1,
+            "effectiveTime": "2026-09-13T07:00:00Z"
+          }
+        }
+      ],
+      "raw": {
+        "name": "services/149C-F9EC-3994/skus/8502-299A-ABAF",
+        "skuId": "8502-299A-ABAF",
+        "description": "Artifact Registry Storage",
+        "category": {
+          "serviceDisplayName": "Artifact Registry",
+          "resourceFamily": "ApplicationServices",
+          "resourceGroup": "Storage",
+          "usageType": "OnDemand"
+        },
+        "serviceRegions": [
+          "global"
+        ],
+        "pricingInfo": [
+          {
+            "summary": "",
+            "pricingExpression": {
+              "usageUnit": "GiBy.mo",
+              "displayQuantity": 1,
+              "tieredRates": [
+                {
+                  "startUsageAmount": 0,
+                  "unitPrice": {
+                    "currencyCode": "USD",
+                    "units": "0",
+                    "nanos": 0
+                  }
+                },
+                {
+                  "startUsageAmount": "0.5",
+                  "unitPrice": {
+                    "currencyCode": "USD",
+                    "units": "0",
+                    "nanos": 100000000
+                  }
+                }
+              ],
+              "usageUnitDescription": "gibibyte month",
+              "baseUnit": "By.s",
+              "baseUnitDescription": "byte second",
+              "baseUnitConversionFactor": "2.783138807808E+15"
+            },
+            "aggregationInfo": {
+              "aggregationLevel": "ACCOUNT",
+              "aggregationInterval": "MONTHLY",
+              "aggregationCount": 1
+            },
+            "currencyConversionRate": 1,
+            "effectiveTime": "2026-09-13T07:00:00Z"
+          }
+        ],
+        "serviceProviderName": "Google",
+        "geoTaxonomy": {
+          "type": "GLOBAL",
+          "regions": []
+        }
+      },
+      "raw_variant_sha256": "0ca1c5c72f2116702ab0e4a13f5338ef8e88f2798d7966d70c5403d96e4367a4",
+      "source_pages": [
+        "/tmp/isaac-gcp-cost-validation/catalog/014.json.gz"
+      ]
+    },
+    "g4_local_ssd": {
+      "skuId": "FC94-13C6-4468",
+      "name": "services/6F81-5844-456A/skus/FC94-13C6-4468",
+      "description": "G4 Instance Local SSD running in Oregon",
+      "category": {
+        "serviceDisplayName": "Compute Engine",
+        "resourceFamily": "Compute",
+        "resourceGroup": "LocalSSD",
+        "usageType": "OnDemand"
+      },
+      "serviceRegions": [
+        "us-west1"
+      ],
+      "geoTaxonomy": {
+        "type": "REGIONAL",
+        "regions": [
+          "us-west1"
+        ]
+      },
+      "geographic_candidate_class": "exact_us-west1",
+      "search_tags": [
+        "g4_rtx"
+      ],
+      "pricing": [
+        {
+          "effectiveTime": "2026-09-13T07:00:00Z",
+          "summary": "",
+          "aggregationInfo": null,
+          "currencyConversionRate": 1,
+          "expression_metadata": {
+            "usageUnit": "GiBy.mo",
+            "displayQuantity": 1,
+            "usageUnitDescription": "gibibyte month",
+            "baseUnit": "By.s",
+            "baseUnitDescription": "byte second",
+            "baseUnitConversionFactor": "2.783138807808E+15"
+          },
+          "tiers": [
+            {
+              "startUsageAmount": 0,
+              "startUsageAmount_omitted_defaults_to_zero": false,
+              "decimal_unit_price": "0",
+              "price_status": "decoded_protobuf_money",
+              "currencyCode": "USD",
+              "raw": {
+                "startUsageAmount": 0,
+                "unitPrice": {
+                  "currencyCode": "USD",
+                  "units": "0",
+                  "nanos": 0
+                }
+              }
+            }
+          ],
+          "raw": {
+            "summary": "",
+            "pricingExpression": {
+              "usageUnit": "GiBy.mo",
+              "displayQuantity": 1,
+              "tieredRates": [
+                {
+                  "startUsageAmount": 0,
+                  "unitPrice": {
+                    "currencyCode": "USD",
+                    "units": "0",
+                    "nanos": 0
+                  }
+                }
+              ],
+              "usageUnitDescription": "gibibyte month",
+              "baseUnit": "By.s",
+              "baseUnitDescription": "byte second",
+              "baseUnitConversionFactor": "2.783138807808E+15"
+            },
+            "currencyConversionRate": 1,
+            "effectiveTime": "2026-09-13T07:00:00Z"
+          }
+        }
+      ],
+      "raw": {
+        "name": "services/6F81-5844-456A/skus/FC94-13C6-4468",
+        "skuId": "FC94-13C6-4468",
+        "description": "G4 Instance Local SSD running in Oregon",
+        "category": {
+          "serviceDisplayName": "Compute Engine",
+          "resourceFamily": "Compute",
+          "resourceGroup": "LocalSSD",
+          "usageType": "OnDemand"
+        },
+        "serviceRegions": [
+          "us-west1"
+        ],
+        "pricingInfo": [
+          {
+            "summary": "",
+            "pricingExpression": {
+              "usageUnit": "GiBy.mo",
+              "displayQuantity": 1,
+              "tieredRates": [
+                {
+                  "startUsageAmount": 0,
+                  "unitPrice": {
+                    "currencyCode": "USD",
+                    "units": "0",
+                    "nanos": 0
+                  }
+                }
+              ],
+              "usageUnitDescription": "gibibyte month",
+              "baseUnit": "By.s",
+              "baseUnitDescription": "byte second",
+              "baseUnitConversionFactor": "2.783138807808E+15"
+            },
+            "currencyConversionRate": 1,
+            "effectiveTime": "2026-09-13T07:00:00Z"
+          }
+        ],
+        "serviceProviderName": "Google",
+        "geoTaxonomy": {
+          "type": "REGIONAL",
+          "regions": [
+            "us-west1"
+          ]
+        }
+      },
+      "raw_variant_sha256": "ec7eb331e3ddfa008216d4a41786b87fe7c2ed31f39cb6ad09bb1ea7b9dfb574",
+      "source_pages": [
+        "/tmp/isaac-gcp-cost-validation/catalog/011.json.gz"
+      ]
+    }
+  },
+  "compute_reference": [
+    {
+      "machine_type": "g4-standard-48",
+      "region": "us-west1",
+      "model": "STANDARD",
+      "components": [
+        {
+          "resource": "core",
+          "quantity_per_vm_hour": 48,
+          "skuId": "A36E-7315-8862",
+          "price": "0.04891",
+          "extended_hourly": "2.34768"
+        },
+        {
+          "resource": "ram",
+          "quantity_per_vm_hour": 180,
+          "skuId": "C566-5B7E-28AA",
+          "price": "0.00587",
+          "extended_hourly": "1.05660"
+        },
+        {
+          "resource": "gpu",
+          "quantity_per_vm_hour": 1,
+          "skuId": "73C5-0031-0BF3",
+          "price": "1.09565",
+          "extended_hourly": "1.09565"
+        }
+      ],
+      "catalog_component_sum_hourly": "4.49993",
+      "catalog_component_sum_730h": "3284.94890",
+      "official_web_machine_price_hourly": "4.49993",
+      "official_web_machine_price_730h": "3284.94890",
+      "catalog_minus_public_web_hourly": "0.00000",
+      "assessment": "standard decomposition matches public machine price exactly"
+    },
+    {
+      "machine_type": "g4-standard-384",
+      "region": "us-west1",
+      "model": "STANDARD",
+      "components": [
+        {
+          "resource": "core",
+          "quantity_per_vm_hour": 384,
+          "skuId": "A36E-7315-8862",
+          "price": "0.04891",
+          "extended_hourly": "18.78144"
+        },
+        {
+          "resource": "ram",
+          "quantity_per_vm_hour": 1440,
+          "skuId": "C566-5B7E-28AA",
+          "price": "0.00587",
+          "extended_hourly": "8.45280"
+        },
+        {
+          "resource": "gpu",
+          "quantity_per_vm_hour": 8,
+          "skuId": "73C5-0031-0BF3",
+          "price": "1.09565",
+          "extended_hourly": "8.76520"
+        }
+      ],
+      "catalog_component_sum_hourly": "35.99944",
+      "catalog_component_sum_730h": "26279.59120",
+      "official_web_machine_price_hourly": "35.99944",
+      "official_web_machine_price_730h": "26279.59120",
+      "catalog_minus_public_web_hourly": "0.00000",
+      "assessment": "standard decomposition matches public machine price exactly"
+    },
+    {
+      "machine_type": "g4-standard-48",
+      "region": "us-west1",
+      "model": "DWS_DEFINED_DURATION_CANDIDATE",
+      "components": [
+        {
+          "resource": "core",
+          "quantity_per_vm_hour": 48,
+          "skuId": "3B6F-2FBA-B0C5",
+          "price": "0.024455",
+          "extended_hourly": "1.173840"
+        },
+        {
+          "resource": "ram",
+          "quantity_per_vm_hour": 180,
+          "skuId": "4742-1C3C-6E23",
+          "price": "0.002935",
+          "extended_hourly": "0.528300"
+        },
+        {
+          "resource": "gpu",
+          "quantity_per_vm_hour": 1,
+          "skuId": "1DE7-2C1A-CBEB",
+          "price": "0.54783",
+          "extended_hourly": "0.54783"
+        }
+      ],
+      "catalog_component_sum_hourly": "2.249970",
+      "catalog_component_sum_730h": "1642.478100",
+      "official_web_machine_price_hourly": "2.25",
+      "official_web_machine_price_730h": "1642.50",
+      "catalog_minus_public_web_hourly": "-0.000030",
+      "assessment": "Flex-start public page independently establishes displayed rate. DWS Defined Duration SKU alias is not explicitly defined in retrieved docs; close numeric match is corroboration, not identity proof."
+    },
+    {
+      "machine_type": "g4-standard-384",
+      "region": "us-west1",
+      "model": "DWS_DEFINED_DURATION_CANDIDATE",
+      "components": [
+        {
+          "resource": "core",
+          "quantity_per_vm_hour": 384,
+          "skuId": "3B6F-2FBA-B0C5",
+          "price": "0.024455",
+          "extended_hourly": "9.390720"
+        },
+        {
+          "resource": "ram",
+          "quantity_per_vm_hour": 1440,
+          "skuId": "4742-1C3C-6E23",
+          "price": "0.002935",
+          "extended_hourly": "4.226400"
+        },
+        {
+          "resource": "gpu",
+          "quantity_per_vm_hour": 8,
+          "skuId": "1DE7-2C1A-CBEB",
+          "price": "0.54783",
+          "extended_hourly": "4.38264"
+        }
+      ],
+      "catalog_component_sum_hourly": "17.999760",
+      "catalog_component_sum_730h": "13139.824800",
+      "official_web_machine_price_hourly": "18",
+      "official_web_machine_price_730h": "13140",
+      "catalog_minus_public_web_hourly": "-0.000240",
+      "assessment": "Flex-start public page independently establishes displayed rate. DWS Defined Duration SKU alias is not explicitly defined in retrieved docs; close numeric match is corroboration, not identity proof."
+    }
+  ],
+  "ancillary_reference": {
+    "hyperdisk_capacity_255GiB_one_catalog_month": "20.40",
+    "hyperdisk_formula": "255*capacity_rate + max(provisioned_iops-3000,0)*iops_rate + max(provisioned_MiBps-140,0)*throughput_rate per catalog month; prorate by retention",
+    "hyperdisk_defaults_formula_only": {
+      "iops": "4530",
+      "throughput_MiBps_before_integer_rounding": "522.5",
+      "excess_iops_cost_one_month": "7.650",
+      "excess_throughput_formula_cost_one_month": "15.300",
+      "total_formula_one_month_not_actual_disk": "43.350",
+      "caveat": "Fixture omits provisioned performance. Published defaults exceed included baseline. API/provider boot-disk semantics and integer throughput rounding unverified; do not assert baseline-only disk cost or realized total."
+    },
+    "nat_one_assigned_VM_730h": "1.0220",
+    "nat_100GiB_processed": "4.500",
+    "nat_one_external_ip_730h_conditional": "3.650",
+    "nat_subtotal_if_one_ip_730h_and_100GiB_not_including_egress": "9.1720",
+    "gcs_1GiBmo_100A_100B_if_free_tier_unconsumed": "0.0000000",
+    "gcs_1GiBmo_100A_100B_if_free_tier_exhausted": "0.0205400",
+    "artifact_10GiBmo_if_account_allowance_unconsumed": "0.95",
+    "artifact_10GiBmo_if_account_allowance_exhausted": "1.0",
+    "month_unit_warning": {
+      "catalog_month_seconds": 2592000,
+      "catalog_month_hours": "720",
+      "public_page_monthly_hourly_toggle_uses_730": true,
+      "do_not_mix": "730 compute hours and one storage billing month are independent assumptions; use Catalog baseUnitConversionFactor for explicitly elapsed seconds; public UI hourly display rounds and uses a different monthly presentation."
+    }
+  },
+  "fixtures": [
+    {
+      "path": "/workspaces/IsaacAutomator/configs/cost/fixtures/g4-standard-384-flex_start/main.tf.json",
+      "machine_type": "g4-standard-384",
+      "scheduling": {
+        "provisioning_model": "FLEX_START",
+        "on_host_maintenance": "TERMINATE",
+        "automatic_restart": false,
+        "instance_termination_action": "STOP",
+        "max_run_duration": {
+          "seconds": 3600
+        }
+      },
+      "boot_disk": {
+        "initialize_params": {
+          "image": "ubuntu-os-cloud/ubuntu-2204-lts",
+          "size": 255,
+          "type": "hyperdisk-balanced"
+        }
+      },
+      "gpu": {
+        "type": "nvidia-rtx-pro-6000",
+        "count": 8
+      }
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/configs/cost/fixtures/g4-standard-384-standard/main.tf.json",
+      "machine_type": "g4-standard-384",
+      "scheduling": {
+        "provisioning_model": "STANDARD",
+        "on_host_maintenance": "TERMINATE",
+        "automatic_restart": false
+      },
+      "boot_disk": {
+        "initialize_params": {
+          "image": "ubuntu-os-cloud/ubuntu-2204-lts",
+          "size": 255,
+          "type": "hyperdisk-balanced"
+        }
+      },
+      "gpu": {
+        "type": "nvidia-rtx-pro-6000",
+        "count": 8
+      }
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/configs/cost/fixtures/g4-standard-48-flex_start/main.tf.json",
+      "machine_type": "g4-standard-48",
+      "scheduling": {
+        "provisioning_model": "FLEX_START",
+        "on_host_maintenance": "TERMINATE",
+        "automatic_restart": false,
+        "instance_termination_action": "STOP",
+        "max_run_duration": {
+          "seconds": 3600
+        }
+      },
+      "boot_disk": {
+        "initialize_params": {
+          "image": "ubuntu-os-cloud/ubuntu-2204-lts",
+          "size": 255,
+          "type": "hyperdisk-balanced"
+        }
+      },
+      "gpu": {
+        "type": "nvidia-rtx-pro-6000",
+        "count": 1
+      }
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/configs/cost/fixtures/g4-standard-48-standard/main.tf.json",
+      "machine_type": "g4-standard-48",
+      "scheduling": {
+        "provisioning_model": "STANDARD",
+        "on_host_maintenance": "TERMINATE",
+        "automatic_restart": false
+      },
+      "boot_disk": {
+        "initialize_params": {
+          "image": "ubuntu-os-cloud/ubuntu-2204-lts",
+          "size": 255,
+          "type": "hyperdisk-balanced"
+        }
+      },
+      "gpu": {
+        "type": "nvidia-rtx-pro-6000",
+        "count": 1
+      }
+    }
+  ],
+  "not_an_infrastructure_total": true
+}

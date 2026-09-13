@@ -1,0 +1,25 @@
+{
+  "costs": [
+    {
+      "resource": "azurerm_key_vault.public_price_trial",
+      "kind": "azurerm_key_vault",
+      "name": "public_price_trial",
+      "line_items": [
+        {
+          "dimension": "operations",
+          "description": "Vault operations",
+          "unit": "10K operations",
+          "quantity": "10",
+          "unit_rate": "0.03",
+          "monthly_cost": "0.3",
+          "price_source": "live"
+        }
+      ],
+      "monthly_subtotal": "0.3",
+      "currency": "USD"
+    }
+  ],
+  "project_total": "0.3",
+  "currency": "USD",
+  "generated_at": "2026-09-13T03:00:32Z"
+}

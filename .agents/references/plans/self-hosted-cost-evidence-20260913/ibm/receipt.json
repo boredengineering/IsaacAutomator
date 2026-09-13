@@ -1,0 +1,163 @@
+{
+  "candidate": "IBM-Cloud/infracost-cloud-pricing-api",
+  "source_commit": "a02557a9daf623565f47b28f750b48ca4860ba69",
+  "license": "Apache-2.0",
+  "recorded_at": "2026-09-13T03:06:02.177342+00:00",
+  "verdict": "PARTIAL_BACKEND_ONLY",
+  "upstream_build": {
+    "exit_code": 1,
+    "blocker": "npm E404 @console/console-platform-log4js-utils@^4.1.0",
+    "process": "proc_e152f6279dd9"
+  },
+  "repair_builds": [
+    {
+      "exit_code": 1,
+      "blocker": "pg-protocol Buffer generics vs Node18 types/TS4.9",
+      "process": "proc_ca3e437a68bd"
+    },
+    {
+      "exit_code": 1,
+      "blocker": "Promise unknown vs finish callback signatures after toolchain update",
+      "process": "proc_01d118a34e25"
+    },
+    {
+      "exit_code": 0,
+      "process": "proc_70e46707302e"
+    }
+  ],
+  "disposable_patches": [
+    "Node22/Debian instead of Node16/Alpine; public log4js instead of unavailable IBM logger",
+    "TypeScript5 + Node22 types",
+    "three Promise<void> annotations"
+  ],
+  "patch_sha256": "0b1bab76b39f0b858930794ce01da827ee969fbcc2ac58b0c9ee0b4b17faaebe",
+  "native_job_init": {
+    "exit_code": 1,
+    "database_setup_passed": true,
+    "reason": "job:update calls removed data:download; native import remains broken"
+  },
+  "runtime_probes": [
+    {
+      "name": "health",
+      "argv": [
+        "docker",
+        "exec",
+        "isaac-cost-ibm-api",
+        "curl",
+        "--fail",
+        "--max-time",
+        "10",
+        "http://127.0.0.1:4000/health"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"status\":\"success\",\"region\":\"local\",\"hostname\":\"93d1a15cb4c6\",\"version\":\"local\"}",
+      "stderr": "  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current\n                                 Dload  Upload   Total   Spent    Left  Speed\n\n  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0\n100    81  100    81    0     0   7938      0 --:--:-- --:--:-- --:--:--  8100\n"
+    },
+    {
+      "name": "empty-gcp-query",
+      "argv": [
+        "docker",
+        "exec",
+        "isaac-cost-ibm-api",
+        "curl",
+        "--fail",
+        "--max-time",
+        "10",
+        "-H",
+        "Content-Type: application/json",
+        "--data",
+        "{\"query\": \"{ products(filter: {vendorName: \\\"gcp\\\", service: \\\"Compute Engine\\\", region: \\\"us-west1\\\"}) { sku prices { USD unit } } }\"}",
+        "http://127.0.0.1:4000/graphql"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"data\":{\"products\":[]}}\n",
+      "stderr": "  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current\n                                 Dload  Upload   Total   Spent    Left  Speed\n\n  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0\n100   160  100    25  100   135   1182   6387 --:--:-- --:--:-- --:--:--  7619\n"
+    },
+    {
+      "name": "external-egress-denied",
+      "argv": [
+        "docker",
+        "exec",
+        "isaac-cost-ibm-api",
+        "node",
+        "-e",
+        "require('https').get('https://pricing.api.infracost.io',()=>process.exit(5)).on('error',()=>process.exit(0)).setTimeout(4000,function(){this.destroy();process.exit(0)})"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "name": "internal-network",
+      "argv": [
+        "docker",
+        "network",
+        "inspect",
+        "isaac-cost-ibm-net",
+        "--format",
+        "{{.Internal}}"
+      ],
+      "exit_code": 0,
+      "stdout": "true\n",
+      "stderr": ""
+    }
+  ],
+  "real_price_provenance": {
+    "url": "https://prices.azure.com/api/retail/prices?%24filter=serviceName+eq+%27Virtual+Machines%27+and+armRegionName+eq+%27eastus%27+and+armSkuName+eq+%27Standard_D2s_v3%27+and+priceType+eq+%27Consumption%27",
+    "retrieved_at": "2026-09-13T03:04:57.191410+00:00",
+    "sha256": "03a440ec88fde044ce8d8b9dd38e592c8fe1c61cfe875cc8f3ace515d5f903d4",
+    "item_count": 6,
+    "source": "Microsoft Azure Retail Prices API",
+    "synthetic": false
+  },
+  "real_price_probe": {
+    "vendor_records_imported": 6,
+    "import_method": "trial harness exposes unmodified upstream parseProduct and calls upsertProducts on archived official API response; not native job",
+    "response": {
+      "data": {
+        "products": [
+          {
+            "sku": "DZH318Z0BQ50/Standard_D2s_v3/ae331802-83a5-4b9e-b287-85675f794e3d",
+            "prices": [
+              {
+                "USD": "0.096",
+                "unit": "1 Hour",
+                "purchaseOption": "Consumption"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "matched_official_source": true,
+    "egress_during_query": "Docker internal network; external HTTPS probe failed as expected"
+  },
+  "full_selfhosted_estimator_passed": false,
+  "g4_flex_passed": false,
+  "remaining": [
+    "native initialization/data-refresh repair",
+    "full estimator client compatibility",
+    "GCP catalog authorization and genuine G4/Flex modeling",
+    "private-input and production security review"
+  ],
+  "cleanup": {
+    "containers": {
+      "remaining": [],
+      "empty": true
+    },
+    "networks": {
+      "remaining": [],
+      "empty": true
+    },
+    "volumes": {
+      "remaining": [],
+      "empty": true
+    },
+    "image_tags": {
+      "remaining": [],
+      "empty": true
+    }
+  },
+  "shared_base_images_and_build_cache": "retained; no global prune",
+  "archival_note": "Condensed from raw trial receipt; verbose command bodies omitted. Paths in upstream receipt are trial-relative, not all artifacts archived. See parent manifest for exact preserved files. No reproducible full installer is claimed."
+}

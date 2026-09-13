@@ -1,0 +1,20 @@
+{
+  "completed_at": "2026-09-13T17:31:38.864407+00:00",
+  "ownership_checks": [
+    "/isaac-gcp-verify-77e5e4c2-cli|gcp-verify|running",
+    "/isaac-gcp-verify-77e5e4c2-api|gcp-verify|running",
+    "/isaac-gcp-verify-77e5e4c2-db|gcp-verify|running"
+  ],
+  "removed_containers": [
+    "isaac-gcp-verify-77e5e4c2-cli",
+    "isaac-gcp-verify-77e5e4c2-api",
+    "isaac-gcp-verify-77e5e4c2-db"
+  ],
+  "removed_network": "isaac-gcp-verify-77e5e4c2-net",
+  "remaining_labelled_containers": [],
+  "remaining_labelled_networks": [],
+  "no_trial_persistent_volumes_created": true,
+  "cloud_resources_created": false,
+  "neo4j_mutated": false,
+  "shared_images_removed": false
+}

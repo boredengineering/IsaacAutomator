@@ -1,0 +1,44 @@
+=== RUN   TestGCPCatalogOriginAndRedirects
+=== RUN   TestGCPCatalogOriginAndRedirects/api_key/http://cloudbilling.googleapis.com/v1/services
+=== RUN   TestGCPCatalogOriginAndRedirects/api_key/https://evil.example/v1/services
+=== RUN   TestGCPCatalogOriginAndRedirects/api_key/https://cloudbilling.googleapis.com.evil.example/v1/services
+=== RUN   TestGCPCatalogOriginAndRedirects/api_key/https://cloudbilling.googleapis.com:443/v1/services
+=== RUN   TestGCPCatalogOriginAndRedirects/api_key/https://user@cloudbilling.googleapis.com/v1/services
+=== RUN   TestGCPCatalogOriginAndRedirects/api_key/https://cloudbilling.googleapis.com/v1/services#fragment
+=== RUN   TestGCPCatalogOriginAndRedirects/api_key/redirect/https://evil.example/secret
+=== RUN   TestGCPCatalogOriginAndRedirects/api_key/redirect/http://cloudbilling.googleapis.com/secret
+=== RUN   TestGCPCatalogOriginAndRedirects/api_key/redirect/https://cloudbilling.googleapis.com/secret
+=== RUN   TestGCPCatalogOriginAndRedirects/adc/http://cloudbilling.googleapis.com/v1/services
+=== RUN   TestGCPCatalogOriginAndRedirects/adc/https://evil.example/v1/services
+=== RUN   TestGCPCatalogOriginAndRedirects/adc/https://cloudbilling.googleapis.com.evil.example/v1/services
+=== RUN   TestGCPCatalogOriginAndRedirects/adc/https://cloudbilling.googleapis.com:443/v1/services
+=== RUN   TestGCPCatalogOriginAndRedirects/adc/https://user@cloudbilling.googleapis.com/v1/services
+=== RUN   TestGCPCatalogOriginAndRedirects/adc/https://cloudbilling.googleapis.com/v1/services#fragment
+=== RUN   TestGCPCatalogOriginAndRedirects/adc/redirect/https://evil.example/secret
+=== RUN   TestGCPCatalogOriginAndRedirects/adc/redirect/http://cloudbilling.googleapis.com/secret
+=== RUN   TestGCPCatalogOriginAndRedirects/adc/redirect/https://cloudbilling.googleapis.com/secret
+--- PASS: TestGCPCatalogOriginAndRedirects (0.00s)
+    --- PASS: TestGCPCatalogOriginAndRedirects/api_key/http://cloudbilling.googleapis.com/v1/services (0.00s)
+    --- PASS: TestGCPCatalogOriginAndRedirects/api_key/https://evil.example/v1/services (0.00s)
+    --- PASS: TestGCPCatalogOriginAndRedirects/api_key/https://cloudbilling.googleapis.com.evil.example/v1/services (0.00s)
+    --- PASS: TestGCPCatalogOriginAndRedirects/api_key/https://cloudbilling.googleapis.com:443/v1/services (0.00s)
+    --- PASS: TestGCPCatalogOriginAndRedirects/api_key/https://user@cloudbilling.googleapis.com/v1/services (0.00s)
+    --- PASS: TestGCPCatalogOriginAndRedirects/api_key/https://cloudbilling.googleapis.com/v1/services#fragment (0.00s)
+    --- PASS: TestGCPCatalogOriginAndRedirects/api_key/redirect/https://evil.example/secret (0.00s)
+    --- PASS: TestGCPCatalogOriginAndRedirects/api_key/redirect/http://cloudbilling.googleapis.com/secret (0.00s)
+    --- PASS: TestGCPCatalogOriginAndRedirects/api_key/redirect/https://cloudbilling.googleapis.com/secret (0.00s)
+    --- PASS: TestGCPCatalogOriginAndRedirects/adc/http://cloudbilling.googleapis.com/v1/services (0.00s)
+    --- PASS: TestGCPCatalogOriginAndRedirects/adc/https://evil.example/v1/services (0.00s)
+    --- PASS: TestGCPCatalogOriginAndRedirects/adc/https://cloudbilling.googleapis.com.evil.example/v1/services (0.00s)
+    --- PASS: TestGCPCatalogOriginAndRedirects/adc/https://cloudbilling.googleapis.com:443/v1/services (0.00s)
+    --- PASS: TestGCPCatalogOriginAndRedirects/adc/https://user@cloudbilling.googleapis.com/v1/services (0.00s)
+    --- PASS: TestGCPCatalogOriginAndRedirects/adc/https://cloudbilling.googleapis.com/v1/services#fragment (0.00s)
+    --- PASS: TestGCPCatalogOriginAndRedirects/adc/redirect/https://evil.example/secret (0.00s)
+    --- PASS: TestGCPCatalogOriginAndRedirects/adc/redirect/http://cloudbilling.googleapis.com/secret (0.00s)
+    --- PASS: TestGCPCatalogOriginAndRedirects/adc/redirect/https://cloudbilling.googleapis.com/secret (0.00s)
+=== RUN   TestGCPCatalogTransportErrorRedacted
+--- PASS: TestGCPCatalogTransportErrorRedacted (0.00s)
+=== RUN   TestGCPQuotaHeaderInjectionRejected
+--- PASS: TestGCPQuotaHeaderInjectionRejected (0.00s)
+PASS
+ok  	github.com/c3xdev/c3x-pricing-api/internal/scraper	0.002s

@@ -1,0 +1,128 @@
+{
+  "verdict": "PARTIAL: native self-hosted library+MySQL estimation works; G4/GPU/Flex vendor coverage blocked",
+  "source": {
+    "url": "https://github.com/cycloidio/terracost",
+    "sha": "683308f82b404bb5ff74acee4bbbd89cc6aaeee2",
+    "checkout": "detached",
+    "library_license": "MIT",
+    "terraform_fork_license": "Business Source License 1.1; copied terraform-fork-LICENSE; review downstream license obligations",
+    "tracked_source_changes": false
+  },
+  "completed_utc": "2026-09-13T03:03:04.247679+00:00",
+  "scope": {
+    "only_local_tree": "/tmp/isaac-selfhost-trials/terracost",
+    "repo_edits": false,
+    "cloud_resources_created": false,
+    "terraform_plan_apply": false,
+    "cloud_credentials_accessed": false,
+    "public_fixture_copies": [
+      {
+        "name": "g4-standard-384-flex_start",
+        "sha256": "06f3ee42e785dc7601f60a5d54581b591ec12206ee312f8906a68b309652c168"
+      },
+      {
+        "name": "g4-standard-384-standard",
+        "sha256": "838efc24a9ac789413e90f4f5504b811d19af432bf523430875a097b84bca5ad"
+      },
+      {
+        "name": "g4-standard-48-flex_start",
+        "sha256": "87ffb2bc400d7dc11bc0b53a479a7d0116b2b9aa957732391443c283836dd774"
+      },
+      {
+        "name": "g4-standard-48-standard",
+        "sha256": "f0e0fe3c12611d2d1754f7936aa4cebc0f758ebb4a88ac4d9b089b2ffedf6206"
+      }
+    ]
+  },
+  "runtime": {
+    "go": "go1.25.14 linux/amd64 (Docker golang:1.25)",
+    "mysql": "mysql:8.0 Docker; real MySQL, tmpfs data, no published ports",
+    "build_network": "bridge; dependency downloads only",
+    "estimation_network": "internal isaac-cost-terra-net",
+    "test_network": "none; GOPROXY=off; GOTOOLCHAIN=local",
+    "mounts": "Successful build, estimation and tests had zero bind mounts; source transferred by docker cp. Initial failed bind build saw empty remote-host path.",
+    "limits": "Build/tests max 2 CPUs and 3 GiB each; estimation 1.5 CPUs/2 GiB; DB 0.5 CPU/768 MiB. DB coexisted, so aggregate build+DB configured maxima 2.5 CPU/3.75 GiB."
+  },
+  "native_path": {
+    "unmodified_example": "Built examples/terracost.go directly using pinned root go.mod (examples has its own nested module); ran original binary against MySQL",
+    "library": "trialcmd calls unmodified mysql.Migrate, mysql.Backend product/price repositories, terracost.EstimateTerraformPlan with usage.Default and default provider initializers",
+    "adapters": [
+      "Temporary Go driver supplies synthetic Product/Price seeds and prints native results/errors",
+      "Python constructs EXPORTED-PLAN-SHAPED SYNTHETIC INPUTS, NOT actual Terraform plans; four fixtures copied byte-identically, nested blocks converted to arrays, provider zone included",
+      "One additional local-HTTP Google ingestion regression test; no changes to tracked upstream source"
+    ],
+    "no_vendor_price_claim": true
+  },
+  "results": {
+    "mysql_lookup": "Native Upsert+FindByVendorAndSKU+Prices.Filter returned one synthetic n2-standard-2 price 1.25 USD/hour",
+    "estimated_cases": 14,
+    "synthetic_monthly_at_730h": "912.50",
+    "missing_g4": "All four fixture projections: top-level nil error, total 0, total-error nil, resource Valid=false and Compute error product not found",
+    "seeded_g4": "Synthetic prices make all four compute resources return 912.5 monthly; only SQL protocol feasibility, NOT vendor coverage",
+    "gpu_flex": "n2 controls with 0 GPUs, 1 GPU, and 8 GPUs+FLEX_START produce identical single Compute component and total; G4 standard/Flex also identical under synthetic seed",
+    "skipped": "All 6 ancillary resources per G4 fixture skipped: network, subnetwork, router, NAT, bucket, artifact repository; boot disk/GPU have no separate component",
+    "ingester": "Actual native Google ingester with local upstream SKU fixture and 2 appended synthetic G4 machine types emitted 1777 entries/72 supported machine types/0 G4; test passed",
+    "upstream_example_missing": "Process exit 0, printed google_compute_instance.workstation: 0 -> 0, no product-not-found warning"
+  },
+  "tests": {
+    "requested_packages": 6,
+    "passed_packages": 5,
+    "packages_without_tests": [
+      "google/terraform"
+    ],
+    "passed_test_events_including_subtests": 68,
+    "passed_top_level_tests": 25,
+    "added_top_level_tests": 1,
+    "failures": 0,
+    "jsonl": "tests.jsonl"
+  },
+  "fixes_and_failures": [
+    "Bare python unavailable; used python3",
+    "Initial bind mount invisible to remote Docker host; switched to docker cp, no bind mounts",
+    "docker cp source to existing source directory nested it; corrected to source/.",
+    "Root go build ./examples failed because examples is nested module; built unchanged examples/terracost.go with pinned root dependency graph",
+    "Initial synthetic provider included region only; native Google initializer requires zone. Preserved initial failed output then corrected generator to include fixture zone.",
+    "No Go dependency replacements or version fixes required beyond upstream go.mod; three container/build setup corrections, one synthetic-input correction",
+    "No public live pricing import attempted; no GCP auth available; SKU test fixture is not a live price validation"
+  ],
+  "limitations": [
+    "Not a complete Terraform validation or actual generated plan",
+    "No live vendor pricing/authentication validation; cannot claim valid G4 cost",
+    "Native Google ingestion allowlist excludes G4; machine cost mapping CPU/RAM only",
+    "Library and sample can report zero costs unless caller explicitly checks resource errors/Valid and skipped addresses",
+    "Transitive Terraform fork is BSL, despite TerraCost root MIT"
+  ],
+  "command_output_log": "commands.jsonl",
+  "initial_pre_log_failure": {
+    "command": "python run.py git -c credential.helper= clone --depth 1 https://github.com/cycloidio/terracost source",
+    "exit": 127
+  },
+  "cleanup": {
+    "containers": {
+      "exit": 0,
+      "remaining": ""
+    },
+    "networks": {
+      "exit": 0,
+      "remaining": ""
+    },
+    "volumes": {
+      "exit": 0,
+      "remaining": ""
+    },
+    "images": {
+      "exit": 0,
+      "remaining": ""
+    }
+  },
+  "artifacts": {
+    "trial": "09bcb5ddb9a7cc57219de86c83b11fbadb09ea9ce6b00f8eec34e6b438739e87",
+    "terracost-example": "9ebaaee6a9c9f120feb8547a30d0ca713bcb3ec78e86c25074f7b0ab52b8ca74",
+    "estimation.log": "cc3930b4826affe054168428b8021a2425efa4228f1a53be64458aed0de7d41a",
+    "tests.jsonl": "7ab47967c710a352ec569a743fac2520fc853116eedf185e93366b39521158c9",
+    "example-missing-g4.log": "6d7ca7ed3688ae97d95ddab7c77ce2f8d098cbc991bf67b74fcfd3a22ea3140a",
+    "source/trialcmd/main.go": "995bf14745b295889ab249cc2c3c10a0bb0213e0870093b244120b75c50637bf",
+    "source/google/trial_g4_test.go": "eae6019eb0e882d54775b39c5ed0e1087a5f1d451ffbd4831b7eeea0692a9fdd"
+  },
+  "archival_note": "Condensed from raw trial receipt; verbose command bodies omitted. Paths in upstream receipt are trial-relative, not all artifacts archived. See parent manifest for exact preserved files. No reproducible full installer is claimed."
+}

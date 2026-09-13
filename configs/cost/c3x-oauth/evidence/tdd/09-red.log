@@ -1,0 +1,12 @@
+=== RUN   TestProbeRequiresExplicitOptIn
+    main_test.go:15: unsafe opt-in result: <nil>
+--- FAIL: TestProbeRequiresExplicitOptIn (0.00s)
+=== RUN   TestProbePrintsOnlyCounts
+    main_test.go:22: unexpected result:  <nil>
+--- FAIL: TestProbePrintsOnlyCounts (0.00s)
+=== RUN   TestProbeFailureHasNoSuccessOutput
+    main_test.go:29: error lost/false success:  <nil>
+--- FAIL: TestProbeFailureHasNoSuccessOutput (0.00s)
+FAIL
+FAIL	github.com/c3xdev/c3x-pricing-api/cmd/gcp-catalog-probe	0.001s
+FAIL

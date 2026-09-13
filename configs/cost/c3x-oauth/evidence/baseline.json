@@ -1,0 +1,13 @@
+{
+  "source_revision": "cc58da98652a0ce9f8aac6d1f574d3578544d8c1",
+  "checkout": "/tmp/isaac-c3x-oauth-parent/baseline",
+  "toolchain": "Go 1.26.8 linux/amd64",
+  "command": "go test -short -count=1 ./...",
+  "environment": "env -i, isolated HOME and Go caches, GOMAXPROCS=1, GOMEMLIMIT=2GiB, GOFLAGS=-p=1",
+  "exit_code": 0,
+  "tested_packages": ["internal/config", "internal/db", "internal/graphql", "internal/scraper", "internal/server"],
+  "packages_without_tests": ["catalog", "cmd/server"],
+  "integration_build_tag_enabled": false,
+  "cloud_credentials_supplied": false,
+  "note": "Parent executed the clean baseline, excluding the earlier untracked Azure trial harness. Resource settings are Go runtime controls, not a hard OS memory sandbox."
+}

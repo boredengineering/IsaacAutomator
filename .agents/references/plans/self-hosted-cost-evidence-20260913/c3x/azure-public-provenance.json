@@ -1,0 +1,7 @@
+{
+  "url": "https://prices.azure.com/api/retail/prices?%24filter=serviceName+eq+%27Key+Vault%27+and+armRegionName+eq+%27eastus%27+and+skuName+eq+%27Standard%27+and+meterName+eq+%27Operations%27",
+  "status": 200,
+  "sha256": "4c9af048ab886b439f65c3b9731ca0a85e0089bafe6495de3ea4c91b99d8b12b",
+  "authentication": "none",
+  "method": "GET"
+}

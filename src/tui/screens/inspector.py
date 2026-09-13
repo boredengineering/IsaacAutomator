@@ -8,9 +8,10 @@ from textual.binding import Binding
 from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.screen import ModalScreen
 from textual.widgets import Button, Label, Static
+from src.tui.widgets.cost_estimate import CostEstimatePanel
 
 class WorkstationInspectorModal(ModalScreen):
-    """Deep inspection modal displaying cloud metadata, networking, burn rate, and state."""
+    """Read-only metadata and explicit-input cost inspection (not live billing)."""
 
     BINDINGS = [
         Binding("escape", "dismiss_modal", "Close", show=True),
@@ -29,26 +30,16 @@ class WorkstationInspectorModal(ModalScreen):
             "status": "READY",
             "gpu": "Physical Host",
             "ip": "127.0.0.1",
-            "profile": "Simple ($0/mo)",
+            "profile": "Simple (cost not estimated)",
             "path": "",
         }
         self.show_raw_state = False
 
     def get_cost_estimate(self) -> tuple[str, str]:
-        gpu = self.workstation.get("gpu", "").lower()
         cloud = self.workstation.get("cloud", "").upper()
-
-        if cloud == "BARE-METAL" or cloud == "LOCAL":
-            return "$0.00 / hr", "On-Premise Physical Node"
-        elif "g5." in gpu or "a10g" in gpu:
-            return "~$1.21 / hr", "AWS EC2 GPU Instance"
-        elif "g2-" in gpu or "l4" in gpu:
-            return "~$0.85 / hr", "GCP Compute Engine GPU Instance"
-        elif "nc" in gpu or "t4" in gpu:
-            return "~$0.75 / hr", "Azure NC-series GPU Instance"
-        elif "gn7i" in gpu:
-            return "~$1.15 / hr", "Alibaba Cloud GPU Instance"
-        return "~$0.95 / hr", "Cloud GPU Instance"
+        if cloud in ("BARE-METAL", "BAREMETAL", "LOCAL"):
+            return "Not estimated", "Physical node; no cloud price estimate"
+        return "Not estimated", "Select explicit HCL/plan input below; inventory is not a billing source"
 
     def get_state_content(self) -> str:
         # Controller inventory is already projected from the shared descriptor
@@ -65,7 +56,7 @@ class WorkstationInspectorModal(ModalScreen):
         status = self.workstation.get("status", "UNKNOWN")
         gpu = self.workstation.get("gpu", "N/A")
         ip = self.workstation.get("ip", "N/A")
-        profile = self.workstation.get("profile", "Simple ($0/mo)")
+        profile = self.workstation.get("profile", "Unknown")
         rate, billing_desc = self.get_cost_estimate()
 
         status_color = "green" if status in ('READY', 'PROVISIONED', 'RUNNING') else "yellow"
@@ -88,7 +79,7 @@ class WorkstationInspectorModal(ModalScreen):
                     f"[bold white]BILLING & RUNTIME TELEMETRY[/]\n"
                     f"  Estimated Rate:   [yellow]{rate}[/]\n"
                     f"  Billing Category: {billing_desc}\n"
-                    f"  Lifecycle State:  {'Active Cost Accumulation' if status in ('PROVISIONED', 'RUNNING') else 'Unknown (not a live VM status check)'}\n\n"
+                    f"  Lifecycle State:  Unknown (not a live billing or VM status check)\n\n"
                     f"[bold white]PHYSICAL AI COMPATIBILITY[/]\n"
                     f"  Isaac Sim:        6.0.1 Standalone Kit\n"
                     f"  Isaac Lab:        v3.0.0-beta2 (Omniverse Kit Compatible)\n"
@@ -96,6 +87,9 @@ class WorkstationInspectorModal(ModalScreen):
                     id="inspector-details",
                     classes="box-panel",
                 )
+                yield CostEstimatePanel(unavailable_reason=(
+                    "Bare metal / local: not estimated. No cloud pricing requested."
+                    if cloud.upper() in ("BARE-METAL", "BAREMETAL", "LOCAL") else None))
 
             with Horizontal(classes="modal-btn-bar"):
                 yield Button("Connect [c]", id="btn-inspect-connect", variant="primary")
@@ -114,7 +108,7 @@ class WorkstationInspectorModal(ModalScreen):
             status = self.workstation.get("status", "UNKNOWN")
             gpu = self.workstation.get("gpu", "N/A")
             ip = self.workstation.get("ip", "N/A")
-            profile = self.workstation.get("profile", "Simple ($0/mo)")
+            profile = self.workstation.get("profile", "Unknown")
             rate, billing_desc = self.get_cost_estimate()
             details.update(
                 f"[bold white]GENERAL METADATA[/]\n"

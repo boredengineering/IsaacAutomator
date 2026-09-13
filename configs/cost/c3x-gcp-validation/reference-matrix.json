@@ -1,0 +1,39 @@
+{
+  "not_a_C3X_estimate": true,
+  "region": "us-west1",
+  "compute_only": true,
+  "cases": [
+    {
+      "machine": "g4-standard-48",
+      "model": "STANDARD",
+      "published_reference_USD_per_hour": "4.49993",
+      "published_reference_USD_730_compute_hours": "3284.94890",
+      "C3X_accepted": false,
+      "display_hourly_USD": "4.50"
+    },
+    {
+      "machine": "g4-standard-384",
+      "model": "STANDARD",
+      "published_reference_USD_per_hour": "35.99944",
+      "published_reference_USD_730_compute_hours": "26279.59120",
+      "C3X_accepted": false,
+      "display_hourly_USD": "36.00"
+    },
+    {
+      "machine": "g4-standard-48",
+      "model": "FLEX_START",
+      "published_reference_USD_per_hour": "2.25",
+      "published_reference_USD_730_compute_hours": "1642.50",
+      "C3X_accepted": false,
+      "display_hourly_USD": "2.25"
+    },
+    {
+      "machine": "g4-standard-384",
+      "model": "FLEX_START",
+      "published_reference_USD_per_hour": "18",
+      "published_reference_USD_730_compute_hours": "13140",
+      "C3X_accepted": false,
+      "display_hourly_USD": "18.00"
+    }
+  ]
+}

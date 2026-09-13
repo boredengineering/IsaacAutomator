@@ -1,0 +1,73 @@
+go: downloading github.com/spf13/cobra v1.10.2
+go: downloading github.com/graphql-go/graphql v0.8.1
+go: downloading github.com/prometheus/client_golang v1.23.2
+go: downloading go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.69.0
+go: downloading go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.44.0
+go: downloading go.opentelemetry.io/otel/sdk v1.44.0
+go: downloading go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.44.0
+go: downloading github.com/spf13/pflag v1.0.9
+go: downloading github.com/prometheus/client_model v0.6.2
+go: downloading github.com/prometheus/common v0.66.1
+go: downloading github.com/beorn7/perks v1.0.1
+go: downloading github.com/prometheus/procfs v0.16.1
+go: downloading google.golang.org/protobuf v1.36.11
+go: downloading github.com/felixge/httpsnoop v1.0.4
+go: downloading go.opentelemetry.io/proto/otlp v1.10.0
+go: downloading google.golang.org/genproto/googleapis/rpc v0.0.0-20260526163538-3dc84a4a5aaa
+go: downloading google.golang.org/grpc v1.81.1
+go: downloading github.com/google/uuid v1.6.0
+go: downloading github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822
+go: downloading go.yaml.in/yaml/v2 v2.4.2
+go: downloading github.com/cenkalti/backoff/v5 v5.0.3
+go: downloading github.com/grpc-ecosystem/grpc-gateway/v2 v2.29.0
+go: downloading golang.org/x/net v0.55.0
+go: downloading google.golang.org/genproto/googleapis/api v0.0.0-20260526163538-3dc84a4a5aaa
+=== RUN   TestScrapeGCPAuthBeforeDatabase
+=== RUN   TestScrapeGCPAuthBeforeDatabase/gcp/api_key
+Error: failed to connect to database: failed to parse database URL: cannot parse `://invalid`: failed to parse as keyword/value (invalid keyword/value)
+Usage:
+  scrape [flags]
+
+Flags:
+  -h, --help            help for scrape
+      --vendor string   Vendor to scrape: aws, azure, gcp, or all (default "all")
+
+    gcp_auth_test.go:21: auth must fail before DB: failed to connect to database: failed to parse database URL: cannot parse `://invalid`: failed to parse as keyword/value (invalid keyword/value)
+=== RUN   TestScrapeGCPAuthBeforeDatabase/gcp/invalid-sensitive
+Error: failed to connect to database: failed to parse database URL: cannot parse `://invalid`: failed to parse as keyword/value (invalid keyword/value)
+Usage:
+  scrape [flags]
+
+Flags:
+  -h, --help            help for scrape
+      --vendor string   Vendor to scrape: aws, azure, gcp, or all (default "all")
+
+    gcp_auth_test.go:21: auth must fail before DB: failed to connect to database: failed to parse database URL: cannot parse `://invalid`: failed to parse as keyword/value (invalid keyword/value)
+=== RUN   TestScrapeGCPAuthBeforeDatabase/all/api_key
+Error: failed to connect to database: failed to parse database URL: cannot parse `://invalid`: failed to parse as keyword/value (invalid keyword/value)
+Usage:
+  scrape [flags]
+
+Flags:
+  -h, --help            help for scrape
+      --vendor string   Vendor to scrape: aws, azure, gcp, or all (default "all")
+
+    gcp_auth_test.go:21: auth must fail before DB: failed to connect to database: failed to parse database URL: cannot parse `://invalid`: failed to parse as keyword/value (invalid keyword/value)
+=== RUN   TestScrapeGCPAuthBeforeDatabase/all/invalid-sensitive
+Error: failed to connect to database: failed to parse database URL: cannot parse `://invalid`: failed to parse as keyword/value (invalid keyword/value)
+Usage:
+  scrape [flags]
+
+Flags:
+  -h, --help            help for scrape
+      --vendor string   Vendor to scrape: aws, azure, gcp, or all (default "all")
+
+    gcp_auth_test.go:21: auth must fail before DB: failed to connect to database: failed to parse database URL: cannot parse `://invalid`: failed to parse as keyword/value (invalid keyword/value)
+--- FAIL: TestScrapeGCPAuthBeforeDatabase (0.00s)
+    --- FAIL: TestScrapeGCPAuthBeforeDatabase/gcp/api_key (0.00s)
+    --- FAIL: TestScrapeGCPAuthBeforeDatabase/gcp/invalid-sensitive (0.00s)
+    --- FAIL: TestScrapeGCPAuthBeforeDatabase/all/api_key (0.00s)
+    --- FAIL: TestScrapeGCPAuthBeforeDatabase/all/invalid-sensitive (0.00s)
+FAIL
+FAIL	github.com/c3xdev/c3x-pricing-api/cmd/server	0.004s
+FAIL

@@ -1,0 +1,19 @@
+# Public synthetic scenario, NOT a quote, spending limit or deployment approval.
+# Applies to the static addresses in configs/cost/fixtures/*/main.tf.json.
+# 2 compute hours in a MONTHLY scenario; persistent storage is retained for the
+# month. Do not call the resulting subtotal a two-hour all-in experiment cost.
+# Flex-start SKU accuracy remains unverified until actual pricing acceptance.
+version: "0.1"
+resource_usage:
+  google_compute_instance.workstation:
+    monthly_hrs: 2
+  google_compute_router_nat.private:
+    assigned_vms: 1
+    monthly_data_processed_gb: 100
+  google_storage_bucket.state_example:
+    storage_gb: 1
+    monthly_class_a_operations: 100
+    monthly_class_b_operations: 100
+    monthly_data_retrieval_gb: 0
+  google_artifact_registry_repository.images:
+    storage_gb: 10

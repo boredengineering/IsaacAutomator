@@ -46,7 +46,7 @@ class WorkstationsPane(Vertical):
                 Text.from_markup("[green]READY[/]"),
                 "Physical Host",
                 "127.0.0.1",
-                "Simple ($0/mo)"
+                "Simple (cost not estimated)"
             )
         else:
             for vm in vms:
@@ -58,7 +58,7 @@ class WorkstationsPane(Vertical):
                     Text.from_markup(status_badge),
                     vm["gpu"],
                     vm["ip"],
-                    vm.get("profile", "Simple ($0/mo)")
+                    vm.get("profile", "Simple (cost not estimated)")
                 )
 
     def get_selected_workstation(self) -> dict:

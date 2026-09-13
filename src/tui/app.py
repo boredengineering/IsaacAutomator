@@ -60,7 +60,7 @@ class BackendAwareWorkstationsPane(WorkstationsPane):
         table.clear()
         if not self.current_vms:
             table.add_row("local-workstation", "BARE-METAL", Text("READY", style="green"),
-                          "Physical Host", "127.0.0.1", "Simple ($0/mo)")
+                          "Physical Host", "127.0.0.1", "Simple (cost not estimated)")
             return
         for vm in self.current_vms:
             table.add_row(Text(vm["name"]), Text(vm["cloud"]), Text(vm["status"], style="yellow"),
@@ -178,9 +178,9 @@ class Isaac9sApp(App):
                         "  ./isaac-installer doctor    Pre-flight audit in terminal\n"
                         "  ./isaac-installer repair    Preview local tooling repair; cloud drift is separate\n\n"
                         "[bold cyan]Security Profiles:[/]\n"
-                        "  Tier 1: Simple Mode        $0.00 / mo, Dynamic /32 IP lock, Direct Outbound\n"
+                        "  Tier 1: Simple Mode        Cost not estimated, Dynamic /32 IP lock, Direct Outbound\n"
                         "  Tier 2: Collaborative      Local state by default; remote backend requires explicit opt-in\n"
-                        "  Tier 3: Enterprise         ~$35-$180 / mo, KMS CMEK keys, Cloud Secret Manager, Zero-Trust IAP\n\n"
+                        "  Tier 3: Enterprise         Cost not estimated, KMS CMEK keys, Cloud Secret Manager, Zero-Trust IAP\n\n"
                         "[bold cyan]Cloud Authentication Wizards (SSO / Device Flow):[/]\n"
                         "  AWS SSO Login:             aws sso login --use-device-code\n"
                         "  AWS Configure SSO:         aws configure sso\n"

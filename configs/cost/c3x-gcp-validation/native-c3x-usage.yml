@@ -1,0 +1,16 @@
+# Native C3X usage projection of the public planning baseline, not actual usage.
+# Sources: served catalog/gcp/google_{storage_bucket,artifact_registry_repository,
+# compute_router_nat}.toml. Only renamed supported quantities; no price changes.
+# VM/NAT monthly_hours() is the CLI constant 730. This is an aggregate monthly
+# scenario, NOT the cost of a single 3600-second Flex-start job.
+# GCS class-A/class-B requests, NAT IP addresses and other absent dimensions
+# cannot be represented by these mappings; they remain explicitly uncovered.
+version: "0.1"
+resource_usage:
+  google_compute_router_nat.private:
+    active_vms: 1
+    monthly_data_processed_gb: 100
+  google_storage_bucket.state_example:
+    monthly_storage_gb: 1
+  google_artifact_registry_repository.images:
+    monthly_storage_gb: 10
