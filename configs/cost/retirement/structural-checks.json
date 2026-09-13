@@ -1,0 +1,23 @@
+{
+  "archive_files_byte_identical_to_HEAD": [
+    "integration-guide.md",
+    "VERIFICATION.md",
+    "verification.json",
+    "core-review.json",
+    "runtime.json",
+    "infracost-usage.example.yml"
+  ],
+  "unchanged_C3X_and_fixture_files": 72,
+  "settings_and_agent_guidance_unchanged": true,
+  "active_retired_references": [],
+  "python_ast": "pass",
+  "added_line_security_pattern_counts": {
+    "shell_execution": 0,
+    "eval_exec": 0,
+    "pickle": 0,
+    "literal_secret": 0
+  },
+  "tests_total": 271,
+  "test_suites": 12,
+  "skipped_suites": []
+}

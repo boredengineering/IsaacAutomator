@@ -1,6 +1,14 @@
 # Self-hosted Cost Engine Evaluation Plan
 
-**Goal:** qualify an open-source, entirely self-hosted estimator for Isaac Automator without replacing working cost/report/UI boundaries prematurely.
+**Status — closed evaluation, 2026-09-13:** the user selected C3X as the sole
+future direction and retired competing tooling. This document preserves historical
+trials, not an active implementation queue for TerraCost, IBM, Infracost or the
+scope-screened tools. The old Infracost integration is removed, not retained
+pending replacement. [Dedicated C3X project/devcontainer plan](c3x-dedicated-project-plan.md)
+and the main roadmap §13.8 govern further work. C3X is selected but all four G4
+pricing cases still fail; no replacement adapter or new project is delivered.
+
+**Historical goal:** qualify a self-hosted estimator through bounded experiments.
 
 **Initial-trial authorization:** user requested roadmap updates and local testing of the researched alternatives. Public source/dependency downloads and isolated local builds/services were in scope. No paid infrastructure, existing credential access, cloud/IAM changes, global installation, commits, pushes or editor settings changes were authorized for that initial trial.
 
@@ -31,7 +39,7 @@ credential disclosure, or replacing the production cost engine.
 - **GCP workload:** all four checked-in fixture combinations of `g4-standard-48`/`g4-standard-384` and Standard/Flex-start. No T4/L4 mapping for RTX PRO 6000, no on-demand/Spot for Flex, no double-counted GPU bundle. Include Hyperdisk capacity/performance, NAT, GCS, registry and independent running/storage-retention units.
 - **Production integration:** selected engine must preserve allowlisted staging, privacy, cancellation, monetary precision, source-bound reports, unknown/free distinction and safe comparison; then rerun CLI/TUI/packaging acceptance. Not part of a claim that a standalone trial works.
 
-## Execution and reproducibility
+## Historical execution and reproducibility (not a new action request)
 
 1. Preserve existing repo changes; use `/tmp/isaac-selfhost-trials/{c3x,terracost,ibm}` for candidate checkouts, dependencies, probes and raw sanitized logs.
 2. Use uniquely named trial Docker resources with bounded CPU/memory and time. Never mount HOME, cloud credentials, host Docker socket or production Terraform state into a candidate.
@@ -60,13 +68,14 @@ credential disclosure, or replacing the production cost engine.
 - https://github.com/opencost/opencost
 - https://github.com/TheCloudTheory/arm-estimator
 
-Prior research: `/tmp/isaac-selfhost-cost-research/REPORT.md`. Prior delivered Infracost slice: `configs/cost/VERIFICATION.md`. Neither is new execution evidence for these trials.
+Prior research: `/tmp/isaac-selfhost-cost-research/REPORT.md`. Prior delivered Infracost slice: `configs/cost/archive/infracost/VERIFICATION.md`. Neither is new execution evidence for these trials.
 
 ## Results
 
-**Decision: C3X is the leading self-hosted architecture candidate, not an accepted
-Isaac Automator replacement.** No tested option passed the complete G4/Flex gate.
-The existing production cost implementation was not replaced.
+**Historical trial conclusion:** C3X led for self-hosted architecture; no tested
+option passed the complete G4/Flex gate. The old implementation remained at that
+milestone. **Subsequent decision:** C3X alone is selected for dedicated development;
+competing active tooling is retired rather than kept as a fallback.
 
 ### C3X — self-hosting proved, GCP acceptance failed
 
@@ -115,7 +124,7 @@ The existing production cost implementation was not replaced.
   Linux D2s v3 in eastus, matching the official record, with external egress denied.
   This is a backend lookup, not a Terraform estimate or v2 Infracost compatibility.
 
-### Remaining work before adoption
+### Historical gates, continued for C3X only
 
 - [x] Execute and compare the three plausible self-hosted candidates; scope-screen
   OptScale/OpenCost/ACE rather than claiming these uninstalled tools passed.
@@ -129,10 +138,13 @@ The existing production cost implementation was not replaced.
   one Compute Engine SKU, exit 0. A clean patch replay passed short unit tests,
   race tests, vet, and server/probe builds; negative CLI checks failed closed.
   See the [durable patch and verification evidence](../../../configs/cost/c3x-oauth/README.md).
-- [ ] Complete a genuine full GCP catalog import and validate its published
-  pricing records. Authentication alone will not fix resource mappings.
-- [ ] Add/review G4 Standard/Flex, RTX bundle and Hyperdisk models, or choose a
-  different provider-native engine. Fix unknown-price zeroing, region fallback,
+- [x] Subsequent GCP test fully paginated four relevant services (35,924 SKUs)
+  and performed a region-projected real import (3,787 products / 4,443 prices).
+  [Evidence](../../../configs/cost/c3x-gcp-validation/README.md).
+- [ ] Dedicated C3X project: verify the full scheduled refresh lifecycle and
+  correct mappings; the scoped test is not an all-GCP import or a valid estimate.
+- [ ] Dedicated C3X project: add/review G4 Standard/Flex, RTX bundle and Hyperdisk
+  models. Fix unknown-price zeroing, region fallback,
   input format and provenance before any C3X adapter acceptance.
 - [ ] Verify every required compute/storage/network/retention component using
   actual provider-derived data; do not promote synthetic seeds to live prices.

@@ -1,0 +1,72 @@
+{
+  "passed": true,
+  "blockers": [],
+  "suggestions": [],
+  "summary": "Approved for documentation/planning only: the sole original blocker and all three suggestions are resolved in the current documents. Static inspection finds the standalone bootstrap and manual build/test subshells fail closed, the build context is limited to .devcontainer, readiness has bounded retries and an explicit stop-on-failure instruction, and the profile guide no longer advertises the retired calculator. Only the C3X plan and profile guide differ from the eight original reviewed hashes; the other six are unchanged. No new blocking issue was found within this bounded recheck. Templates were only statically validated, NOT built or run; this is not implementation or runtime acceptance.",
+  "reviewedsha256": {
+    ".agents/references/plans/c3x-dedicated-project-plan.md": "de9492e05cdb97b88696c7d4eaf428bdf4779bb24568e296ea7477789f453614",
+    ".agents/references/plans/terraform-remote-backend-plan.md": "ec36db5ed7f5741449ea14481e12d2c301691907deaf5b7f8a5b54f4edb72591",
+    ".agents/references/plans/self-hosted-cost-evaluation-20260913.md": "ea493a408101a98d7a481fdd5dbf20da24643dec1393840e74e28c5d08622c11",
+    "README.md": "5a44fd5d60b6cfd95ffbfaadbc6b52b7f7bc11b1942161773f6a2a94f14689a4",
+    "configs/cost/README.md": "e47e1f91d603b9cde12ff32360dd47eae61e7ad165ae5506a76017b1d47630bb",
+    "configs/cost/retirement/README.md": "cf776c0d81cf2e2d66e089c9678b0f6fa89e192949f171d2ca7ede81780100e4",
+    "configs/cost/archive/infracost/README.md": "8411c7110867d45afe78168520dcf9fbcdba603e0a95870bd21558906b98d778",
+    "configs/profiles/README.md": "5067b813622921ca4c48c3b90f6e26d14c95b5fd9765c9422ccc590def2f5973"
+  },
+  "whichoriginalfindingsresolved": [
+    {
+      "original_kind": "blocker",
+      "original_index": 0,
+      "resolved": true,
+      "location": ".agents/references/plans/c3x-dedicated-project-plan.md:101-122,292-311",
+      "evidence": "Both executable shell blocks are standalone subshells beginning with set -eu. Bootstrap rejects an unset/empty path, non-absolute paths, existing entries and dangling symlinks before mutation. Workspace-leaf mkdir has no -p, so preexisting paths and creation errors stop execution. cd, clone, checkout, copy, apply --check and apply are sequential commands whose failure terminates the subshell. The manual block likewise stops on failed cd, downloads, tests, vet, builds or help calls; the nested cd && Go groups return failure to the fail-fast outer subshell rather than masking it. This verifies the documented standalone invocation statically, not actual execution."
+    },
+    {
+      "original_kind": "suggestion",
+      "original_index": 0,
+      "resolved": true,
+      "location": ".agents/references/plans/c3x-dedicated-project-plan.md:165-179,247-249",
+      "evidence": "Compose lives in .devcontainer, uses build context: . and dockerfile: Dockerfile, and retains the separate ..:/workspaces/c3x bind mount. Thus source/evidence are no longer the toolchain build context. Parsed YAML and devcontainer JSON agree on the Compose file location."
+    },
+    {
+      "original_kind": "suggestion",
+      "original_index": 1,
+      "resolved": true,
+      "location": ".agents/references/plans/c3x-dedicated-project-plan.md:314-321",
+      "evidence": "Readiness uses timeout 45s around curl --fail --retry 10 --retry-connrefused --retry-delay 1 --connect-timeout 2 --max-time 5. The overall timeout bounds the retry process, individual connection/request limits bound attempts, and the next line explicitly says to stop on failure before the subsequent manual import step. Readiness is explicitly distinguished from catalog completeness. No request was made."
+    },
+    {
+      "original_kind": "suggestion",
+      "original_index": 2,
+      "resolved": true,
+      "location": "configs/profiles/README.md:256-270",
+      "evidence": "The interactive cost-estimate and dynamic monthly calculator claims are removed. The guide states cost estimation is unavailable pending dedicated C3X qualification and links to ../cost/README.md, while preserving profile design, settings and export instructions. The working-tree diff for this guide contains only these scoped replacements."
+    }
+  ],
+  "original_review_handle": "/tmp/isaac-cost-retirement-plan-review.json",
+  "hash_comparison": {
+    "compared_files": 8,
+    "changed_reviewed_files": [
+      ".agents/references/plans/c3x-dedicated-project-plan.md",
+      "configs/profiles/README.md"
+    ],
+    "unchanged_reviewed_files": [
+      ".agents/references/plans/terraform-remote-backend-plan.md",
+      ".agents/references/plans/self-hosted-cost-evaluation-20260913.md",
+      "README.md",
+      "configs/cost/README.md",
+      "configs/cost/retirement/README.md",
+      "configs/cost/archive/infracost/README.md"
+    ],
+    "other_changed_reviewed_files": []
+  },
+  "verification": {
+    "shell_syntax": "Both sh-fenced blocks passed /bin/sh -n and /bin/bash -n: four checks, all exit 0, no stderr. No block was executed.",
+    "templates": "Embedded JSON and YAML parsed successfully with Python json and yaml.safe_load; assertions confirmed the restricted context, Dockerfile, separate workspace bind and editor-only startup. Dockerfile was read statically, not built.",
+    "scope": "Read current C3X plan, profile guide affected section and diff; recomputed SHA-256 for all eight originally reviewed files. Unchanged documents retain original review coverage; no new full architecture investigation was performed.",
+    "not_performed": "No future bootstrap, Go command, Docker command, container startup, network request, credential access, cloud operation, import or implementation test was run. Image availability, host ownership, pgpass compatibility and runtime behavior remain future checks.",
+    "tool_issue": "The first hash-check attempt used unavailable bare python and failed before execution; rerunning with python3 succeeded.",
+    "repository_files_modified": []
+  },
+  "handle": "/tmp/isaac-cost-retirement-plan-review-final.json"
+}

@@ -1,0 +1,35 @@
+{
+  "status": "retired_historical_evidence_not_active_tooling",
+  "files": [
+    {
+      "original_path": "configs/cost/README.md",
+      "archived_path": "integration-guide.md",
+      "sha256": "4601f4a5f690ebd8b35a6df4a18b354bfff1afb913cc1bbc911a8f8dc3835aae"
+    },
+    {
+      "original_path": "configs/cost/VERIFICATION.md",
+      "archived_path": "VERIFICATION.md",
+      "sha256": "cef9c02642a320bb65a8c1f0ab14c4f124b869ab3a1a9d0129c66b517fdd2d8d"
+    },
+    {
+      "original_path": "configs/cost/verification.json",
+      "archived_path": "verification.json",
+      "sha256": "49e3274f3b9485aa5fe068fba73562dbf42b6f916a5d9f53f178ae2f91397af8"
+    },
+    {
+      "original_path": "configs/cost/core-review.json",
+      "archived_path": "core-review.json",
+      "sha256": "2a748d0d3a766b79cb6e4b7d390c7a850725a182620a24b73a02b1389dcfa38a"
+    },
+    {
+      "original_path": "configs/cost/runtime.json",
+      "archived_path": "runtime.json",
+      "sha256": "0fc23cc377f919ae720fc03ff7109165221b5f5ef761aaff7289ce4980f8bcd6"
+    },
+    {
+      "original_path": "configs/cost/infracost-usage.example.yml",
+      "archived_path": "infracost-usage.example.yml",
+      "sha256": "36e43fd058e002e66dbc52730d1fff963887c1b757d373a07799ca7d1f16a7f8"
+    }
+  ]
+}

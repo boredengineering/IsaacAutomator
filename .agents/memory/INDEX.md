@@ -4,6 +4,7 @@ Master index of session memory checkpoints for Isaac Automator.
 
 | Date / Time (UTC) | Short UUID | Topic | Summary | Log File |
 | :--- | :--- | :--- | :--- | :--- |
+| 2026-09-13 18:09 | `9ead6140` | C3X-only costing and dedicated-project handoff | Removed competing active tooling; 271 regression tests pass; preserved evidence and wrote Go/PostgreSQL devcontainer continuation instructions | [`20260913_180922_9ead6140.md`](./sessions/20260913_180922_9ead6140.md) |
 | 2026-09-13 17:34 | `ed95e578` | GCP catalog import and G4 costing acceptance | Genuine scoped import verified; all four C3X G4 estimates rejected; official reference rates, independent audit and temporary-stack cleanup verified | [`20260913_173432_ed95e578.md`](./sessions/20260913_173432_ed95e578.md) |
 | 2026-09-13 17:05 | `2e795f61` | C3X OAuth ADC and live catalog verification | Replayable OAuth patch; clean unit/race/vet/build passes, live ADC Catalog probe without API key, independent review; full import and G4/Flex costing remain open | [`20260913_170520_2e795f61.md`](./sessions/20260913_170520_2e795f61.md) |
 | 2026-09-13 03:12 | `d941e621` | Self-hosted cost trials | C3X real Azure self-hosted quote; TerraCost synthetic library and repaired IBM backend trials; G4/Flex rejected; roadmap/evidence updated, independent audit and cleanup verified | [`20260913_031251_d941e621.md`](./sessions/20260913_031251_d941e621.md) |

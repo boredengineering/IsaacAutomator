@@ -3,7 +3,6 @@
 FROM ubuntu:24.04
 
 ARG WITH_PACKER=1
-ARG WITH_INFRACOST=0
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV force_color_prompt=yes
@@ -29,17 +28,6 @@ RUN apt-get update && apt-get install -qy \
     wget \
     gpg \
     jq
-
-# Optional pinned Infracost + GCP HCL/plan JSON plugins. No build-time token.
-COPY scripts/install_infracost.py /tmp/isaac-build/scripts/install_infracost.py
-COPY configs/cost/runtime.json /tmp/isaac-build/configs/cost/runtime.json
-RUN python3 /tmp/isaac-build/scripts/install_infracost.py \
-    --enabled "$WITH_INFRACOST" --architecture "$(dpkg --print-architecture)" \
-    --with-plugins "$WITH_INFRACOST" \
-    && rm -rf /tmp/isaac-build
-# Explicit flat directory disables ALL plugin download/update on estimates.
-ENV INFRACOST_CLI_PLUGIN_DIR=/opt/isaac-infracost/plugins
-ENV INFRACOST_CLI_PLUGIN_AUTO_UPDATE=false
 
 # hashicorp sources
 RUN wget -O- https://apt.releases.hashicorp.com/gpg | \

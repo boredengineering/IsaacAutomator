@@ -11,7 +11,6 @@ from textual.widgets import Button, Checkbox, Input, Label, RadioButton, RadioSe
 import asyncio
 
 from src.tui.backend import load_backend_selection
-from src.tui.widgets.cost_estimate import CostEstimatePanel
 
 
 class DeployWorkstationModal(ModalScreen):
@@ -202,7 +201,6 @@ class DeployWorkstationModal(ModalScreen):
                     id="deploy-summary",
                     classes="box-panel"
                 )
-                yield CostEstimatePanel()
 
             with Horizontal(classes="modal-btn-bar"):
                 yield Button("Dry Run / Validate", id="btn-deploy-dryrun", variant="warning")
@@ -245,8 +243,6 @@ class DeployWorkstationModal(ModalScreen):
         )
 
     def update_summary(self) -> None:
-        if self.is_mounted:
-            self.query_one(CostEstimatePanel).mark_stale()
         try:
             summary = self.query_one("#deploy-summary", Static)
             summary.update(self.build_summary_text())
@@ -387,13 +383,9 @@ class DeployWorkstationModal(ModalScreen):
         self.dismiss(result)
 
     def on_input_changed(self, event: Input.Changed) -> None:
-        self.query_one(CostEstimatePanel).mark_stale()
         if event.input.id == "inp-backend-config":
             self.backend_config = event.value.strip()
             self.invalidate_backend_validation()
-
-    def on_checkbox_changed(self, event: Checkbox.Changed) -> None:
-        self.query_one(CostEstimatePanel).mark_stale()
 
     def on_mount(self) -> None:
         self.start_backend_validation()

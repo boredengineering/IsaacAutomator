@@ -14,7 +14,6 @@ from textual.widgets import Button, Checkbox, Input, Label, RadioButton, RadioSe
 from src.python.config import save_profile_spec
 from src.python.workstation_profile import list_profiles, resolve_profile, ProfileError
 from src.tui.backend import REPO_ROOT, backend_selection, load_backend_selection
-from src.tui.widgets.cost_estimate import CostEstimatePanel
 
 
 class ProfilesPane(VerticalScroll):
@@ -83,7 +82,6 @@ class ProfilesPane(VerticalScroll):
                          id="profile-backend-status", markup=False)
 
         yield Static(id="profile-details-panel", classes="box-panel")
-        yield CostEstimatePanel()
 
         with Horizontal(classes="action-bar"):
             yield Button("Save Intent (not apply)", id="btn-apply-profile", variant="primary")
@@ -114,7 +112,6 @@ class ProfilesPane(VerticalScroll):
             pass
 
     def on_radio_set_changed(self, event: RadioSet.Changed) -> None:
-        self.query_one(CostEstimatePanel).mark_stale()
         if event.radio_set.id == "rs-security-tier":
             tier_map = {
                 "tier-simple": "simple",
@@ -130,7 +127,6 @@ class ProfilesPane(VerticalScroll):
             self.update_workstation_intent()
 
     def on_checkbox_changed(self, event: Checkbox.Changed) -> None:
-        self.query_one(CostEstimatePanel).mark_stale()
         if self.selected_tier == "custom":
             self.update_details("tier-custom")
 
@@ -139,7 +135,6 @@ class ProfilesPane(VerticalScroll):
         if tier_id == "tier-simple":
             panel.update(
                 "[bold green]Active Selection: Tier 1 - Simple Mode (Frictionless / Beginner)[/]\n\n"
-                "• [bold white]Cost:[/] Not estimated; explicit HCL/plan input required below\n"
                 "• [bold white]Firewall Ingress:[/]   [cyan]Dynamic /32 IP Whitelist[/] (auto-locked to caller IP via curl ifconfig.me)\n"
                 "• [bold white]Outbound Internet:[/]  Direct ephemeral public IP\n"
                 "• [bold white]Data Encryption:[/]    Cloud-default encryption (Google-managed, AWS SSE-S3, Azure PMK)\n"
@@ -149,7 +144,6 @@ class ProfilesPane(VerticalScroll):
         elif tier_id == "tier-team":
             panel.update(
                 "[bold yellow]Active Selection: Tier 2 - Collaborative (Team & Multi-Agent)[/]\n\n"
-                "• [bold white]Cost:[/] Not estimated; explicit HCL/plan input required below\n"
                 "• [bold white]Firewall Ingress:[/]   Dynamic /32 IP Whitelist or shared team subnet CIDR\n"
                 "• [bold white]Outbound Internet:[/]  Direct ephemeral public IP\n"
                 "• [bold white]Data Encryption:[/]    Cloud-default encryption with bucket versioning\n"
@@ -159,7 +153,6 @@ class ProfilesPane(VerticalScroll):
         elif tier_id == "tier-enterprise":
             panel.update(
                 "[bold red]Active Selection: Tier 3 - Enterprise Hardened (Defense / Compliance)[/]\n\n"
-                "• [bold white]Cost:[/] Not estimated; explicit HCL/plan input required below\n"
                 "• [bold white]Firewall Ingress:[/]   Zero Public IP (Cloud IAP, AWS SSM Session Manager, Azure Bastion)\n"
                 "• [bold white]Outbound Internet:[/]  Managed Cloud NAT Gateway with Cloud Router\n"
                 "• [bold white]Data Encryption:[/]    Customer-Managed Encryption Keys (KMS CMEK / CMK) with 90-day auto-rotation\n"
@@ -169,7 +162,6 @@ class ProfilesPane(VerticalScroll):
         else:
             panel.update(
                 f"[bold cyan]Active Selection: Special Custom Mode (Interactive Granular Spec)[/]\n\n"
-                "• [bold white]Cost:[/] Not estimated; explicit HCL/plan input required below\n"
                 f"• [bold white]Network Perimeter:[/]  {'Zero Public IP (Cloud IAP Tunnel)' if self.query_one('#cb-custom-iap', Checkbox).value else 'Public IP (/32 Lock)'}\n"
                 f"• [bold white]Outbound Routing:[/]   {'Managed Cloud NAT Gateway' if self.query_one('#cb-custom-nat', Checkbox).value else 'Direct Ephemeral Public'}\n"
                 f"• [bold white]Storage Backend:[/]    Explicit selection below; no automatic bucket creation\n"
@@ -245,13 +237,11 @@ class ProfilesPane(VerticalScroll):
             self.selected_state_backend = str(event.value)
         else:
             return
-        self.query_one(CostEstimatePanel).mark_stale()
         self.invalidate_backend()
 
     def on_input_changed(self, event: Input.Changed) -> None:
         if event.input.id == "inp-profile-backend-config":
             self.backend_config = event.value.strip()
-            self.query_one(CostEstimatePanel).mark_stale()
             self.invalidate_backend()
 
     def invalidate_backend(self) -> None:

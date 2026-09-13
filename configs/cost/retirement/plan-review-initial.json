@@ -1,0 +1,39 @@
+{
+  "passed": false,
+  "blockers": [
+    {
+      "location": ".agents/references/plans/c3x-dedicated-project-plan.md:101-117",
+      "issue": "The bootstrap does not fail closed. In an ordinary shell, test ! -e can fail and mkdir -p/cd/clones/checkouts/copies/patching still continue. A failed clone into an existing api/cli directory can consequently be followed by checkout and patch operations against someone else's checkout; a failed cd can redirect subsequent work into the caller's directory.",
+      "required_change": "Run the bootstrap in an explicit fail-fast shell/subshell, reject non-absolute paths and existing paths including dangling symlinks, use mkdir without -p for the new workspace leaf, and stop on every failed clone/checkout/copy/apply check. The existing-workspace refusal must occur before any mutation. Apply fail-fast sequencing to the manual build/test block at lines 285-301 as well so failed tests/builds cannot be obscured by later successful help commands."
+    }
+  ],
+  "suggestions": [
+    {
+      "location": ".agents/references/plans/c3x-dedicated-project-plan.md:165-167",
+      "issue": "The toolchain Dockerfile copies no workspace files, but context: .. exposes the entire future workspace to the builder unnecessarily. Git ignores do not constrain Docker build context.",
+      "recommendation": "Use context: . with dockerfile: Dockerfile, or an explicit restrictive .dockerignore. Retain the separate workspace bind mount. This is preventive hardening, not a claim that secrets were transmitted."
+    },
+    {
+      "location": ".agents/references/plans/c3x-dedicated-project-plan.md:304-307",
+      "issue": "Detached Compose startup only waits for database health, not API readiness. The single curl can race API startup and has no explicit duration bound.",
+      "recommendation": "Document a finite readiness loop or bounded curl retries including connection-refused handling, per-attempt connect/request timeouts and an overall deadline; stop before import when readiness never succeeds."
+    },
+    {
+      "location": "configs/profiles/README.md:258,268",
+      "issue": "An adjacent current operator guide still advertises interactive cost estimation and a dynamic monthly cost calculator, contradicting the retired panels and new root README. Discovered during the scoped documentation search; not part of the seven requested review files.",
+      "recommendation": "Remove only those stale costing claims or point to configs/cost/README.md; preserve the profile-edit/export instructions."
+    }
+  ],
+  "summary": "The requested documents consistently select C3X alone, close alternative implementation queues, retain history and separate successful OAuth/catalog imports from all four failed G4 pricing cases. No dedicated project/devcontainer/pricing implementation success is claimed. Pinned API/CLI HEADs and documented PostgreSQL, migration, seed, CLI flag and catalog interfaces match inspected sources. Embedded YAML/JSON parse as text; six archived records match both manifests and HEAD originals byte-for-byte. Retirement receipts report 271 passing tests across 12 suites; this reviewer did not rerun those tests. Approval is blocked only by the unsafe fail-open bootstrap. Image digests, UID/pgpass compatibility and runtime readiness remain explicitly future checks, not implemented results. No future shell commands, builds, containers, cloud calls, imports or secret access were performed; only this review JSON was written.",
+  "reviewedsha256": {
+    ".agents/references/plans/c3x-dedicated-project-plan.md": "e11a7e366c4411b4a64b2c46302679eb866cc68a3e6f09987861e3531368d2be",
+    ".agents/references/plans/terraform-remote-backend-plan.md": "ec36db5ed7f5741449ea14481e12d2c301691907deaf5b7f8a5b54f4edb72591",
+    ".agents/references/plans/self-hosted-cost-evaluation-20260913.md": "ea493a408101a98d7a481fdd5dbf20da24643dec1393840e74e28c5d08622c11",
+    "README.md": "5a44fd5d60b6cfd95ffbfaadbc6b52b7f7bc11b1942161773f6a2a94f14689a4",
+    "configs/cost/README.md": "e47e1f91d603b9cde12ff32360dd47eae61e7ad165ae5506a76017b1d47630bb",
+    "configs/cost/retirement/README.md": "cf776c0d81cf2e2d66e089c9678b0f6fa89e192949f171d2ca7ede81780100e4",
+    "configs/cost/archive/infracost/README.md": "8411c7110867d45afe78168520dcf9fbcdba603e0a95870bd21558906b98d778",
+    "configs/profiles/README.md": "0c460d2fadaded65d961571eb31f85974ae4588cb58b372b8d77ec2b0864b65e"
+  },
+  "handle": "/tmp/isaac-cost-retirement-plan-review.json"
+}

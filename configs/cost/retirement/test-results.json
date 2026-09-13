@@ -1,0 +1,243 @@
+{
+  "suite_results": [
+    {
+      "suite": "backend_selection",
+      "command": [
+        "env",
+        "-i",
+        "PATH=/usr/local/bin:/usr/bin:/bin",
+        "HOME=/tmp/isaac-retirement-verified-d49l3oj0",
+        "XDG_CONFIG_HOME=/tmp/isaac-retirement-verified-d49l3oj0/config",
+        "APP_DIR=/workspaces/IsaacAutomator",
+        "PYTHONPATH=/workspaces/IsaacAutomator",
+        "CHECKPOINT_DISABLE=1",
+        "/usr/bin/python3",
+        "-B",
+        "src/tests/backend_selection.test.py"
+      ],
+      "exit_code": 0,
+      "tests": 5,
+      "output": ".....\n----------------------------------------------------------------------\nRan 5 tests in 0.007s\n\nOK"
+    },
+    {
+      "suite": "backend_entrypoints",
+      "command": [
+        "env",
+        "-i",
+        "PATH=/usr/local/bin:/usr/bin:/bin",
+        "HOME=/tmp/isaac-retirement-verified-d49l3oj0",
+        "XDG_CONFIG_HOME=/tmp/isaac-retirement-verified-d49l3oj0/config",
+        "APP_DIR=/workspaces/IsaacAutomator",
+        "PYTHONPATH=/workspaces/IsaacAutomator",
+        "CHECKPOINT_DISABLE=1",
+        "/usr/bin/python3",
+        "-B",
+        "src/tests/backend_entrypoints.test.py"
+      ],
+      "exit_code": 0,
+      "tests": 14,
+      "output": "..............\n----------------------------------------------------------------------\nRan 14 tests in 0.081s\n\nOK"
+    },
+    {
+      "suite": "backend_runtime",
+      "command": [
+        "env",
+        "-i",
+        "PATH=/usr/local/bin:/usr/bin:/bin",
+        "HOME=/tmp/isaac-retirement-verified-d49l3oj0",
+        "XDG_CONFIG_HOME=/tmp/isaac-retirement-verified-d49l3oj0/config",
+        "APP_DIR=/workspaces/IsaacAutomator",
+        "PYTHONPATH=/workspaces/IsaacAutomator",
+        "CHECKPOINT_DISABLE=1",
+        "/usr/bin/python3",
+        "-B",
+        "src/tests/backend_runtime.test.py"
+      ],
+      "exit_code": 0,
+      "tests": 7,
+      "output": ".......\n----------------------------------------------------------------------\nRan 7 tests in 0.033s\n\nOK"
+    },
+    {
+      "suite": "terraform_runner",
+      "command": [
+        "env",
+        "-i",
+        "PATH=/usr/local/bin:/usr/bin:/bin",
+        "HOME=/tmp/isaac-retirement-verified-d49l3oj0",
+        "XDG_CONFIG_HOME=/tmp/isaac-retirement-verified-d49l3oj0/config",
+        "APP_DIR=/workspaces/IsaacAutomator",
+        "PYTHONPATH=/workspaces/IsaacAutomator",
+        "CHECKPOINT_DISABLE=1",
+        "/usr/bin/python3",
+        "-B",
+        "src/tests/terraform_runner.test.py"
+      ],
+      "exit_code": 0,
+      "tests": 42,
+      "output": "..........................................\n----------------------------------------------------------------------\nRan 42 tests in 3.427s\n\nOK"
+    },
+    {
+      "suite": "terraform_lifecycle",
+      "command": [
+        "env",
+        "-i",
+        "PATH=/usr/local/bin:/usr/bin:/bin",
+        "HOME=/tmp/isaac-retirement-verified-d49l3oj0",
+        "XDG_CONFIG_HOME=/tmp/isaac-retirement-verified-d49l3oj0/config",
+        "APP_DIR=/workspaces/IsaacAutomator",
+        "PYTHONPATH=/workspaces/IsaacAutomator",
+        "CHECKPOINT_DISABLE=1",
+        "/usr/bin/python3",
+        "-B",
+        "src/tests/terraform_lifecycle.test.py"
+      ],
+      "exit_code": 0,
+      "tests": 23,
+      "output": ".......................\n----------------------------------------------------------------------\nRan 23 tests in 0.066s\n\nOK"
+    },
+    {
+      "suite": "workstation_profile",
+      "command": [
+        "env",
+        "-i",
+        "PATH=/usr/local/bin:/usr/bin:/bin",
+        "HOME=/tmp/isaac-retirement-verified-d49l3oj0",
+        "XDG_CONFIG_HOME=/tmp/isaac-retirement-verified-d49l3oj0/config",
+        "APP_DIR=/workspaces/IsaacAutomator",
+        "PYTHONPATH=/workspaces/IsaacAutomator",
+        "CHECKPOINT_DISABLE=1",
+        "/usr/bin/python3",
+        "-B",
+        "src/tests/workstation_profile.test.py"
+      ],
+      "exit_code": 0,
+      "tests": 11,
+      "output": "...........\n----------------------------------------------------------------------\nRan 11 tests in 0.753s\n\nOK"
+    },
+    {
+      "suite": "workstation_profile_command",
+      "command": [
+        "env",
+        "-i",
+        "PATH=/usr/local/bin:/usr/bin:/bin",
+        "HOME=/tmp/isaac-retirement-verified-d49l3oj0",
+        "XDG_CONFIG_HOME=/tmp/isaac-retirement-verified-d49l3oj0/config",
+        "APP_DIR=/workspaces/IsaacAutomator",
+        "PYTHONPATH=/workspaces/IsaacAutomator",
+        "CHECKPOINT_DISABLE=1",
+        "/usr/bin/python3",
+        "-B",
+        "src/tests/workstation_profile_command.test.py"
+      ],
+      "exit_code": 0,
+      "tests": 12,
+      "output": "............\n----------------------------------------------------------------------\nRan 12 tests in 0.084s\n\nOK"
+    },
+    {
+      "suite": "deploy_command",
+      "command": [
+        "env",
+        "-i",
+        "PATH=/usr/local/bin:/usr/bin:/bin",
+        "HOME=/tmp/isaac-retirement-verified-d49l3oj0",
+        "XDG_CONFIG_HOME=/tmp/isaac-retirement-verified-d49l3oj0/config",
+        "APP_DIR=/workspaces/IsaacAutomator",
+        "PYTHONPATH=/workspaces/IsaacAutomator",
+        "CHECKPOINT_DISABLE=1",
+        "/usr/bin/python3",
+        "-B",
+        "src/tests/deploy_command.test.py"
+      ],
+      "exit_code": 0,
+      "tests": 43,
+      "output": "..................Warning: could not verify isaacsim ref 'v6.0.1' (git missing). Continuing.\nWarning: could not verify isaacsim ref 'v6.0.1' (Command 'git' timed out after 30 seconds). Continuing.\n.........................\n----------------------------------------------------------------------\nRan 43 tests in 0.035s\n\nOK"
+    },
+    {
+      "suite": "deployer",
+      "command": [
+        "env",
+        "-i",
+        "PATH=/usr/local/bin:/usr/bin:/bin",
+        "HOME=/tmp/isaac-retirement-verified-d49l3oj0",
+        "XDG_CONFIG_HOME=/tmp/isaac-retirement-verified-d49l3oj0/config",
+        "APP_DIR=/workspaces/IsaacAutomator",
+        "PYTHONPATH=/workspaces/IsaacAutomator",
+        "CHECKPOINT_DISABLE=1",
+        "/usr/bin/python3",
+        "-B",
+        "src/tests/deployer.test.py"
+      ],
+      "exit_code": 0,
+      "tests": 57,
+      "output": "* Deleting existing deployment...\n* Deleting existing deployment...\n* Deleting existing deployment...\n* Deleting existing deployment...\n* Deleting existing deployment...\n* Deleting existing deployment...\n.* Deleting existing deployment...\n..............* Repairing existing deployment \"test-1\"...\n...........................* Demo \"quadruped-locomotion\" requires isaacsim; enabling it (latest).\n* Demo \"quadruped-locomotion\" requires isaaclab; enabling it (latest).\n.* Demo \"quadruped-locomotion\" requires isaaclab; enabling it (latest).\n..* Unknown demo(s): does-not-exist. Valid demos: arena-benchmark, arena-gr00t, franka-manipulation, humanoid-locomotion, quadruped-locomotion.\n....* Validating Ansible playbook syntax (isaac-workstation.yaml)...\n...Warning: built-in team/enterprise now use local state by default; remote state requires explicit --state-backend and --backend-config opt-in. GCS lifecycle is supported; S3/Azure workstation mutation is not enabled.\n.* Unknown security profile 'invalid-profile'. Valid profiles: custom-developer, enterprise, enterprise-zero-trust, example-aws-ecr, example-dockerhub, example-huggingface, example-profile, simple, simple-workstation, studio-enterprise, team, team-studio.\n....\n----------------------------------------------------------------------\nRan 57 tests in 0.933s\n\nOK"
+    },
+    {
+      "suite": "gcp_flex_start",
+      "command": [
+        "env",
+        "-i",
+        "PATH=/usr/local/bin:/usr/bin:/bin",
+        "HOME=/tmp/isaac-retirement-verified-d49l3oj0",
+        "XDG_CONFIG_HOME=/tmp/isaac-retirement-verified-d49l3oj0/config",
+        "APP_DIR=/workspaces/IsaacAutomator",
+        "PYTHONPATH=/workspaces/IsaacAutomator",
+        "CHECKPOINT_DISABLE=1",
+        "/usr/bin/python3",
+        "-B",
+        "src/tests/gcp_flex_start.test.py"
+      ],
+      "exit_code": 0,
+      "tests": 16,
+      "output": "......* Repairing existing deployment \"offline-flex\"...\n* Repairing existing deployment \"offline-flex\"...\n* Repairing existing deployment \"offline-flex\"...\n* Repairing existing deployment \"offline-flex\"...\n* Repairing existing deployment \"offline-flex\"...\n* Repairing existing deployment \"offline-flex\"...\n* Repairing existing deployment \"offline-flex\"...\n* Repairing existing deployment \"offline-flex\"...\n* Repairing existing deployment \"offline-flex\"...\n* Repairing existing deployment \"offline-flex\"...\n* Repairing existing deployment \"offline-flex\"...\n* Repairing existing deployment \"offline-flex\"...\n* Repairing existing deployment \"offline-flex\"...\n* Repairing existing deployment \"offline-flex\"...\n* Repairing existing deployment \"offline-flex\"...\n...* Repairing existing deployment \"offline-flex\"...\n.* Repairing existing deployment \"offline-flex\"...\n\n======================================================================\n* [DRY-RUN] Validating Terraform and Ansible configuration...\n======================================================================\n\n\n======================================================================\n* [DRY-RUN] SUCCESS: Terraform plan and Ansible syntax checks passed!\n* No apply was performed. Planning can read cloud APIs and acquire backend locks; it is not offline validation.\n======================================================================\n\n* Repairing existing deployment \"offline-flex\"...\n\n======================================================================\n* [DRY-RUN] Validating Terraform and Ansible configuration...\n======================================================================\n\n\n======================================================================\n* [DRY-RUN] SUCCESS: Terraform plan and Ansible syntax checks passed!\n* No apply was performed. Planning can read cloud APIs and acquire backend locks; it is not offline validation.\n======================================================================\n\n......\n----------------------------------------------------------------------\nRan 16 tests in 1.617s\n\nOK"
+    },
+    {
+      "suite": "terraform_tui",
+      "command": [
+        "env",
+        "-i",
+        "PATH=/usr/local/bin:/usr/bin:/bin",
+        "HOME=/tmp/isaac-retirement-verified-d49l3oj0",
+        "XDG_CONFIG_HOME=/tmp/isaac-retirement-verified-d49l3oj0/config",
+        "APP_DIR=/workspaces/IsaacAutomator",
+        "PYTHONPATH=/workspaces/IsaacAutomator",
+        "CHECKPOINT_DISABLE=1",
+        "/tmp/isaac-task30-tui-venv/bin/python",
+        "-B",
+        "src/tests/terraform_tui.test.py"
+      ],
+      "exit_code": 0,
+      "tests": 34,
+      "output": "..................................\n----------------------------------------------------------------------\nRan 34 tests in 1.137s\n\nOK"
+    },
+    {
+      "suite": "cost_retirement",
+      "command": [
+        "env",
+        "-i",
+        "PATH=/usr/local/bin:/usr/bin:/bin",
+        "HOME=/tmp/isaac-retirement-verified-d49l3oj0",
+        "XDG_CONFIG_HOME=/tmp/isaac-retirement-verified-d49l3oj0/config",
+        "APP_DIR=/workspaces/IsaacAutomator",
+        "PYTHONPATH=/workspaces/IsaacAutomator",
+        "CHECKPOINT_DISABLE=1",
+        "/tmp/isaac-task30-tui-venv/bin/python",
+        "-B",
+        "src/tests/cost_retirement.test.py"
+      ],
+      "exit_code": 0,
+      "tests": 7,
+      "output": "....Executing <Task pending name='Task-828' coro=<CostUIRetirementTests.test_existing_production_app_smoke_without_cost_runtime() running at /workspaces/IsaacAutomator/src/tests/cost_retirement.test.py:107> wait_for=<Future pending cb=[Task.task_wakeup()] created at /root/.local/share/uv/python/cpython-3.12.14-linux-x86_64-gnu/lib/python3.12/asyncio/base_events.py:448> cb=[_run_until_complete_cb() at /root/.local/share/uv/python/cpython-3.12.14-linux-x86_64-gnu/lib/python3.12/asyncio/base_events.py:181] created at /root/.local/share/uv/python/cpython-3.12.14-linux-x86_64-gnu/lib/python3.12/asyncio/runners.py:100> took 0.104 seconds\n.Executing <Task pending name='message pump WorkstationInspectorModal()' coro=<MessagePump._process_messages() running at /tmp/isaac-task30-tui-venv/lib/python3.12/site-packages/textual/message_pump.py:571> wait_for=<Future pending cb=[Task.task_wakeup()] created at /root/.local/share/uv/python/cpython-3.12.14-linux-x86_64-gnu/lib/python3.12/asyncio/base_events.py:448> created at /root/.local/share/uv/python/cpython-3.12.14-linux-x86_64-gnu/lib/python3.12/asyncio/tasks.py:420> took 0.112 seconds\n.Executing <Task pending name='Task-2505' coro=<CostUIRetirementTests.test_profiles_edit_and_export_intent_without_cost_controls() running at /workspaces/IsaacAutomator/src/tests/cost_retirement.test.py:309> wait_for=<Future pending cb=[Task.task_wakeup()] created at /root/.local/share/uv/python/cpython-3.12.14-linux-x86_64-gnu/lib/python3.12/asyncio/base_events.py:448> cb=[_run_until_complete_cb() at /root/.local/share/uv/python/cpython-3.12.14-linux-x86_64-gnu/lib/python3.12/asyncio/base_events.py:181] created at /root/.local/share/uv/python/cpython-3.12.14-linux-x86_64-gnu/lib/python3.12/asyncio/runners.py:100> took 0.106 seconds\n.\n----------------------------------------------------------------------\nRan 7 tests in 10.133s\n\nOK"
+    }
+  ],
+  "source_sha256_before": {
+    "src/tui/screens/profiles.py": "177df762efead6535f6079918d114d01450fef14359a55ef499ec72ea897ac01",
+    "src/tui/screens/deploy_modal.py": "0e58d55710d4a3cdc029270392dcc4f686077409a29deb7e0f29dd18aa4dde71",
+    "src/tui/screens/inspector.py": "02c48d680fb1a1ffb05cee426c762d88790907dccab78e7a034ecbc0e293907d",
+    "src/tests/cost_retirement.test.py": "7229c000f20a666bae20533fc6db118e3e69471f604aaf5ac3d4a4738c8fd7bd",
+    "Dockerfile": "bb87747ea5be85ba2380d776f5761feb4f27b4475d9e743c0ab7a8a0e4a140e7"
+  },
+  "source_changed_during_run": [],
+  "total_tests": 271,
+  "all_passed": true,
+  "initial_harness_failures": "First attempt used TUI-only Python for CLI suites, omitted /usr/local/bin (Terraform) from PATH and pointed APP_DIR at a nonexistent temp path. Corrected harness; no production code changes or dependency installation."
+}

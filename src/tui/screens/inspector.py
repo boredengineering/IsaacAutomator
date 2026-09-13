@@ -8,10 +8,9 @@ from textual.binding import Binding
 from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.screen import ModalScreen
 from textual.widgets import Button, Label, Static
-from src.tui.widgets.cost_estimate import CostEstimatePanel
 
 class WorkstationInspectorModal(ModalScreen):
-    """Read-only metadata and explicit-input cost inspection (not live billing)."""
+    """Read-only workstation metadata and safe backend state inspection."""
 
     BINDINGS = [
         Binding("escape", "dismiss_modal", "Close", show=True),
@@ -35,12 +34,6 @@ class WorkstationInspectorModal(ModalScreen):
         }
         self.show_raw_state = False
 
-    def get_cost_estimate(self) -> tuple[str, str]:
-        cloud = self.workstation.get("cloud", "").upper()
-        if cloud in ("BARE-METAL", "BAREMETAL", "LOCAL"):
-            return "Not estimated", "Physical node; no cloud price estimate"
-        return "Not estimated", "Select explicit HCL/plan input below; inventory is not a billing source"
-
     def get_state_content(self) -> str:
         # Controller inventory is already projected from the shared descriptor
         # schema. Never render raw Terraform outputs/params or secret references.
@@ -57,7 +50,6 @@ class WorkstationInspectorModal(ModalScreen):
         gpu = self.workstation.get("gpu", "N/A")
         ip = self.workstation.get("ip", "N/A")
         profile = self.workstation.get("profile", "Unknown")
-        rate, billing_desc = self.get_cost_estimate()
 
         status_color = "green" if status in ('READY', 'PROVISIONED', 'RUNNING') else "yellow"
         with Vertical(id="dialog"):
@@ -76,10 +68,8 @@ class WorkstationInspectorModal(ModalScreen):
                     f"  Public Endpoint:  [cyan]{ip}[/]\n"
                     f"  Security Tier:    [green]{profile}[/]\n"
                     f"  Ingress Filter:   Strict /32 Caller IP Filter (Zero Public Exposure)\n\n"
-                    f"[bold white]BILLING & RUNTIME TELEMETRY[/]\n"
-                    f"  Estimated Rate:   [yellow]{rate}[/]\n"
-                    f"  Billing Category: {billing_desc}\n"
-                    f"  Lifecycle State:  Unknown (not a live billing or VM status check)\n\n"
+                    f"[bold white]LIFECYCLE[/]\n"
+                    f"  Lifecycle State:  Unknown (not a live VM status check)\n\n"
                     f"[bold white]PHYSICAL AI COMPATIBILITY[/]\n"
                     f"  Isaac Sim:        6.0.1 Standalone Kit\n"
                     f"  Isaac Lab:        v3.0.0-beta2 (Omniverse Kit Compatible)\n"
@@ -87,9 +77,6 @@ class WorkstationInspectorModal(ModalScreen):
                     id="inspector-details",
                     classes="box-panel",
                 )
-                yield CostEstimatePanel(unavailable_reason=(
-                    "Bare metal / local: not estimated. No cloud pricing requested."
-                    if cloud.upper() in ("BARE-METAL", "BAREMETAL", "LOCAL") else None))
 
             with Horizontal(classes="modal-btn-bar"):
                 yield Button("Connect [c]", id="btn-inspect-connect", variant="primary")
@@ -109,7 +96,6 @@ class WorkstationInspectorModal(ModalScreen):
             gpu = self.workstation.get("gpu", "N/A")
             ip = self.workstation.get("ip", "N/A")
             profile = self.workstation.get("profile", "Unknown")
-            rate, billing_desc = self.get_cost_estimate()
             details.update(
                 f"[bold white]GENERAL METADATA[/]\n"
                 f"  Name:             [cyan]{name}[/]\n"
@@ -120,9 +106,8 @@ class WorkstationInspectorModal(ModalScreen):
                 f"  Public Endpoint:  [cyan]{ip}[/]\n"
                 f"  Security Tier:    [green]{profile}[/]\n"
                 f"  Ingress Filter:   Strict /32 Caller IP Filter\n\n"
-                f"[bold white]BILLING & RUNTIME TELEMETRY[/]\n"
-                f"  Estimated Rate:   [yellow]{rate}[/]\n"
-                f"  Billing Category: {billing_desc}"
+                f"[bold white]LIFECYCLE[/]\n"
+                f"  Lifecycle State:  Unknown (not a live VM status check)"
             )
 
     def on_button_pressed(self, event: Button.Pressed) -> None:

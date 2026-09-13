@@ -26,6 +26,6 @@ availability does not prove GPU quota, zone capacity, deployment success,
 IAP access or application compatibility.
 
 Do not add separate GPU/CPU/RAM line items to a complete G4 machine price.
-An Infracost response recognizing the VM resource is not sufficient proof
+An estimator response recognizing the VM resource is not sufficient proof
 that it priced Flex-start correctly. Until actual SKU/model coverage is
 verified, Flex estimates must remain explicitly partial/unsupported.

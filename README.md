@@ -151,37 +151,22 @@ selector or the legacy installer's `--config` files. Cloud/installer/Packer
 consumption remains a separate implementation gate; `ready_for_apply` is false.
 See [the schema, field mapping and limits](configs/workstations/README.md).
 
-## Optional Cost Estimates (Infracost)
+## Cost Estimation — C3X Roadmap
 
-`./cost` estimates explicitly selected public Terraform inputs without deploying.
-It shares normalized reports with the explicit Estimate/Refresh panels in
-isaac9s; missing or unsupported pricing is not replaced by hard-coded prices.
+C3X is the selected future cost engine and will be developed in a dedicated
+project. **No cost-estimation command or panel is currently available in Isaac
+Automator.** The previous Infracost adapter, installer, Docker build hooks and
+isaac9s estimate panels have been retired; deployment/lifecycle remain independent.
 
-```sh
-./cost --help
-./cost doctor --format json
-# After installing the pinned runtime and supplying authentication securely:
-./cost estimate --path configs/cost/fixtures/g4-standard-48-standard \
-  --usage-file configs/cost/infracost-usage.example.yml \
-  --region us-west1 --public-input --allow-pricing --format json
-```
+C3X OAuth and a scoped real GCP catalog import were verified, but all four G4
+Standard/Flex-start estimates failed correct-SKU and coverage checks. Selection
+is not pricing acceptance: no zero, wrong-GPU or compute-only total is a usable
+infrastructure quote. TerraCost/IBM alternatives are closed experiments.
 
-Optional controller packaging uses `./build --build-arg WITH_INFRACOST=1`.
-The default is disabled. Infracost 2.16.3 and its GCP parser/provider plugins are
-checksum-pinned; authentication uses `INFRACOST_CLI_AUTHENTICATION_TOKEN` through
-the environment, never build arguments or profile YAML. No automatic install,
-login, cloud plan or apply occurs during estimation.
-
-Current limits: flat public HCL/JSON inputs and public exported plan JSON only;
-private inputs, modules, profile/deployment binding and native binary plans are
-not supported. Flex-start pricing remains explicitly unverified/partial. Real
-authenticated G4 quote acceptance is still gated on credentials and actual
-responses. Monthly usage scenarios are not automatically short-run all-in budgets.
-
-See [setup, privacy, usage, comparison and verification](configs/cost/README.md)
-and [the executed verification receipt](configs/cost/VERIFICATION.md).
-For host-side isaac9s, install `requirements-tui.txt` into an isolated Python
-environment; pricing remains optional and never required to deploy.
+See [current status and preserved evidence](configs/cost/README.md) and the
+[dedicated C3X project/devcontainer handoff](.agents/references/plans/c3x-dedicated-project-plan.md).
+The new project, devcontainer and later optional CLI/TUI integration are planned,
+not created or running. Historical trial records remain archived for review.
 
 ## Development Environments
 

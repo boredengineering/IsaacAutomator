@@ -255,7 +255,7 @@ When you are ready to provision, remove `--dry-run`:
 
 ## 6. Visual Profile Configurator (`isaac9s`)
 
-You can also design, cost-estimate, and export custom profiles interactively using the built-in terminal cockpit:
+You can also design and export custom profiles interactively using the built-in terminal cockpit:
 
 1. Launch `isaac9s`:
    ```bash
@@ -265,5 +265,6 @@ You can also design, cost-estimate, and export custom profiles interactively usi
    ```
 2. Navigate to the **Profiles** screen (tab 2).
 3. Select **Special Custom Mode** to interactively toggle individual subsystems (Cloud NAT, GCS State, KMS CMEK, Shielded VM, OS Login, Secret Manager).
-4. Review the dynamic monthly cost calculator.
+4. Review the selected profile settings. Cost estimation is currently unavailable;
+   the previous calculator was retired pending [dedicated C3X qualification](../cost/README.md).
 5. Enter a profile name and click **Save Custom Profile** to automatically serialize it into `configs/profiles/<profile_name>.yaml`.

@@ -1,0 +1,63 @@
+{
+  "status": "configuration/syntax and isolated bootstrap-guard checks pass; not build/runtime acceptance",
+  "plan_sha256": "de9492e05cdb97b88696c7d4eaf428bdf4779bb24568e296ea7477789f453614",
+  "json": "valid",
+  "compose_profiles": {
+    "default": {
+      "exit_code": 0,
+      "services": [
+        "editor"
+      ],
+      "no_published_ports": true,
+      "catalog_internal": true,
+      "build_context_only_devcontainer": true
+    },
+    "catalog": {
+      "exit_code": 0,
+      "services": [
+        "api",
+        "db",
+        "editor"
+      ],
+      "no_published_ports": true,
+      "catalog_internal": true,
+      "build_context_only_devcontainer": true
+    }
+  },
+  "shell_blocks_syntax_checked": 2,
+  "bootstrap_negative_guards": [
+    {
+      "case": "unset",
+      "exit_code": 2,
+      "no_mutation": true
+    },
+    {
+      "case": "relative",
+      "exit_code": 1,
+      "no_mutation": true
+    },
+    {
+      "case": "existing_directory",
+      "exit_code": 1,
+      "no_mutation": true
+    },
+    {
+      "case": "existing_file",
+      "exit_code": 1,
+      "no_mutation": true
+    },
+    {
+      "case": "dangling_symlink",
+      "exit_code": 1,
+      "no_mutation": true
+    }
+  ],
+  "bootstrap_positive_guard": "new empty temporary directory created; no clone/copy/patch commands executed",
+  "image_placeholder": "example.invalid/c3x-go:syntax-only; no lookup/pull",
+  "limits": [
+    "No actual project created; all temporary checks cleaned",
+    "No image availability/digest verification",
+    "No build, container startup, secrets creation, DB/auth or Go tests",
+    "Host UID/pgpass permissions and runtime networking remain future checks"
+  ]
+}
