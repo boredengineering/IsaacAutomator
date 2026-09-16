@@ -1,0 +1,636 @@
+{
+  "status": "implemented-fixture-verified; source frozen for parent independent review",
+  "files": [
+    {
+      "path": "isaac-installer/tools/collect_host_metadata.py",
+      "sha256": "dd3d38090888437e517013b473c7fb433c44e6dbfa6e091b430d96999447b80e",
+      "action": "created"
+    },
+    {
+      "path": "src/tests/installer_host_collector.test.py",
+      "sha256": "b7f8932a2da7fa2354d797c3da31a3c56fe0cdbc8a38fab53722ff8a679f6f7d",
+      "action": "created"
+    }
+  ],
+  "scope": {
+    "real_host_inventory": false,
+    "network": false,
+    "git_commands": false,
+    "package_commands": false,
+    "managed_apply_or_fixture_builders": false,
+    "other_source_edited": false,
+    "commits_or_pushes": false
+  },
+  "contract": {
+    "schema_version": 1,
+    "kind": "host-inventory",
+    "exact_top_level_keys": [
+      "schema_version",
+      "kind",
+      "context",
+      "workspace",
+      "repositories",
+      "isaacsim",
+      "machine",
+      "packages",
+      "environments",
+      "coverage"
+    ],
+    "fixture_identity": "explicit non-root system_root; no fallback to live /",
+    "execution_authorized": false,
+    "default_limits": {
+      "max_entries": 4096,
+      "max_bytes": 8388608,
+      "max_seconds": 10.0,
+      "max_depth": 4
+    },
+    "positive_limit_caps": {
+      "max_entries": 100000,
+      "max_bytes": 67108864,
+      "max_seconds": 120,
+      "max_depth": 16
+    },
+    "machine_keys": [
+      "os",
+      "os_id",
+      "os_version",
+      "kernel",
+      "cpu",
+      "memory",
+      "driver",
+      "cuda_toolkit",
+      "gpu",
+      "container"
+    ],
+    "environment_name_for_dot_venv": "venv"
+  },
+  "features": [
+    "bounded exact/case-nearby BoredEngineer and fixed boredengineering legacy alias; ambiguity never selects",
+    "credential-stripped GitHub origin and loose HEAD/ref metadata; dirty unknown",
+    "fixed IsaacSim VERSION without launcher execution",
+    "fixed OS/kernel/CPU/RAM/loaded-driver/CUDA/container-marker records; usr/lib/os-release independently admitted fallback",
+    "local dpkg/APT installed multiarch and explicit manual/automatic/unknown states",
+    "bounded Conda seeds and selected .venv metadata; duplicate conflicting packages dropped explicitly",
+    "exclusive nofollow mode0600 output outside observed roots; default no-read plan; root and redirected regular-file diagnostics refused",
+    "descriptor-relative nofollow ancestors/files; hardlink/nonregular/unstable input rejection; aggregate budgets; POSIX alarm interrupts stalled synthetic reads"
+  ],
+  "verification": {
+    "runner": "/tmp/isaac-host-collector-runner.py",
+    "confinement_source": ".agents/references/isaac-installer/verification/step1/isaac-step1-runner.py",
+    "allowlist": [
+      "installer_host_collector"
+    ],
+    "command": "/usr/bin/python3 -B /tmp/isaac-host-collector-runner.py all",
+    "final": {
+      "method": "all",
+      "exit_code": 0,
+      "log": "/tmp/isaac-host-tdd-3hyi6jy0/receipt.log",
+      "tests": 26,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": true
+    },
+    "actual_script_subprocesses": [
+      {
+        "argv": [
+          "/usr/bin/python3",
+          "-I",
+          "-B",
+          "/workspaces/IsaacAutomator/isaac-installer/tools/collect_host_metadata.py",
+          "--collect",
+          "--home",
+          "/tmp/isaac-host-tdd-3hyi6jy0/installer_host_collector/host-fixture-zfy7l8jt/home",
+          "--system-root",
+          "/tmp/isaac-host-tdd-3hyi6jy0/installer_host_collector/host-fixture-zfy7l8jt/system",
+          "--output",
+          "/tmp/isaac-host-tdd-3hyi6jy0/installer_host_collector/host-fixture-zfy7l8jt/report.json"
+        ],
+        "exit_code": 0,
+        "schema_version": 1,
+        "identity": "fixture",
+        "mode": "0600"
+      },
+      {
+        "argv": [
+          "/usr/bin/python3",
+          "-I",
+          "-B",
+          "/workspaces/IsaacAutomator/isaac-installer/tools/collect_host_metadata.py",
+          "--plan",
+          "--home",
+          "/tmp/isaac-host-tdd-3hyi6jy0/installer_host_collector/host-fixture-l0_yxzjc/home",
+          "--system-root",
+          "/tmp/isaac-host-tdd-3hyi6jy0/installer_host_collector/host-fixture-l0_yxzjc/system",
+          "--output",
+          "/tmp/isaac-host-tdd-3hyi6jy0/installer_host_collector/host-fixture-l0_yxzjc/not-created.json"
+        ],
+        "exit_code": 0,
+        "kind": "host-inventory-plan",
+        "report_created": false
+      }
+    ],
+    "red_green_receipts": [
+      {
+        "method": "test_empty_fixture_contract",
+        "exit_code": 1,
+        "log": "/tmp/isaac-host-tdd-ezlg7w4h/receipt.log",
+        "tests": 1,
+        "failures": 1,
+        "errors": 0,
+        "skipped": 0,
+        "passed": false
+      },
+      {
+        "method": "all",
+        "exit_code": 0,
+        "log": "/tmp/isaac-host-tdd-r526v2y7/receipt.log",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": true
+      },
+      {
+        "method": "test_case_preserving_workspace_selection",
+        "exit_code": 1,
+        "log": "/tmp/isaac-host-tdd-f85u9zm6/receipt.log",
+        "tests": 1,
+        "failures": 1,
+        "errors": 0,
+        "skipped": 0,
+        "passed": false
+      },
+      {
+        "method": "all",
+        "exit_code": 0,
+        "log": "/tmp/isaac-host-tdd-b4qk3nq_/receipt.log",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": true
+      },
+      {
+        "method": "test_repository_metadata_not_directory_name_identifies_component",
+        "exit_code": 1,
+        "log": "/tmp/isaac-host-tdd-wm22hhwa/receipt.log",
+        "tests": 1,
+        "failures": 1,
+        "errors": 0,
+        "skipped": 0,
+        "passed": false
+      },
+      {
+        "method": "all",
+        "exit_code": 0,
+        "log": "/tmp/isaac-host-tdd-51taacza/receipt.log",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": true
+      },
+      {
+        "method": "test_sim_version_is_metadata_only",
+        "exit_code": 1,
+        "log": "/tmp/isaac-host-tdd-c9dhk29o/receipt.log",
+        "tests": 1,
+        "failures": 1,
+        "errors": 0,
+        "skipped": 0,
+        "passed": false
+      },
+      {
+        "method": "all",
+        "exit_code": 0,
+        "log": "/tmp/isaac-host-tdd-gpggt8f4/receipt.log",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": true
+      },
+      {
+        "method": "test_machine_facts_use_only_explicit_fixture_records",
+        "exit_code": 1,
+        "log": "/tmp/isaac-host-tdd-3cm9t2xs/receipt.log",
+        "tests": 1,
+        "failures": 1,
+        "errors": 0,
+        "skipped": 0,
+        "passed": false
+      },
+      {
+        "method": "all",
+        "exit_code": 0,
+        "log": "/tmp/isaac-host-tdd-16svlclk/receipt.log",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": true
+      },
+      {
+        "method": "test_dpkg_inventory_preserves_multiarch_and_manual_unknowns",
+        "exit_code": 1,
+        "log": "/tmp/isaac-host-tdd-8cgkoiy1/receipt.log",
+        "tests": 1,
+        "failures": 1,
+        "errors": 0,
+        "skipped": 0,
+        "passed": false
+      },
+      {
+        "method": "all",
+        "exit_code": 0,
+        "log": "/tmp/isaac-host-tdd-474g013o/receipt.log",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": true
+      },
+      {
+        "method": "test_conda_selected_metadata_does_not_import_or_expose_urls",
+        "exit_code": 1,
+        "log": "/tmp/isaac-host-tdd-mqptftt0/receipt.log",
+        "tests": 1,
+        "failures": 1,
+        "errors": 0,
+        "skipped": 0,
+        "passed": false
+      },
+      {
+        "method": "all",
+        "exit_code": 0,
+        "log": "/tmp/isaac-host-tdd-amtb82o4/receipt.log",
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": true
+      },
+      {
+        "method": "test_workspace_venv_dist_info_without_python_execution",
+        "exit_code": 1,
+        "log": "/tmp/isaac-host-tdd-xxyl27yz/receipt.log",
+        "tests": 1,
+        "failures": 1,
+        "errors": 0,
+        "skipped": 0,
+        "passed": false
+      },
+      {
+        "method": "all",
+        "exit_code": 0,
+        "log": "/tmp/isaac-host-tdd-h6r3fa5s/receipt.log",
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": true
+      },
+      {
+        "method": "test_cli_default_plan_has_no_target_reads_or_report_write",
+        "exit_code": 1,
+        "log": "/tmp/isaac-host-tdd-0tuq817y/receipt.log",
+        "tests": 1,
+        "failures": 1,
+        "errors": 0,
+        "skipped": 0,
+        "passed": false
+      },
+      {
+        "method": "all",
+        "exit_code": 1,
+        "log": "/tmp/isaac-host-tdd-slu6yui6/receipt.log",
+        "tests": 9,
+        "failures": 1,
+        "errors": 0,
+        "skipped": 0,
+        "passed": false
+      },
+      {
+        "method": "all",
+        "exit_code": 0,
+        "log": "/tmp/isaac-host-tdd-fkczam4i/receipt.log",
+        "tests": 9,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": true
+      },
+      {
+        "method": "test_cli_collect_creates_private_exclusive_report",
+        "exit_code": 1,
+        "log": "/tmp/isaac-host-tdd-daw2b8ml/receipt.log",
+        "tests": 1,
+        "failures": 1,
+        "errors": 0,
+        "skipped": 0,
+        "passed": false
+      },
+      {
+        "method": "all",
+        "exit_code": 0,
+        "log": "/tmp/isaac-host-tdd-o3i2uabt/receipt.log",
+        "tests": 10,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": true
+      },
+      {
+        "method": "test_cli_refuses_observed_output_trees_and_symlinks",
+        "exit_code": 1,
+        "log": "/tmp/isaac-host-tdd-ca1etitv/receipt.log",
+        "tests": 1,
+        "failures": 5,
+        "errors": 0,
+        "skipped": 0,
+        "passed": false
+      },
+      {
+        "method": "all",
+        "exit_code": 0,
+        "log": "/tmp/isaac-host-tdd-ds4r1n6u/receipt.log",
+        "tests": 11,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": true
+      },
+      {
+        "method": "test_incomplete_workspace_enumeration_never_selects_a_candidate",
+        "exit_code": 1,
+        "log": "/tmp/isaac-host-tdd-fon7ld8p/receipt.log",
+        "tests": 1,
+        "failures": 1,
+        "errors": 0,
+        "skipped": 0,
+        "passed": false
+      },
+      {
+        "method": "all",
+        "exit_code": 0,
+        "log": "/tmp/isaac-host-tdd-8o3kdtpe/receipt.log",
+        "tests": 12,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": true
+      },
+      {
+        "method": "test_external_git_worktree_is_explicitly_unsupported",
+        "exit_code": 1,
+        "log": "/tmp/isaac-host-tdd-0mhf9d8y/receipt.log",
+        "tests": 1,
+        "failures": 1,
+        "errors": 0,
+        "skipped": 0,
+        "passed": false
+      },
+      {
+        "method": "all",
+        "exit_code": 0,
+        "log": "/tmp/isaac-host-tdd-uexnydd0/receipt.log",
+        "tests": 13,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": true
+      },
+      {
+        "method": "test_invalid_limits_fail_before_output_creation",
+        "exit_code": 1,
+        "log": "/tmp/isaac-host-tdd-kag60ep0/receipt.log",
+        "tests": 1,
+        "failures": 4,
+        "errors": 0,
+        "skipped": 0,
+        "passed": false
+      },
+      {
+        "method": "all",
+        "exit_code": 0,
+        "log": "/tmp/isaac-host-tdd-j_kg2nr8/receipt.log",
+        "tests": 14,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": true
+      },
+      {
+        "method": "test_deadline_interrupts_a_stalled_selected_read",
+        "exit_code": 1,
+        "log": "/tmp/isaac-host-tdd-4_jfivzz/receipt.log",
+        "tests": 1,
+        "failures": 1,
+        "errors": 0,
+        "skipped": 0,
+        "passed": false
+      },
+      {
+        "method": "all",
+        "exit_code": 0,
+        "log": "/tmp/isaac-host-tdd-0n587mnq/receipt.log",
+        "tests": 15,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": true
+      },
+      {
+        "method": "test_os_release_symlink_uses_only_fixed_usr_lib_fallback",
+        "exit_code": 1,
+        "log": "/tmp/isaac-host-tdd-7v7m4wc_/receipt.log",
+        "tests": 1,
+        "failures": 1,
+        "errors": 0,
+        "skipped": 0,
+        "passed": false
+      },
+      {
+        "method": "all",
+        "exit_code": 0,
+        "log": "/tmp/isaac-host-tdd-rddu17fp/receipt.log",
+        "tests": 16,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": true
+      },
+      {
+        "method": "test_limits_use_positive_import_compatible_caps",
+        "exit_code": 1,
+        "log": "/tmp/isaac-host-tdd-gj41n1k3/receipt.log",
+        "tests": 1,
+        "failures": 8,
+        "errors": 0,
+        "skipped": 0,
+        "passed": false
+      },
+      {
+        "method": "all",
+        "exit_code": 0,
+        "log": "/tmp/isaac-host-tdd-782gn8ce/receipt.log",
+        "tests": 17,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": true
+      },
+      {
+        "method": "test_workspace_venv_dist_info_without_python_execution",
+        "exit_code": 1,
+        "log": "/tmp/isaac-host-tdd-3q8h4dkx/receipt.log",
+        "tests": 1,
+        "failures": 1,
+        "errors": 0,
+        "skipped": 0,
+        "passed": false
+      },
+      {
+        "method": "all",
+        "exit_code": 0,
+        "log": "/tmp/isaac-host-tdd-307uvjeb/receipt.log",
+        "tests": 17,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": true
+      },
+      {
+        "method": "test_cpu_models_have_import_compatible_bound",
+        "exit_code": 1,
+        "log": "/tmp/isaac-host-tdd-6wjc9qts/receipt.log",
+        "tests": 1,
+        "failures": 1,
+        "errors": 0,
+        "skipped": 0,
+        "passed": false
+      },
+      {
+        "method": "all",
+        "exit_code": 0,
+        "log": "/tmp/isaac-host-tdd-ke8lekgr/receipt.log",
+        "tests": 18,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": true
+      },
+      {
+        "method": "all",
+        "exit_code": 0,
+        "log": "/tmp/isaac-host-tdd-spxgtgl3/receipt.log",
+        "tests": 22,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": true
+      },
+      {
+        "method": "test_known_legacy_shadow_workspace_stays_ambiguous",
+        "exit_code": 1,
+        "log": "/tmp/isaac-host-tdd-0rotyi8s/receipt.log",
+        "tests": 1,
+        "failures": 1,
+        "errors": 0,
+        "skipped": 0,
+        "passed": false
+      },
+      {
+        "method": "all",
+        "exit_code": 0,
+        "log": "/tmp/isaac-host-tdd-alvtrm4s/receipt.log",
+        "tests": 23,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": true
+      },
+      {
+        "method": "test_plan_discloses_fixed_metadata_scope",
+        "exit_code": 1,
+        "log": "/tmp/isaac-host-tdd-ckv3f1xg/receipt.log",
+        "tests": 1,
+        "failures": 1,
+        "errors": 0,
+        "skipped": 0,
+        "passed": false
+      },
+      {
+        "method": "all",
+        "exit_code": 0,
+        "log": "/tmp/isaac-host-tdd-s4t26d37/receipt.log",
+        "tests": 24,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": true
+      },
+      {
+        "method": "test_git_default_section_does_not_fabricate_origin",
+        "exit_code": 1,
+        "log": "/tmp/isaac-host-tdd-yyqfhtll/receipt.log",
+        "tests": 1,
+        "failures": 1,
+        "errors": 0,
+        "skipped": 0,
+        "passed": false
+      },
+      {
+        "method": "all",
+        "exit_code": 0,
+        "log": "/tmp/isaac-host-tdd-tl93g72x/receipt.log",
+        "tests": 25,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": true
+      },
+      {
+        "method": "test_conflicting_environment_packages_remain_unknown",
+        "exit_code": 1,
+        "log": "/tmp/isaac-host-tdd-_pcqfr19/receipt.log",
+        "tests": 1,
+        "failures": 1,
+        "errors": 0,
+        "skipped": 0,
+        "passed": false
+      },
+      {
+        "method": "all",
+        "exit_code": 0,
+        "log": "/tmp/isaac-host-tdd-u537on_x/receipt.log",
+        "tests": 26,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": true
+      },
+      {
+        "method": "all",
+        "exit_code": 0,
+        "log": "/tmp/isaac-host-tdd-3hyi6jy0/receipt.log",
+        "tests": 26,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": true
+      }
+    ],
+    "red_green_note": "Incremental new feature/regression tests were run RED before production changes. Four final security verification tests exercised protections already present and passed without production changes. One attempted programmatic write was refused by read_file line-prefix guard; no file was corrupted, and the subsequent targeted patch passed."
+  },
+  "limitations": [
+    "No actual host execution, installation health, GPU query, Git status, or optional runtime qualification. Unsupported software/editable metadata keeps coverage incomplete.",
+    "Secure collection requires POSIX nofollow/descriptor operations and an available SIGALRM timer on the main thread; unavailable timeout support fails closed. Kernel-uninterruptible filesystem operations are not independently qualified.",
+    "Packed refs, external Git worktree/common directories, arbitrary Conda environments, alternative IsaacSim layouts and symlink CUDA roots are not followed; unresolved evidence remains a coverage gap.",
+    "Manual flags absent from selected APT records remain unknown; partial/oversized dpkg databases are not treated as complete.",
+    "Parent importer happy-path integration is parent-owned. Unusual path characters, unusually long environment/version labels and large nondefault inventories exceeding importer per-array cardinalities have not been qualified against its narrower validation; parent independent review should retain these as interoperability gaps.",
+    "The collector does not inherit the test runner Landlock/seccomp sandbox when copied to a host. Concurrent mount/ancestor rename adversaries and uninterruptible I/O have not received independent qualification."
+  ],
+  "follow_up": "Parent final bounded combined retest/import integration and independent boundary review; do not perform host collection automatically."
+}

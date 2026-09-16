@@ -1,0 +1,642 @@
+{
+  "passed": true,
+  "findings": [
+    {
+      "id": "STEP1-TOOL-LOCATION-FIX",
+      "severity": "info",
+      "blocking": false,
+      "status": "accepted",
+      "detail": "No definite implementation/security defect found in the narrow null-location fix. validate_tool defaults allow_unbound_location=False and still validates every non-null location through the supplied path validator. Only candidate tool-field validation opts in; the observed environment metadata contract is unchanged. Review deep-copies intent; rescan retains edited value separately from the observed suggested_value and immutable original_observed_roots. The new desired-profile regression checks both real mappers, invalid locations, unchanged original baseline, retained origin, accepted state and strict default validation. Retained tool RED fails exactly at the null-location edit; GREEN records 22 desired-profile and 25 metadata-reader tests with no failures/errors/skips.",
+      "source_refs": [
+        "isaac-installer/lib/core/metadata_readers.py:174-188",
+        "isaac-installer/lib/core/profile_discovery.py:579-591,627-709,857-918",
+        "src/tests/installer_desired_profile.test.py:253-303"
+      ],
+      "receipts": [
+        "/tmp/isaac-step1-5mfwjdlo/installer_desired_profile.log",
+        "/tmp/isaac-step1-kuv_do88/results.json"
+      ]
+    },
+    {
+      "id": "STEP1-WORKSPACE-ANCESTOR-FIX",
+      "severity": "info",
+      "blocking": false,
+      "status": "accepted",
+      "detail": "O_PATH|O_DIRECTORY|O_NOFOLLOW|O_CLOEXEC handles traverse and pin the absolute path components without asking for directory-list access on ancestors. Existing mode checks are retained. The selected inode alone is reopened as dot with O_RDONLY, O_DIRECTORY, O_NOFOLLOW and O_CLOEXEC; callers still get a readable directory FD. Missing components return None; other failures propagate. The regression intercepts actual os.open calls, rejects ancestor read opens, checks selected inode identity and successfully lists the final FD. The retained RED has that precise assertion failure and ancestor-root PermissionErrors under confinement; GREEN records workspace 30, named-safety 12 and migration-preview 12 independently, all successful.",
+      "source_refs": [
+        "isaac-installer/lib/core/workspace_paths.py:49-72",
+        "src/tests/installer_workspace_contract.test.py:18-38"
+      ],
+      "receipts": [
+        "/tmp/isaac-step1-h4fz1iub/installer_workspace_contract.log",
+        "/tmp/isaac-step1-d_75mkuc/results.json"
+      ]
+    },
+    {
+      "id": "STEP1-TEST-BOUNDARY-CLOSED",
+      "severity": "info",
+      "blocking": false,
+      "status": "resolved",
+      "detail": "The retained STEP1 runner has an explicit 19-suite selection and excludes BOTH evidence methods that load managed_apply. It does not use the broad default workflow runner. The current audit hook is installed before suite module execution; the preserved initial error traceback shows the second managed method was denied at the exec audit event before managed module code ran. This was a blocked import attempt, not a successful managed run or installation. Source shows non-root UID enforcement, no_new_privs, Landlock read-only repository/system grants plus selected temporary write authority, and seccomp denial of socket creation/network and listed escape operations. The retained control receipt reports denied outside read/write and network, successful inside write, UID 65534. These controls justify this trusted, bounded verification selection, not generic sandbox certification.",
+      "source_refs": [
+        ".agents/references/isaac-installer/verification/step1/isaac-step1-runner.py:18-28,39-81,83-123",
+        "src/tests/installer_plan_evidence.test.py:169-226"
+      ],
+      "receipts": [
+        "/tmp/isaac-step1-hi3ctpdx/installer_plan_evidence.log",
+        "/tmp/isaac-step1-ptww1ez4/controls.log"
+      ]
+    },
+    {
+      "id": "STEP1-CURRENT-FINAL-RECEIPT",
+      "severity": "info",
+      "blocking": false,
+      "status": "accepted_with_explicit_skips",
+      "detail": "The final retained /tmp/isaac-step1-ptww1ez4/results.json exactly matches the 19-suite allowlist/order. Its 267 reported tests comprise 265 passing tests and 2 root-only skips; every suite exits 0 with zero failures/errors. All 19 STEP1_RESULT log records agree with results.json. Skips are test_root_refuses_before_reading_inputs and test_root_entry_diagnostic_preserves_inherited_regular_stderr because this runner drops root. No totals from earlier overlapping runs were added. This is receipt inspection, not independent execution. The durable tests/results.json and all durable test logs match the final temporary receipts byte-for-byte. All 39 source-fingerprints.json hashes match current source bytes; this adds source identity evidence, not new behavioral testing.",
+      "receipts": [
+        "/tmp/isaac-step1-ptww1ez4/results.json",
+        "/workspaces/IsaacAutomator/.agents/references/isaac-installer/verification/step1/tests/results.json",
+        "/workspaces/IsaacAutomator/.agents/references/isaac-installer/verification/step1/source-fingerprints.json"
+      ]
+    },
+    {
+      "id": "STEP1-CHAIN-COVERAGE-CLOSED",
+      "severity": "info",
+      "blocking": false,
+      "status": "resolved",
+      "detail": "The demo source makes real subprocess CLI calls and checks exact exit codes, private written artifacts and written status rather than accepting mere file existence or either exit code. Its retained commands show 10 CLI steps: selected synthetic metadata observation, explicit review, rescan, YAML export, JSON export, both renderers, dry-run, target metadata and evidence-backed dry-run. Direct receipt comparisons confirm initially no accepted fields; unchanged baseline on review; retained accepted intent/original roots on rescan; nonempty enabled Sim/Lab YAML; exact repository and commit, standalone version/URL/checksum, Lab environment/Python, optional custom-tool pin, concrete target paths and public flags across mappings and the legacy parser. Both renderers have no blockers and preserve apply_supported/runtime_verified/references_verified/execution_authorized=false. Plans preserve all actions: existing directories satisfied, existing Lab checkout blocked, absent Sim would_change, disabled components excluded and runtime prefixes unknown. Both dry-runs exit 2 without execution authorization. No source checkout, download, playbook execution or native install is demonstrated. Final acceptance uses /tmp/isaac-step1-demo-j0pu_ozq/reports, not the earlier demo. I independently reconstructed all 11 comparison triplets from its raw artifacts/plans/parser output; they exactly equal durable demo/11-consumer-agreement.json and each triplet agrees. Current review/rescan, exact sources/targets, complete nonempty selection, false authorization flags, statuses and unmanaged target metadata were independently cross-checked again from retained JSON. Durable demo copies are byte-identical to this final run.",
+      "source_refs": [
+        ".agents/references/isaac-installer/verification/step1/isaac-step1-demo.py:24-149",
+        "src/python/profile_adapters.py:112-165,172-276,306-338,402-409",
+        "isaac-installer/lib/core/profile_workflow.py:77-109"
+      ],
+      "receipts": [
+        "/tmp/isaac-step1-demo-j0pu_ozq/reports/commands.json",
+        "/tmp/isaac-step1-demo-j0pu_ozq/reports/summary.json",
+        "/workspaces/IsaacAutomator/.agents/references/isaac-installer/verification/step1/demo/11-consumer-agreement.json"
+      ]
+    },
+    {
+      "id": "STEP1-PUBLIC-FLAGS-TEMPLATE-SCOPE",
+      "severity": "info",
+      "blocking": false,
+      "status": "source_mapping_only",
+      "detail": "Source/receipts retain public_git_profile=True in both artifacts and CFG_PUBLIC_GIT_PROFILE=true after the actual legacy parser. The local Git branch refuses existing destinations/updates; the Ansible Lab template selects the public-git task and suppresses legacy clone/upstream branches for this flag. Public Git helper source uses a clean environment, disabled credential helpers/prompts, system/global config isolation and HTTPS-only settings. The base inventory template does not itself list the flag: deployer.create_ansible_inventory appends the validated software artifact into child-group variables. This is bounded flag/template wiring review only, not native/playbook/cloud transport execution or full installation safety acceptance.",
+      "source_refs": [
+        "isaac-installer/lib/core/git_workspace.sh:185-190,360-380",
+        "src/python/public_git.py:32-57",
+        "src/python/deployer.py:818-833,923-933",
+        "src/ansible/roles/isaaclab-source/tasks/install.yml:17-23,47-55,76-83",
+        "src/ansible/roles/public-git/tasks/source.yml:1-54"
+      ]
+    }
+  ],
+  "reviewed_files": [
+    {
+      "path": "/tmp/isaac-step1-5mfwjdlo/installer_desired_profile.log",
+      "sha256": "2da456bb124b93ce21a441b2391f43652ddf6ae5a1d0c740cbbd51c575c8027a"
+    },
+    {
+      "path": "/tmp/isaac-step1-d_75mkuc/installer_migration_preview.log",
+      "sha256": "7c8542a76fb08ba33a712a102352c27ec3722daa9afb4e3024a1cb6dc8669faa"
+    },
+    {
+      "path": "/tmp/isaac-step1-d_75mkuc/installer_named_safety.log",
+      "sha256": "24c7deb4e9929f47bd886f213dfeb230d74e2dd496eca76d706e5f5672e7e06a"
+    },
+    {
+      "path": "/tmp/isaac-step1-d_75mkuc/installer_workspace_contract.log",
+      "sha256": "eae4c4b81117afc71ab80015464d2795063ae454888ac397063b4445af47aa8c"
+    },
+    {
+      "path": "/tmp/isaac-step1-d_75mkuc/results.json",
+      "sha256": "fac49d809df2c2ef3e620d0c75514499ebe77939625708050d509e9bd687d321"
+    },
+    {
+      "path": "/tmp/isaac-step1-demo-j0pu_ozq/reports/01-observed.json",
+      "sha256": "ba3a2c2ce5c4f991ab597faec1c37984360c4f40c7374617f89b97556724b9e5"
+    },
+    {
+      "path": "/tmp/isaac-step1-demo-j0pu_ozq/reports/02-decisions.json",
+      "sha256": "8c8b71892f7db5e7eca8c31bcd508e5ef2175656079cfada8ab89a1319e10a1a"
+    },
+    {
+      "path": "/tmp/isaac-step1-demo-j0pu_ozq/reports/03-reviewed.json",
+      "sha256": "40ab5c20b2d5f9c4b287afe5c16a058a0559c2eb194cd8286e8d5fe15fdb5d65"
+    },
+    {
+      "path": "/tmp/isaac-step1-demo-j0pu_ozq/reports/04-rescanned.json",
+      "sha256": "49f36732b07e5ba31d3e10736976f76a9bf2fe18d81a47d9c345afc54a7acd25"
+    },
+    {
+      "path": "/tmp/isaac-step1-demo-j0pu_ozq/reports/05-desired.yaml",
+      "sha256": "27aefc2f888cc71b27d076dfef2812924de011e1666192ad4f60c850126f9742"
+    },
+    {
+      "path": "/tmp/isaac-step1-demo-j0pu_ozq/reports/06-export-review.json",
+      "sha256": "3cb5940d49701dc390ee42175f4e50205383ca2bfb3a916d2036d3ad2d515d98"
+    },
+    {
+      "path": "/tmp/isaac-step1-demo-j0pu_ozq/reports/07-local.json",
+      "sha256": "543bf7f7a6f931f55d5534cdd083730cb7b4d6b15501855de3e9d4caba42e5cc"
+    },
+    {
+      "path": "/tmp/isaac-step1-demo-j0pu_ozq/reports/08-ansible.json",
+      "sha256": "8218357fb5bf4a48ccf46df0bce59bbe4fcf4dcc6a18600fcc6bda156e3c9e9c"
+    },
+    {
+      "path": "/tmp/isaac-step1-demo-j0pu_ozq/reports/09-dry-run.json",
+      "sha256": "56824ad6763da4a25c57f5850636e6923f30c467cab5ed97498327c76ad7b02c"
+    },
+    {
+      "path": "/tmp/isaac-step1-demo-j0pu_ozq/reports/09b-target-metadata.json",
+      "sha256": "6342c97b158d28c9d7eda2d030371e04c27785df3f17290d154fdc47a27d4444"
+    },
+    {
+      "path": "/tmp/isaac-step1-demo-j0pu_ozq/reports/09c-dry-run-with-evidence.json",
+      "sha256": "bfa4c00210a622c61b1e833719d76710a14b9e9dcd63d40cbcffecbce4847e31"
+    },
+    {
+      "path": "/tmp/isaac-step1-demo-j0pu_ozq/reports/10-legacy-parser.json",
+      "sha256": "0ddd5977960bb0e7b78fdf970229aee17683d5d133b8605d01a31019903325aa"
+    },
+    {
+      "path": "/tmp/isaac-step1-demo-j0pu_ozq/reports/commands.json",
+      "sha256": "ecb7603ecca77a7390413f9bd74073030fbfe4af04203f3fbd596589ea4a8e07"
+    },
+    {
+      "path": "/tmp/isaac-step1-demo-j0pu_ozq/reports/summary.json",
+      "sha256": "39fd57289de6c5a528ed1696feb62695728cda4a5914f0142d6cc4d4a98b519a"
+    },
+    {
+      "path": "/tmp/isaac-step1-demo.py",
+      "sha256": "21dec29daece38d50e3795579b4a17c07631737b5a6e81e0e2409d0d9112c0d4"
+    },
+    {
+      "path": "/tmp/isaac-step1-h4fz1iub/installer_workspace_contract.log",
+      "sha256": "568649fba25ac28960c16174fac650afba518bff793495630b04943d304ed77e"
+    },
+    {
+      "path": "/tmp/isaac-step1-hi3ctpdx/installer_plan_evidence.log",
+      "sha256": "4812526742409b10c8f337add935636ad7085e5961d0ef3e6a16ee4edbbb4414"
+    },
+    {
+      "path": "/tmp/isaac-step1-independent-review.json",
+      "sha256": "2d9386096566f7b328bd6e8dc6054ff30ac27ec5046f5cf6bb67445ffa656a6d"
+    },
+    {
+      "path": "/tmp/isaac-step1-kuv_do88/installer_desired_profile.log",
+      "sha256": "071917ea2f51fbf73bdb7277039ee4b982d80858664e57ec5388135ae68f9815"
+    },
+    {
+      "path": "/tmp/isaac-step1-kuv_do88/installer_metadata_readers.log",
+      "sha256": "c1650f064d19065285e76bafa192b5dc8510d514ee2d79bb0c98d65b273c36d4"
+    },
+    {
+      "path": "/tmp/isaac-step1-kuv_do88/results.json",
+      "sha256": "c3c080cae07eb5e95bdb2fa6ba727a3a8f3f09f454cf74a21e1981530326da8e"
+    },
+    {
+      "path": "/tmp/isaac-step1-ptww1ez4/controls.log",
+      "sha256": "bd9ee2e45552f4fc112c1565605c78efb7b2f7222354c47679beccbbab4791e8"
+    },
+    {
+      "path": "/tmp/isaac-step1-ptww1ez4/installer_action_plan.log",
+      "sha256": "5d84da55dcd1351f25f8159edf091fdaa444af2c3ced7b109100538fa7b9f5b7"
+    },
+    {
+      "path": "/tmp/isaac-step1-ptww1ez4/installer_desired_profile.log",
+      "sha256": "62c39ece0978c13bd69e94fc11efdb02f768fc479294db27a57693a10eaa86d7"
+    },
+    {
+      "path": "/tmp/isaac-step1-ptww1ez4/installer_discovery.log",
+      "sha256": "087b16643789e734e373ceed6dd8ba5b28521157bc0f336d660b34587af4b6ef"
+    },
+    {
+      "path": "/tmp/isaac-step1-ptww1ez4/installer_discovery_cli.log",
+      "sha256": "c9afdb9066268ffe6019d42fb2a03c8fad08612b75e00525a2ffacf22b493a15"
+    },
+    {
+      "path": "/tmp/isaac-step1-ptww1ez4/installer_export_conflict.log",
+      "sha256": "77f015665029b3af9356e79e575a29593e0a56428922083932a93fe61c786a35"
+    },
+    {
+      "path": "/tmp/isaac-step1-ptww1ez4/installer_metadata_readers.log",
+      "sha256": "2aac38445eec465267695f460ce757d44639e545cfb758ffd2bea7d2d478703e"
+    },
+    {
+      "path": "/tmp/isaac-step1-ptww1ez4/installer_migration_preview.log",
+      "sha256": "61c1d235e87e7e54eee1b7498ae30223ba788a6cdd3f6180a3ef9c91a33c072d"
+    },
+    {
+      "path": "/tmp/isaac-step1-ptww1ez4/installer_named_safety.log",
+      "sha256": "afe1aa1d20ce39a5c999f991686cdf42e59981f73ffaa0595f2f1d329eb87e24"
+    },
+    {
+      "path": "/tmp/isaac-step1-ptww1ez4/installer_output_entry.log",
+      "sha256": "3358f0af6607519ea060fb025cabb9c3d873d5bb021f5359b82cbaea15470a11"
+    },
+    {
+      "path": "/tmp/isaac-step1-ptww1ez4/installer_plan_evidence.log",
+      "sha256": "e7333d4e373db752f1a24f6187c1bcbdc87f23463504c04a135857bca7514124"
+    },
+    {
+      "path": "/tmp/isaac-step1-ptww1ez4/installer_profile_read_boundary.log",
+      "sha256": "a36267f58dc0e49b5d1c49d880a3518a99f906eaaf081dbdbe659b16c3f0794b"
+    },
+    {
+      "path": "/tmp/isaac-step1-ptww1ez4/installer_profile_workflow.log",
+      "sha256": "c5cc16c91e5cf16d656c0c81d86347066f063d59cca0bd5b6022317e78e64e72"
+    },
+    {
+      "path": "/tmp/isaac-step1-ptww1ez4/installer_report_writer.log",
+      "sha256": "3dbfbaf00c2d235198c7a57019a2975cc890682b7c0b6e4897573d217c837b2e"
+    },
+    {
+      "path": "/tmp/isaac-step1-ptww1ez4/installer_target_observation.log",
+      "sha256": "0d15e332668822459977ba4f2a3ed66c5b2a1c322982eba7ef7556bc3880372d"
+    },
+    {
+      "path": "/tmp/isaac-step1-ptww1ez4/installer_workspace_contract.log",
+      "sha256": "65a55a848eeb2e77c7d9ab32560f58363b9677a596183637a9d9974439bf0070"
+    },
+    {
+      "path": "/tmp/isaac-step1-ptww1ez4/installer_writer_history.log",
+      "sha256": "d9c64b98ae38e1f24f9de85cab2b8e1fa580c39840ee453062f2e1d04c41c1ae"
+    },
+    {
+      "path": "/tmp/isaac-step1-ptww1ez4/profile_adapters.log",
+      "sha256": "0a7244f5ecd9999e28ef7cfad7abe65bbdc826223b7732d8f378d32639da4e11"
+    },
+    {
+      "path": "/tmp/isaac-step1-ptww1ez4/results.json",
+      "sha256": "593ca803f8409678f1f05ff9c3dab1a3ad2a817cfc0fe30739f8aa2b143702e4"
+    },
+    {
+      "path": "/tmp/isaac-step1-ptww1ez4/workstation_profile.log",
+      "sha256": "dfe39628cee82b5ab8836b26f60a3aee5f4b4054da85c7f6aaa6e4b488ce5753"
+    },
+    {
+      "path": "/tmp/isaac-step1-ptww1ez4/workstation_profile_extensions.log",
+      "sha256": "0706e7ce5c6af8eed649f64f170f023202d3af838265314861525e84ad769e20"
+    },
+    {
+      "path": "/tmp/isaac-step1-runner.py",
+      "sha256": "a11704a3f5370e96c691220ab4bf1dd46480d8928b8a46e4b2042a6ee13fc2cf"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/.agents/references/isaac-installer/verification/step1/demo/01-observed.json",
+      "sha256": "ba3a2c2ce5c4f991ab597faec1c37984360c4f40c7374617f89b97556724b9e5"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/.agents/references/isaac-installer/verification/step1/demo/02-decisions.json",
+      "sha256": "8c8b71892f7db5e7eca8c31bcd508e5ef2175656079cfada8ab89a1319e10a1a"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/.agents/references/isaac-installer/verification/step1/demo/03-reviewed.json",
+      "sha256": "40ab5c20b2d5f9c4b287afe5c16a058a0559c2eb194cd8286e8d5fe15fdb5d65"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/.agents/references/isaac-installer/verification/step1/demo/04-rescanned.json",
+      "sha256": "49f36732b07e5ba31d3e10736976f76a9bf2fe18d81a47d9c345afc54a7acd25"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/.agents/references/isaac-installer/verification/step1/demo/05-desired.yaml",
+      "sha256": "27aefc2f888cc71b27d076dfef2812924de011e1666192ad4f60c850126f9742"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/.agents/references/isaac-installer/verification/step1/demo/06-export-review.json",
+      "sha256": "3cb5940d49701dc390ee42175f4e50205383ca2bfb3a916d2036d3ad2d515d98"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/.agents/references/isaac-installer/verification/step1/demo/07-local.json",
+      "sha256": "543bf7f7a6f931f55d5534cdd083730cb7b4d6b15501855de3e9d4caba42e5cc"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/.agents/references/isaac-installer/verification/step1/demo/08-ansible.json",
+      "sha256": "8218357fb5bf4a48ccf46df0bce59bbe4fcf4dcc6a18600fcc6bda156e3c9e9c"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/.agents/references/isaac-installer/verification/step1/demo/09-dry-run.json",
+      "sha256": "56824ad6763da4a25c57f5850636e6923f30c467cab5ed97498327c76ad7b02c"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/.agents/references/isaac-installer/verification/step1/demo/09b-target-metadata.json",
+      "sha256": "6342c97b158d28c9d7eda2d030371e04c27785df3f17290d154fdc47a27d4444"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/.agents/references/isaac-installer/verification/step1/demo/09c-dry-run-with-evidence.json",
+      "sha256": "bfa4c00210a622c61b1e833719d76710a14b9e9dcd63d40cbcffecbce4847e31"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/.agents/references/isaac-installer/verification/step1/demo/10-legacy-parser.json",
+      "sha256": "0ddd5977960bb0e7b78fdf970229aee17683d5d133b8605d01a31019903325aa"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/.agents/references/isaac-installer/verification/step1/demo/11-consumer-agreement.json",
+      "sha256": "59d3b988bb012c83cc369f87c6262e4367a57fd9b2bd7cbfaed4e4d5df916478"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/.agents/references/isaac-installer/verification/step1/demo/commands.json",
+      "sha256": "ecb7603ecca77a7390413f9bd74073030fbfe4af04203f3fbd596589ea4a8e07"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/.agents/references/isaac-installer/verification/step1/demo/summary.json",
+      "sha256": "39fd57289de6c5a528ed1696feb62695728cda4a5914f0142d6cc4d4a98b519a"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/.agents/references/isaac-installer/verification/step1/isaac-step1-demo.py",
+      "sha256": "768bef0aa648014ad51ff79d1a4655be4f1f56562c2f63f061d5fee0e4ae2de7"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/.agents/references/isaac-installer/verification/step1/isaac-step1-runner.py",
+      "sha256": "1b275aff34c170d258488a07ec27fd26f54b8dea575f8785eb7bdb7e38b7bd22"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/.agents/references/isaac-installer/verification/step1/source-fingerprints.json",
+      "sha256": "13c410acd68da4b1d28957a9a22a8bc02ca290a4a28a1fb75c54c6079da8a7e2"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/.agents/references/isaac-installer/verification/step1/tests/controls.log",
+      "sha256": "bd9ee2e45552f4fc112c1565605c78efb7b2f7222354c47679beccbbab4791e8"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/.agents/references/isaac-installer/verification/step1/tests/installer_action_plan.log",
+      "sha256": "5d84da55dcd1351f25f8159edf091fdaa444af2c3ced7b109100538fa7b9f5b7"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/.agents/references/isaac-installer/verification/step1/tests/installer_desired_profile.log",
+      "sha256": "62c39ece0978c13bd69e94fc11efdb02f768fc479294db27a57693a10eaa86d7"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/.agents/references/isaac-installer/verification/step1/tests/installer_discovery.log",
+      "sha256": "087b16643789e734e373ceed6dd8ba5b28521157bc0f336d660b34587af4b6ef"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/.agents/references/isaac-installer/verification/step1/tests/installer_discovery_cli.log",
+      "sha256": "c9afdb9066268ffe6019d42fb2a03c8fad08612b75e00525a2ffacf22b493a15"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/.agents/references/isaac-installer/verification/step1/tests/installer_export_conflict.log",
+      "sha256": "77f015665029b3af9356e79e575a29593e0a56428922083932a93fe61c786a35"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/.agents/references/isaac-installer/verification/step1/tests/installer_metadata_readers.log",
+      "sha256": "2aac38445eec465267695f460ce757d44639e545cfb758ffd2bea7d2d478703e"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/.agents/references/isaac-installer/verification/step1/tests/installer_migration_preview.log",
+      "sha256": "61c1d235e87e7e54eee1b7498ae30223ba788a6cdd3f6180a3ef9c91a33c072d"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/.agents/references/isaac-installer/verification/step1/tests/installer_named_safety.log",
+      "sha256": "afe1aa1d20ce39a5c999f991686cdf42e59981f73ffaa0595f2f1d329eb87e24"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/.agents/references/isaac-installer/verification/step1/tests/installer_output_entry.log",
+      "sha256": "3358f0af6607519ea060fb025cabb9c3d873d5bb021f5359b82cbaea15470a11"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/.agents/references/isaac-installer/verification/step1/tests/installer_plan_evidence.log",
+      "sha256": "e7333d4e373db752f1a24f6187c1bcbdc87f23463504c04a135857bca7514124"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/.agents/references/isaac-installer/verification/step1/tests/installer_profile_read_boundary.log",
+      "sha256": "a36267f58dc0e49b5d1c49d880a3518a99f906eaaf081dbdbe659b16c3f0794b"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/.agents/references/isaac-installer/verification/step1/tests/installer_profile_workflow.log",
+      "sha256": "c5cc16c91e5cf16d656c0c81d86347066f063d59cca0bd5b6022317e78e64e72"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/.agents/references/isaac-installer/verification/step1/tests/installer_report_writer.log",
+      "sha256": "3dbfbaf00c2d235198c7a57019a2975cc890682b7c0b6e4897573d217c837b2e"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/.agents/references/isaac-installer/verification/step1/tests/installer_target_observation.log",
+      "sha256": "0d15e332668822459977ba4f2a3ed66c5b2a1c322982eba7ef7556bc3880372d"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/.agents/references/isaac-installer/verification/step1/tests/installer_workspace_contract.log",
+      "sha256": "65a55a848eeb2e77c7d9ab32560f58363b9677a596183637a9d9974439bf0070"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/.agents/references/isaac-installer/verification/step1/tests/installer_writer_history.log",
+      "sha256": "d9c64b98ae38e1f24f9de85cab2b8e1fa580c39840ee453062f2e1d04c41c1ae"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/.agents/references/isaac-installer/verification/step1/tests/profile_adapters.log",
+      "sha256": "0a7244f5ecd9999e28ef7cfad7abe65bbdc826223b7732d8f378d32639da4e11"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/.agents/references/isaac-installer/verification/step1/tests/results.json",
+      "sha256": "593ca803f8409678f1f05ff9c3dab1a3ad2a817cfc0fe30739f8aa2b143702e4"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/.agents/references/isaac-installer/verification/step1/tests/workstation_profile.log",
+      "sha256": "dfe39628cee82b5ab8836b26f60a3aee5f4b4054da85c7f6aaa6e4b488ce5753"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/.agents/references/isaac-installer/verification/step1/tests/workstation_profile_extensions.log",
+      "sha256": "0706e7ce5c6af8eed649f64f170f023202d3af838265314861525e84ad769e20"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/isaac-installer/bin/isaac-installer",
+      "sha256": "b21fd5aa906669cc392d66fe9d72a13956a3155589d9da6875cd1df3fe548e4d"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/isaac-installer/lib/core/action_plan.py",
+      "sha256": "92e5d89c4f57da118cb747a0cce74e625da8c070e0a634417c02c6fa4ef2e543"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/isaac-installer/lib/core/desired_profile.py",
+      "sha256": "57a8af6abdbd9128de51e630245a85a9b29add92fbd54648f0eaab50838ffe97"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/isaac-installer/lib/core/discovery_cli.py",
+      "sha256": "fcbb27ff3a6e3ac04018d3569dc252fcd31241de144e6885b7bed17e1f9c10ce"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/isaac-installer/lib/core/git_workspace.sh",
+      "sha256": "7d53d35f8e22a5f8c6f90293730ee8a0371123855d18e590d3e8622188800eeb"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/isaac-installer/lib/core/metadata_readers.py",
+      "sha256": "7e006d3c3cdca265a95836601b07d5c7e650c778b2565dbe8631514473eae182"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/isaac-installer/lib/core/migration_preview.py",
+      "sha256": "8f6a6aee8c6e0f934367eb0906ac574c0377e8d2b211c068c246d42fd0670e6c"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/isaac-installer/lib/core/plan_evidence.py",
+      "sha256": "a5e09926a1aacfd07d46b3ee5c0906bd807b480aaf0fe87127156e9e5df26695"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/isaac-installer/lib/core/preview_sandbox.py",
+      "sha256": "e59f4d2fd50e6a554249f42b1d22e915f686824895c77cf6197af694c022728f"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/isaac-installer/lib/core/profile_discovery.py",
+      "sha256": "a71620f014aae49c72c9f7226bdb7babf6d0f1b0810793c414bf557255bb5e93"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/isaac-installer/lib/core/profile_output.py",
+      "sha256": "4c3e64b7ff88db6c53f163d9a12bc74c7aa83ee40f46a2c85fee6459f5f901e1"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/isaac-installer/lib/core/profile_parser.py",
+      "sha256": "fb1430b92aa5a45993b57e9bdb0d5db8d1bf4769e18e3559220858b83cfc6c96"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/isaac-installer/lib/core/profile_workflow.py",
+      "sha256": "3f29380fd1e9912853fa9bef9fb18de1959b932bbb36047dd8799370ebd89b6f"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/isaac-installer/lib/core/report_writer.py",
+      "sha256": "4a1dec2a2a5cfb7d2c8f2adc78976c9cd598ebd0c8f4cd03d192f43fcc51f18e"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/isaac-installer/lib/core/safe_preview.py",
+      "sha256": "dc574d10f83f239e116784f6ad3c4f66af7c7389bd17958dbce54036a1a0a6fe"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/isaac-installer/lib/core/target_observation.py",
+      "sha256": "8fc336d3108d65fd3657f421c375cce47c48a66a76114d530f90dd4a9d7f0e72"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/isaac-installer/lib/core/workspace_paths.py",
+      "sha256": "685abd283ce40907880461aa88a8db38d37f3f2d314af11b56379717c10d1364"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/src/ansible/inventory.template",
+      "sha256": "31ed2722adf84744e28c8c74c56abe8d91c78e43fbd4b39a30c946d5b81b03b7"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/src/ansible/roles/isaaclab-source/tasks/install.yml",
+      "sha256": "e271b107ed614e91be6a71a1df0fc8772608c2cc6957ff138100ad56ef0341ba"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/src/ansible/roles/isaacsim-source/tasks/standalone.yml",
+      "sha256": "3afe6479f43a3a54b44d1a50af61696a587fe52968fa08d59d19eaedb1daa37d"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/src/ansible/roles/public-git/tasks/source.yml",
+      "sha256": "ded050cf479cb8157dc645c8affbad368e885c7096bdf1f87abba37c7d3193e4"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/src/python/deploy_command.py",
+      "sha256": "5ecda253856412583233fec239c83b6e110fce31fab5d5f637f55ce3ab3d8bab"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/src/python/deployer.py",
+      "sha256": "9fcebaff7c84bf8adc94feae06708efeebc95f737da33df5b104ccc87b7a57e6"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/src/python/profile_adapters.py",
+      "sha256": "8449d69203202fb2936069c2e7a5a6c2220487da5e30f7eb03ef82dd16e9df7b"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/src/python/public_git.py",
+      "sha256": "e304006e30afda75c62ef2c2a06334aef11b03dc5b6248916c631d2a964f9a9a"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/src/python/workstation_profile.py",
+      "sha256": "c90a1ff5bd4ca77a28efb16a26220507b53e19c92fc9cf26140bca8162b829cd"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/src/tests/installer_action_plan.test.py",
+      "sha256": "1defc2e75c394844d64ed48736b683096b9a8d6c099c33ea4bc7748ee007a27c"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/src/tests/installer_desired_profile.test.py",
+      "sha256": "fab9113e7d46bcb93e81d9bab7f9b1d29e2803ea4cce621836c9665867662d0d"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/src/tests/installer_discovery.test.py",
+      "sha256": "70d78720cf0b0ef0fe6acf08a7bb05a6991352018781b45c2f7834ca3bf90210"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/src/tests/installer_discovery_cli.test.py",
+      "sha256": "746318b1ccbae192d4818d31524462d2ee34ceb9591a0b78acf7240780a7e53c"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/src/tests/installer_export_conflict.test.py",
+      "sha256": "4a631c2528f6c9a7cb451386761608830567888e976840e16dd066cc55d16bdc"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/src/tests/installer_metadata_readers.test.py",
+      "sha256": "ff5131b7a203f80c9f15c9c644aad14d0c0c41c6d75409b8a811d45fadfa44e3"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/src/tests/installer_migration_preview.test.py",
+      "sha256": "69623be9dc71e43033b7279c1c78249bbe296b235b526ac25558b498a21a1767"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/src/tests/installer_named_safety.test.py",
+      "sha256": "8f8b0abb2be34997f960e0863f4daab43561030d2bbcabee0af4c0559b540173"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/src/tests/installer_output_entry.test.py",
+      "sha256": "2508705a68fa9433cf662cd029fef0f64a385e79a115d61927ba55c94fe545f4"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/src/tests/installer_plan_evidence.test.py",
+      "sha256": "a9d7bcdbcf584bfd77ca79af6bd8b5b6e537495a04c9b7f53573426cb15dc72b"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/src/tests/installer_profile_read_boundary.test.py",
+      "sha256": "9e16e8e9080ed8b55f6f0cfb047155889812d49c06f486ef554f19310dc4949d"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/src/tests/installer_profile_workflow.test.py",
+      "sha256": "711f39951a309f2bc16778c7725c280e453a844c31491eb0998518a8f5ddcf19"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/src/tests/installer_report_writer.test.py",
+      "sha256": "7f06eec5b90e5321ec6c71f741a8bb315bdb113d1582129a84f1173f81a1fe7e"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/src/tests/installer_target_observation.test.py",
+      "sha256": "883c028e26a5852bd8c4ee1bfe19ed5a1dbe63b38b6cc82dd777d7cc9ef480a1"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py",
+      "sha256": "30a45ae07a2d94f90f8efc80b55dab321ccb0b3ee28009723197db22e399fa43"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/src/tests/installer_writer_history.test.py",
+      "sha256": "bc6e60907fff34a46a34415f69fefbd4c77e4776c67470e2bc33b4a5fb66eaf0"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/src/tests/profile_adapter_transport.test.py",
+      "sha256": "d55cb91bc40bd8efa9a7add4c0ca882d9d87a571c03f99f4b9d287279769c791"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/src/tests/profile_adapters.test.py",
+      "sha256": "fb757a06cf1fcd0ad1b10240998631abc8a59fefaa01203e80317c7008fb0b8c"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/src/tests/workstation_profile.test.py",
+      "sha256": "bab10c4251dc34fa44be6ccd0d82768145b3542400d55808e19aa7fcea6a8b69"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/src/tests/workstation_profile_extensions.test.py",
+      "sha256": "1a55b22cfa51a5fdc6dd7997b2dc978578ccb9dbb0fd814715191eb2fb8ac1b4"
+    }
+  ],
+  "limitations": [
+    "Verdict is limited to the approved STEP1 implementation/review-export-render-concrete-preview chain and the narrow new fixes. No blocking actual bug was established. Missing native, cloud, managed apply, GPU/runtime, source reachability or full no-change installation qualification is not treated as STEP1 implementation failure.",
+    "Only source text and retained report/log bytes were read; Python stdlib AST/JSON/hash/diff processing was used. No tests, subprocess probes, project imports, managed imports, fixture creation, installer calls, real observation, network, Git, settings/credentials/workstation inspection or repository edits were performed by this reviewer. The only file written is /tmp/isaac-step1-final-review.json.",
+    "Current-source hashes identify bytes at review time, not a frozen tree or cryptographically attested historical execution. Comparison against all initial audit fingerprints found changes only in metadata_readers.py, profile_discovery.py, workspace_paths.py and installer_desired_profile.test.py among that original list; the new workspace test and verification scripts were additionally inspected.",
+    "Retained /tmp runner/demo copies differ from checked-in verification copies by added spec/loader assertions and demo import profile_parser becoming importlib.import_module(\"profile_parser\"). Those textual differences were reviewed as equivalent successful-path loading, not silently represented as byte-identical test provenance. No new execution of checked-in copies was performed.",
+    "Source extent: full narrow helper/desired bridge/profile workflow and runner/demo text; candidate validation/review/rescan/origin sections; new regression methods and related evidence-method boundaries; targeted mapper/parser/output/predispatch and public-flag/template transport sections. Fingerprinting the remaining bytes of these files does not certify every legacy/native/deployment behavior in them. Initial broad audit remains secondary context.",
+    "Runner controls are bounded trusted-code verification controls, not a hostile-code/general sandbox certificate. Landlock has explicit trusted repository, /usr and library aliases, selected temp, loader/localtime and /dev/null exceptions; temporary rights include executable fixture seams. Audit hook is a same-interpreter Python guard, not a universal subprocess import restriction. Root-only tests were skipped, not passed.",
+    "Demo observation uses synthetic HEAD/config and environment metadata, not a valid fetched Git revision or installed environment. The example archive URL/hash and Git commit do not prove public reachability, authenticity, buildability or native runtime conformance. No managed ownership was fabricated and target metadata stays managed=false.",
+    "Non-mutation evidence is specifically the demo assertion comparing fixture regular-file content hashes/modes and checking that the precreated empty target home stays empty. This does not prove all directory metadata, timestamps, ACLs, arbitrary links or an actual workstation remained unchanged. The target-home directory was deliberately created before CLI calls solely for the writer exclusion-root contract; installation_targets_created=false must not be read as no fixture directory creation.",
+    "Custom-tool success is mapper and legacy-parser acceptance of an optional exact PyPI dependency using location=null. Required unsupported declarations remain gated; the concrete planner still labels package/runtime execution unqualified. This does not establish package availability, installation, dependency compatibility or playbook/native consumer acceptance.",
+    "A concrete dry-run with blocked/unknown/would_change statuses is not a converged all-satisfied workstation. Runtime prefix unknowns, absent Sim changes and blocked existing checkout are correct retained boundaries here. No authorization is inferred for a real workstation scan or any work beyond STEP1.",
+    "One targeted search used a nonexistent deployers.py spelling; it returned the existing deployer.py alternative, which was then read. Broad/truncated outputs were followed by targeted reads or JSON processing; no execution fallback was used.",
+    "Final update: /tmp/isaac-step1-ptww1ez4 and /tmp/isaac-step1-demo-j0pu_ozq are the primary current acceptance receipts. Earlier RED logs are retained solely for regression causality; the denied initial managed import is retained solely for the guard boundary. No failed intermediate expanded run is presented as the final result. The initially inspected 03lxxwmf demo is superseded by the final j0pu_ozq artifact checks. The parent states there were no production edits since the final run; independent fingerprint comparison found no mismatch among all 39 recorded files. Additional source rows from that manifest are hash-only provenance unless included in the source extents above."
+  ]
+}

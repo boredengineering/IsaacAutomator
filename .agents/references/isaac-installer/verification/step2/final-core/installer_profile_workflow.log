@@ -1,0 +1,15 @@
+STEP1_RESULT {"suite": "installer_profile_workflow", "tests": 9, "skipped": 0, "failures": 0, "errors": 0, "passed": true}
+test_desired_profile_reaches_concrete_plan_without_target_reads_or_writes (step1_installer_profile_workflow.ProfileWorkflowTests) ... ok
+test_explicit_readonly_diagnostics_use_same_plan (step1_installer_profile_workflow.ProfileWorkflowTests) ... ok
+test_explicit_target_metadata_bridges_into_conflict_plan (step1_installer_profile_workflow.ProfileWorkflowTests) ... ok
+test_malformed_or_sensitive_evidence_refuses_without_disclosure (step1_installer_profile_workflow.ProfileWorkflowTests) ... ok
+test_migration_preview_compares_profiles_without_moving_checkout (step1_installer_profile_workflow.ProfileWorkflowTests) ... ok
+test_packer_adapter_is_available_through_confined_renderer (step1_installer_profile_workflow.ProfileWorkflowTests) ... ok
+test_public_preset_inheritance_is_resolved_before_planning (step1_installer_profile_workflow.ProfileWorkflowTests) ... ok
+test_shared_yaml_renders_actual_legacy_workspace_fields (step1_installer_profile_workflow.ProfileWorkflowTests) ... ok
+test_unknown_or_mutating_options_refuse_without_profile_content (step1_installer_profile_workflow.ProfileWorkflowTests) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.753s
+
+OK

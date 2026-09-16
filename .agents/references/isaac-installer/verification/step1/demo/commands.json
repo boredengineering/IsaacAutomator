@@ -1,0 +1,194 @@
+[
+  {
+    "step": "01-observed",
+    "argv": [
+      "/bin/bash",
+      "/workspaces/IsaacAutomator/isaac-installer/bin/isaac-installer",
+      "observe",
+      "--workspace-root",
+      "/tmp/isaac-step1-demo-j0pu_ozq/inputs/Documents/GitHub",
+      "--workspace-name",
+      "BoredEngineer",
+      "--git-source",
+      "{\"id\": \"synthetic-lab\", \"root\": \"/tmp/isaac-step1-demo-j0pu_ozq/inputs/Documents/GitHub/BoredEngineer/IsaacLab\", \"git_dir\": \"/tmp/isaac-step1-demo-j0pu_ozq/inputs/Documents/GitHub/BoredEngineer/IsaacLab/.git\", \"common_dir\": \"/tmp/isaac-step1-demo-j0pu_ozq/inputs/Documents/GitHub/BoredEngineer/IsaacLab/.git\", \"ref_paths\": [], \"component\": \"lab\"}",
+      "--metadata-source",
+      "{\"id\": \"synthetic-env\", \"path\": \"/tmp/isaac-step1-demo-j0pu_ozq/inputs/environment.json\", \"format\": \"environment-json\", \"environment\": \"isaaclab\", \"placement\": \"environment\", \"runtime\": \"lab\"}",
+      "--output",
+      "/tmp/isaac-step1-demo-j0pu_ozq/reports/01-observed.json"
+    ],
+    "exit_code": 0,
+    "stdout": "{\"bytes_written\": 13511, \"destination\": \"/tmp/isaac-step1-demo-j0pu_ozq/reports/01-observed.json\", \"execution_authorized\": false, \"owned_artifact\": {\"device\": 93, \"inode\": 90067166}, \"producer_exit_code\": 0, \"status\": \"written\"}\n",
+    "stderr": ""
+  },
+  {
+    "step": "03-reviewed",
+    "argv": [
+      "/bin/bash",
+      "/workspaces/IsaacAutomator/isaac-installer/bin/isaac-installer",
+      "review-profile",
+      "--report",
+      "/tmp/isaac-step1-demo-j0pu_ozq/reports/01-observed.json",
+      "--decisions",
+      "/tmp/isaac-step1-demo-j0pu_ozq/reports/02-decisions.json",
+      "--output",
+      "/tmp/isaac-step1-demo-j0pu_ozq/reports/03-reviewed.json"
+    ],
+    "exit_code": 0,
+    "stdout": "{\"bytes_written\": 16808, \"destination\": \"/tmp/isaac-step1-demo-j0pu_ozq/reports/03-reviewed.json\", \"execution_authorized\": false, \"owned_artifact\": {\"device\": 93, \"inode\": 90067172}, \"producer_exit_code\": 0, \"status\": \"written\"}\n",
+    "stderr": ""
+  },
+  {
+    "step": "04-rescanned",
+    "argv": [
+      "/bin/bash",
+      "/workspaces/IsaacAutomator/isaac-installer/bin/isaac-installer",
+      "observe",
+      "--workspace-root",
+      "/tmp/isaac-step1-demo-j0pu_ozq/inputs/Documents/GitHub",
+      "--workspace-name",
+      "BoredEngineer",
+      "--git-source",
+      "{\"id\": \"synthetic-lab\", \"root\": \"/tmp/isaac-step1-demo-j0pu_ozq/inputs/Documents/GitHub/BoredEngineer/IsaacLab\", \"git_dir\": \"/tmp/isaac-step1-demo-j0pu_ozq/inputs/Documents/GitHub/BoredEngineer/IsaacLab/.git\", \"common_dir\": \"/tmp/isaac-step1-demo-j0pu_ozq/inputs/Documents/GitHub/BoredEngineer/IsaacLab/.git\", \"ref_paths\": [], \"component\": \"lab\"}",
+      "--metadata-source",
+      "{\"id\": \"synthetic-env\", \"path\": \"/tmp/isaac-step1-demo-j0pu_ozq/inputs/environment.json\", \"format\": \"environment-json\", \"environment\": \"isaaclab\", \"placement\": \"environment\", \"runtime\": \"lab\"}",
+      "--previous-report",
+      "/tmp/isaac-step1-demo-j0pu_ozq/reports/03-reviewed.json",
+      "--output",
+      "/tmp/isaac-step1-demo-j0pu_ozq/reports/04-rescanned.json"
+    ],
+    "exit_code": 0,
+    "stdout": "{\"bytes_written\": 16808, \"destination\": \"/tmp/isaac-step1-demo-j0pu_ozq/reports/04-rescanned.json\", \"execution_authorized\": false, \"owned_artifact\": {\"device\": 93, \"inode\": 90067174}, \"producer_exit_code\": 0, \"status\": \"written\"}\n",
+    "stderr": ""
+  },
+  {
+    "step": "05-desired",
+    "argv": [
+      "/bin/bash",
+      "/workspaces/IsaacAutomator/isaac-installer/bin/isaac-installer",
+      "export-profile",
+      "--report",
+      "/tmp/isaac-step1-demo-j0pu_ozq/reports/04-rescanned.json",
+      "--name",
+      "synthetic-native-sim-lab",
+      "--format",
+      "yaml",
+      "--output",
+      "/tmp/isaac-step1-demo-j0pu_ozq/reports/05-desired.yaml"
+    ],
+    "exit_code": 0,
+    "stdout": "{\"bytes_written\": 1495, \"destination\": \"/tmp/isaac-step1-demo-j0pu_ozq/reports/05-desired.yaml\", \"execution_authorized\": false, \"owned_artifact\": {\"device\": 93, \"inode\": 90067176}, \"producer_exit_code\": 0, \"status\": \"written\"}\n",
+    "stderr": ""
+  },
+  {
+    "step": "06-export-review",
+    "argv": [
+      "/bin/bash",
+      "/workspaces/IsaacAutomator/isaac-installer/bin/isaac-installer",
+      "export-profile",
+      "--report",
+      "/tmp/isaac-step1-demo-j0pu_ozq/reports/04-rescanned.json",
+      "--name",
+      "synthetic-native-sim-lab",
+      "--output",
+      "/tmp/isaac-step1-demo-j0pu_ozq/reports/06-export-review.json"
+    ],
+    "exit_code": 0,
+    "stdout": "{\"bytes_written\": 14175, \"destination\": \"/tmp/isaac-step1-demo-j0pu_ozq/reports/06-export-review.json\", \"execution_authorized\": false, \"owned_artifact\": {\"device\": 93, \"inode\": 90067178}, \"producer_exit_code\": 0, \"status\": \"written\"}\n",
+    "stderr": ""
+  },
+  {
+    "step": "07-local",
+    "argv": [
+      "/bin/bash",
+      "/workspaces/IsaacAutomator/isaac-installer/bin/isaac-installer",
+      "render-profile",
+      "--desired-profile",
+      "/tmp/isaac-step1-demo-j0pu_ozq/reports/05-desired.yaml",
+      "--target-home",
+      "/tmp/isaac-step1-demo-j0pu_ozq/target-home",
+      "--adapter",
+      "local",
+      "--output",
+      "/tmp/isaac-step1-demo-j0pu_ozq/reports/07-local.json"
+    ],
+    "exit_code": 0,
+    "stdout": "{\"bytes_written\": 11405, \"destination\": \"/tmp/isaac-step1-demo-j0pu_ozq/reports/07-local.json\", \"execution_authorized\": false, \"owned_artifact\": {\"device\": 93, \"inode\": 90067182}, \"producer_exit_code\": 0, \"status\": \"written\"}\n",
+    "stderr": ""
+  },
+  {
+    "step": "08-ansible",
+    "argv": [
+      "/bin/bash",
+      "/workspaces/IsaacAutomator/isaac-installer/bin/isaac-installer",
+      "render-profile",
+      "--desired-profile",
+      "/tmp/isaac-step1-demo-j0pu_ozq/reports/05-desired.yaml",
+      "--target-home",
+      "/tmp/isaac-step1-demo-j0pu_ozq/target-home",
+      "--adapter",
+      "ansible",
+      "--output",
+      "/tmp/isaac-step1-demo-j0pu_ozq/reports/08-ansible.json"
+    ],
+    "exit_code": 0,
+    "stdout": "{\"bytes_written\": 10194, \"destination\": \"/tmp/isaac-step1-demo-j0pu_ozq/reports/08-ansible.json\", \"execution_authorized\": false, \"owned_artifact\": {\"device\": 93, \"inode\": 90067184}, \"producer_exit_code\": 0, \"status\": \"written\"}\n",
+    "stderr": ""
+  },
+  {
+    "step": "09-dry-run",
+    "argv": [
+      "/bin/bash",
+      "/workspaces/IsaacAutomator/isaac-installer/bin/isaac-installer",
+      "install",
+      "--dry-run",
+      "--desired-profile",
+      "/tmp/isaac-step1-demo-j0pu_ozq/reports/05-desired.yaml",
+      "--target-home",
+      "/tmp/isaac-step1-demo-j0pu_ozq/target-home",
+      "--json",
+      "--output",
+      "/tmp/isaac-step1-demo-j0pu_ozq/reports/09-dry-run.json"
+    ],
+    "exit_code": 2,
+    "stdout": "{\"bytes_written\": 10339, \"destination\": \"/tmp/isaac-step1-demo-j0pu_ozq/reports/09-dry-run.json\", \"execution_authorized\": false, \"owned_artifact\": {\"device\": 93, \"inode\": 90067185}, \"producer_exit_code\": 2, \"status\": \"written\"}\n",
+    "stderr": ""
+  },
+  {
+    "step": "09b-target-metadata",
+    "argv": [
+      "/bin/bash",
+      "/workspaces/IsaacAutomator/isaac-installer/bin/isaac-installer",
+      "observe-targets",
+      "--desired-profile",
+      "/tmp/isaac-step1-demo-j0pu_ozq/reports/05-desired.yaml",
+      "--target-home",
+      "/tmp/isaac-step1-demo-j0pu_ozq/target-home",
+      "--output",
+      "/tmp/isaac-step1-demo-j0pu_ozq/reports/09b-target-metadata.json"
+    ],
+    "exit_code": 0,
+    "stdout": "{\"bytes_written\": 556, \"destination\": \"/tmp/isaac-step1-demo-j0pu_ozq/reports/09b-target-metadata.json\", \"execution_authorized\": false, \"owned_artifact\": {\"device\": 93, \"inode\": 90067186}, \"producer_exit_code\": 0, \"status\": \"written\"}\n",
+    "stderr": ""
+  },
+  {
+    "step": "09c-dry-run-with-evidence",
+    "argv": [
+      "/bin/bash",
+      "/workspaces/IsaacAutomator/isaac-installer/bin/isaac-installer",
+      "install",
+      "--dry-run",
+      "--desired-profile",
+      "/tmp/isaac-step1-demo-j0pu_ozq/reports/05-desired.yaml",
+      "--target-home",
+      "/tmp/isaac-step1-demo-j0pu_ozq/target-home",
+      "--evidence",
+      "/tmp/isaac-step1-demo-j0pu_ozq/reports/09b-target-metadata.json",
+      "--json",
+      "--output",
+      "/tmp/isaac-step1-demo-j0pu_ozq/reports/09c-dry-run-with-evidence.json"
+    ],
+    "exit_code": 2,
+    "stdout": "{\"bytes_written\": 10937, \"destination\": \"/tmp/isaac-step1-demo-j0pu_ozq/reports/09c-dry-run-with-evidence.json\", \"execution_authorized\": false, \"owned_artifact\": {\"device\": 93, \"inode\": 90067188}, \"producer_exit_code\": 2, \"status\": \"written\"}\n",
+    "stderr": ""
+  }
+]

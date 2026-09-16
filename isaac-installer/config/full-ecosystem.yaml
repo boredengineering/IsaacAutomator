@@ -14,6 +14,8 @@ hardware:
   auto_blacklist_nouveau: true
   enable_nvme_storage_tools: true
 
+# Named alternative: set layout: named and an explicit name in your own profile.
+# Names preserve case/spaces; selecting an existing workspace never adopts its repos.
 workspace:
   root: "~/Documents/GitHub"
   layout: "flat"                     # Public preset; customize layout in a private profile

@@ -4,6 +4,33 @@ A modular, zero-infrastructure, bare-metal robotics and Physical AI workstation 
 
 `isaac-installer` transforms a freshly booted or pre-existing physical desktop or server into a complete robotics development, teleoperation, and simulation workstation using **declarative YAML profiles**.
 
+> **Working-machine safety:** legacy install/repair/switch paths are not qualified
+> as safe adoption or idempotent updates of an existing developer workstation.
+> `observe` → `review-profile` → `export-profile` produces reviewed shared YAML
+> plus evidence/unknowns; `render-profile` reaches local and Ansible mappings.
+> `install --dry-run --desired-profile ... --target-home ...` produces concrete
+> actions without inspecting target paths. `observe-targets` is a separate,
+> explicitly requested metadata-only observation. `--output` selects a new private
+> report file; it never authorizes overwriting an existing file.
+> Shared-profile-derived native application is blocked for every workspace layout;
+> named legacy application also remains blocked. Managed qualification is currently
+> incomplete. Unmarked legacy installation has not become a safe adoption path.
+> No successful observation or profile review authorizes installation.
+> See [bounded discovery and safety](docs/profile-discovery.md).
+
+For an existing native workstation behind a restricted devcontainer, the
+stdlib-only `tools/collect_host_metadata.py` provides a no-read scope plan and
+explicit host-side metadata collection. It starts with BoredEngineer and IsaacSim,
+then selected machine/package/environment records. Its private report feeds
+`import-host-report` into the same review/export workflow, without opening host
+access to the container. See [host discovery and scope](docs/host-discovery.md).
+
+For the simplest host workflow, run `./collect-host-metadata --plan` followed by
+`./collect-host-metadata --collect` from the **repository root**, without sudo.
+The report is saved directly in Git-ignored `configs/private/host-inventory.json`
+for review in the same checkout/devcontainer; no manual copy is needed when the
+checkout is already shared. Existing reports are never overwritten.
+
 ---
 
 ## Key Features
@@ -46,9 +73,11 @@ automatic package installation or a fallback to partial YAML parsing.
 
 The legacy loader transports values as data, not evaluated shell text. Duplicate,
 malformed or ambiguous profiles fail instead of silently selecting the default.
-Observed `workstation-baseline` documents and the new shared
-`workstation-profile` schema are rejected until a dedicated installer adapter
-exists. Current `config/*.yaml` presets remain the executable legacy schema.
+Observed `workstation-baseline` documents and raw shared `workstation-profile`
+documents remain deliberately rejected by the legacy loader. Use the dedicated
+`--desired-profile` planning/rendering entry or the root `workstation-profile render`
+command for shared YAML. Current `config/*.yaml` presets remain the legacy schema;
+rendering into it is not permission to execute installation.
 
 ### 1. Inspect Active YAML Configuration
 ```bash
@@ -78,42 +107,45 @@ sudo ./bin/isaac-installer install --with-lerobot
 # Minimal headless server + selectively enable IsaacLab-Arena:
 sudo ./bin/isaac-installer install --profile minimal --with-arena
 
-# Clone personal fork with custom workspace directory:
-sudo ./bin/isaac-installer install \
-  --workspace-dir ~/Documents/GitHub/BoredEngineer \
-  --isaaclab-repo BoredEngineer/IsaacLab \
-  --arena-repo BoredEngineer/IsaacLab-Arena
+# Preview explicit local naming independently of repository ownership:
+./bin/isaac-installer install --dry-run --profile minimal \
+  --workspace-root ~/Documents/GitHub --workspace-layout named \
+  --workspace-name BoredEngineer
 ```
 
-### 4. Non-Destructive Pre-Flight Simulations
+### 4. Confined, incomplete profile-only preview
+
+Run as a non-root user on Linux x86_64 with Landlock ABI >= 5 and seccomp.
+Missing confinement refuses execution; it never falls back to legacy checks.
+An explicit profile is required. Exit **2** means incomplete/unsupported, not a
+successful installation; **77** means root/confinement refusal. Selected stages
+remain `unknown` because no host checks run. Output must be a terminal or pipe,
+not a directly redirected regular file. Host health and overwrite effects are
+not established by this preview.
+
 ```bash
-# Simulate default profile:
-./bin/isaac-installer install --dry-run
+# Explicit default profile, no host inspection:
+./bin/isaac-installer install --dry-run --profile default
 
 # Simulate minimal profile:
 ./bin/isaac-installer install --dry-run --profile minimal
 
-# 20-component audit diff report:
-./bin/isaac-installer plan
+# Machine-readable selection report (still exits 2):
+./bin/isaac-installer install --dry-run --profile minimal --json
 ```
 
-### 5. Diagnostics & Health Verification
-```bash
-# Probe CPU, RAM, NVMe SSDs, LVM, GPU PCIe link, and Display:
-./bin/isaac-installer doctor
+### 5. Observation and legacy diagnostics
 
-# Run end-to-end 13-subsystem test suite:
-./bin/isaac-installer test
+The new bounded `observe` / `review-profile` workflow is documented in
+[profile-discovery.md](docs/profile-discovery.md). It reads only explicitly
+selected metadata and never imports the observed Python environments.
 
-# Check Cloud Hubs, OAuth & user permissions:
-./bin/isaac-installer auth status
-
-# Audit workspace state and remote drift:
-./bin/isaac-installer drift
-
-# Automatically reconcile and heal workspace drift:
-sudo ./bin/isaac-installer repair
-```
+Legacy observation commands such as `doctor`, `plan`, `check`, `config`, `test`,
+`drift` and default component/auth status paths now fail closed before legacy
+initialization: their existing checks are not admitted read-only probes. They
+must not be recommended as safe audits until individually qualified. This does
+not replace them with fabricated health results. Explicit legacy mutation
+commands remain potentially destructive and are not a workaround for refusal.
 
 ---
 

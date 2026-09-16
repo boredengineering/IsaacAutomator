@@ -1,0 +1,840 @@
+[
+  {
+    "behavior": "FINAL01 printable evidence paths",
+    "phase": "red",
+    "original_directory": "/tmp/isaac-step1-ymbo_5ik",
+    "results": [
+      {
+        "suite": "controls",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-ymbo_5ik/controls.log"
+      },
+      {
+        "suite": "installer_host_inventory",
+        "exit_code": 1,
+        "log": "/tmp/isaac-step1-ymbo_5ik/installer_host_inventory.log",
+        "tests": 13,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 1,
+        "passed": false
+      }
+    ],
+    "logs": {
+      "installer_host_inventory.log": "STEP1_RESULT {\"suite\": \"installer_host_inventory\", \"tests\": 13, \"skipped\": 0, \"failures\": 0, \"errors\": 1, \"passed\": false}\ntest_ambiguous_workspace_does_not_choose_a_name (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_changed_evidence_requires_review_and_keeps_local_origin_history (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_epoch_versions_and_private_env_name_are_importable_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_printable_paths_import_without_becoming_desired_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ERROR\ntest_environment_proposal_identity_survives_reordering (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_extended_sim_version_retained_without_breaking_review_grammar (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_invalid_reports_refuse_without_output_or_echoing_payload (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_noncanonical_checkout_requires_explicit_path_review (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_output_collision_and_link_input_refuse (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_portable_import_proposes_paths_without_reading_host (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_review_export_both_renderers_and_dry_run_with_remote_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_system_packages_stay_grouped_with_complete_raw_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_unrepresentable_workspace_name_remains_unresolved_not_fatal (step1_installer_host_inventory.HostInventoryIntegration) ... ok\n\n======================================================================\nERROR: test_collector_printable_paths_import_without_becoming_desired_paths (step1_installer_host_inventory.HostInventoryIntegration)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/workspaces/IsaacAutomator/src/tests/installer_host_inventory.test.py\", line 252, in test_collector_printable_paths_import_without_becoming_desired_paths\n    baseline = discovery._host.baseline(report, str(self.source), discovery)\n  File \"/workspaces/IsaacAutomator/isaac-installer/lib/core/host_inventory.py\", line 159, in baseline\n    validate_report(report); path(report_path)\n  File \"/workspaces/IsaacAutomator/isaac-installer/lib/core/host_inventory.py\", line 74, in validate_report\n    path(context['home']); path(context['system_root'], root=True)\n  File \"/workspaces/IsaacAutomator/isaac-installer/lib/core/host_inventory.py\", line 41, in path\n    text(value, r'/[A-Za-z0-9_./ -]+', 4096)\n  File \"/workspaces/IsaacAutomator/isaac-installer/lib/core/host_inventory.py\", line 34, in text\n    require(type(value) is str and len(value) <= maximum and re.fullmatch(pattern, value) is not None)\n  File \"/workspaces/IsaacAutomator/isaac-installer/lib/core/host_inventory.py\", line 26, in require\n    raise InventoryError('Invalid host inventory report.')\ndiscovery_host_inventory.InventoryError: Invalid host inventory report.\n\n----------------------------------------------------------------------\nRan 13 tests in 1.345s\n\nFAILED (errors=1)\n"
+    }
+  },
+  {
+    "behavior": "FINAL01 printable evidence paths",
+    "phase": "green",
+    "original_directory": "/tmp/isaac-step1-n7e65tjz",
+    "results": [
+      {
+        "suite": "controls",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-n7e65tjz/controls.log"
+      },
+      {
+        "suite": "installer_host_inventory",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-n7e65tjz/installer_host_inventory.log",
+        "tests": 13,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "passed": true
+      }
+    ],
+    "logs": {
+      "installer_host_inventory.log": "STEP1_RESULT {\"suite\": \"installer_host_inventory\", \"tests\": 13, \"skipped\": 0, \"failures\": 0, \"errors\": 0, \"passed\": true}\ntest_ambiguous_workspace_does_not_choose_a_name (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_changed_evidence_requires_review_and_keeps_local_origin_history (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_epoch_versions_and_private_env_name_are_importable_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_printable_paths_import_without_becoming_desired_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_environment_proposal_identity_survives_reordering (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_extended_sim_version_retained_without_breaking_review_grammar (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_invalid_reports_refuse_without_output_or_echoing_payload (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_noncanonical_checkout_requires_explicit_path_review (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_output_collision_and_link_input_refuse (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_portable_import_proposes_paths_without_reading_host (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_review_export_both_renderers_and_dry_run_with_remote_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_system_packages_stay_grouped_with_complete_raw_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_unrepresentable_workspace_name_remains_unresolved_not_fatal (step1_installer_host_inventory.HostInventoryIntegration) ... ok\n\n----------------------------------------------------------------------\nRan 13 tests in 1.462s\n\nOK\n"
+    }
+  },
+  {
+    "behavior": "FINAL03 actual 33 environments and 129 repositories",
+    "phase": "red",
+    "original_directory": "/tmp/isaac-step1-ok3x7vdb",
+    "results": [
+      {
+        "suite": "controls",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-ok3x7vdb/controls.log"
+      },
+      {
+        "suite": "installer_host_inventory",
+        "exit_code": 1,
+        "log": "/tmp/isaac-step1-ok3x7vdb/installer_host_inventory.log",
+        "tests": 14,
+        "skipped": 0,
+        "failures": 1,
+        "errors": 0,
+        "passed": false
+      }
+    ],
+    "logs": {
+      "installer_host_inventory.log": "STEP1_RESULT {\"suite\": \"installer_host_inventory\", \"tests\": 14, \"skipped\": 0, \"failures\": 1, \"errors\": 0, \"passed\": false}\ntest_ambiguous_workspace_does_not_choose_a_name (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_changed_evidence_requires_review_and_keeps_local_origin_history (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_epoch_versions_and_private_env_name_are_importable_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_printable_paths_import_without_becoming_desired_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_schema_caps_keep_large_fixture_importable (step1_installer_host_inventory.HostInventoryIntegration) ... FAIL\ntest_environment_proposal_identity_survives_reordering (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_extended_sim_version_retained_without_breaking_review_grammar (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_invalid_reports_refuse_without_output_or_echoing_payload (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_noncanonical_checkout_requires_explicit_path_review (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_output_collision_and_link_input_refuse (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_portable_import_proposes_paths_without_reading_host (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_review_export_both_renderers_and_dry_run_with_remote_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_system_packages_stay_grouped_with_complete_raw_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_unrepresentable_workspace_name_remains_unresolved_not_fatal (step1_installer_host_inventory.HostInventoryIntegration) ... ok\n\n======================================================================\nFAIL: test_collector_schema_caps_keep_large_fixture_importable (step1_installer_host_inventory.HostInventoryIntegration)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/workspaces/IsaacAutomator/src/tests/installer_host_inventory.test.py\", line 256, in test_collector_schema_caps_keep_large_fixture_importable\n    self.assertEqual(len(report['environments']), 32)\nAssertionError: 33 != 32\n\n----------------------------------------------------------------------\nRan 14 tests in 1.491s\n\nFAILED (failures=1)\n"
+    }
+  },
+  {
+    "behavior": "FINAL03 actual 33 environments and 129 repositories",
+    "phase": "green",
+    "original_directory": "/tmp/isaac-step1-xcvgofes",
+    "results": [
+      {
+        "suite": "controls",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-xcvgofes/controls.log"
+      },
+      {
+        "suite": "installer_host_inventory",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-xcvgofes/installer_host_inventory.log",
+        "tests": 14,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "passed": true
+      }
+    ],
+    "logs": {
+      "installer_host_inventory.log": "STEP1_RESULT {\"suite\": \"installer_host_inventory\", \"tests\": 14, \"skipped\": 0, \"failures\": 0, \"errors\": 0, \"passed\": true}\ntest_ambiguous_workspace_does_not_choose_a_name (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_changed_evidence_requires_review_and_keeps_local_origin_history (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_epoch_versions_and_private_env_name_are_importable_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_printable_paths_import_without_becoming_desired_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_schema_caps_keep_large_fixture_importable (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_environment_proposal_identity_survives_reordering (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_extended_sim_version_retained_without_breaking_review_grammar (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_invalid_reports_refuse_without_output_or_echoing_payload (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_noncanonical_checkout_requires_explicit_path_review (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_output_collision_and_link_input_refuse (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_portable_import_proposes_paths_without_reading_host (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_review_export_both_renderers_and_dry_run_with_remote_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_system_packages_stay_grouped_with_complete_raw_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_unrepresentable_workspace_name_remains_unresolved_not_fatal (step1_installer_host_inventory.HostInventoryIntegration) ... ok\n\n----------------------------------------------------------------------\nRan 14 tests in 1.587s\n\nOK\n"
+    }
+  },
+  {
+    "behavior": "B8 selected sources, B6 installed status, B5 driver CUDA unknown",
+    "phase": "red",
+    "original_directory": "/tmp/isaac-step1-l2eyggn5",
+    "results": [
+      {
+        "suite": "controls",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-l2eyggn5/controls.log"
+      },
+      {
+        "suite": "installer_host_inventory",
+        "exit_code": 1,
+        "log": "/tmp/isaac-step1-l2eyggn5/installer_host_inventory.log",
+        "tests": 15,
+        "skipped": 0,
+        "failures": 1,
+        "errors": 0,
+        "passed": false
+      }
+    ],
+    "logs": {
+      "installer_host_inventory.log": "STEP1_RESULT {\"suite\": \"installer_host_inventory\", \"tests\": 15, \"skipped\": 0, \"failures\": 1, \"errors\": 0, \"passed\": false}\ntest_ambiguous_workspace_does_not_choose_a_name (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_changed_evidence_requires_review_and_keeps_local_origin_history (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_epoch_versions_and_private_env_name_are_importable_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_printable_paths_import_without_becoming_desired_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_schema_caps_keep_large_fixture_importable (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_environment_proposal_identity_survives_reordering (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_extended_sim_version_retained_without_breaking_review_grammar (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_invalid_reports_refuse_without_output_or_echoing_payload (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_noncanonical_checkout_requires_explicit_path_review (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_output_collision_and_link_input_refuse (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_portable_import_proposes_paths_without_reading_host (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_review_export_both_renderers_and_dry_run_with_remote_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_selected_sources_and_dpkg_status_survive_import_and_bind_to_records (step1_installer_host_inventory.HostInventoryIntegration) ... FAIL\ntest_system_packages_stay_grouped_with_complete_raw_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_unrepresentable_workspace_name_remains_unresolved_not_fatal (step1_installer_host_inventory.HostInventoryIntegration) ... ok\n\n======================================================================\nFAIL: test_selected_sources_and_dpkg_status_survive_import_and_bind_to_records (step1_installer_host_inventory.HostInventoryIntegration)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/workspaces/IsaacAutomator/src/tests/installer_host_inventory.test.py\", line 263, in test_selected_sources_and_dpkg_status_survive_import_and_bind_to_records\n    self.assertIn('details', report, 'Selected per-fact evidence is missing')\nAssertionError: 'details' not found in {'schema_version': 1, 'kind': 'host-inventory', 'context': {'home': '/tmp/isaac-step1-l2eyggn5/installer_host_inventory/tmpo0b2k_1l/home', 'system_root': '/tmp/isaac-step1-l2eyggn5/installer_host_inventory/tmpo0b2k_1l/system', 'identity': 'fixture', 'execution_authorized': False}, 'workspace': {'parent': '/tmp/isaac-step1-l2eyggn5/installer_host_inventory/tmpo0b2k_1l/home/Documents/GitHub', 'candidates': ['/tmp/isaac-step1-l2eyggn5/installer_host_inventory/tmpo0b2k_1l/home/Documents/GitHub/BoredEngineer'], 'selected': '/tmp/isaac-step1-l2eyggn5/installer_host_inventory/tmpo0b2k_1l/home/Documents/GitHub/BoredEngineer'}, 'repositories': [{'path': '/tmp/isaac-step1-l2eyggn5/installer_host_inventory/tmpo0b2k_1l/home/Documents/GitHub/BoredEngineer/IsaacLab', 'component': 'lab', 'repository': 'https://github.com/example/IsaacLab.git', 'ref': 'refs/heads/main', 'commit': 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'dirty': 'unknown'}], 'isaacsim': [{'path': '/tmp/isaac-step1-l2eyggn5/installer_host_inventory/tmpo0b2k_1l/home/IsaacSim', 'version': '5.1.0'}], 'machine': {'os': {'value': None, 'source': '/tmp/isaac-step1-l2eyggn5/installer_host_inventory/tmpo0b2k_1l/system/etc/os-release'}, 'os_id': {'value': 'fixture', 'source': '/tmp/isaac-step1-l2eyggn5/installer_host_inventory/tmpo0b2k_1l/system/etc/os-release'}, 'os_version': {'value': None, 'source': '/tmp/isaac-step1-l2eyggn5/installer_host_inventory/tmpo0b2k_1l/system/etc/os-release'}, 'kernel': {'value': None, 'source': '/tmp/isaac-step1-l2eyggn5/installer_host_inventory/tmpo0b2k_1l/system/proc/sys/kernel/osrelease'}, 'cpu': {'value': None, 'source': '/tmp/isaac-step1-l2eyggn5/installer_host_inventory/tmpo0b2k_1l/system/proc/cpuinfo'}, 'memory': {'value': None, 'source': '/tmp/isaac-step1-l2eyggn5/installer_host_inventory/tmpo0b2k_1l/system/proc/meminfo'}, 'driver': {'value': None, 'source': '/tmp/isaac-step1-l2eyggn5/installer_host_inventory/tmpo0b2k_1l/system/proc/driver/nvidia/version'}, 'gpu': {'value': None, 'source': '/tmp/isaac-step1-l2eyggn5/installer_host_inventory/tmpo0b2k_1l/system/proc/driver/nvidia/version'}, 'cuda_toolkit': {'value': None, 'source': '/tmp/isaac-step1-l2eyggn5/installer_host_inventory/tmpo0b2k_1l/system/usr/local/cuda/version.json'}, 'container': {'value': None, 'source': '/tmp/isaac-step1-l2eyggn5/installer_host_inventory/tmpo0b2k_1l/system/run/systemd/container'}}, 'packages': [{'name': 'cmake', 'version': '1.0', 'architecture': 'amd64', 'manual': True}], 'environments': [{'path': '/tmp/isaac-step1-l2eyggn5/installer_host_inventory/tmpo0b2k_1l/home/Documents/GitHub/BoredEngineer/IsaacLab/.venv', 'name': 'venv', 'manager': 'venv', 'python': '3.11.1', 'packages': [{'name': 'sample', 'version': '1.0'}]}, {'path': '/tmp/isaac-step1-l2eyggn5/installer_host_inventory/tmpo0b2k_1l/home/miniconda3/envs/robot', 'name': 'robot', 'manager': 'conda', 'python': '3.11.1', 'packages': [{'name': 'python', 'version': '3.11.1'}]}], 'coverage': {'complete': False, 'issues': [{'code': 'unavailable-fact', 'path': '/tmp/isaac-step1-l2eyggn5/installer_host_inventory/tmpo0b2k_1l/system/etc/os-release'}, {'code': 'missing-file', 'path': '/tmp/isaac-step1-l2eyggn5/installer_host_inventory/tmpo0b2k_1l/system/proc/sys/kernel/osrelease'}, {'code': 'unavailable-fact', 'path': '/tmp/isaac-step1-l2eyggn5/installer_host_inventory/tmpo0b2k_1l/system/proc/sys/kernel/osrelease'}, {'code': 'missing-file', 'path': '/tmp/isaac-step1-l2eyggn5/installer_host_inventory/tmpo0b2k_1l/system/proc/cpuinfo'}, {'code': 'unavailable-fact', 'path': '/tmp/isaac-step1-l2eyggn5/installer_host_inventory/tmpo0b2k_1l/system/proc/cpuinfo'}, {'code': 'missing-file', 'path': '/tmp/isaac-step1-l2eyggn5/installer_host_inventory/tmpo0b2k_1l/system/proc/meminfo'}, {'code': 'unavailable-fact', 'path': '/tmp/isaac-step1-l2eyggn5/installer_host_inventory/tmpo0b2k_1l/system/proc/meminfo'}, {'code': 'missing-file', 'path': '/tmp/isaac-step1-l2eyggn5/installer_host_inventory/tmpo0b2k_1l/system/proc/driver/nvidia/version'}, {'code': 'unavailable-fact', 'path': '/tmp/isaac-step1-l2eyggn5/installer_host_inventory/tmpo0b2k_1l/system/proc/driver/nvidia/version'}, {'code': 'gpu-probe-not-enabled', 'path': '/tmp/isaac-step1-l2eyggn5/installer_host_inventory/tmpo0b2k_1l/system/proc/driver/nvidia/version'}, {'code': 'missing-file', 'path': '/tmp/isaac-step1-l2eyggn5/installer_host_inventory/tmpo0b2k_1l/system/usr/local/cuda/version.json'}, {'code': 'unavailable-fact', 'path': '/tmp/isaac-step1-l2eyggn5/installer_host_inventory/tmpo0b2k_1l/system/usr/local/cuda/version.json'}, {'code': 'unavailable-fact', 'path': '/tmp/isaac-step1-l2eyggn5/installer_host_inventory/tmpo0b2k_1l/system/run/systemd/container'}, {'code': 'unsupported-editable-metadata', 'path': '/tmp/isaac-step1-l2eyggn5/installer_host_inventory/tmpo0b2k_1l/home/Documents/GitHub/BoredEngineer/IsaacLab/.venv'}, {'code': 'unsupported-software-inventory', 'path': '/tmp/isaac-step1-l2eyggn5/installer_host_inventory/tmpo0b2k_1l/home'}], 'limits': {'max_entries': 4096, 'max_bytes': 8388608, 'max_seconds': 10.0, 'max_depth': 4}}} : Selected per-fact evidence is missing\n\n----------------------------------------------------------------------\nRan 15 tests in 1.539s\n\nFAILED (failures=1)\n"
+    }
+  },
+  {
+    "behavior": "B8 selected sources, B6 installed status, B5 driver CUDA unknown",
+    "phase": "green",
+    "original_directory": "/tmp/isaac-step1-y4_7th1h",
+    "results": [
+      {
+        "suite": "controls",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-y4_7th1h/controls.log"
+      },
+      {
+        "suite": "installer_host_collector",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-y4_7th1h/installer_host_collector.log",
+        "tests": 27,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "passed": true
+      },
+      {
+        "suite": "installer_host_inventory",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-y4_7th1h/installer_host_inventory.log",
+        "tests": 15,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "passed": true
+      }
+    ],
+    "logs": {
+      "installer_host_collector.log": "SYNTHETIC_CLI {\"argv\": [\"/usr/bin/python3\", \"-I\", \"-B\", \"/workspaces/IsaacAutomator/isaac-installer/tools/collect_host_metadata.py\", \"--collect\", \"--home\", \"/tmp/isaac-step1-y4_7th1h/installer_host_collector/host-fixture-j_yo_ej6/home\", \"--system-root\", \"/tmp/isaac-step1-y4_7th1h/installer_host_collector/host-fixture-j_yo_ej6/system\", \"--output\", \"/tmp/isaac-step1-y4_7th1h/installer_host_collector/host-fixture-j_yo_ej6/report.json\"], \"exit_code\": 0, \"schema_version\": 1, \"identity\": \"fixture\", \"mode\": \"0600\"}\nSYNTHETIC_PLAN {\"argv\": [\"/usr/bin/python3\", \"-I\", \"-B\", \"/workspaces/IsaacAutomator/isaac-installer/tools/collect_host_metadata.py\", \"--plan\", \"--home\", \"/tmp/isaac-step1-y4_7th1h/installer_host_collector/host-fixture-lh7ptz00/home\", \"--system-root\", \"/tmp/isaac-step1-y4_7th1h/installer_host_collector/host-fixture-lh7ptz00/system\", \"--output\", \"/tmp/isaac-step1-y4_7th1h/installer_host_collector/host-fixture-lh7ptz00/not-created.json\"], \"exit_code\": 0, \"kind\": \"host-inventory-plan\", \"report_created\": false}\nSTEP1_RESULT {\"suite\": \"installer_host_collector\", \"tests\": 27, \"skipped\": 0, \"failures\": 0, \"errors\": 0, \"passed\": true}\ntest_case_preserving_workspace_selection (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cli_collect_creates_private_exclusive_report (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cli_default_plan_has_no_target_reads_or_report_write (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cli_diagnostics_refuse_regular_redirects_before_help (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cli_refuses_observed_output_trees_and_symlinks (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_conda_selected_metadata_does_not_import_or_expose_urls (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_conflicting_environment_packages_remain_unknown (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cpu_models_have_import_compatible_bound (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_deadline_interrupts_a_stalled_selected_read (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_dpkg_inventory_preserves_multiarch_and_manual_unknowns (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_empty_fixture_contract (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_external_git_worktree_is_explicitly_unsupported (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_git_default_section_does_not_fabricate_origin (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_incomplete_workspace_enumeration_never_selects_a_candidate (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_invalid_limits_fail_before_output_creation (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_known_legacy_shadow_workspace_stays_ambiguous (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_limits_use_positive_import_compatible_caps (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_machine_facts_use_only_explicit_fixture_records (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_os_release_symlink_uses_only_fixed_usr_lib_fallback (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_plan_discloses_fixed_metadata_scope (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_repository_metadata_not_directory_name_identifies_component (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_sim_version_is_metadata_only (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_source_scalar_limits_produce_unknowns_not_invalid_reports (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_total_byte_and_depth_budgets_cover_all_inputs (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_unsafe_files_and_ancestors_are_never_read (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_unstable_selected_file_is_rejected (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_workspace_venv_dist_info_without_python_execution (step1_installer_host_collector.HostCollectorTests) ... ok\n\n----------------------------------------------------------------------\nRan 27 tests in 0.587s\n\nOK\n",
+      "installer_host_inventory.log": "STEP1_RESULT {\"suite\": \"installer_host_inventory\", \"tests\": 15, \"skipped\": 0, \"failures\": 0, \"errors\": 0, \"passed\": true}\ntest_ambiguous_workspace_does_not_choose_a_name (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_changed_evidence_requires_review_and_keeps_local_origin_history (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_epoch_versions_and_private_env_name_are_importable_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_printable_paths_import_without_becoming_desired_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_schema_caps_keep_large_fixture_importable (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_environment_proposal_identity_survives_reordering (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_extended_sim_version_retained_without_breaking_review_grammar (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_invalid_reports_refuse_without_output_or_echoing_payload (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_noncanonical_checkout_requires_explicit_path_review (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_output_collision_and_link_input_refuse (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_portable_import_proposes_paths_without_reading_host (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_review_export_both_renderers_and_dry_run_with_remote_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_selected_sources_and_dpkg_status_survive_import_and_bind_to_records (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_system_packages_stay_grouped_with_complete_raw_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_unrepresentable_workspace_name_remains_unresolved_not_fatal (step1_installer_host_inventory.HostInventoryIntegration) ... ok\n\n----------------------------------------------------------------------\nRan 15 tests in 1.656s\n\nOK\n"
+    }
+  },
+  {
+    "behavior": "Source scalar lengths and unsafe label gaps",
+    "phase": "red",
+    "original_directory": "/tmp/isaac-step1-9tst2loy",
+    "results": [
+      {
+        "suite": "controls",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-9tst2loy/controls.log"
+      },
+      {
+        "suite": "installer_host_collector",
+        "exit_code": 1,
+        "log": "/tmp/isaac-step1-9tst2loy/installer_host_collector.log",
+        "tests": 27,
+        "skipped": 0,
+        "failures": 1,
+        "errors": 0,
+        "passed": false
+      }
+    ],
+    "logs": {
+      "installer_host_collector.log": "SYNTHETIC_CLI {\"argv\": [\"/usr/bin/python3\", \"-I\", \"-B\", \"/workspaces/IsaacAutomator/isaac-installer/tools/collect_host_metadata.py\", \"--collect\", \"--home\", \"/tmp/isaac-step1-9tst2loy/installer_host_collector/host-fixture-buutjf04/home\", \"--system-root\", \"/tmp/isaac-step1-9tst2loy/installer_host_collector/host-fixture-buutjf04/system\", \"--output\", \"/tmp/isaac-step1-9tst2loy/installer_host_collector/host-fixture-buutjf04/report.json\"], \"exit_code\": 0, \"schema_version\": 1, \"identity\": \"fixture\", \"mode\": \"0600\"}\nSYNTHETIC_PLAN {\"argv\": [\"/usr/bin/python3\", \"-I\", \"-B\", \"/workspaces/IsaacAutomator/isaac-installer/tools/collect_host_metadata.py\", \"--plan\", \"--home\", \"/tmp/isaac-step1-9tst2loy/installer_host_collector/host-fixture-ibj_tp3j/home\", \"--system-root\", \"/tmp/isaac-step1-9tst2loy/installer_host_collector/host-fixture-ibj_tp3j/system\", \"--output\", \"/tmp/isaac-step1-9tst2loy/installer_host_collector/host-fixture-ibj_tp3j/not-created.json\"], \"exit_code\": 0, \"kind\": \"host-inventory-plan\", \"report_created\": false}\nSTEP1_RESULT {\"suite\": \"installer_host_collector\", \"tests\": 27, \"skipped\": 0, \"failures\": 1, \"errors\": 0, \"passed\": false}\ntest_case_preserving_workspace_selection (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cli_collect_creates_private_exclusive_report (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cli_default_plan_has_no_target_reads_or_report_write (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cli_diagnostics_refuse_regular_redirects_before_help (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cli_refuses_observed_output_trees_and_symlinks (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_conda_selected_metadata_does_not_import_or_expose_urls (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_conflicting_environment_packages_remain_unknown (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cpu_models_have_import_compatible_bound (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_deadline_interrupts_a_stalled_selected_read (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_dpkg_inventory_preserves_multiarch_and_manual_unknowns (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_empty_fixture_contract (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_external_git_worktree_is_explicitly_unsupported (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_git_default_section_does_not_fabricate_origin (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_incomplete_workspace_enumeration_never_selects_a_candidate (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_invalid_limits_fail_before_output_creation (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_known_legacy_shadow_workspace_stays_ambiguous (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_limits_use_positive_import_compatible_caps (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_machine_facts_use_only_explicit_fixture_records (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_os_release_symlink_uses_only_fixed_usr_lib_fallback (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_plan_discloses_fixed_metadata_scope (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_repository_metadata_not_directory_name_identifies_component (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_sim_version_is_metadata_only (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_source_scalar_limits_produce_unknowns_not_invalid_reports (step1_installer_host_collector.HostCollectorTests) ... FAIL\ntest_total_byte_and_depth_budgets_cover_all_inputs (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_unsafe_files_and_ancestors_are_never_read (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_unstable_selected_file_is_rejected (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_workspace_venv_dist_info_without_python_execution (step1_installer_host_collector.HostCollectorTests) ... ok\n\n======================================================================\nFAIL: test_source_scalar_limits_produce_unknowns_not_invalid_reports (step1_installer_host_collector.HostCollectorTests)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/workspaces/IsaacAutomator/src/tests/installer_host_collector.test.py\", line 382, in test_source_scalar_limits_produce_unknowns_not_invalid_reports\n    self.assertIsNone(report['isaacsim'][0]['version'])\nAssertionError: '5.1.0+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' is not None\n\n----------------------------------------------------------------------\nRan 27 tests in 0.539s\n\nFAILED (failures=1)\n"
+    }
+  },
+  {
+    "behavior": "Source scalar lengths and unsafe label gaps",
+    "phase": "green",
+    "original_directory": "/tmp/isaac-step1-y4_7th1h",
+    "results": [
+      {
+        "suite": "controls",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-y4_7th1h/controls.log"
+      },
+      {
+        "suite": "installer_host_collector",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-y4_7th1h/installer_host_collector.log",
+        "tests": 27,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "passed": true
+      },
+      {
+        "suite": "installer_host_inventory",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-y4_7th1h/installer_host_inventory.log",
+        "tests": 15,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "passed": true
+      }
+    ],
+    "logs": {
+      "installer_host_collector.log": "SYNTHETIC_CLI {\"argv\": [\"/usr/bin/python3\", \"-I\", \"-B\", \"/workspaces/IsaacAutomator/isaac-installer/tools/collect_host_metadata.py\", \"--collect\", \"--home\", \"/tmp/isaac-step1-y4_7th1h/installer_host_collector/host-fixture-j_yo_ej6/home\", \"--system-root\", \"/tmp/isaac-step1-y4_7th1h/installer_host_collector/host-fixture-j_yo_ej6/system\", \"--output\", \"/tmp/isaac-step1-y4_7th1h/installer_host_collector/host-fixture-j_yo_ej6/report.json\"], \"exit_code\": 0, \"schema_version\": 1, \"identity\": \"fixture\", \"mode\": \"0600\"}\nSYNTHETIC_PLAN {\"argv\": [\"/usr/bin/python3\", \"-I\", \"-B\", \"/workspaces/IsaacAutomator/isaac-installer/tools/collect_host_metadata.py\", \"--plan\", \"--home\", \"/tmp/isaac-step1-y4_7th1h/installer_host_collector/host-fixture-lh7ptz00/home\", \"--system-root\", \"/tmp/isaac-step1-y4_7th1h/installer_host_collector/host-fixture-lh7ptz00/system\", \"--output\", \"/tmp/isaac-step1-y4_7th1h/installer_host_collector/host-fixture-lh7ptz00/not-created.json\"], \"exit_code\": 0, \"kind\": \"host-inventory-plan\", \"report_created\": false}\nSTEP1_RESULT {\"suite\": \"installer_host_collector\", \"tests\": 27, \"skipped\": 0, \"failures\": 0, \"errors\": 0, \"passed\": true}\ntest_case_preserving_workspace_selection (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cli_collect_creates_private_exclusive_report (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cli_default_plan_has_no_target_reads_or_report_write (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cli_diagnostics_refuse_regular_redirects_before_help (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cli_refuses_observed_output_trees_and_symlinks (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_conda_selected_metadata_does_not_import_or_expose_urls (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_conflicting_environment_packages_remain_unknown (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cpu_models_have_import_compatible_bound (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_deadline_interrupts_a_stalled_selected_read (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_dpkg_inventory_preserves_multiarch_and_manual_unknowns (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_empty_fixture_contract (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_external_git_worktree_is_explicitly_unsupported (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_git_default_section_does_not_fabricate_origin (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_incomplete_workspace_enumeration_never_selects_a_candidate (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_invalid_limits_fail_before_output_creation (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_known_legacy_shadow_workspace_stays_ambiguous (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_limits_use_positive_import_compatible_caps (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_machine_facts_use_only_explicit_fixture_records (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_os_release_symlink_uses_only_fixed_usr_lib_fallback (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_plan_discloses_fixed_metadata_scope (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_repository_metadata_not_directory_name_identifies_component (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_sim_version_is_metadata_only (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_source_scalar_limits_produce_unknowns_not_invalid_reports (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_total_byte_and_depth_budgets_cover_all_inputs (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_unsafe_files_and_ancestors_are_never_read (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_unstable_selected_file_is_rejected (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_workspace_venv_dist_info_without_python_execution (step1_installer_host_collector.HostCollectorTests) ... ok\n\n----------------------------------------------------------------------\nRan 27 tests in 0.587s\n\nOK\n",
+      "installer_host_inventory.log": "STEP1_RESULT {\"suite\": \"installer_host_inventory\", \"tests\": 15, \"skipped\": 0, \"failures\": 0, \"errors\": 0, \"passed\": true}\ntest_ambiguous_workspace_does_not_choose_a_name (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_changed_evidence_requires_review_and_keeps_local_origin_history (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_epoch_versions_and_private_env_name_are_importable_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_printable_paths_import_without_becoming_desired_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_schema_caps_keep_large_fixture_importable (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_environment_proposal_identity_survives_reordering (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_extended_sim_version_retained_without_breaking_review_grammar (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_invalid_reports_refuse_without_output_or_echoing_payload (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_noncanonical_checkout_requires_explicit_path_review (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_output_collision_and_link_input_refuse (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_portable_import_proposes_paths_without_reading_host (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_review_export_both_renderers_and_dry_run_with_remote_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_selected_sources_and_dpkg_status_survive_import_and_bind_to_records (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_system_packages_stay_grouped_with_complete_raw_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_unrepresentable_workspace_name_remains_unresolved_not_fatal (step1_installer_host_inventory.HostInventoryIntegration) ... ok\n\n----------------------------------------------------------------------\nRan 15 tests in 1.656s\n\nOK\n"
+    }
+  },
+  {
+    "behavior": "B3 links and B7 selected scope followups in review",
+    "phase": "red",
+    "original_directory": "/tmp/isaac-step1-kt6esnzv",
+    "results": [
+      {
+        "suite": "controls",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-kt6esnzv/controls.log"
+      },
+      {
+        "suite": "installer_host_inventory",
+        "exit_code": 1,
+        "log": "/tmp/isaac-step1-kt6esnzv/installer_host_inventory.log",
+        "tests": 16,
+        "skipped": 0,
+        "failures": 1,
+        "errors": 0,
+        "passed": false
+      }
+    ],
+    "logs": {
+      "installer_host_inventory.log": "STEP1_RESULT {\"suite\": \"installer_host_inventory\", \"tests\": 16, \"skipped\": 0, \"failures\": 1, \"errors\": 0, \"passed\": false}\ntest_ambiguous_workspace_does_not_choose_a_name (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_changed_evidence_requires_review_and_keeps_local_origin_history (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_epoch_versions_and_private_env_name_are_importable_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_printable_paths_import_without_becoming_desired_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_schema_caps_keep_large_fixture_importable (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_environment_proposal_identity_survives_reordering (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_extended_sim_version_retained_without_breaking_review_grammar (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_invalid_reports_refuse_without_output_or_echoing_payload (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_links_and_targeted_followups_are_data_only_and_visible_in_review (step1_installer_host_inventory.HostInventoryIntegration) ... FAIL\ntest_noncanonical_checkout_requires_explicit_path_review (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_output_collision_and_link_input_refuse (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_portable_import_proposes_paths_without_reading_host (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_review_export_both_renderers_and_dry_run_with_remote_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_selected_sources_and_dpkg_status_survive_import_and_bind_to_records (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_system_packages_stay_grouped_with_complete_raw_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_unrepresentable_workspace_name_remains_unresolved_not_fatal (step1_installer_host_inventory.HostInventoryIntegration) ... ok\n\n======================================================================\nFAIL: test_links_and_targeted_followups_are_data_only_and_visible_in_review (step1_installer_host_inventory.HostInventoryIntegration)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/workspaces/IsaacAutomator/src/tests/installer_host_inventory.test.py\", line 255, in test_links_and_targeted_followups_are_data_only_and_visible_in_review\n    self.assertIn('links', report['details'])\nAssertionError: 'links' not found in {'version': 1, 'repositories': {}, 'isaacsim': {}, 'environments': {'/tmp/isaac-step1-kt6esnzv/installer_host_inventory/tmpkxgcobme/home/miniconda3/envs/robot': {'python': '/tmp/isaac-step1-kt6esnzv/installer_host_inventory/tmpkxgcobme/home/miniconda3/envs/robot/conda-meta/python.json', 'packages': {'python': '/tmp/isaac-step1-kt6esnzv/installer_host_inventory/tmpkxgcobme/home/miniconda3/envs/robot/conda-meta/python.json'}}}, 'system_packages': {'status_source': '/tmp/isaac-step1-kt6esnzv/installer_host_inventory/tmpkxgcobme/system/var/lib/dpkg/status', 'manual_source': '/tmp/isaac-step1-kt6esnzv/installer_host_inventory/tmpkxgcobme/system/var/lib/apt/extended_states', 'status': {}}}\n\n----------------------------------------------------------------------\nRan 16 tests in 1.553s\n\nFAILED (failures=1)\n"
+    }
+  },
+  {
+    "behavior": "B3 links and B7 selected scope followups in review",
+    "phase": "green",
+    "original_directory": "/tmp/isaac-step1-7vpon6dw",
+    "results": [
+      {
+        "suite": "controls",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-7vpon6dw/controls.log"
+      },
+      {
+        "suite": "installer_host_inventory",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-7vpon6dw/installer_host_inventory.log",
+        "tests": 16,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "passed": true
+      },
+      {
+        "suite": "installer_host_collector",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-7vpon6dw/installer_host_collector.log",
+        "tests": 27,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "passed": true
+      }
+    ],
+    "logs": {
+      "installer_host_inventory.log": "STEP1_RESULT {\"suite\": \"installer_host_inventory\", \"tests\": 16, \"skipped\": 0, \"failures\": 0, \"errors\": 0, \"passed\": true}\ntest_ambiguous_workspace_does_not_choose_a_name (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_changed_evidence_requires_review_and_keeps_local_origin_history (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_epoch_versions_and_private_env_name_are_importable_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_printable_paths_import_without_becoming_desired_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_schema_caps_keep_large_fixture_importable (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_environment_proposal_identity_survives_reordering (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_extended_sim_version_retained_without_breaking_review_grammar (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_invalid_reports_refuse_without_output_or_echoing_payload (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_links_and_targeted_followups_are_data_only_and_visible_in_review (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_noncanonical_checkout_requires_explicit_path_review (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_output_collision_and_link_input_refuse (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_portable_import_proposes_paths_without_reading_host (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_review_export_both_renderers_and_dry_run_with_remote_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_selected_sources_and_dpkg_status_survive_import_and_bind_to_records (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_system_packages_stay_grouped_with_complete_raw_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_unrepresentable_workspace_name_remains_unresolved_not_fatal (step1_installer_host_inventory.HostInventoryIntegration) ... ok\n\n----------------------------------------------------------------------\nRan 16 tests in 1.595s\n\nOK\n",
+      "installer_host_collector.log": "SYNTHETIC_CLI {\"argv\": [\"/usr/bin/python3\", \"-I\", \"-B\", \"/workspaces/IsaacAutomator/isaac-installer/tools/collect_host_metadata.py\", \"--collect\", \"--home\", \"/tmp/isaac-step1-7vpon6dw/installer_host_collector/host-fixture-yaa6v1aw/home\", \"--system-root\", \"/tmp/isaac-step1-7vpon6dw/installer_host_collector/host-fixture-yaa6v1aw/system\", \"--output\", \"/tmp/isaac-step1-7vpon6dw/installer_host_collector/host-fixture-yaa6v1aw/report.json\"], \"exit_code\": 0, \"schema_version\": 1, \"identity\": \"fixture\", \"mode\": \"0600\"}\nSYNTHETIC_PLAN {\"argv\": [\"/usr/bin/python3\", \"-I\", \"-B\", \"/workspaces/IsaacAutomator/isaac-installer/tools/collect_host_metadata.py\", \"--plan\", \"--home\", \"/tmp/isaac-step1-7vpon6dw/installer_host_collector/host-fixture-azttzwq_/home\", \"--system-root\", \"/tmp/isaac-step1-7vpon6dw/installer_host_collector/host-fixture-azttzwq_/system\", \"--output\", \"/tmp/isaac-step1-7vpon6dw/installer_host_collector/host-fixture-azttzwq_/not-created.json\"], \"exit_code\": 0, \"kind\": \"host-inventory-plan\", \"report_created\": false}\nSTEP1_RESULT {\"suite\": \"installer_host_collector\", \"tests\": 27, \"skipped\": 0, \"failures\": 0, \"errors\": 0, \"passed\": true}\ntest_case_preserving_workspace_selection (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cli_collect_creates_private_exclusive_report (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cli_default_plan_has_no_target_reads_or_report_write (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cli_diagnostics_refuse_regular_redirects_before_help (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cli_refuses_observed_output_trees_and_symlinks (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_conda_selected_metadata_does_not_import_or_expose_urls (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_conflicting_environment_packages_remain_unknown (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cpu_models_have_import_compatible_bound (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_deadline_interrupts_a_stalled_selected_read (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_dpkg_inventory_preserves_multiarch_and_manual_unknowns (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_empty_fixture_contract (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_external_git_worktree_is_explicitly_unsupported (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_git_default_section_does_not_fabricate_origin (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_incomplete_workspace_enumeration_never_selects_a_candidate (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_invalid_limits_fail_before_output_creation (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_known_legacy_shadow_workspace_stays_ambiguous (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_limits_use_positive_import_compatible_caps (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_machine_facts_use_only_explicit_fixture_records (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_os_release_symlink_uses_only_fixed_usr_lib_fallback (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_plan_discloses_fixed_metadata_scope (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_repository_metadata_not_directory_name_identifies_component (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_sim_version_is_metadata_only (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_source_scalar_limits_produce_unknowns_not_invalid_reports (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_total_byte_and_depth_budgets_cover_all_inputs (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_unsafe_files_and_ancestors_are_never_read (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_unstable_selected_file_is_rejected (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_workspace_venv_dist_info_without_python_execution (step1_installer_host_collector.HostCollectorTests) ... ok\n\n----------------------------------------------------------------------\nRan 27 tests in 0.607s\n\nOK\n"
+    }
+  },
+  {
+    "behavior": "C grouped package membership",
+    "phase": "red",
+    "original_directory": "/tmp/isaac-step1-plqj_ouq",
+    "results": [
+      {
+        "suite": "controls",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-plqj_ouq/controls.log"
+      },
+      {
+        "suite": "installer_host_inventory",
+        "exit_code": 1,
+        "log": "/tmp/isaac-step1-plqj_ouq/installer_host_inventory.log",
+        "tests": 17,
+        "skipped": 0,
+        "failures": 1,
+        "errors": 0,
+        "passed": false
+      }
+    ],
+    "logs": {
+      "installer_host_inventory.log": "STEP1_RESULT {\"suite\": \"installer_host_inventory\", \"tests\": 17, \"skipped\": 0, \"failures\": 1, \"errors\": 0, \"passed\": false}\ntest_ambiguous_workspace_does_not_choose_a_name (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_changed_evidence_requires_review_and_keeps_local_origin_history (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_epoch_versions_and_private_env_name_are_importable_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_printable_paths_import_without_becoming_desired_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_schema_caps_keep_large_fixture_importable (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_environment_proposal_identity_survives_reordering (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_extended_sim_version_retained_without_breaking_review_grammar (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_invalid_reports_refuse_without_output_or_echoing_payload (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_links_and_targeted_followups_are_data_only_and_visible_in_review (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_noncanonical_checkout_requires_explicit_path_review (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_output_collision_and_link_input_refuse (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_package_group_membership_is_deterministic_review_evidence_not_install_intent (step1_installer_host_inventory.HostInventoryIntegration) ... FAIL\ntest_portable_import_proposes_paths_without_reading_host (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_review_export_both_renderers_and_dry_run_with_remote_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_selected_sources_and_dpkg_status_survive_import_and_bind_to_records (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_system_packages_stay_grouped_with_complete_raw_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_unrepresentable_workspace_name_remains_unresolved_not_fatal (step1_installer_host_inventory.HostInventoryIntegration) ... ok\n\n======================================================================\nFAIL: test_package_group_membership_is_deterministic_review_evidence_not_install_intent (step1_installer_host_inventory.HostInventoryIntegration)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/workspaces/IsaacAutomator/src/tests/installer_host_inventory.test.py\", line 250, in test_package_group_membership_is_deterministic_review_evidence_not_install_intent\n    self.assertIn('package_groups', report['details'])\nAssertionError: 'package_groups' not found in {'version': 1, 'repositories': {}, 'isaacsim': {}, 'environments': {}, 'links': {}, 'followups': {'bf178822ceb4495ffaed23fd': {'kind': 'isaacsim', 'path': '/tmp/isaac-step1-plqj_ouq/installer_host_inventory/tmp56q4xoed/home/IsaacSim', 'target': None, 'records': ['VERSION'], 'action': 'request-explicit-scope'}, 'd4b2abcf775e0bf5855f4dae': {'kind': 'workspace', 'path': '/tmp/isaac-step1-plqj_ouq/installer_host_inventory/tmp56q4xoed/home/Documents/GitHub', 'target': None, 'records': ['BoredEngineer', 'boredengineering'], 'action': 'request-explicit-scope'}}, 'system_packages': {'status_source': '/tmp/isaac-step1-plqj_ouq/installer_host_inventory/tmp56q4xoed/system/var/lib/dpkg/status', 'manual_source': '/tmp/isaac-step1-plqj_ouq/installer_host_inventory/tmp56q4xoed/system/var/lib/apt/extended_states', 'status': {'bash:amd64': 'install ok installed', 'cmake:amd64': 'install ok installed', 'custom-local:amd64': 'install ok installed', 'firefox:amd64': 'install ok installed', 'nvidia-driver-580:amd64': 'install ok installed'}}}\n\n----------------------------------------------------------------------\nRan 17 tests in 1.573s\n\nFAILED (failures=1)\n"
+    }
+  },
+  {
+    "behavior": "C grouped package membership",
+    "phase": "green",
+    "original_directory": "/tmp/isaac-step1-_fkow6uw",
+    "results": [
+      {
+        "suite": "controls",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-_fkow6uw/controls.log"
+      },
+      {
+        "suite": "installer_host_inventory",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-_fkow6uw/installer_host_inventory.log",
+        "tests": 17,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "passed": true
+      },
+      {
+        "suite": "installer_host_collector",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-_fkow6uw/installer_host_collector.log",
+        "tests": 27,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "passed": true
+      }
+    ],
+    "logs": {
+      "installer_host_inventory.log": "STEP1_RESULT {\"suite\": \"installer_host_inventory\", \"tests\": 17, \"skipped\": 0, \"failures\": 0, \"errors\": 0, \"passed\": true}\ntest_ambiguous_workspace_does_not_choose_a_name (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_changed_evidence_requires_review_and_keeps_local_origin_history (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_epoch_versions_and_private_env_name_are_importable_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_printable_paths_import_without_becoming_desired_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_schema_caps_keep_large_fixture_importable (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_environment_proposal_identity_survives_reordering (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_extended_sim_version_retained_without_breaking_review_grammar (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_invalid_reports_refuse_without_output_or_echoing_payload (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_links_and_targeted_followups_are_data_only_and_visible_in_review (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_noncanonical_checkout_requires_explicit_path_review (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_output_collision_and_link_input_refuse (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_package_group_membership_is_deterministic_review_evidence_not_install_intent (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_portable_import_proposes_paths_without_reading_host (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_review_export_both_renderers_and_dry_run_with_remote_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_selected_sources_and_dpkg_status_survive_import_and_bind_to_records (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_system_packages_stay_grouped_with_complete_raw_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_unrepresentable_workspace_name_remains_unresolved_not_fatal (step1_installer_host_inventory.HostInventoryIntegration) ... ok\n\n----------------------------------------------------------------------\nRan 17 tests in 1.597s\n\nOK\n",
+      "installer_host_collector.log": "SYNTHETIC_CLI {\"argv\": [\"/usr/bin/python3\", \"-I\", \"-B\", \"/workspaces/IsaacAutomator/isaac-installer/tools/collect_host_metadata.py\", \"--collect\", \"--home\", \"/tmp/isaac-step1-_fkow6uw/installer_host_collector/host-fixture-4l_cmm1c/home\", \"--system-root\", \"/tmp/isaac-step1-_fkow6uw/installer_host_collector/host-fixture-4l_cmm1c/system\", \"--output\", \"/tmp/isaac-step1-_fkow6uw/installer_host_collector/host-fixture-4l_cmm1c/report.json\"], \"exit_code\": 0, \"schema_version\": 1, \"identity\": \"fixture\", \"mode\": \"0600\"}\nSYNTHETIC_PLAN {\"argv\": [\"/usr/bin/python3\", \"-I\", \"-B\", \"/workspaces/IsaacAutomator/isaac-installer/tools/collect_host_metadata.py\", \"--plan\", \"--home\", \"/tmp/isaac-step1-_fkow6uw/installer_host_collector/host-fixture-9u5bisa2/home\", \"--system-root\", \"/tmp/isaac-step1-_fkow6uw/installer_host_collector/host-fixture-9u5bisa2/system\", \"--output\", \"/tmp/isaac-step1-_fkow6uw/installer_host_collector/host-fixture-9u5bisa2/not-created.json\"], \"exit_code\": 0, \"kind\": \"host-inventory-plan\", \"report_created\": false}\nSTEP1_RESULT {\"suite\": \"installer_host_collector\", \"tests\": 27, \"skipped\": 0, \"failures\": 0, \"errors\": 0, \"passed\": true}\ntest_case_preserving_workspace_selection (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cli_collect_creates_private_exclusive_report (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cli_default_plan_has_no_target_reads_or_report_write (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cli_diagnostics_refuse_regular_redirects_before_help (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cli_refuses_observed_output_trees_and_symlinks (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_conda_selected_metadata_does_not_import_or_expose_urls (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_conflicting_environment_packages_remain_unknown (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cpu_models_have_import_compatible_bound (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_deadline_interrupts_a_stalled_selected_read (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_dpkg_inventory_preserves_multiarch_and_manual_unknowns (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_empty_fixture_contract (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_external_git_worktree_is_explicitly_unsupported (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_git_default_section_does_not_fabricate_origin (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_incomplete_workspace_enumeration_never_selects_a_candidate (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_invalid_limits_fail_before_output_creation (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_known_legacy_shadow_workspace_stays_ambiguous (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_limits_use_positive_import_compatible_caps (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_machine_facts_use_only_explicit_fixture_records (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_os_release_symlink_uses_only_fixed_usr_lib_fallback (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_plan_discloses_fixed_metadata_scope (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_repository_metadata_not_directory_name_identifies_component (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_sim_version_is_metadata_only (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_source_scalar_limits_produce_unknowns_not_invalid_reports (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_total_byte_and_depth_budgets_cover_all_inputs (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_unsafe_files_and_ancestors_are_never_read (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_unstable_selected_file_is_rejected (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_workspace_venv_dist_info_without_python_execution (step1_installer_host_collector.HostCollectorTests) ... ok\n\n----------------------------------------------------------------------\nRan 27 tests in 0.606s\n\nOK\n"
+    }
+  },
+  {
+    "behavior": "FINAL03 report budget and orphan source normalization",
+    "phase": "red",
+    "original_directory": "/tmp/isaac-step1-n3ur4be6",
+    "results": [
+      {
+        "suite": "controls",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-n3ur4be6/controls.log"
+      },
+      {
+        "suite": "installer_host_inventory",
+        "exit_code": 1,
+        "log": "/tmp/isaac-step1-n3ur4be6/installer_host_inventory.log",
+        "tests": 18,
+        "skipped": 0,
+        "failures": 1,
+        "errors": 0,
+        "passed": false
+      }
+    ],
+    "logs": {
+      "installer_host_inventory.log": "STEP1_RESULT {\"suite\": \"installer_host_inventory\", \"tests\": 18, \"skipped\": 0, \"failures\": 1, \"errors\": 0, \"passed\": false}\ntest_ambiguous_workspace_does_not_choose_a_name (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_changed_evidence_requires_review_and_keeps_local_origin_history (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_epoch_versions_and_private_env_name_are_importable_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_printable_paths_import_without_becoming_desired_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_schema_caps_keep_large_fixture_importable (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_environment_proposal_identity_survives_reordering (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_extended_sim_version_retained_without_breaking_review_grammar (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_invalid_reports_refuse_without_output_or_echoing_payload (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_links_and_targeted_followups_are_data_only_and_visible_in_review (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_noncanonical_checkout_requires_explicit_path_review (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_output_collision_and_link_input_refuse (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_package_group_membership_is_deterministic_review_evidence_not_install_intent (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_portable_import_proposes_paths_without_reading_host (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_report_budget_and_orphan_provenance_leave_cli_envelope_headroom (step1_installer_host_inventory.HostInventoryIntegration) ... FAIL\ntest_review_export_both_renderers_and_dry_run_with_remote_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_selected_sources_and_dpkg_status_survive_import_and_bind_to_records (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_system_packages_stay_grouped_with_complete_raw_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_unrepresentable_workspace_name_remains_unresolved_not_fatal (step1_installer_host_inventory.HostInventoryIntegration) ... ok\n\n======================================================================\nFAIL: test_report_budget_and_orphan_provenance_leave_cli_envelope_headroom (step1_installer_host_inventory.HostInventoryIntegration)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/workspaces/IsaacAutomator/src/tests/installer_host_inventory.test.py\", line 254, in test_report_budget_and_orphan_provenance_leave_cli_envelope_headroom\n    self.assertTrue(hasattr(module, '_finish'), 'No bounded report finalization exists')\nAssertionError: False is not true : No bounded report finalization exists\n\n----------------------------------------------------------------------\nRan 18 tests in 1.779s\n\nFAILED (failures=1)\n"
+    }
+  },
+  {
+    "behavior": "FINAL03 report budget and orphan source normalization",
+    "phase": "green",
+    "original_directory": "/tmp/isaac-step1-tz0w3aer",
+    "results": [
+      {
+        "suite": "controls",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-tz0w3aer/controls.log"
+      },
+      {
+        "suite": "installer_host_inventory",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-tz0w3aer/installer_host_inventory.log",
+        "tests": 18,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "passed": true
+      },
+      {
+        "suite": "installer_host_collector",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-tz0w3aer/installer_host_collector.log",
+        "tests": 27,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "passed": true
+      }
+    ],
+    "logs": {
+      "installer_host_inventory.log": "STEP1_RESULT {\"suite\": \"installer_host_inventory\", \"tests\": 18, \"skipped\": 0, \"failures\": 0, \"errors\": 0, \"passed\": true}\ntest_ambiguous_workspace_does_not_choose_a_name (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_changed_evidence_requires_review_and_keeps_local_origin_history (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_epoch_versions_and_private_env_name_are_importable_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_printable_paths_import_without_becoming_desired_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_schema_caps_keep_large_fixture_importable (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_environment_proposal_identity_survives_reordering (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_extended_sim_version_retained_without_breaking_review_grammar (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_invalid_reports_refuse_without_output_or_echoing_payload (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_links_and_targeted_followups_are_data_only_and_visible_in_review (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_noncanonical_checkout_requires_explicit_path_review (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_output_collision_and_link_input_refuse (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_package_group_membership_is_deterministic_review_evidence_not_install_intent (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_portable_import_proposes_paths_without_reading_host (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_report_budget_and_orphan_provenance_leave_cli_envelope_headroom (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_review_export_both_renderers_and_dry_run_with_remote_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_selected_sources_and_dpkg_status_survive_import_and_bind_to_records (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_system_packages_stay_grouped_with_complete_raw_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_unrepresentable_workspace_name_remains_unresolved_not_fatal (step1_installer_host_inventory.HostInventoryIntegration) ... ok\n\n----------------------------------------------------------------------\nRan 18 tests in 2.944s\n\nOK\n",
+      "installer_host_collector.log": "SYNTHETIC_CLI {\"argv\": [\"/usr/bin/python3\", \"-I\", \"-B\", \"/workspaces/IsaacAutomator/isaac-installer/tools/collect_host_metadata.py\", \"--collect\", \"--home\", \"/tmp/isaac-step1-tz0w3aer/installer_host_collector/host-fixture-_fym_y_m/home\", \"--system-root\", \"/tmp/isaac-step1-tz0w3aer/installer_host_collector/host-fixture-_fym_y_m/system\", \"--output\", \"/tmp/isaac-step1-tz0w3aer/installer_host_collector/host-fixture-_fym_y_m/report.json\"], \"exit_code\": 0, \"schema_version\": 1, \"identity\": \"fixture\", \"mode\": \"0600\"}\nSYNTHETIC_PLAN {\"argv\": [\"/usr/bin/python3\", \"-I\", \"-B\", \"/workspaces/IsaacAutomator/isaac-installer/tools/collect_host_metadata.py\", \"--plan\", \"--home\", \"/tmp/isaac-step1-tz0w3aer/installer_host_collector/host-fixture-jzhoj2s4/home\", \"--system-root\", \"/tmp/isaac-step1-tz0w3aer/installer_host_collector/host-fixture-jzhoj2s4/system\", \"--output\", \"/tmp/isaac-step1-tz0w3aer/installer_host_collector/host-fixture-jzhoj2s4/not-created.json\"], \"exit_code\": 0, \"kind\": \"host-inventory-plan\", \"report_created\": false}\nSTEP1_RESULT {\"suite\": \"installer_host_collector\", \"tests\": 27, \"skipped\": 0, \"failures\": 0, \"errors\": 0, \"passed\": true}\ntest_case_preserving_workspace_selection (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cli_collect_creates_private_exclusive_report (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cli_default_plan_has_no_target_reads_or_report_write (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cli_diagnostics_refuse_regular_redirects_before_help (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cli_refuses_observed_output_trees_and_symlinks (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_conda_selected_metadata_does_not_import_or_expose_urls (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_conflicting_environment_packages_remain_unknown (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cpu_models_have_import_compatible_bound (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_deadline_interrupts_a_stalled_selected_read (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_dpkg_inventory_preserves_multiarch_and_manual_unknowns (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_empty_fixture_contract (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_external_git_worktree_is_explicitly_unsupported (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_git_default_section_does_not_fabricate_origin (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_incomplete_workspace_enumeration_never_selects_a_candidate (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_invalid_limits_fail_before_output_creation (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_known_legacy_shadow_workspace_stays_ambiguous (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_limits_use_positive_import_compatible_caps (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_machine_facts_use_only_explicit_fixture_records (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_os_release_symlink_uses_only_fixed_usr_lib_fallback (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_plan_discloses_fixed_metadata_scope (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_repository_metadata_not_directory_name_identifies_component (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_sim_version_is_metadata_only (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_source_scalar_limits_produce_unknowns_not_invalid_reports (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_total_byte_and_depth_budgets_cover_all_inputs (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_unsafe_files_and_ancestors_are_never_read (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_unstable_selected_file_is_rejected (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_workspace_venv_dist_info_without_python_execution (step1_installer_host_collector.HostCollectorTests) ... ok\n\n----------------------------------------------------------------------\nRan 27 tests in 0.631s\n\nOK\n"
+    }
+  },
+  {
+    "behavior": "Credential-like scalar/ref and canonical ref gaps",
+    "phase": "red",
+    "original_directory": "/tmp/isaac-step1-y92n4kwy",
+    "results": [
+      {
+        "suite": "controls",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-y92n4kwy/controls.log"
+      },
+      {
+        "suite": "installer_host_collector",
+        "exit_code": 1,
+        "log": "/tmp/isaac-step1-y92n4kwy/installer_host_collector.log",
+        "tests": 28,
+        "skipped": 0,
+        "failures": 1,
+        "errors": 0,
+        "passed": false
+      }
+    ],
+    "logs": {
+      "installer_host_collector.log": "SYNTHETIC_CLI {\"argv\": [\"/usr/bin/python3\", \"-I\", \"-B\", \"/workspaces/IsaacAutomator/isaac-installer/tools/collect_host_metadata.py\", \"--collect\", \"--home\", \"/tmp/isaac-step1-y92n4kwy/installer_host_collector/host-fixture-2izt_zj1/home\", \"--system-root\", \"/tmp/isaac-step1-y92n4kwy/installer_host_collector/host-fixture-2izt_zj1/system\", \"--output\", \"/tmp/isaac-step1-y92n4kwy/installer_host_collector/host-fixture-2izt_zj1/report.json\"], \"exit_code\": 0, \"schema_version\": 1, \"identity\": \"fixture\", \"mode\": \"0600\"}\nSYNTHETIC_PLAN {\"argv\": [\"/usr/bin/python3\", \"-I\", \"-B\", \"/workspaces/IsaacAutomator/isaac-installer/tools/collect_host_metadata.py\", \"--plan\", \"--home\", \"/tmp/isaac-step1-y92n4kwy/installer_host_collector/host-fixture-mub256ly/home\", \"--system-root\", \"/tmp/isaac-step1-y92n4kwy/installer_host_collector/host-fixture-mub256ly/system\", \"--output\", \"/tmp/isaac-step1-y92n4kwy/installer_host_collector/host-fixture-mub256ly/not-created.json\"], \"exit_code\": 0, \"kind\": \"host-inventory-plan\", \"report_created\": false}\nSTEP1_RESULT {\"suite\": \"installer_host_collector\", \"tests\": 28, \"skipped\": 0, \"failures\": 1, \"errors\": 0, \"passed\": false}\ntest_case_preserving_workspace_selection (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cli_collect_creates_private_exclusive_report (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cli_default_plan_has_no_target_reads_or_report_write (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cli_diagnostics_refuse_regular_redirects_before_help (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cli_refuses_observed_output_trees_and_symlinks (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_conda_selected_metadata_does_not_import_or_expose_urls (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_conflicting_environment_packages_remain_unknown (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cpu_models_have_import_compatible_bound (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_deadline_interrupts_a_stalled_selected_read (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_dpkg_inventory_preserves_multiarch_and_manual_unknowns (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_empty_fixture_contract (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_external_git_worktree_is_explicitly_unsupported (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_git_default_section_does_not_fabricate_origin (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_incomplete_workspace_enumeration_never_selects_a_candidate (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_invalid_limits_fail_before_output_creation (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_known_legacy_shadow_workspace_stays_ambiguous (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_limits_use_positive_import_compatible_caps (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_machine_facts_use_only_explicit_fixture_records (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_os_release_symlink_uses_only_fixed_usr_lib_fallback (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_plan_discloses_fixed_metadata_scope (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_repository_metadata_not_directory_name_identifies_component (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_sim_version_is_metadata_only (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_source_credentials_and_noncanonical_refs_remain_importable_gaps (step1_installer_host_collector.HostCollectorTests) ... FAIL\ntest_source_scalar_limits_produce_unknowns_not_invalid_reports (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_total_byte_and_depth_budgets_cover_all_inputs (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_unsafe_files_and_ancestors_are_never_read (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_unstable_selected_file_is_rejected (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_workspace_venv_dist_info_without_python_execution (step1_installer_host_collector.HostCollectorTests) ... ok\n\n======================================================================\nFAIL: test_source_credentials_and_noncanonical_refs_remain_importable_gaps (step1_installer_host_collector.HostCollectorTests)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/workspaces/IsaacAutomator/src/tests/installer_host_collector.test.py\", line 379, in test_source_credentials_and_noncanonical_refs_remain_importable_gaps\n    self.assertIsNone(report['repositories'][0]['ref'])\nAssertionError: 'refs/heads/a//b' is not None\n\n----------------------------------------------------------------------\nRan 28 tests in 0.639s\n\nFAILED (failures=1)\n"
+    }
+  },
+  {
+    "behavior": "Credential-like scalar/ref and canonical ref gaps",
+    "phase": "green",
+    "original_directory": "/tmp/isaac-step1-2efy4uv2",
+    "results": [
+      {
+        "suite": "controls",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-2efy4uv2/controls.log"
+      },
+      {
+        "suite": "installer_host_collector",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-2efy4uv2/installer_host_collector.log",
+        "tests": 28,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "passed": true
+      }
+    ],
+    "logs": {
+      "installer_host_collector.log": "SYNTHETIC_CLI {\"argv\": [\"/usr/bin/python3\", \"-I\", \"-B\", \"/workspaces/IsaacAutomator/isaac-installer/tools/collect_host_metadata.py\", \"--collect\", \"--home\", \"/tmp/isaac-step1-2efy4uv2/installer_host_collector/host-fixture-3yecm849/home\", \"--system-root\", \"/tmp/isaac-step1-2efy4uv2/installer_host_collector/host-fixture-3yecm849/system\", \"--output\", \"/tmp/isaac-step1-2efy4uv2/installer_host_collector/host-fixture-3yecm849/report.json\"], \"exit_code\": 0, \"schema_version\": 1, \"identity\": \"fixture\", \"mode\": \"0600\"}\nSYNTHETIC_PLAN {\"argv\": [\"/usr/bin/python3\", \"-I\", \"-B\", \"/workspaces/IsaacAutomator/isaac-installer/tools/collect_host_metadata.py\", \"--plan\", \"--home\", \"/tmp/isaac-step1-2efy4uv2/installer_host_collector/host-fixture-3_dry8d8/home\", \"--system-root\", \"/tmp/isaac-step1-2efy4uv2/installer_host_collector/host-fixture-3_dry8d8/system\", \"--output\", \"/tmp/isaac-step1-2efy4uv2/installer_host_collector/host-fixture-3_dry8d8/not-created.json\"], \"exit_code\": 0, \"kind\": \"host-inventory-plan\", \"report_created\": false}\nSTEP1_RESULT {\"suite\": \"installer_host_collector\", \"tests\": 28, \"skipped\": 0, \"failures\": 0, \"errors\": 0, \"passed\": true}\ntest_case_preserving_workspace_selection (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cli_collect_creates_private_exclusive_report (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cli_default_plan_has_no_target_reads_or_report_write (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cli_diagnostics_refuse_regular_redirects_before_help (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cli_refuses_observed_output_trees_and_symlinks (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_conda_selected_metadata_does_not_import_or_expose_urls (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_conflicting_environment_packages_remain_unknown (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cpu_models_have_import_compatible_bound (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_deadline_interrupts_a_stalled_selected_read (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_dpkg_inventory_preserves_multiarch_and_manual_unknowns (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_empty_fixture_contract (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_external_git_worktree_is_explicitly_unsupported (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_git_default_section_does_not_fabricate_origin (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_incomplete_workspace_enumeration_never_selects_a_candidate (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_invalid_limits_fail_before_output_creation (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_known_legacy_shadow_workspace_stays_ambiguous (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_limits_use_positive_import_compatible_caps (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_machine_facts_use_only_explicit_fixture_records (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_os_release_symlink_uses_only_fixed_usr_lib_fallback (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_plan_discloses_fixed_metadata_scope (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_repository_metadata_not_directory_name_identifies_component (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_sim_version_is_metadata_only (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_source_credentials_and_noncanonical_refs_remain_importable_gaps (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_source_scalar_limits_produce_unknowns_not_invalid_reports (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_total_byte_and_depth_budgets_cover_all_inputs (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_unsafe_files_and_ancestors_are_never_read (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_unstable_selected_file_is_rejected (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_workspace_venv_dist_info_without_python_execution (step1_installer_host_collector.HostCollectorTests) ... ok\n\n----------------------------------------------------------------------\nRan 28 tests in 0.656s\n\nOK\n"
+    }
+  },
+  {
+    "behavior": "Unverified basic VERSION and Git markers followup scope",
+    "phase": "red",
+    "original_directory": "/tmp/isaac-step1-8vree0ja",
+    "results": [
+      {
+        "suite": "controls",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-8vree0ja/controls.log"
+      },
+      {
+        "suite": "installer_host_inventory",
+        "exit_code": 1,
+        "log": "/tmp/isaac-step1-8vree0ja/installer_host_inventory.log",
+        "tests": 19,
+        "skipped": 0,
+        "failures": 1,
+        "errors": 0,
+        "passed": false
+      }
+    ],
+    "logs": {
+      "installer_host_inventory.log": "STEP1_RESULT {\"suite\": \"installer_host_inventory\", \"tests\": 19, \"skipped\": 0, \"failures\": 1, \"errors\": 0, \"passed\": false}\ntest_ambiguous_workspace_does_not_choose_a_name (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_changed_evidence_requires_review_and_keeps_local_origin_history (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_epoch_versions_and_private_env_name_are_importable_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_printable_paths_import_without_becoming_desired_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_schema_caps_keep_large_fixture_importable (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_environment_proposal_identity_survives_reordering (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_extended_sim_version_retained_without_breaking_review_grammar (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_invalid_reports_refuse_without_output_or_echoing_payload (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_links_and_targeted_followups_are_data_only_and_visible_in_review (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_noncanonical_checkout_requires_explicit_path_review (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_output_collision_and_link_input_refuse (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_package_group_membership_is_deterministic_review_evidence_not_install_intent (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_portable_import_proposes_paths_without_reading_host (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_report_budget_and_orphan_provenance_leave_cli_envelope_headroom (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_review_export_both_renderers_and_dry_run_with_remote_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_selected_sources_and_dpkg_status_survive_import_and_bind_to_records (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_system_packages_stay_grouped_with_complete_raw_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_unrepresentable_workspace_name_remains_unresolved_not_fatal (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_unverified_basic_markers_offer_exact_selected_scope_followups (step1_installer_host_inventory.HostInventoryIntegration) ... FAIL\n\n======================================================================\nFAIL: test_unverified_basic_markers_offer_exact_selected_scope_followups (step1_installer_host_inventory.HostInventoryIntegration)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/workspaces/IsaacAutomator/src/tests/installer_host_inventory.test.py\", line 251, in test_unverified_basic_markers_offer_exact_selected_scope_followups\n    self.assertTrue(any(p['kind'] == 'isaacsim' and p['path'] == str(home / 'IsaacSim') and p['records'] == ['VERSION'] for p in proposals))\nAssertionError: False is not true\n\n----------------------------------------------------------------------\nRan 19 tests in 2.875s\n\nFAILED (failures=1)\n"
+    }
+  },
+  {
+    "behavior": "Unverified basic VERSION and Git markers followup scope",
+    "phase": "green",
+    "original_directory": "/tmp/isaac-step1-no5nqey6",
+    "results": [
+      {
+        "suite": "controls",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-no5nqey6/controls.log"
+      },
+      {
+        "suite": "installer_host_inventory",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-no5nqey6/installer_host_inventory.log",
+        "tests": 19,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "passed": true
+      },
+      {
+        "suite": "installer_host_collector",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-no5nqey6/installer_host_collector.log",
+        "tests": 28,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "passed": true
+      }
+    ],
+    "logs": {
+      "installer_host_inventory.log": "STEP1_RESULT {\"suite\": \"installer_host_inventory\", \"tests\": 19, \"skipped\": 0, \"failures\": 0, \"errors\": 0, \"passed\": true}\ntest_ambiguous_workspace_does_not_choose_a_name (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_changed_evidence_requires_review_and_keeps_local_origin_history (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_epoch_versions_and_private_env_name_are_importable_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_printable_paths_import_without_becoming_desired_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_schema_caps_keep_large_fixture_importable (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_environment_proposal_identity_survives_reordering (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_extended_sim_version_retained_without_breaking_review_grammar (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_invalid_reports_refuse_without_output_or_echoing_payload (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_links_and_targeted_followups_are_data_only_and_visible_in_review (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_noncanonical_checkout_requires_explicit_path_review (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_output_collision_and_link_input_refuse (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_package_group_membership_is_deterministic_review_evidence_not_install_intent (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_portable_import_proposes_paths_without_reading_host (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_report_budget_and_orphan_provenance_leave_cli_envelope_headroom (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_review_export_both_renderers_and_dry_run_with_remote_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_selected_sources_and_dpkg_status_survive_import_and_bind_to_records (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_system_packages_stay_grouped_with_complete_raw_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_unrepresentable_workspace_name_remains_unresolved_not_fatal (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_unverified_basic_markers_offer_exact_selected_scope_followups (step1_installer_host_inventory.HostInventoryIntegration) ... ok\n\n----------------------------------------------------------------------\nRan 19 tests in 2.848s\n\nOK\n",
+      "installer_host_collector.log": "SYNTHETIC_CLI {\"argv\": [\"/usr/bin/python3\", \"-I\", \"-B\", \"/workspaces/IsaacAutomator/isaac-installer/tools/collect_host_metadata.py\", \"--collect\", \"--home\", \"/tmp/isaac-step1-no5nqey6/installer_host_collector/host-fixture-bxs4bwbb/home\", \"--system-root\", \"/tmp/isaac-step1-no5nqey6/installer_host_collector/host-fixture-bxs4bwbb/system\", \"--output\", \"/tmp/isaac-step1-no5nqey6/installer_host_collector/host-fixture-bxs4bwbb/report.json\"], \"exit_code\": 0, \"schema_version\": 1, \"identity\": \"fixture\", \"mode\": \"0600\"}\nSYNTHETIC_PLAN {\"argv\": [\"/usr/bin/python3\", \"-I\", \"-B\", \"/workspaces/IsaacAutomator/isaac-installer/tools/collect_host_metadata.py\", \"--plan\", \"--home\", \"/tmp/isaac-step1-no5nqey6/installer_host_collector/host-fixture-dhco04b3/home\", \"--system-root\", \"/tmp/isaac-step1-no5nqey6/installer_host_collector/host-fixture-dhco04b3/system\", \"--output\", \"/tmp/isaac-step1-no5nqey6/installer_host_collector/host-fixture-dhco04b3/not-created.json\"], \"exit_code\": 0, \"kind\": \"host-inventory-plan\", \"report_created\": false}\nSTEP1_RESULT {\"suite\": \"installer_host_collector\", \"tests\": 28, \"skipped\": 0, \"failures\": 0, \"errors\": 0, \"passed\": true}\ntest_case_preserving_workspace_selection (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cli_collect_creates_private_exclusive_report (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cli_default_plan_has_no_target_reads_or_report_write (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cli_diagnostics_refuse_regular_redirects_before_help (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cli_refuses_observed_output_trees_and_symlinks (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_conda_selected_metadata_does_not_import_or_expose_urls (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_conflicting_environment_packages_remain_unknown (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cpu_models_have_import_compatible_bound (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_deadline_interrupts_a_stalled_selected_read (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_dpkg_inventory_preserves_multiarch_and_manual_unknowns (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_empty_fixture_contract (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_external_git_worktree_is_explicitly_unsupported (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_git_default_section_does_not_fabricate_origin (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_incomplete_workspace_enumeration_never_selects_a_candidate (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_invalid_limits_fail_before_output_creation (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_known_legacy_shadow_workspace_stays_ambiguous (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_limits_use_positive_import_compatible_caps (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_machine_facts_use_only_explicit_fixture_records (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_os_release_symlink_uses_only_fixed_usr_lib_fallback (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_plan_discloses_fixed_metadata_scope (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_repository_metadata_not_directory_name_identifies_component (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_sim_version_is_metadata_only (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_source_credentials_and_noncanonical_refs_remain_importable_gaps (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_source_scalar_limits_produce_unknowns_not_invalid_reports (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_total_byte_and_depth_budgets_cover_all_inputs (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_unsafe_files_and_ancestors_are_never_read (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_unstable_selected_file_is_rejected (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_workspace_venv_dist_info_without_python_execution (step1_installer_host_collector.HostCollectorTests) ... ok\n\n----------------------------------------------------------------------\nRan 28 tests in 0.641s\n\nOK\n"
+    }
+  },
+  {
+    "behavior": "Output truncation removes orphan repository environment scope",
+    "phase": "red",
+    "original_directory": "/tmp/isaac-step1-xqpdr14v",
+    "results": [
+      {
+        "suite": "controls",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-xqpdr14v/controls.log"
+      },
+      {
+        "suite": "installer_host_inventory",
+        "exit_code": 1,
+        "log": "/tmp/isaac-step1-xqpdr14v/installer_host_inventory.log",
+        "tests": 19,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 1,
+        "passed": false
+      }
+    ],
+    "logs": {
+      "installer_host_inventory.log": "STEP1_RESULT {\"suite\": \"installer_host_inventory\", \"tests\": 19, \"skipped\": 0, \"failures\": 0, \"errors\": 1, \"passed\": false}\ntest_ambiguous_workspace_does_not_choose_a_name (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_changed_evidence_requires_review_and_keeps_local_origin_history (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_epoch_versions_and_private_env_name_are_importable_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_printable_paths_import_without_becoming_desired_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_schema_caps_keep_large_fixture_importable (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_environment_proposal_identity_survives_reordering (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_extended_sim_version_retained_without_breaking_review_grammar (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_invalid_reports_refuse_without_output_or_echoing_payload (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_links_and_targeted_followups_are_data_only_and_visible_in_review (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_noncanonical_checkout_requires_explicit_path_review (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_output_collision_and_link_input_refuse (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_package_group_membership_is_deterministic_review_evidence_not_install_intent (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_portable_import_proposes_paths_without_reading_host (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_report_budget_and_orphan_provenance_leave_cli_envelope_headroom (step1_installer_host_inventory.HostInventoryIntegration) ... ERROR\ntest_review_export_both_renderers_and_dry_run_with_remote_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_selected_sources_and_dpkg_status_survive_import_and_bind_to_records (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_system_packages_stay_grouped_with_complete_raw_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_unrepresentable_workspace_name_remains_unresolved_not_fatal (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_unverified_basic_markers_offer_exact_selected_scope_followups (step1_installer_host_inventory.HostInventoryIntegration) ... ok\n\n======================================================================\nERROR: test_report_budget_and_orphan_provenance_leave_cli_envelope_headroom (step1_installer_host_inventory.HostInventoryIntegration)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/workspaces/IsaacAutomator/src/tests/installer_host_inventory.test.py\", line 302, in test_report_budget_and_orphan_provenance_leave_cli_envelope_headroom\n    discovery._host.validate_report(report)\n  File \"/workspaces/IsaacAutomator/isaac-installer/lib/core/host_inventory.py\", line 158, in validate_report\n    validate_details(report)\n  File \"/workspaces/IsaacAutomator/isaac-installer/lib/core/host_inventory.py\", line 248, in validate_details\n    require(base in selected_envs or base in seeds or\n  File \"/workspaces/IsaacAutomator/isaac-installer/lib/core/host_inventory.py\", line 26, in require\n    raise InventoryError('Invalid host inventory report.')\ndiscovery_host_inventory.InventoryError: Invalid host inventory report.\n\n----------------------------------------------------------------------\nRan 19 tests in 2.895s\n\nFAILED (errors=1)\n"
+    }
+  },
+  {
+    "behavior": "Output truncation removes orphan repository environment scope",
+    "phase": "green",
+    "original_directory": "/tmp/isaac-step1-jz912n5k",
+    "results": [
+      {
+        "suite": "controls",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-jz912n5k/controls.log"
+      },
+      {
+        "suite": "installer_host_inventory",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-jz912n5k/installer_host_inventory.log",
+        "tests": 19,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "passed": true
+      },
+      {
+        "suite": "installer_host_collector",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-jz912n5k/installer_host_collector.log",
+        "tests": 28,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "passed": true
+      }
+    ],
+    "logs": {
+      "installer_host_inventory.log": "STEP1_RESULT {\"suite\": \"installer_host_inventory\", \"tests\": 19, \"skipped\": 0, \"failures\": 0, \"errors\": 0, \"passed\": true}\ntest_ambiguous_workspace_does_not_choose_a_name (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_changed_evidence_requires_review_and_keeps_local_origin_history (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_epoch_versions_and_private_env_name_are_importable_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_printable_paths_import_without_becoming_desired_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_schema_caps_keep_large_fixture_importable (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_environment_proposal_identity_survives_reordering (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_extended_sim_version_retained_without_breaking_review_grammar (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_invalid_reports_refuse_without_output_or_echoing_payload (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_links_and_targeted_followups_are_data_only_and_visible_in_review (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_noncanonical_checkout_requires_explicit_path_review (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_output_collision_and_link_input_refuse (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_package_group_membership_is_deterministic_review_evidence_not_install_intent (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_portable_import_proposes_paths_without_reading_host (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_report_budget_and_orphan_provenance_leave_cli_envelope_headroom (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_review_export_both_renderers_and_dry_run_with_remote_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_selected_sources_and_dpkg_status_survive_import_and_bind_to_records (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_system_packages_stay_grouped_with_complete_raw_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_unrepresentable_workspace_name_remains_unresolved_not_fatal (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_unverified_basic_markers_offer_exact_selected_scope_followups (step1_installer_host_inventory.HostInventoryIntegration) ... ok\n\n----------------------------------------------------------------------\nRan 19 tests in 2.924s\n\nOK\n",
+      "installer_host_collector.log": "SYNTHETIC_CLI {\"argv\": [\"/usr/bin/python3\", \"-I\", \"-B\", \"/workspaces/IsaacAutomator/isaac-installer/tools/collect_host_metadata.py\", \"--collect\", \"--home\", \"/tmp/isaac-step1-jz912n5k/installer_host_collector/host-fixture-re_5ozi7/home\", \"--system-root\", \"/tmp/isaac-step1-jz912n5k/installer_host_collector/host-fixture-re_5ozi7/system\", \"--output\", \"/tmp/isaac-step1-jz912n5k/installer_host_collector/host-fixture-re_5ozi7/report.json\"], \"exit_code\": 0, \"schema_version\": 1, \"identity\": \"fixture\", \"mode\": \"0600\"}\nSYNTHETIC_PLAN {\"argv\": [\"/usr/bin/python3\", \"-I\", \"-B\", \"/workspaces/IsaacAutomator/isaac-installer/tools/collect_host_metadata.py\", \"--plan\", \"--home\", \"/tmp/isaac-step1-jz912n5k/installer_host_collector/host-fixture-loj6o0ne/home\", \"--system-root\", \"/tmp/isaac-step1-jz912n5k/installer_host_collector/host-fixture-loj6o0ne/system\", \"--output\", \"/tmp/isaac-step1-jz912n5k/installer_host_collector/host-fixture-loj6o0ne/not-created.json\"], \"exit_code\": 0, \"kind\": \"host-inventory-plan\", \"report_created\": false}\nSTEP1_RESULT {\"suite\": \"installer_host_collector\", \"tests\": 28, \"skipped\": 0, \"failures\": 0, \"errors\": 0, \"passed\": true}\ntest_case_preserving_workspace_selection (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cli_collect_creates_private_exclusive_report (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cli_default_plan_has_no_target_reads_or_report_write (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cli_diagnostics_refuse_regular_redirects_before_help (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cli_refuses_observed_output_trees_and_symlinks (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_conda_selected_metadata_does_not_import_or_expose_urls (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_conflicting_environment_packages_remain_unknown (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cpu_models_have_import_compatible_bound (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_deadline_interrupts_a_stalled_selected_read (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_dpkg_inventory_preserves_multiarch_and_manual_unknowns (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_empty_fixture_contract (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_external_git_worktree_is_explicitly_unsupported (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_git_default_section_does_not_fabricate_origin (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_incomplete_workspace_enumeration_never_selects_a_candidate (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_invalid_limits_fail_before_output_creation (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_known_legacy_shadow_workspace_stays_ambiguous (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_limits_use_positive_import_compatible_caps (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_machine_facts_use_only_explicit_fixture_records (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_os_release_symlink_uses_only_fixed_usr_lib_fallback (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_plan_discloses_fixed_metadata_scope (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_repository_metadata_not_directory_name_identifies_component (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_sim_version_is_metadata_only (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_source_credentials_and_noncanonical_refs_remain_importable_gaps (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_source_scalar_limits_produce_unknowns_not_invalid_reports (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_total_byte_and_depth_budgets_cover_all_inputs (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_unsafe_files_and_ancestors_are_never_read (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_unstable_selected_file_is_rejected (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_workspace_venv_dist_info_without_python_execution (step1_installer_host_collector.HostCollectorTests) ... ok\n\n----------------------------------------------------------------------\nRan 28 tests in 0.667s\n\nOK\n"
+    }
+  },
+  {
+    "behavior": "Sim build metadata note",
+    "phase": "red",
+    "original_directory": "/tmp/isaac-step1-xk1fa8ek",
+    "results": [
+      {
+        "suite": "controls",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-xk1fa8ek/controls.log"
+      },
+      {
+        "suite": "installer_host_inventory",
+        "exit_code": 1,
+        "log": "/tmp/isaac-step1-xk1fa8ek/installer_host_inventory.log",
+        "tests": 10,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 1,
+        "passed": false
+      }
+    ],
+    "logs": {
+      "installer_host_inventory.log": "STEP1_RESULT {\"suite\": \"installer_host_inventory\", \"tests\": 10, \"skipped\": 0, \"failures\": 0, \"errors\": 1, \"passed\": false}\ntest_ambiguous_workspace_does_not_choose_a_name (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_changed_evidence_requires_review_and_keeps_local_origin_history (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_environment_proposal_identity_survives_reordering (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_extended_sim_version_retained_without_breaking_review_grammar (step1_installer_host_inventory.HostInventoryIntegration) ... ERROR\ntest_invalid_reports_refuse_without_output_or_echoing_payload (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_noncanonical_checkout_requires_explicit_path_review (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_output_collision_and_link_input_refuse (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_portable_import_proposes_paths_without_reading_host (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_review_export_both_renderers_and_dry_run_with_remote_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_system_packages_stay_grouped_with_complete_raw_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\n\n======================================================================\nERROR: test_extended_sim_version_retained_without_breaking_review_grammar (step1_installer_host_inventory.HostInventoryIntegration)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/workspaces/IsaacAutomator/src/tests/installer_host_inventory.test.py\", line 223, in test_extended_sim_version_retained_without_breaking_review_grammar\n    review = discovery.build_review(baseline, discovery.propose(baseline))\n  File \"/workspaces/IsaacAutomator/isaac-installer/lib/core/profile_discovery.py\", line 940, in build_review\n    _validate_document(candidate, 'workstation-candidate')\n  File \"/workspaces/IsaacAutomator/isaac-installer/lib/core/profile_discovery.py\", line 736, in _validate_document\n    _field_value(field['id'], field['value'])\n  File \"/workspaces/IsaacAutomator/isaac-installer/lib/core/profile_discovery.py\", line 599, in _field_value\n    raise DiscoveryError('Invalid customization metadata') from None\nprofile_discovery.DiscoveryError: Invalid customization metadata\n\n----------------------------------------------------------------------\nRan 10 tests in 1.366s\n\nFAILED (errors=1)\n"
+    }
+  },
+  {
+    "behavior": "Sim build metadata note",
+    "phase": "green",
+    "original_directory": "/tmp/isaac-step1-9x_fo5he",
+    "results": [
+      {
+        "suite": "controls",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-9x_fo5he/controls.log"
+      },
+      {
+        "suite": "installer_host_inventory",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-9x_fo5he/installer_host_inventory.log",
+        "tests": 10,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "passed": true
+      }
+    ],
+    "logs": {
+      "installer_host_inventory.log": "STEP1_RESULT {\"suite\": \"installer_host_inventory\", \"tests\": 10, \"skipped\": 0, \"failures\": 0, \"errors\": 0, \"passed\": true}\ntest_ambiguous_workspace_does_not_choose_a_name (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_changed_evidence_requires_review_and_keeps_local_origin_history (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_environment_proposal_identity_survives_reordering (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_extended_sim_version_retained_without_breaking_review_grammar (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_invalid_reports_refuse_without_output_or_echoing_payload (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_noncanonical_checkout_requires_explicit_path_review (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_output_collision_and_link_input_refuse (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_portable_import_proposes_paths_without_reading_host (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_review_export_both_renderers_and_dry_run_with_remote_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_system_packages_stay_grouped_with_complete_raw_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\n\n----------------------------------------------------------------------\nRan 10 tests in 1.406s\n\nOK\n"
+    }
+  },
+  {
+    "behavior": "unsupported desired workspace name",
+    "phase": "red",
+    "original_directory": "/tmp/isaac-step1-27xdka34",
+    "results": [
+      {
+        "suite": "controls",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-27xdka34/controls.log"
+      },
+      {
+        "suite": "installer_host_inventory",
+        "exit_code": 1,
+        "log": "/tmp/isaac-step1-27xdka34/installer_host_inventory.log",
+        "tests": 11,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 1,
+        "passed": false
+      }
+    ],
+    "logs": {
+      "installer_host_inventory.log": "STEP1_RESULT {\"suite\": \"installer_host_inventory\", \"tests\": 11, \"skipped\": 0, \"failures\": 0, \"errors\": 1, \"passed\": false}\ntest_ambiguous_workspace_does_not_choose_a_name (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_changed_evidence_requires_review_and_keeps_local_origin_history (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_environment_proposal_identity_survives_reordering (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_extended_sim_version_retained_without_breaking_review_grammar (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_invalid_reports_refuse_without_output_or_echoing_payload (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_noncanonical_checkout_requires_explicit_path_review (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_output_collision_and_link_input_refuse (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_portable_import_proposes_paths_without_reading_host (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_review_export_both_renderers_and_dry_run_with_remote_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_system_packages_stay_grouped_with_complete_raw_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_unrepresentable_workspace_name_remains_unresolved_not_fatal (step1_installer_host_inventory.HostInventoryIntegration) ... ERROR\n\n======================================================================\nERROR: test_unrepresentable_workspace_name_remains_unresolved_not_fatal (step1_installer_host_inventory.HostInventoryIntegration)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/workspaces/IsaacAutomator/src/tests/installer_host_inventory.test.py\", line 234, in test_unrepresentable_workspace_name_remains_unresolved_not_fatal\n    discovery.build_review(baseline, candidate)\n  File \"/workspaces/IsaacAutomator/isaac-installer/lib/core/profile_discovery.py\", line 940, in build_review\n    _validate_document(candidate, 'workstation-candidate')\n  File \"/workspaces/IsaacAutomator/isaac-installer/lib/core/profile_discovery.py\", line 736, in _validate_document\n    _field_value(field['id'], field['value'])\n  File \"/workspaces/IsaacAutomator/isaac-installer/lib/core/profile_discovery.py\", line 603, in _field_value\n    _workspace_name(value)\n  File \"/workspaces/IsaacAutomator/isaac-installer/lib/core/profile_discovery.py\", line 117, in _workspace_name\n    raise DiscoveryError('Invalid workspace name') from None\nprofile_discovery.DiscoveryError: Invalid workspace name\n\n----------------------------------------------------------------------\nRan 11 tests in 1.382s\n\nFAILED (errors=1)\n"
+    }
+  },
+  {
+    "behavior": "unsupported desired workspace name",
+    "phase": "green",
+    "original_directory": "/tmp/isaac-step1-1xeovamx",
+    "results": [
+      {
+        "suite": "controls",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-1xeovamx/controls.log"
+      },
+      {
+        "suite": "installer_host_inventory",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-1xeovamx/installer_host_inventory.log",
+        "tests": 11,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "passed": true
+      }
+    ],
+    "logs": {
+      "installer_host_inventory.log": "STEP1_RESULT {\"suite\": \"installer_host_inventory\", \"tests\": 11, \"skipped\": 0, \"failures\": 0, \"errors\": 0, \"passed\": true}\ntest_ambiguous_workspace_does_not_choose_a_name (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_changed_evidence_requires_review_and_keeps_local_origin_history (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_environment_proposal_identity_survives_reordering (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_extended_sim_version_retained_without_breaking_review_grammar (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_invalid_reports_refuse_without_output_or_echoing_payload (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_noncanonical_checkout_requires_explicit_path_review (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_output_collision_and_link_input_refuse (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_portable_import_proposes_paths_without_reading_host (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_review_export_both_renderers_and_dry_run_with_remote_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_system_packages_stay_grouped_with_complete_raw_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_unrepresentable_workspace_name_remains_unresolved_not_fatal (step1_installer_host_inventory.HostInventoryIntegration) ... ok\n\n----------------------------------------------------------------------\nRan 11 tests in 1.464s\n\nOK\n"
+    }
+  },
+  {
+    "behavior": "collector epoch and private environment name",
+    "phase": "red",
+    "original_directory": "/tmp/isaac-step1-2hl1qigw",
+    "results": [
+      {
+        "suite": "controls",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-2hl1qigw/controls.log"
+      },
+      {
+        "suite": "installer_host_inventory",
+        "exit_code": 1,
+        "log": "/tmp/isaac-step1-2hl1qigw/installer_host_inventory.log",
+        "tests": 12,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 1,
+        "passed": false
+      }
+    ],
+    "logs": {
+      "installer_host_inventory.log": "STEP1_RESULT {\"suite\": \"installer_host_inventory\", \"tests\": 12, \"skipped\": 0, \"failures\": 0, \"errors\": 1, \"passed\": false}\ntest_ambiguous_workspace_does_not_choose_a_name (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_changed_evidence_requires_review_and_keeps_local_origin_history (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_epoch_versions_and_private_env_name_are_importable_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ERROR\ntest_environment_proposal_identity_survives_reordering (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_extended_sim_version_retained_without_breaking_review_grammar (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_invalid_reports_refuse_without_output_or_echoing_payload (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_noncanonical_checkout_requires_explicit_path_review (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_output_collision_and_link_input_refuse (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_portable_import_proposes_paths_without_reading_host (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_review_export_both_renderers_and_dry_run_with_remote_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_system_packages_stay_grouped_with_complete_raw_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_unrepresentable_workspace_name_remains_unresolved_not_fatal (step1_installer_host_inventory.HostInventoryIntegration) ... ok\n\n======================================================================\nERROR: test_collector_epoch_versions_and_private_env_name_are_importable_evidence (step1_installer_host_inventory.HostInventoryIntegration)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/workspaces/IsaacAutomator/src/tests/installer_host_inventory.test.py\", line 251, in test_collector_epoch_versions_and_private_env_name_are_importable_evidence\n    baseline = discovery._host.baseline(report, str(self.source), discovery)\n  File \"/workspaces/IsaacAutomator/isaac-installer/lib/core/host_inventory.py\", line 159, in baseline\n    validate_report(report); path(report_path)\n  File \"/workspaces/IsaacAutomator/isaac-installer/lib/core/host_inventory.py\", line 131, in validate_report\n    text(env['name'], r'[A-Za-z0-9][A-Za-z0-9_.-]*', 64)\n  File \"/workspaces/IsaacAutomator/isaac-installer/lib/core/host_inventory.py\", line 34, in text\n    require(type(value) is str and len(value) <= maximum and re.fullmatch(pattern, value) is not None)\n  File \"/workspaces/IsaacAutomator/isaac-installer/lib/core/host_inventory.py\", line 26, in require\n    raise InventoryError('Invalid host inventory report.')\ndiscovery_host_inventory.InventoryError: Invalid host inventory report.\n\n----------------------------------------------------------------------\nRan 12 tests in 1.386s\n\nFAILED (errors=1)\n"
+    }
+  },
+  {
+    "behavior": "collector epoch and private environment name",
+    "phase": "green",
+    "original_directory": "/tmp/isaac-step1-x6mpggw6",
+    "results": [
+      {
+        "suite": "controls",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-x6mpggw6/controls.log"
+      },
+      {
+        "suite": "installer_host_inventory",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-x6mpggw6/installer_host_inventory.log",
+        "tests": 12,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "passed": true
+      },
+      {
+        "suite": "installer_host_collector",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-x6mpggw6/installer_host_collector.log",
+        "tests": 26,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "passed": true
+      }
+    ],
+    "logs": {
+      "installer_host_inventory.log": "STEP1_RESULT {\"suite\": \"installer_host_inventory\", \"tests\": 12, \"skipped\": 0, \"failures\": 0, \"errors\": 0, \"passed\": true}\ntest_ambiguous_workspace_does_not_choose_a_name (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_changed_evidence_requires_review_and_keeps_local_origin_history (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_epoch_versions_and_private_env_name_are_importable_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_environment_proposal_identity_survives_reordering (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_extended_sim_version_retained_without_breaking_review_grammar (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_invalid_reports_refuse_without_output_or_echoing_payload (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_noncanonical_checkout_requires_explicit_path_review (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_output_collision_and_link_input_refuse (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_portable_import_proposes_paths_without_reading_host (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_review_export_both_renderers_and_dry_run_with_remote_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_system_packages_stay_grouped_with_complete_raw_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_unrepresentable_workspace_name_remains_unresolved_not_fatal (step1_installer_host_inventory.HostInventoryIntegration) ... ok\n\n----------------------------------------------------------------------\nRan 12 tests in 1.383s\n\nOK\n",
+      "installer_host_collector.log": "SYNTHETIC_CLI {\"argv\": [\"/usr/bin/python3\", \"-I\", \"-B\", \"/workspaces/IsaacAutomator/isaac-installer/tools/collect_host_metadata.py\", \"--collect\", \"--home\", \"/tmp/isaac-step1-x6mpggw6/installer_host_collector/host-fixture-cuw3qcii/home\", \"--system-root\", \"/tmp/isaac-step1-x6mpggw6/installer_host_collector/host-fixture-cuw3qcii/system\", \"--output\", \"/tmp/isaac-step1-x6mpggw6/installer_host_collector/host-fixture-cuw3qcii/report.json\"], \"exit_code\": 0, \"schema_version\": 1, \"identity\": \"fixture\", \"mode\": \"0600\"}\nSYNTHETIC_PLAN {\"argv\": [\"/usr/bin/python3\", \"-I\", \"-B\", \"/workspaces/IsaacAutomator/isaac-installer/tools/collect_host_metadata.py\", \"--plan\", \"--home\", \"/tmp/isaac-step1-x6mpggw6/installer_host_collector/host-fixture-7vh9r92j/home\", \"--system-root\", \"/tmp/isaac-step1-x6mpggw6/installer_host_collector/host-fixture-7vh9r92j/system\", \"--output\", \"/tmp/isaac-step1-x6mpggw6/installer_host_collector/host-fixture-7vh9r92j/not-created.json\"], \"exit_code\": 0, \"kind\": \"host-inventory-plan\", \"report_created\": false}\nSTEP1_RESULT {\"suite\": \"installer_host_collector\", \"tests\": 26, \"skipped\": 0, \"failures\": 0, \"errors\": 0, \"passed\": true}\ntest_case_preserving_workspace_selection (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cli_collect_creates_private_exclusive_report (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cli_default_plan_has_no_target_reads_or_report_write (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cli_diagnostics_refuse_regular_redirects_before_help (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cli_refuses_observed_output_trees_and_symlinks (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_conda_selected_metadata_does_not_import_or_expose_urls (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_conflicting_environment_packages_remain_unknown (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_cpu_models_have_import_compatible_bound (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_deadline_interrupts_a_stalled_selected_read (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_dpkg_inventory_preserves_multiarch_and_manual_unknowns (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_empty_fixture_contract (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_external_git_worktree_is_explicitly_unsupported (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_git_default_section_does_not_fabricate_origin (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_incomplete_workspace_enumeration_never_selects_a_candidate (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_invalid_limits_fail_before_output_creation (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_known_legacy_shadow_workspace_stays_ambiguous (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_limits_use_positive_import_compatible_caps (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_machine_facts_use_only_explicit_fixture_records (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_os_release_symlink_uses_only_fixed_usr_lib_fallback (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_plan_discloses_fixed_metadata_scope (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_repository_metadata_not_directory_name_identifies_component (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_sim_version_is_metadata_only (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_total_byte_and_depth_budgets_cover_all_inputs (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_unsafe_files_and_ancestors_are_never_read (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_unstable_selected_file_is_rejected (step1_installer_host_collector.HostCollectorTests) ... ok\ntest_workspace_venv_dist_info_without_python_execution (step1_installer_host_collector.HostCollectorTests) ... ok\n\n----------------------------------------------------------------------\nRan 26 tests in 0.535s\n\nOK\n"
+    }
+  },
+  {
+    "behavior": "selected home symlink ancestor",
+    "phase": "red",
+    "original_directory": "/tmp/isaac-step1-fo3rs_y_",
+    "results": [
+      {
+        "suite": "controls",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-fo3rs_y_/controls.log"
+      },
+      {
+        "suite": "installer_host_inventory",
+        "exit_code": 1,
+        "log": "/tmp/isaac-step1-fo3rs_y_/installer_host_inventory.log",
+        "tests": 20,
+        "skipped": 0,
+        "failures": 1,
+        "errors": 0,
+        "passed": false
+      }
+    ],
+    "logs": {
+      "installer_host_inventory.log": "STEP1_RESULT {\"suite\": \"installer_host_inventory\", \"tests\": 20, \"skipped\": 0, \"failures\": 1, \"errors\": 0, \"passed\": false}\ntest_ambiguous_workspace_does_not_choose_a_name (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_changed_evidence_requires_review_and_keeps_local_origin_history (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_epoch_versions_and_private_env_name_are_importable_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_printable_paths_import_without_becoming_desired_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_schema_caps_keep_large_fixture_importable (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_documents_symlink_ancestor_collects_and_imports_without_target_grant (step1_installer_host_inventory.HostInventoryIntegration) ... FAIL\ntest_environment_proposal_identity_survives_reordering (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_extended_sim_version_retained_without_breaking_review_grammar (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_invalid_reports_refuse_without_output_or_echoing_payload (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_links_and_targeted_followups_are_data_only_and_visible_in_review (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_noncanonical_checkout_requires_explicit_path_review (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_output_collision_and_link_input_refuse (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_package_group_membership_is_deterministic_review_evidence_not_install_intent (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_portable_import_proposes_paths_without_reading_host (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_report_budget_and_orphan_provenance_leave_cli_envelope_headroom (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_review_export_both_renderers_and_dry_run_with_remote_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_selected_sources_and_dpkg_status_survive_import_and_bind_to_records (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_system_packages_stay_grouped_with_complete_raw_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_unrepresentable_workspace_name_remains_unresolved_not_fatal (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_unverified_basic_markers_offer_exact_selected_scope_followups (step1_installer_host_inventory.HostInventoryIntegration) ... ok\n\n======================================================================\nFAIL: test_documents_symlink_ancestor_collects_and_imports_without_target_grant (step1_installer_host_inventory.HostInventoryIntegration)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/workspaces/IsaacAutomator/src/tests/installer_host_inventory.test.py\", line 403, in test_documents_symlink_ancestor_collects_and_imports_without_target_grant\n    self.assertEqual(result.returncode, 0, result.stdout + result.stderr)\nAssertionError: 2 != 0 : {\"status\": \"refused\", \"execution_authorized\": false, \"reason\": \"output_workflow_failed\"}\nOutput workflow refused or interrupted; no installation performed.\n\n\n----------------------------------------------------------------------\nRan 20 tests in 2.930s\n\nFAILED (failures=1)\n"
+    }
+  },
+  {
+    "behavior": "selected home symlink ancestor",
+    "phase": "green",
+    "original_directory": "/tmp/isaac-step1-w4gt4m9y",
+    "results": [
+      {
+        "suite": "controls",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-w4gt4m9y/controls.log"
+      },
+      {
+        "suite": "installer_host_inventory",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-w4gt4m9y/installer_host_inventory.log",
+        "tests": 20,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "passed": true
+      }
+    ],
+    "logs": {
+      "installer_host_inventory.log": "STEP1_RESULT {\"suite\": \"installer_host_inventory\", \"tests\": 20, \"skipped\": 0, \"failures\": 0, \"errors\": 0, \"passed\": true}\ntest_ambiguous_workspace_does_not_choose_a_name (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_changed_evidence_requires_review_and_keeps_local_origin_history (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_epoch_versions_and_private_env_name_are_importable_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_printable_paths_import_without_becoming_desired_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_schema_caps_keep_large_fixture_importable (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_documents_symlink_ancestor_collects_and_imports_without_target_grant (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_environment_proposal_identity_survives_reordering (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_extended_sim_version_retained_without_breaking_review_grammar (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_invalid_reports_refuse_without_output_or_echoing_payload (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_links_and_targeted_followups_are_data_only_and_visible_in_review (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_noncanonical_checkout_requires_explicit_path_review (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_output_collision_and_link_input_refuse (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_package_group_membership_is_deterministic_review_evidence_not_install_intent (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_portable_import_proposes_paths_without_reading_host (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_report_budget_and_orphan_provenance_leave_cli_envelope_headroom (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_review_export_both_renderers_and_dry_run_with_remote_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_selected_sources_and_dpkg_status_survive_import_and_bind_to_records (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_system_packages_stay_grouped_with_complete_raw_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_unrepresentable_workspace_name_remains_unresolved_not_fatal (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_unverified_basic_markers_offer_exact_selected_scope_followups (step1_installer_host_inventory.HostInventoryIntegration) ... ok\n\n----------------------------------------------------------------------\nRan 20 tests in 2.969s\n\nOK\n"
+    }
+  },
+  {
+    "behavior": "shallow raw system ancestor, no grant",
+    "phase": "red",
+    "original_directory": "/tmp/isaac-step1-nrb53p23",
+    "results": [
+      {
+        "suite": "controls",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-nrb53p23/controls.log"
+      },
+      {
+        "suite": "installer_host_inventory",
+        "exit_code": 1,
+        "log": "/tmp/isaac-step1-nrb53p23/installer_host_inventory.log",
+        "tests": 21,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 1,
+        "passed": false
+      }
+    ],
+    "logs": {
+      "installer_host_inventory.log": "STEP1_RESULT {\"suite\": \"installer_host_inventory\", \"tests\": 21, \"skipped\": 0, \"failures\": 0, \"errors\": 1, \"passed\": false}\ntest_ambiguous_workspace_does_not_choose_a_name (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_changed_evidence_requires_review_and_keeps_local_origin_history (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_epoch_versions_and_private_env_name_are_importable_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_printable_paths_import_without_becoming_desired_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_schema_caps_keep_large_fixture_importable (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_documents_symlink_ancestor_collects_and_imports_without_target_grant (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_environment_proposal_identity_survives_reordering (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_extended_sim_version_retained_without_breaking_review_grammar (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_invalid_reports_refuse_without_output_or_echoing_payload (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_links_and_targeted_followups_are_data_only_and_visible_in_review (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_noncanonical_checkout_requires_explicit_path_review (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_output_collision_and_link_input_refuse (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_package_group_membership_is_deterministic_review_evidence_not_install_intent (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_portable_import_proposes_paths_without_reading_host (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_report_budget_and_orphan_provenance_leave_cli_envelope_headroom (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_review_export_both_renderers_and_dry_run_with_remote_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_selected_sources_and_dpkg_status_survive_import_and_bind_to_records (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_shallow_system_ancestor_is_raw_evidence_not_a_local_grant (step1_installer_host_inventory.HostInventoryIntegration) ... ERROR\ntest_system_packages_stay_grouped_with_complete_raw_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_unrepresentable_workspace_name_remains_unresolved_not_fatal (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_unverified_basic_markers_offer_exact_selected_scope_followups (step1_installer_host_inventory.HostInventoryIntegration) ... ok\n\n======================================================================\nERROR: test_shallow_system_ancestor_is_raw_evidence_not_a_local_grant (step1_installer_host_inventory.HostInventoryIntegration)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/workspaces/IsaacAutomator/src/tests/installer_host_inventory.test.py\", line 435, in test_shallow_system_ancestor_is_raw_evidence_not_a_local_grant\n    baseline = discovery._host.baseline(report, str(self.source), discovery)\n  File \"/workspaces/IsaacAutomator/isaac-installer/lib/core/host_inventory.py\", line 307, in baseline\n    validate_report(report); discovery._path(report_path)\n  File \"/workspaces/IsaacAutomator/isaac-installer/lib/core/host_inventory.py\", line 150, in validate_report\n    text(issue['code'], r'[a-z][a-z0-9_-]*', 80); path(issue['path'], root=True)\n  File \"/workspaces/IsaacAutomator/isaac-installer/lib/core/host_inventory.py\", line 45, in path\n    require(len(PurePosixPath(value).parts) >= 3)\n  File \"/workspaces/IsaacAutomator/isaac-installer/lib/core/host_inventory.py\", line 26, in require\n    raise InventoryError('Invalid host inventory report.')\ndiscovery_host_inventory.InventoryError: Invalid host inventory report.\n\n----------------------------------------------------------------------\nRan 21 tests in 2.937s\n\nFAILED (errors=1)\n"
+    }
+  },
+  {
+    "behavior": "shallow raw system ancestor, no grant",
+    "phase": "green",
+    "original_directory": "/tmp/isaac-step1-cgw2e1z6",
+    "results": [
+      {
+        "suite": "controls",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-cgw2e1z6/controls.log"
+      },
+      {
+        "suite": "installer_host_inventory",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-cgw2e1z6/installer_host_inventory.log",
+        "tests": 21,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "passed": true
+      }
+    ],
+    "logs": {
+      "installer_host_inventory.log": "STEP1_RESULT {\"suite\": \"installer_host_inventory\", \"tests\": 21, \"skipped\": 0, \"failures\": 0, \"errors\": 0, \"passed\": true}\ntest_ambiguous_workspace_does_not_choose_a_name (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_changed_evidence_requires_review_and_keeps_local_origin_history (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_epoch_versions_and_private_env_name_are_importable_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_printable_paths_import_without_becoming_desired_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_collector_schema_caps_keep_large_fixture_importable (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_documents_symlink_ancestor_collects_and_imports_without_target_grant (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_environment_proposal_identity_survives_reordering (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_extended_sim_version_retained_without_breaking_review_grammar (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_invalid_reports_refuse_without_output_or_echoing_payload (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_links_and_targeted_followups_are_data_only_and_visible_in_review (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_noncanonical_checkout_requires_explicit_path_review (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_output_collision_and_link_input_refuse (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_package_group_membership_is_deterministic_review_evidence_not_install_intent (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_portable_import_proposes_paths_without_reading_host (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_report_budget_and_orphan_provenance_leave_cli_envelope_headroom (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_review_export_both_renderers_and_dry_run_with_remote_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_selected_sources_and_dpkg_status_survive_import_and_bind_to_records (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_shallow_system_ancestor_is_raw_evidence_not_a_local_grant (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_system_packages_stay_grouped_with_complete_raw_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_unrepresentable_workspace_name_remains_unresolved_not_fatal (step1_installer_host_inventory.HostInventoryIntegration) ... ok\ntest_unverified_basic_markers_offer_exact_selected_scope_followups (step1_installer_host_inventory.HostInventoryIntegration) ... ok\n\n----------------------------------------------------------------------\nRan 21 tests in 3.015s\n\nOK\n"
+    }
+  }
+]

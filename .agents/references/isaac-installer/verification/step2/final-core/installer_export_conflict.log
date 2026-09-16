@@ -1,0 +1,7 @@
+STEP1_RESULT {"suite": "installer_export_conflict", "tests": 1, "skipped": 0, "failures": 0, "errors": 0, "passed": true}
+test_empty_declare_export_resolve_render_collision_and_distinct_control (step1_installer_export_conflict.ExportConflictTests) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.364s
+
+OK

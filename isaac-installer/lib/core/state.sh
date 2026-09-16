@@ -138,59 +138,56 @@ with open('${state_file}', 'w') as f:
 # Takes a full snapshot of active workspace state and writes it to state.json
 sync_state_ledger() {
     detect_target_user
-    init_state
-    local state_file
-    state_file="$(resolve_state_file)"
-    local state_dir
-    state_dir="$(resolve_state_dir)"
+    local ws_root sim_dir conda_env state_file state_dir
+    local lab_dir arena_dir gr00t_dir lerobot_dir
+    # Resolve everything before initialization/writes. Refusal is not absence.
+    ws_root="$(resolve_default_workspace_dir)" || return $?
+    lab_dir="$(resolve_isaaclab_dir)" || return $?
+    arena_dir="$(resolve_arena_dir)" || return $?
+    gr00t_dir="$(resolve_gr00t_dir)" || return $?
+    lerobot_dir="$(resolve_lerobot_dir)" || return $?
+    conda_env="$(resolve_conda_env_path "isaaclab")" || return $?
+    sim_dir="$(resolve_isaacsim_dir)" || return $?
+    state_file="$(resolve_state_file)" || return $?
+    state_dir="$(resolve_state_dir)" || return $?
 
-    local lab_existing
-    lab_existing="$(find_existing_repo "IsaacLab" || echo "")"
-    local lab_info="{\"exists\": false}"
-    if [[ -n "$lab_existing" ]]; then
-        lab_info="$(get_repo_info "$lab_existing")"
-    fi
-
-    local arena_existing
-    arena_existing="$(find_existing_repo "IsaacLab-Arena" || echo "")"
-    local arena_info="{\"exists\": false}"
-    if [[ -n "$arena_existing" ]]; then
-        arena_info="$(get_repo_info "$arena_existing")"
-    fi
-
-    local conda_env
-    conda_env="$(resolve_conda_env_path "isaaclab" 2>/dev/null || echo "")"
-    local sim_dir="${ISAACSIM_DIR:-${TARGET_HOME}/IsaacSim}"
-
-    python3 -c "
-import json, datetime
-try:
-    with open('${state_file}', 'r') as f:
-        data = json.load(f)
-except Exception:
-    data = {}
-
-data['updated_at'] = datetime.datetime.utcnow().isoformat() + 'Z'
-data['target_user'] = '${TARGET_USER}'
-data['workspace_root'] = '$(resolve_default_workspace_dir)'
-data['simulation'] = {
-    'version': '${ISAACSIM_VERSION:-6.0.1}',
-    'install_dir': '${sim_dir}',
-    'exists': $([[ -d "$sim_dir" ]] && echo "True" || echo "False")
-}
-data['conda'] = {
-    'env_name': 'isaaclab',
-    'env_path': '${conda_env}',
-    'exists': $([[ -d "$conda_env" && -x "$conda_env/bin/python" ]] && echo "True" || echo "False")
-}
-data['repositories'] = {
-    'isaaclab': json.loads('''${lab_info}'''),
-    'arena': json.loads('''${arena_info}''')
-}
-
-with open('${state_file}', 'w') as f:
-    json.dump(data, f, indent=2)
-" 2>/dev/null || true
+    local path info
+    local repo_info=()
+    for path in "$lab_dir" "$arena_dir" "$gr00t_dir" "$lerobot_dir"; do
+        info='{"exists": false}'
+        if [[ -d "$path/.git" ]]; then
+            info="$(get_repo_info "$path")" || return $?
+        fi
+        repo_info+=("$info")
+    done
+    init_state || return $?
+    # Paths/metadata are data, never interpolated Python source.
+    python3 - "$state_file" "$TARGET_USER" "$ws_root" "$sim_dir" \
+        "${ISAACSIM_VERSION:-6.0.1}" "$conda_env" \
+        "$lab_dir" "$arena_dir" "$gr00t_dir" "$lerobot_dir" "${repo_info[@]}" <<'PY'
+import datetime
+import json
+import os
+import sys
+state_file, user, root, sim, version, conda = sys.argv[1:7]
+with open(state_file) as stream:
+    data = json.load(stream)
+repositories = {}
+for key, path, raw in zip(('isaaclab', 'arena', 'gr00t', 'lerobot'), sys.argv[7:11], sys.argv[11:15]):
+    info = json.loads(raw)
+    info['path'] = path
+    repositories[key] = info
+# Path selection is not identity/adoption/healthy-runtime evidence.
+data.update(updated_at=datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            target_user=user, workspace_root=root, repositories=repositories,
+            simulation=dict(version=version, install_dir=sim, exists=os.path.isdir(sim)),
+            conda=dict(env_name='isaaclab', env_path=conda,
+                       exists=os.path.isdir(conda) and os.access(os.path.join(conda, 'bin/python'), os.X_OK)))
+with open(state_file, 'w') as stream:
+    json.dump(data, stream, indent=2)
+PY
+    local result=$?
+    [[ "$result" -eq 0 ]] || return "$result"
     chown -R "${TARGET_USER}:${TARGET_USER}" "${state_dir}" 2>/dev/null || true
 }
 
@@ -205,15 +202,15 @@ audit_workspace_drift() {
     detect_target_user
 
     local ws_root
-    ws_root="$(resolve_default_workspace_dir)"
+    ws_root="$(resolve_default_workspace_dir)" || return $?
     local layout="${WORKSPACE_LAYOUT:-${CFG_WORKSPACE_LAYOUT:-auto}}"
 
     # 1. Audit Isaac Lab
     local lab_enabled="${CFG_REPOSITORIES_ISAACLAB_ENABLED:-true}"
     local lab_target_path
-    lab_target_path="$(resolve_repo_dest_path "IsaacLab" "${ISAACLAB_REPO:-https://github.com/boredengineering/IsaacLab.git}" "${ISAACLAB_DIR:-}")"
+    lab_target_path="$(resolve_isaaclab_dir)" || return $?
     local lab_existing
-    lab_existing="$(find_existing_repo "IsaacLab" || echo "")"
+    lab_existing="${lab_target_path}"
 
     if [[ "$lab_enabled" == "true" ]]; then
         if [[ -z "$lab_existing" || ! -d "${lab_existing}/.git" ]]; then
@@ -224,7 +221,7 @@ audit_workspace_drift() {
             fi
 
             local lab_info
-            lab_info="$(get_repo_info "$lab_existing")"
+            lab_info="$(get_repo_info "$lab_existing")" || return $?
             local desired_ref="${ISAACLAB_TAG:-${ISAACLAB_BRANCH:-main}}"
             
             # Check remotes & ref drift
@@ -296,9 +293,9 @@ for d in drifts:
     # 2. Audit IsaacLab-Arena
     local arena_enabled="${CFG_REPOSITORIES_ARENA_ENABLED:-true}"
     local arena_target_path
-    arena_target_path="$(resolve_repo_dest_path "IsaacLab-Arena" "${ARENA_REPO:-https://github.com/boredengineering/IsaacLab-Arena.git}" "${ARENA_DIR:-}")"
+    arena_target_path="$(resolve_arena_dir)" || return $?
     local arena_existing
-    arena_existing="$(find_existing_repo "IsaacLab-Arena" || echo "")"
+    arena_existing="${arena_target_path}"
 
     if [[ "$arena_enabled" == "true" ]]; then
         if [[ -z "$arena_existing" || ! -d "${arena_existing}/.git" ]]; then
@@ -309,7 +306,7 @@ for d in drifts:
             fi
 
             local arena_info
-            arena_info="$(get_repo_info "$arena_existing")"
+            arena_info="$(get_repo_info "$arena_existing")" || return $?
             local arena_desired_ref="${ARENA_TAG:-${ARENA_BRANCH:-release/0.1.1}}"
             local arena_origin_norm="$(normalize_git_url "${ARENA_REPO:-https://github.com/boredengineering/IsaacLab-Arena.git}")"
             local arena_upstream_norm="$(normalize_git_url "${ARENA_UPSTREAM:-https://github.com/isaac-sim/IsaacLab-Arena.git}")"
@@ -371,9 +368,9 @@ for d in drifts:
     # 3. Audit LeRobot
     local lerobot_enabled="${CFG_REPOSITORIES_LEROBOT_ENABLED:-false}"
     local lerobot_target_path
-    lerobot_target_path="$(resolve_repo_dest_path "lerobot" "${LEROBOT_REPO:-https://github.com/huggingface/lerobot.git}" "${LEROBOT_DIR:-}")"
+    lerobot_target_path="$(resolve_lerobot_dir)" || return $?
     local lerobot_existing
-    lerobot_existing="$(find_existing_repo "lerobot" || echo "")"
+    lerobot_existing="${lerobot_target_path}"
 
     if [[ "$lerobot_enabled" == "true" ]]; then
         if [[ -z "$lerobot_existing" || ! -d "${lerobot_existing}/.git" ]]; then
@@ -384,7 +381,7 @@ for d in drifts:
             fi
 
             local lerobot_info
-            lerobot_info="$(get_repo_info "$lerobot_existing")"
+            lerobot_info="$(get_repo_info "$lerobot_existing")" || return $?
             local lerobot_desired_ref="${LEROBOT_TAG:-${LEROBOT_BRANCH:-main}}"
             local lerobot_origin_norm="$(normalize_git_url "${LEROBOT_REPO:-https://github.com/huggingface/lerobot.git}")"
             local lerobot_upstream_norm="$(normalize_git_url "${LEROBOT_UPSTREAM:-https://github.com/huggingface/lerobot.git}")"
@@ -445,9 +442,9 @@ for d in drifts:
 
     # 4. Audit Conda Environment Drift
     local conda_bin
-    conda_bin="$(resolve_conda_bin 2>/dev/null || echo "")"
+    conda_bin="$(resolve_conda_bin)" || return $?
     local user_env_path
-    user_env_path="$(resolve_conda_env_path "isaaclab" 2>/dev/null || echo "")"
+    user_env_path="$(resolve_conda_env_path "isaaclab")" || return $?
 
     if [[ -d "/opt/conda/envs/isaaclab" || -d "/opt/conda" ]]; then
         DRIFT_ITEMS+=("CondaEnv|CONDA_ENV_MISLOCATED|/opt/conda/envs/isaaclab|${user_env_path}|Orphaned /opt/conda system environment found outside user's active Conda")
@@ -459,7 +456,7 @@ for d in drifts:
 
     # 5. Audit Standalone Isaac Sim Bridge, .pth link & Vulkan Hook Drift
     local sim_dir
-    sim_dir="$(resolve_isaacsim_dir 2>/dev/null || echo "")"
+    sim_dir="$(resolve_isaacsim_dir)" || return $?
     if [[ -n "$sim_dir" && -d "$sim_dir" ]]; then
         if [[ -f "${sim_dir}/setup_python_env.sh" && ! -f "${sim_dir}/setup_conda_env.sh" ]]; then
             DRIFT_ITEMS+=("IsaacSim|SIM_BRIDGE_MISSING|None|${sim_dir}/setup_conda_env.sh|Isaac Sim 6.0.1 setup_conda_env.sh bridge script missing")
@@ -507,7 +504,7 @@ for d in drifts:
 
 print_drift_report() {
     log_header "Workspace State & Drift Audit"
-    audit_workspace_drift
+    audit_workspace_drift || return $?
 
     if [[ ${#DRIFT_ITEMS[@]} -eq 0 ]]; then
         log_success "Workspace is 100% in sync with declarative profile (${CONFIG_FILE}). Zero drift detected."
@@ -530,7 +527,7 @@ print_drift_report() {
     done
     echo "----------------------------------------------------------------------------------------------------------------------"
     echo -e "Total Drift Issues Found: ${CLR_YELLOW}${#DRIFT_ITEMS[@]}${CLR_RESET}"
-    echo -e "Run ${CLR_BOLD}./bin/isaac-installer repair${CLR_RESET} to automatically reconcile and heal all drift."
+    echo "Automatic repair/adoption is unsupported. The repair command reports selected paths only; no reconciliation is attempted."
     echo ""
 }
 
@@ -538,162 +535,28 @@ print_drift_report() {
 # Self-Healing Reconciliation Engine (`repair` / `fix`)
 # ==============================================================================
 
+# Selection-only planning: no drift probes, metadata imports, Git or writes.
+# Unsupported mutation remains explicit; this is not an adoption/action receipt.
+plan_workspace_repair() {
+    local lab_dir arena_dir gr00t_dir lerobot_dir
+    lab_dir="$(resolve_isaaclab_dir)" || return $?
+    arena_dir="$(resolve_arena_dir)" || return $?
+    gr00t_dir="$(resolve_gr00t_dir)" || return $?
+    lerobot_dir="$(resolve_lerobot_dir)" || return $?
+    python3 - "$lab_dir" "$arena_dir" "$gr00t_dir" "$lerobot_dir" <<'PY'
+import json
+import sys
+print(json.dumps(dict(
+    status='unsupported', mutation_supported=False,
+    reason='Existing-resource repair/adoption requires a separately implemented and reviewed preservation policy; no actions were attempted.',
+    selected_paths=dict(zip(('isaaclab', 'arena', 'gr00t', 'lerobot'), sys.argv[1:])),
+    actions=[]), indent=2))
+PY
+}
+
 repair_workspace_drift() {
-    log_header "Initiating Workspace Self-Healing & Drift Reconciliation"
-    audit_workspace_drift
-
-    if [[ ${#DRIFT_ITEMS[@]} -eq 0 ]]; then
-        log_success "No drift detected. Workspace is healthy and clean."
-        sync_state_ledger
-        return 0
-    fi
-
-    detect_target_user
-
-    for item in "${DRIFT_ITEMS[@]}"; do
-        IFS='|' read -r repo dtype cur target desc <<< "$item"
-        log_step "Reconciling [${repo}]: ${dtype}..."
-
-        case "$dtype" in
-            REPO_MISSING)
-                log_info "Provisioning missing repository [${repo}] -> ${target}..."
-                case "$repo" in
-                    IsaacLab)
-                        install_isaac_lab
-                        ;;
-                    IsaacLab-Arena)
-                        install_isaaclab_arena
-                        ;;
-                    LeRobot)
-                        install_physical_ai_stack
-                        ;;
-                esac
-                log_success "${repo} provisioned."
-                ;;
-
-            PATH_MISLOCATED)
-                log_info "Migrating ${cur} -> ${target}..."
-                if [[ -d "$target" ]]; then
-                    log_warn "Target path ${target} already exists. Skipping directory move to avoid overwrite."
-                else
-                    mkdir -p "$(dirname "$target")"
-                    mv "$cur" "$target"
-                    chown -R "${TARGET_USER}:${TARGET_USER}" "$target"
-                    register_github_desktop_repo "$target"
-                    log_success "Migrated ${repo} to ${target}."
-                fi
-                ;;
-
-            ORIGIN_MISMATCH)
-                log_info "Re-wiring origin remote on ${repo} -> ${target}..."
-                local repo_dir
-                repo_dir="$(find_existing_repo "$repo")"
-                sudo -H -u "${TARGET_USER}" git -C "$repo_dir" config --global --add safe.directory "$repo_dir" 2>/dev/null || true
-                sudo -H -u "${TARGET_USER}" git -C "$repo_dir" remote set-url origin "$target" 2>/dev/null || \
-                sudo -H -u "${TARGET_USER}" git -C "$repo_dir" remote add origin "$target" 2>/dev/null || true
-                log_success "Origin remote updated to ${target}."
-                ;;
-
-            UPSTREAM_MISSING|UPSTREAM_MISMATCH)
-                log_info "Adding canonical upstream remote on ${repo} -> ${target}..."
-                local repo_dir
-                repo_dir="$(find_existing_repo "$repo")"
-                sudo -H -u "${TARGET_USER}" git -C "$repo_dir" config --global --add safe.directory "$repo_dir" 2>/dev/null || true
-                sudo -H -u "${TARGET_USER}" git -C "$repo_dir" remote set-url upstream "$target" 2>/dev/null || \
-                sudo -H -u "${TARGET_USER}" git -C "$repo_dir" remote add upstream "$target" 2>/dev/null || true
-                sudo -H -u "${TARGET_USER}" git -C "$repo_dir" config remote.upstream.pushurl "PUSH_DISABLED_CANONICAL_UPSTREAM" 2>/dev/null || true
-                sudo -H -u "${TARGET_USER}" git -C "$repo_dir" fetch upstream 2>/dev/null || true
-                log_success "Upstream remote wired and push-protected."
-                ;;
-
-            REF_DRIFT)
-                log_info "Aligning active git ref on ${repo} -> ${target}..."
-                local repo_dir
-                repo_dir="$(find_existing_repo "$repo")"
-                local is_tag=false
-                if [[ "$target" == v* ]]; then is_tag=true; fi
-                fetch_and_checkout_ref "$repo_dir" "$target" "$is_tag"
-                log_success "Ref aligned to ${target}."
-                ;;
-
-            BROKEN_SYMLINK)
-                log_info "Healing _isaac_sim symlink -> ${target}..."
-                local repo_dir
-                repo_dir="$(find_existing_repo "$repo")"
-                ln -sfn "${target}" "${repo_dir}/_isaac_sim.tmp.$$"
-                mv -Tf "${repo_dir}/_isaac_sim.tmp.$$" "${repo_dir}/_isaac_sim"
-                chown -h "${TARGET_USER}:${TARGET_USER}" "${repo_dir}/_isaac_sim"
-                deploy_isaacsim_conda_bridge "${target}"
-                log_success "_isaac_sim symlink healed."
-                ;;
-
-            CONDA_ENV_MISLOCATED)
-                log_info "Cleaning up orphaned system Conda environment and /opt/conda..."
-                rm -rf "/opt/conda" 2>/dev/null || true
-                for env_txt in "${TARGET_HOME}/.conda/environments.txt" "/root/.conda/environments.txt"; do
-                    if [[ -f "$env_txt" ]]; then
-                        sed -i '\|/opt/conda|d' "$env_txt" 2>/dev/null || true
-                    fi
-                done
-                log_info "Provisioning native named Conda environment in user's Conda (${target})..."
-                install_python_env
-                log_success "Conda environment mislocation healed."
-                ;;
-
-            CONDA_ENV_MISSING)
-                log_info "Provisioning named Conda environment in user's Conda (${target})..."
-                install_python_env
-                log_success "Conda environment provisioned."
-                ;;
-
-            SIM_BRIDGE_MISSING|SIM_PTH_MISSING)
-                log_info "Reconciling Isaac Sim bridge and site-packages .pth link..."
-                local sim_dir
-                sim_dir="$(resolve_isaacsim_dir)"
-                deploy_isaacsim_conda_bridge "$sim_dir"
-                log_success "Isaac Sim bridge and .pth link reconciled."
-                ;;
-
-            VULKAN_HOOK_DRIFT|DEACT_HOOK_DRIFT)
-                log_info "Healing Conda environment activation & deactivation hooks..."
-                install_python_env
-                log_success "Conda activation and deactivation hooks healed."
-                ;;
-
-            EMPTY_CASE_DUPLICATE)
-                log_info "Cleaning empty duplicate folder ${cur}..."
-                rmdir "$cur" 2>/dev/null || rm -rf "$cur" 2>/dev/null || true
-                log_success "Cleaned duplicate folder ${cur}."
-                ;;
-        esac
-    done
-
-    # Run extension installation and sync ledger
-    local lab_dir
-    lab_dir="$(resolve_active_repo_dir "IsaacLab")"
-    if [[ -d "$lab_dir" && -x "$lab_dir/isaaclab.sh" ]]; then
-        log_step "Running official ./isaaclab.sh --install in healed Conda environment..."
-        local env_path
-        env_path="$(resolve_conda_env_path "isaaclab")"
-        local conda_bin
-        conda_bin="$(resolve_conda_bin)"
-        local conda_root
-        conda_root="$(dirname "$(dirname "$conda_bin")")"
-        if [[ -d "$env_path" ]]; then
-            sudo -H -u "${TARGET_USER}" bash -l -c "
-                export SHELL=/bin/bash
-                export USER='${TARGET_USER}'
-                export HOME='${TARGET_HOME}'
-                export CONDA_NO_PLUGINS=true
-                source '${conda_root}/etc/profile.d/conda.sh' 2>/dev/null || true
-                cd '${lab_dir}'
-                '${conda_bin}' run -n isaaclab ./isaaclab.sh -i
-            " || true
-        fi
-    fi
-
-    sync_state_ledger
-    log_success "Workspace reconciliation complete. All drift resolved."
+    plan_workspace_repair || return $?
+    return 77
 }
 
 register_resume_hook() {

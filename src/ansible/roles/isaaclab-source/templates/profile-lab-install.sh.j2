@@ -1,0 +1,21 @@
+#!/bin/bash
+# Only literal quoted values cross the template boundary; no profile shell code.
+set -euo pipefail
+source {{ (profile_lab_helper_dir.path ~ '/conda.sh') | quote }}
+source {{ (profile_lab_helper_dir.path ~ '/isaaclab.sh') | quote }}
+TARGET_USER={{ ansible_user | quote }}
+CONDA_ENV_NAME={{ conda_env_name | quote }}
+LAB_PYTHON_VERSION={{ (conda_python_version | default('')) | quote }}
+LAB_TORCH_VERSION={{ (profile_lab_torch | default('')) | quote }}
+LAB_TORCHVISION_VERSION={{ (profile_lab_torchvision | default('')) | quote }}
+# Ansible already selected/become'd the target user; no login shell is needed.
+detect_target_user() { :; }
+resolve_conda_bin() { printf '%s\n' {{ (miniconda_install_dir ~ '/bin/conda') | quote }}; }
+resolve_conda_env_path() { printf '%s\n' {{ (miniconda_install_dir ~ '/envs/' ~ conda_env_name) | quote }}; }
+log_error() { printf '%s\n' "$*" >&2; }
+profile_lab_source_preflight
+{% if profile_lab_install_kind == 'arena' %}
+install_profile_arena_dependencies {{ isaaclab_arena_dir | quote }}
+{% else %}
+install_profile_lab_extensions {{ isaaclab_dir | quote }}
+{% endif %}

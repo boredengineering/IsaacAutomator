@@ -55,6 +55,100 @@ class InstallerProfileContract(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         return json.loads(result.stdout)
 
+    def test_explicit_cli_workspace_values_override_profile(self):
+        path = self.profile(yaml.safe_dump({"workspace": {"root": "~/profile-root",
+                            "layout": "named", "name": "Profile Name", "default_owner": "Profile Name"}}))
+        env = self.loaded(self.run_loader(path, before=
+            'export CLI_WORKSPACE_DIR="~/CLI Root" CLI_WORKSPACE_LAYOUT=named '
+            'CLI_WORKSPACE_NAME="CLI Name" CLI_WORKSPACE_DEFAULT_OWNER=""'))
+        self.assertEqual(env["WORKSPACE_DIR"], str(self.root / "CLI Root"))
+        self.assertEqual(env["WORKSPACE_LAYOUT"], "named")
+        self.assertEqual(env["WORKSPACE_NAME"], "CLI Name")
+        self.assertEqual(env["WORKSPACE_DEFAULT_OWNER"], "")
+        self.assertEqual(env["CFG_WORKSPACE_NAME"], "Profile Name")
+        self.assertEqual(env["WORKSPACE_DIR_SOURCE"], "cli")
+        self.assertEqual(env["WORKSPACE_NAME_SOURCE"], "cli")
+
+    def test_workspace_schema_rejects_invalid_touched_values_before_apply(self):
+        cases = [
+            {"layout": "named"}, {"layout": "named", "name": " "},
+            {"layout": "named", "name": "../escape"},
+            {"layout": "named", "name": "Chosen", "default_owner": "Other"},
+            {"layout": "flat", "name": "Chosen"}, {"name": "Chosen"},
+            {"layout": "unknown"}, {"layout": ""}, {"layout": True},
+            {"name": 42}, {"root": False}, {"root": "relative"}, {"root": "~other/work"},
+            {"root": "~/../escape"}, {"root": "/"}, {"default_owner": 42},
+            {"unsupported_naming_policy": "reuse-first"}, "not a mapping",
+        ]
+        for workspace in cases:
+            with self.subTest(workspace=workspace):
+                path = self.profile(yaml.safe_dump({"workspace": workspace}))
+                result = self.run_loader(path)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("workspace", result.stderr.lower())
+                self.assertEqual(result.stdout, "")
+                self.assertNotIn("Traceback", result.stderr)
+
+    def test_parser_can_be_loaded_by_isolated_preview_without_pythonpath(self):
+        path = self.profile('workspace: {layout: named, name: Chosen}\n')
+        code = ("import importlib.util, sys; "
+                "s=importlib.util.spec_from_file_location('profile_parser', sys.argv[1]); "
+                "m=importlib.util.module_from_spec(s); s.loader.exec_module(m); "
+                "sys.stdout.buffer.write(m.parse_profile(sys.argv[2]))")
+        result = subprocess.run([sys.executable, "-I", "-B", "-c", code,
+                                 str(INSTALLER / "lib/core/profile_parser.py"), str(path)],
+                                cwd=self.root, env={"PATH": "/usr/bin:/bin", "HOME": str(self.root)},
+                                capture_output=True, timeout=10)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn(b"CFG_WORKSPACE_NAME\0Chosen\0", result.stdout)
+
+    def test_workspace_reload_discards_stale_and_inherited_operational_values(self):
+        first = self.profile('workspace: {root: "~/first", layout: named, name: First}\n', "first.yaml")
+        second = self.profile('profile_name: second\n', "second.yaml")
+        env = self.loaded(self.run_loader(first, second, before=
+            'export WORKSPACE_DIR=/inherited WORKSPACE_LAYOUT=named WORKSPACE_NAME=Inherited '
+            'WORKSPACE_DEFAULT_OWNER=Inherited'))
+        for key in ("DIR", "NAME", "DEFAULT_OWNER"):
+            self.assertEqual(env["WORKSPACE_" + key], "")
+            self.assertEqual(env["WORKSPACE_" + key + "_SOURCE"], "default")
+        self.assertEqual(env["WORKSPACE_LAYOUT"], "auto")
+        self.assertNotIn("CFG_WORKSPACE_NAME", env)
+
+    def test_cli_can_clear_profile_name_owner_root_when_switching_to_flat(self):
+        path = self.profile('workspace: {root: "~/profile", layout: named, name: Chosen, default_owner: Chosen}\n')
+        env = self.loaded(self.run_loader(path, before=
+            'export CLI_WORKSPACE_DIR="" CLI_WORKSPACE_LAYOUT=flat CLI_WORKSPACE_NAME="" CLI_WORKSPACE_DEFAULT_OWNER=""'))
+        self.assertEqual(env["WORKSPACE_LAYOUT"], "flat")
+        for key in ("DIR", "NAME", "DEFAULT_OWNER"):
+            self.assertEqual(env["WORKSPACE_" + key], "")
+            self.assertEqual(env["WORKSPACE_" + key + "_SOURCE"], "cli")
+
+    def test_invalid_effective_cli_workspace_keeps_previous_profile(self):
+        path = self.profile('profile_name: original\nworkspace: {layout: named, name: Chosen}\n')
+        for setting in ('CLI_WORKSPACE_NAME="../escape"', 'CLI_WORKSPACE_LAYOUT=flat',
+                        'CLI_WORKSPACE_LAYOUT=""', 'CLI_WORKSPACE_DIR=relative'):
+            with self.subTest(setting=setting):
+                after = f'export {setting}; if load_config_profile "$profile"; then exit 99; fi'
+                env = self.loaded(self.run_loader(path, after=after))
+                self.assertEqual(env["PROFILE_NAME"], "original")
+                self.assertEqual(env["WORKSPACE_LAYOUT"], "named")
+                self.assertEqual(env["WORKSPACE_NAME"], "Chosen")
+
+    def test_nonexported_cli_flags_are_validated_before_loader_state_changes(self):
+        path = self.profile('workspace: {layout: named, name: Chosen}\n')
+        result = self.run_loader(path, before='CLI_WORKSPACE_LAYOUT=flat')
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(result.stdout, "")
+        self.assertIn("workspace", result.stderr.lower())
+        env = self.loaded(self.run_loader(path, before='CLI_WORKSPACE_LAYOUT=flat; CLI_WORKSPACE_NAME=""'))
+        self.assertEqual(env["WORKSPACE_LAYOUT"], "flat")
+        self.assertEqual(env["WORKSPACE_NAME"], "")
+
+    def test_profile_desktop_opt_out_replaces_inherited_workspace_setting(self):
+        path = self.profile('workspace: {layout: named, name: Chosen, auto_register_github_desktop: false}\n')
+        env = self.loaded(self.run_loader(path, before='export WORKSPACE_AUTO_REGISTER_GITHUB_DESKTOP=true'))
+        self.assertEqual(env["WORKSPACE_AUTO_REGISTER_GITHUB_DESKTOP"], "false")
+
     def test_existing_relative_option_like_path_loads_literally(self):
         self.profile('profile_name: option-path\n', "-n")
         env = self.loaded(self.run_loader("-n"))

@@ -4,6 +4,80 @@
 # ==============================================================================
 set -euo pipefail
 
+# Safe predispatch MUST remain before sources, traps, logging and host/profile reads.
+SAFE_ENTRY=false
+SAFE_DRY_RUN=false
+SAFE_DESIRED_PROFILE=false
+SAFE_OUTPUT=false
+# Clear provenance before even the normal sources see the environment.
+unset CLI_WORKSPACE_DIR CLI_WORKSPACE_NAME CLI_WORKSPACE_LAYOUT CLI_WORKSPACE_DEFAULT_OWNER
+for _safe_arg in "$@"; do
+    case "$_safe_arg" in --dry-run|--dry-run=*) SAFE_ENTRY=true; SAFE_DRY_RUN=true ;; esac
+    case "$_safe_arg" in --desired-profile|--desired-profile=*) SAFE_ENTRY=true; SAFE_DESIRED_PROFILE=true ;; esac
+    case "$_safe_arg" in --output|--output=*) SAFE_ENTRY=true; SAFE_OUTPUT=true ;; esac
+done
+case "${1:-help}" in
+    install|resume|repair|fix|stream|gui|tui|k9s|isaac9s) ;;
+    auth)
+        case "${2:-status}" in
+            login|gen-ssh|ssh|git|identity|check-perms|fix-perms) ;;
+            *) SAFE_ENTRY=true ;;
+        esac ;;
+    lab)
+        case "${2:-status}" in
+            switch|sync|fork) ;;
+            *) SAFE_ENTRY=true ;;
+        esac ;;
+    arena)
+        case "${2:-status}" in
+            switch|sync|fork|infer) ;;
+            *) SAFE_ENTRY=true ;;
+        esac ;;
+    gr00t)
+        case "${2:-status}" in
+            sync|fork|infer|server) ;;
+            *) SAFE_ENTRY=true ;;
+        esac ;;
+    sim)
+        case "${2:-list}" in
+            switch) ;;
+            *) SAFE_ENTRY=true ;;
+        esac ;;
+    net|ports|zmq)
+        case "${2:-status}" in
+            free|kill-servers) ;;
+            *) SAFE_ENTRY=true ;;
+        esac ;;
+    # Only explicitly admitted command-specific mutations retain legacy routing.
+    # Observations, unknown commands and ambiguous ordering never reach sources.
+    *) SAFE_ENTRY=true ;;
+esac
+if [[ "$SAFE_ENTRY" == true ]]; then
+    # Never emit receipts/diagnostics into an inherited file or socket. Check
+    # before directory resolution or starting the output supervisor, too.
+    [[ -p /dev/fd/1 || -t 1 ]] || exit 2
+    [[ -p /dev/fd/2 || -t 2 ]] || exit 2
+    if [[ "$EUID" -eq 0 || "$UID" -eq 0 ]]; then
+        printf '%s\n' 'Safe preview refused: root is not permitted (do not use sudo).' >&2
+        exit 77
+    fi
+    _safe_dir="$(cd -- "${BASH_SOURCE[0]%/*}/../lib/core" && pwd -P)"
+    if [[ "$SAFE_OUTPUT" == true ]]; then
+        exec /usr/bin/python3 -I -B "${_safe_dir}/profile_output.py" "$@"
+    fi
+    if [[ "$SAFE_DESIRED_PROFILE" == true ]]; then
+        exec /usr/bin/python3 -I -B "${_safe_dir}/profile_workflow.py" "$@"
+    fi
+    if [[ "$SAFE_DRY_RUN" == false ]]; then
+        case "${1:-}" in
+            observe|import-host-report|review-profile|export-profile)
+                exec /usr/bin/python3 -I -B "${_safe_dir}/discovery_cli.py" "$@" ;;
+        esac
+    fi
+    exec /usr/bin/python3 -I -B "${_safe_dir}/safe_preview.py" "$@"
+fi
+unset SAFE_ENTRY SAFE_DRY_RUN SAFE_DESIRED_PROFILE SAFE_OUTPUT _safe_arg
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LIB_CORE="${SCRIPT_DIR}/lib/core"
 LIB_MODULES="${SCRIPT_DIR}/lib/modules"
@@ -71,6 +145,18 @@ is_stage_selected() {
 
     # Check YAML Profile rules
     case "$stage_name" in
+        isaacsim)
+            if [[ "${CFG_SIMULATION_ISAACSIM_ENABLED:-true}" != "true" ]]; then
+                STAGE_CHECK_MSG="Disabled in profile (${CONFIG_FILE})"
+                return 1
+            fi
+            ;;
+        isaaclab)
+            if [[ "${CFG_REPOSITORIES_ISAACLAB_ENABLED:-true}" != "true" ]]; then
+                STAGE_CHECK_MSG="Disabled in profile (${CONFIG_FILE})"
+                return 1
+            fi
+            ;;
         arena)
             local arena_active=false
             [[ "${CFG_REPOSITORIES_ARENA_ENABLED:-false}" == "true" ]] && arena_active=true
@@ -726,11 +812,11 @@ Commands:
 Profiles & Configuration Options:
   --config <path>              Path to custom YAML configuration profile
   --profile <name>             Preset profile: default | minimal | full
-  --dry-run                    Simulate installation without making any system changes
+  --dry-run                    Confined offline profile preview; unknowns return exit 2
   --step | -i                  Interactive step-by-step mode (prompts before each stage)
   --json                       Output doctor / plan / auth in structured JSON format
   --workspace-dir <path>       Base directory for repos (Default: ~/Documents/GitHub)
-  --workspace-layout <type>    Layout hierarchy strategy: auto | org | flat
+  --workspace-layout <type>    Layout: auto | org | flat | named (named apply blocked)
   --workspace-owner <owner>    Default GitHub organization / user folder name
   --isaaclab-repo <url/slug>   Custom fork for Isaac Lab (e.g. BoredEngineer/IsaacLab)
   --isaaclab-tag <tag>         Pin specific Isaac Lab release tag (e.g. v2.3.0)
@@ -758,6 +844,8 @@ HELP
 }
 
 # --- CLI Argument Parsing ---
+# These are CLI provenance, never inherited environment overrides.
+unset CLI_WORKSPACE_DIR CLI_WORKSPACE_NAME CLI_WORKSPACE_LAYOUT CLI_WORKSPACE_DEFAULT_OWNER
 COMMAND="${1:-help}"
 shift || true
 
@@ -778,9 +866,10 @@ while [[ $# -gt 0 ]]; do
         --with-arena)          CLI_WITH_ARENA=true; shift ;;
         --with-lerobot)        CLI_WITH_LEROBOT=true; shift ;;
         --with-gr00t)          CLI_WITH_GR00T=true; shift ;;
-        --workspace-dir)       export WORKSPACE_DIR="$2"; shift 2 ;;
-        --workspace-layout)    export WORKSPACE_LAYOUT="$2"; shift 2 ;;
-        --workspace-owner)     export WORKSPACE_DEFAULT_OWNER="$2"; shift 2 ;;
+        --workspace-dir|--workspace-root) export CLI_WORKSPACE_DIR="$2" WORKSPACE_DIR="$2"; shift 2 ;;
+        --workspace-name)      export CLI_WORKSPACE_NAME="$2"; shift 2 ;;
+        --workspace-layout)    export CLI_WORKSPACE_LAYOUT="$2" WORKSPACE_LAYOUT="$2"; shift 2 ;;
+        --workspace-owner|--workspace-default-owner) export CLI_WORKSPACE_DEFAULT_OWNER="$2" WORKSPACE_DEFAULT_OWNER="$2"; shift 2 ;;
         --isaaclab-repo)       export ISAACLAB_REPO="$2"; shift 2 ;;
         --isaaclab-tag)        export ISAACLAB_TAG="$2"; shift 2 ;;
         --isaaclab-branch)     export ISAACLAB_BRANCH="$2"; shift 2 ;;
@@ -816,6 +905,22 @@ if [[ "$CLI_WITH_LEROBOT" == true ]]; then
 fi
 if [[ "$CLI_WITH_GR00T" == true ]]; then
     export CFG_REPOSITORIES_GR00T_ENABLED="true"
+fi
+
+# Profile-derived native execution has no qualified apply path yet. Rendering
+# shared intent must not provide a flat/auto/org escape into legacy mutations.
+if [[ "${CFG_PUBLIC_GIT_PROFILE:-false}" == true ]]; then
+    printf '%s\n' 'Shared-profile native application not qualified; use the confined observation, rendering and preview commands. Intent is not application authorization.' >&2
+    exit 77
+fi
+
+# Named-workspace execution/adoption has not passed the safety gate. Admitted
+# offline commands already exited in predispatch. Fail closed for ALL remaining
+# commands, including future dispatch arms, before any stage or command checks.
+# Legacy execution retains its old path; it is not qualified by offline preview.
+if [[ "${WORKSPACE_LAYOUT:-auto}" == named ]]; then
+    printf '%s\n' 'Named workspace application not qualified; preview only. Use non-root install --dry-run with an explicit profile; application requires separate safety review.' >&2
+    exit 77
 fi
 
 case "${COMMAND}" in

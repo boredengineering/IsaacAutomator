@@ -1,0 +1,151 @@
+# Explicit shared-profile standalone transport. Never substitutes a Git build.
+# This role is not a qualified adoption/migration or host apply safety adapter.
+- name: Require the reviewed standalone archive recipe and checksum
+  ansible.builtin.assert:
+    that:
+      - isaacsim_version == '6.0.1'
+      - isaacsim_archive_url is match('^https://[A-Za-z0-9][A-Za-z0-9.-]*/[A-Za-z0-9_./-]+$')
+      - isaacsim_archive_sha256 is match('^[0-9a-f]{64}$')
+      - isaacsim_git_checkpoint == 'no'
+    fail_msg: Standalone software intent requires an explicit archive checksum and must not enable a Git build.
+
+- name: Inspect standalone destination without following links
+  ansible.builtin.stat:
+    path: "{{ isaacsim_install_dir }}"
+    follow: false
+  register: isaacsim_archive_destination
+
+- name: Inspect prior standalone receipt without following links
+  ansible.builtin.stat:
+    path: "{{ isaacsim_install_dir }}/.profile-archive-sha256"
+    follow: false
+  register: isaacsim_archive_receipt
+  when: isaacsim_archive_destination.stat.isdir | default(false)
+
+- name: Refuse adoption of an existing unreceipted installation
+  ansible.builtin.assert:
+    that:
+      - not isaacsim_archive_destination.stat.exists or (isaacsim_archive_destination.stat.isdir | default(false) and not isaacsim_archive_destination.stat.islnk | default(false) and isaacsim_archive_receipt.stat.isreg | default(false) and not isaacsim_archive_receipt.stat.islnk | default(false))
+    fail_msg: Existing or partially installed standalone paths require separate review; this role will not replace or adopt them.
+
+- name: Read prior standalone receipt
+  ansible.builtin.slurp:
+    src: "{{ isaacsim_install_dir }}/.profile-archive-sha256"
+  register: isaacsim_archive_previous
+  when: isaacsim_archive_destination.stat.exists
+
+- name: Refuse a different archive at an existing standalone path
+  ansible.builtin.assert:
+    that:
+      - isaacsim_archive_previous.content | b64decode | trim == isaacsim_archive_sha256
+    fail_msg: Standalone archive changes need an explicitly reviewed replacement or new destination.
+  when: isaacsim_archive_destination.stat.exists
+
+# This block controls download only. Existing extraction, post-install and
+# receipt/adoption behavior below remains separately unqualified. A preexisting
+# archive cache is refused, not reused or overwritten, even for the same digest.
+- name: Fetch standalone through the anonymous public-network boundary
+  when: not isaacsim_archive_destination.stat.exists
+  block:
+    - name: Allocate private directory for the trusted artifact helper
+      ansible.builtin.tempfile:
+        state: directory
+        path: /var/tmp
+        prefix: isaacsim-public-helper-
+      register: isaacsim_artifact_helper
+
+    - name: Copy the audited standalone standard-library artifact helper
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/../python/public_artifact.py"
+        dest: "{{ isaacsim_artifact_helper.path }}/public_artifact.py"
+        mode: '0600'
+
+    - name: Download the exact reviewed standalone archive
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/python3
+          - '-I'
+          - "{{ isaacsim_artifact_helper.path }}/public_artifact.py"
+          - '--url'
+          - "{{ isaacsim_archive_url }}"
+          - '--sha256'
+          - "{{ isaacsim_archive_sha256 }}"
+          - '--output'
+          - "/var/tmp/isaacsim-{{ isaacsim_version }}-{{ isaacsim_archive_sha256 }}.zip"
+  always:
+    - name: Remove only the newly allocated artifact helper directory
+      ansible.builtin.file:
+        path: "{{ isaacsim_artifact_helper.path }}"
+        state: absent
+      when: isaacsim_artifact_helper.path is defined
+
+- name: Create fresh standalone destination
+  ansible.builtin.file:
+    path: "{{ isaacsim_install_dir }}"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0755'
+  when: not isaacsim_archive_destination.stat.exists
+
+- name: Extract the verified standalone archive
+  ansible.builtin.unarchive:
+    src: "/var/tmp/isaacsim-{{ isaacsim_version }}-{{ isaacsim_archive_sha256 }}.zip"
+    dest: "{{ isaacsim_install_dir }}"
+    remote_src: true
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+  when: not isaacsim_archive_destination.stat.exists
+
+- name: Verify standalone launcher exists
+  ansible.builtin.stat:
+    path: "{{ isaacsim_install_dir }}/isaac-sim.sh"
+  register: isaacsim_archive_launcher
+
+- name: Require standalone launcher before recording installation
+  ansible.builtin.assert:
+    that:
+      - isaacsim_archive_launcher.stat.isreg | default(false)
+    fail_msg: Archive installation has no expected launcher; no successful receipt will be recorded.
+
+- name: Run the archive post-install script with failure propagation
+  ansible.builtin.command:
+    argv:
+      - "{{ isaacsim_install_dir }}/post_install.sh"
+    chdir: "{{ isaacsim_install_dir }}"
+  become_user: "{{ ansible_user }}"
+  when: not isaacsim_archive_destination.stat.exists
+
+- name: Record the completed standalone archive checksum
+  ansible.builtin.copy:
+    content: "{{ isaacsim_archive_sha256 }}\n"
+    dest: "{{ isaacsim_install_dir }}/.profile-archive-sha256"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0644'
+  when: not isaacsim_archive_destination.stat.exists
+
+- name: Locate selected Lab environment site packages
+  ansible.builtin.find:
+    paths: "{{ miniconda_install_dir }}/envs/{{ conda_env_name }}/lib"
+    recurse: true
+    depth: 2
+    file_type: directory
+    patterns: site-packages
+  register: isaacsim_archive_site_packages
+
+- name: Link standalone package paths to selected Lab environment
+  ansible.builtin.copy:
+    dest: "{{ item.path }}/isaacsim_standalone.pth"
+    content: |
+      {{ isaacsim_install_dir }}/python_packages
+      {{ isaacsim_install_dir }}/exts/isaacsim.simulation_app
+      {{ isaacsim_install_dir }}/kit/kernel/py
+      {{ isaacsim_install_dir }}/kit/plugins/bindings-python
+      {{ isaacsim_install_dir }}/exts/omni.isaac.core_archive/pip_prebundle
+      {{ isaacsim_install_dir }}/exts/omni.pip.compute/pip_prebundle
+      {{ isaacsim_install_dir }}/exts/omni.pip.cloud/pip_prebundle
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0644'
+  loop: "{{ isaacsim_archive_site_packages.files }}"

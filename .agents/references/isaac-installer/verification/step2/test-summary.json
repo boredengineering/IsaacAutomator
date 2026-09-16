@@ -1,0 +1,9 @@
+{
+  "suites": 21,
+  "tests": 316,
+  "passed": 314,
+  "skipped": 2,
+  "failures": 0,
+  "errors": 0,
+  "actual_host_collection": false
+}

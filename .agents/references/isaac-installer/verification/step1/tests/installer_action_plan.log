@@ -1,0 +1,14 @@
+STEP1_RESULT {"suite": "installer_action_plan", "tests": 8, "skipped": 0, "failures": 0, "errors": 0, "passed": true}
+test_all_supplied_evidence_is_validated_before_planning (step1_installer_action_plan.PlannerTests) ... ok
+test_components_runtimes_tools_settings_have_targets_and_gates (step1_installer_action_plan.PlannerTests) ... ok
+test_managed_evidence_never_adopts_foreign_resources_and_files (step1_installer_action_plan.PlannerTests) ... ok
+test_pure_named_workspace_concrete_plan_uses_explicit_home (step1_installer_action_plan.PlannerTests) ... ok
+test_repo_targets_use_shared_shell_resolver_and_public_defaults (step1_installer_action_plan.PlannerTests) ... ok
+test_shared_public_yaml_plan_targets_match_actual_local_consumer (step1_installer_action_plan.PlannerTests) ... ok
+test_sparse_shared_profile_covers_custom_service_and_unused_runtime (step1_installer_action_plan.PlannerTests) ... ok
+test_standalone_artifact_and_legacy_layout_are_not_fake_repo_plans (step1_installer_action_plan.PlannerTests) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.060s
+
+OK

@@ -1,0 +1,27 @@
+STEP1_RESULT {"suite": "installer_plan_evidence", "tests": 8, "skipped": 0, "failures": 0, "errors": 1, "passed": false}
+test_actual_fixture_metadata_is_preserved_without_aliases (step1_installer_plan_evidence.EvidenceTests) ... ERROR
+test_cycles_and_custom_objects_refuse_without_invoking_hooks (step1_installer_plan_evidence.EvidenceTests) ... ok
+test_exact_typed_fields_reject_malformed_values (step1_installer_plan_evidence.EvidenceTests) ... ok
+test_paths_and_nested_ancestor_records_are_strictly_bounded (step1_installer_plan_evidence.EvidenceTests) ... ok
+test_supported_typed_field_boundaries_are_copied (step1_installer_plan_evidence.EvidenceTests) ... ok
+test_total_path_budget_refuses_repeated_deep_metadata (step1_installer_plan_evidence.EvidenceTests) ... ok
+test_unknown_sensitive_keys_and_malformed_objects_refuse_without_content (step1_installer_plan_evidence.EvidenceTests) ... ok
+test_validator_performs_no_io_and_returns_strict_json (step1_installer_plan_evidence.EvidenceTests) ... ok
+
+======================================================================
+ERROR: test_actual_fixture_metadata_is_preserved_without_aliases (step1_installer_plan_evidence.EvidenceTests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspaces/IsaacAutomator/src/tests/installer_plan_evidence.test.py", line 210, in test_actual_fixture_metadata_is_preserved_without_aliases
+    managed = load('managed_apply')
+  File "/workspaces/IsaacAutomator/src/tests/installer_plan_evidence.test.py", line 20, in load
+    spec.loader.exec_module(module)
+  File "<frozen importlib._bootstrap_external>", line 883, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/tmp/isaac-step1-runner.py", line 114, in audit
+RuntimeError: Forbidden managed module in STEP1
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.071s
+
+FAILED (errors=1)

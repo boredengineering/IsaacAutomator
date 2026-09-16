@@ -11,7 +11,7 @@ Requires rsync 3.x on both ends and OpenSSH supporting accept-new. The one-hour
 transfer deadline, 60-second rsync idle timeout, and SSH liveness probes bound
 failures. Re-run the same direction/paths to resume .rsync-partial files.
 """
-from dataclasses import dataclass
+from dataclasses import InitVar, dataclass
 from pathlib import Path
 import os
 import posixpath
@@ -40,6 +40,8 @@ class TransferEndpoint:
     with OpenSSH's accept-new policy; a CHANGED key is refused, never removed.
     To pre-pin trust, populate that file through an independently verified path.
     Ambient SSH config is not used. The caller supplies an existing identity.
+    ``inspect_paths=False`` constructs a lexical preview only; transfer_directory
+    always revalidates paths before execution, regardless of this constructor flag.
     """
     host: str
     user: str
@@ -50,7 +52,9 @@ class TransferEndpoint:
     project: str = ""
     zone: str = ""
 
-    def __post_init__(self):
+    inspect_paths: InitVar[bool] = True
+
+    def __post_init__(self, inspect_paths=True):
         for label, value, pattern in (
             ("host", self.host, r"[A-Za-z0-9][A-Za-z0-9.-]*"),
             ("user", self.user, r"[A-Za-z0-9_][A-Za-z0-9_.-]*"),
@@ -66,7 +70,7 @@ class TransferEndpoint:
                     or any(c in value for c in "\x00\n\r%$") or ".." in Path(value).parts):
                 raise ValueError("SSH identity and known-host paths must be absolute and literal")
         trust = Path(self.known_hosts_file)
-        if (any(part.is_symlink() for part in (trust, *trust.parents))
+        if inspect_paths and (any(part.is_symlink() for part in (trust, *trust.parents))
                 or (trust.exists() and not trust.is_file())):
             raise ValueError("Known-hosts must be a regular non-symlinked file")
 
@@ -297,7 +301,8 @@ def transfer_command(direction):
 
 
 def transfer_directory(endpoint, direction, local_dir, remote_dir, *, delete=False,
-                       dry_run=False, capture_output=False, exclude=(), timeout=3600):
+                       dry_run=False, capture_output=False, exclude=(), timeout=3600,
+                       isolated_local=False, checksum=False):
     """Copy directory contents; deletion is opt-in and dry-run never writes data.
 
     ``endpoint=None`` selects local rsync, useful for disposable local fixtures.
@@ -307,7 +312,14 @@ def transfer_directory(endpoint, direction, local_dir, remote_dir, *, delete=Fal
     directories or modify file contents; it can record first-use SSH trust.
     Excluded destination files remain protected even with delete=True. A missing
     pull source is an rsync error, never an instruction to empty the local copy.
+    ``isolated_local=True`` refuses SSH and uses fixed /usr/bin/rsync with an
+    allowlisted environment and a new private HOME/cwd. It is process hygiene,
+    not filesystem/network sandboxing. ``checksum=True`` opts out of quick-check
+    comparison. Defaults preserve the direct helper contract; callers needing
+    verified replication must independently check byte postconditions.
     """
+    if isolated_local and endpoint is not None:
+        raise ValueError('Isolated local process context does not permit SSH endpoints')
     if direction not in ("push", "pull"):
         raise ValueError("Transfer direction must be push or pull")
     if (not str(local_dir) or not isinstance(remote_dir, str) or not remote_dir
@@ -343,7 +355,20 @@ def transfer_directory(endpoint, direction, local_dir, remote_dir, *, delete=Fal
         argv.extend(["--exclude", pattern])
     if delete:
         argv.append("--delete-after")
+    if checksum:
+        argv.append('--checksum')
     if dry_run:
         argv.append("--dry-run")
+    if isolated_local:
+        import tempfile
+        # Keep compatibility for existing callers; qualification opts into a
+        # fixed system binary and a fresh, empty config/HOME/cwd for each child.
+        # System binary/libraries and /etc/popt remain trusted, not sandboxed.
+        with tempfile.TemporaryDirectory(prefix='isaac-rsync-process-') as home:
+            env = {'PATH': '/usr/bin:/bin', 'HOME': home, 'LC_ALL': 'C',
+                   'TMPDIR': home, 'XDG_CONFIG_HOME': home}
+            return subprocess.run(['/usr/bin/rsync', *argv[1:], '--', source.rstrip('/') + '/', destination],
+                                  check=True, text=True, capture_output=capture_output,
+                                  timeout=timeout, env=env, cwd=home)
     return subprocess.run(argv + ["--", source.rstrip("/") + "/", destination],
                           check=True, text=True, capture_output=capture_output, timeout=timeout)

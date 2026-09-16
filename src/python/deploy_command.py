@@ -22,6 +22,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 
 import click
 import randomname
@@ -53,6 +54,82 @@ class DeployCommand(click.core.Command):
     """
     Defines common cli options for "deploy-*" commands.
     """
+
+    def get_params(self, ctx):
+        params = super().get_params(ctx)
+        # Image commands inherit these options, then replace deployment_name
+        # with image_name. Their Packer adapters do not transport repository URLs.
+        names = {param.name for param in params}
+        if "image_name" in names and "deployment_name" not in names:
+            repo_names = {f"{component}_repo" for component in self._APP_NAMES} | {'software_profile'}
+            return [param for param in params if param.name not in repo_names]
+        return params
+
+    def parse_args(self, ctx, args):
+        # Inspect Click's own token parse without invoking any callbacks. Profile
+        # source pairs must populate defaults BEFORE eager repository validation.
+        if not ctx.resilient_parsing and '--help' not in args:
+            opts, _, _ = self.make_parser(ctx).parse_args(args=list(args))
+            source = opts.get('software_profile')
+            if source is not None:
+                from src.python.workstation_profile import resolve_profile
+                from src.python.profile_adapters import render_profile
+                conflicts = (set(self._APP_NAMES) | {n + '_repo' for n in self._APP_NAMES}
+                             | {'isaaclab_private_git'})
+                if conflicts.intersection(opts):
+                    raise click.UsageError('Software profile source selection cannot combine with component/ref/repository flags.')
+                if opts.get('from_image') or str(opts.get('demos', 'no')).lower() not in ('', 'no', 'none'):
+                    raise click.UsageError('Software profiles cannot combine with image or demo overrides.')
+                try:
+                    document = resolve_profile(source)['profile']
+                    home = '/home/' + (opts.get('ssh_user') or config['default_ssh_user'])
+                    report = render_profile(document, 'ansible', home)
+                    if not report['render_supported']:
+                        raise ValueError('Software profile has required unmapped fields; inspect software-profile render coverage.')
+                except (ValueError, OSError) as exc:
+                    raise click.BadParameter(str(exc), param_hint='--software-profile') from None
+                ctx.meta['software_profile_document'] = document
+                ctx.meta['software_profile_source'] = source
+                # Explicit argv suppresses legacy interactive component prompts;
+                # the original tokens were checked for conflicting overrides.
+                args = list(args)
+                for name, value in report['deploy_params'].items():
+                    args.extend(['--' + name.replace('_', '-'), value])
+        remainder = super().parse_args(ctx, args)
+        document = ctx.params.get('software_profile')
+        if document is not None:
+            # Preserve reviewed intent separately, but transport the callback's
+            # concrete latest selection rather than reintroducing literal latest.
+            from copy import deepcopy
+            resolved = deepcopy(document)
+            changed = False
+            # GR00T/LeRobot have no legacy ref option callbacks, but their
+            # enabled Git sources require the same public-only preflight.
+            for component in ('gr00t', 'lerobot'):
+                value = resolved.get('components', {}).get(component, {})
+                source = value.get('source', {})
+                if value.get('enabled') and source.get('mode') == 'git':
+                    selected = self._check_git_selection(
+                        ctx, click.Option(('--' + component,)),
+                        source.get('revision') or source['ref'], source['repository'], lambda message: None)
+                    if not source.get('revision') and selected != source['ref']:
+                        source['ref'] = selected
+                        changed = True
+            for component, parameter in (('sim', 'isaacsim'), ('lab', 'isaaclab'), ('arena', 'isaaclab_arena')):
+                value = resolved.get('components', {}).get(component, {})
+                source = value.get('source', {})
+                if (value.get('enabled') and source.get('mode') == 'git'
+                        and not source.get('revision') and str(source.get('ref', '')).lower() == 'latest'):
+                    source['ref'] = ctx.params[parameter]
+                    changed = True
+            if changed:
+                ctx.params['software_profile_requested'] = document
+                ctx.params['software_profile'] = resolved
+        return remainder
+
+    @staticmethod
+    def software_profile_callback(ctx, param, value):
+        return ctx.meta.get('software_profile_document') if value is not None else None
 
     def make_context(self, info_name, args, parent=None, **extra):
         """
@@ -120,6 +197,28 @@ class DeployCommand(click.core.Command):
         "isaaclab": "Isaac Lab",
         "isaaclab_arena": "Isaac Lab Arena",
     }
+
+    @staticmethod
+    def git_repo_callback(ctx, param, value):
+        """Accept deliberately narrow credential-free HTTPS URL syntax.
+
+        This does not establish public visibility or anonymous reachability.
+        ASCII DNS hosts and plain path segments only: no userinfo, query,
+        fragment, escapes, shell syntax or Ansible interpolation. Preserve the
+        exact spelling used for validation and checkout; never echo rejected data.
+        """
+        label = r"[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?"
+        match = re.fullmatch(
+            rf"https://{label}(?:\.{label})*/([A-Za-z0-9_./-]+)", value
+        ) if isinstance(value, str) else None
+        if not match or any(part in ("", ".", "..") for part in match[1].split("/")):
+            raise click.BadParameter(
+                "Use a credential-free HTTPS repository URL with an ASCII DNS host "
+                "and plain path segments; credentials, ports, queries, fragments, "
+                "escapes and shell/template syntax are not supported.",
+                ctx=ctx, param=param,
+            )
+        return value
 
     @staticmethod
     def remote_desktop_callback(ctx, param, value):
@@ -197,7 +296,55 @@ class DeployCommand(click.core.Command):
                 int(m.group(3)) if m.group(3) else 0)
 
     @staticmethod
-    def _resolve_latest_ref(repo, dbg):
+    def _anonymous_ls_remote(cmd):
+        """Query without ambient auth/config/proxies or repository discovery.
+
+        URL validation is syntax only. Anonymous reachability is an independent
+        preflight, not proof of commit reachability or target-side checkout safety.
+        Never copy the caller's environment: Git/curl have many auth/config inputs.
+        """
+        with tempfile.TemporaryDirectory(prefix='isaac-public-git-') as directory:
+            env = {
+                'PATH': os.defpath, 'HOME': directory, 'XDG_CONFIG_HOME': directory,
+                'LC_ALL': 'C', 'GIT_CONFIG_NOSYSTEM': '1',
+                'GIT_CONFIG_SYSTEM': os.devnull, 'GIT_CONFIG_GLOBAL': os.devnull,
+                'GIT_CEILING_DIRECTORIES': os.path.dirname(directory),
+                'GIT_TERMINAL_PROMPT': '0', 'GIT_ASKPASS': '/bin/false',
+                'SSH_ASKPASS': '/bin/false', 'GIT_SSH_COMMAND': '/bin/false',
+                'GIT_ALLOW_PROTOCOL': 'https',
+            }
+            settings = {
+                'credential.helper': '', 'credential.interactive': 'false',
+                'core.askPass': '/bin/false', 'http.proxy': '',
+                'http.extraHeader': '', 'http.followRedirects': 'false',
+                'http.sslVerify': 'true',
+            }
+            env['GIT_CONFIG_COUNT'] = str(len(settings))
+            for index, (key, value) in enumerate(settings.items()):
+                env[f'GIT_CONFIG_KEY_{index}'] = key
+                env[f'GIT_CONFIG_VALUE_{index}'] = value
+            return subprocess.run(cmd, capture_output=True, text=True, timeout=30,
+                                  stdin=subprocess.DEVNULL, cwd=directory, env=env)
+
+    @staticmethod
+    def _public_remote_refs(result):
+        """Accept only a successful, nonempty Git ref advertisement (not a SHA proof)."""
+        if type(getattr(result, 'returncode', None)) is not int or result.returncode != 0:
+            raise subprocess.SubprocessError('Anonymous Git request failed')
+        output = getattr(result, 'stdout', None)
+        if not isinstance(output, str) or not output.strip():
+            raise subprocess.SubprocessError('Anonymous Git advertisement missing')
+        refs = set()
+        for line in output.splitlines():
+            match = re.fullmatch(
+                r'[0-9a-fA-F]{40}\t(HEAD|refs/(?:heads|tags)/[A-Za-z0-9][A-Za-z0-9._/-]*(?:\^\{\})?)', line)
+            if not match:
+                raise subprocess.SubprocessError('Anonymous Git advertisement malformed')
+            refs.add(match[1])
+        return refs
+
+    @staticmethod
+    def _resolve_latest_ref(repo, dbg, public_only=False):
         """
         Auto-detect the latest release ref in `repo`: the highest version across its
         tags and release/* branches (prereleases included). On a version tie a
@@ -207,8 +354,12 @@ class DeployCommand(click.core.Command):
         cmd = ["git", "ls-remote", "--tags", "--heads", repo]
         dbg("latest: resolving latest release for " + repo)
         dbg("running: " + " ".join(cmd))
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
-        if result.stderr.strip():
+        result = DeployCommand._anonymous_ls_remote(cmd)
+        if public_only:
+            DeployCommand._public_remote_refs(result)
+        elif getattr(result, 'returncode', 0) != 0:
+            raise subprocess.SubprocessError('Anonymous Git request failed')
+        if not public_only and result.stderr.strip():
             dbg("stderr: " + result.stderr.strip())
 
         best = None  # (version_key, is_branch, ref)
@@ -275,11 +426,27 @@ class DeployCommand(click.core.Command):
             dbg("no repo mapped for this option - skipping ref check")
             return value
 
+        if ctx is not None:
+            repo = ctx.params.get(f"{param.name}_repo", repo)
+        return DeployCommand._check_git_selection(ctx, param, value, repo, dbg)
+
+    @staticmethod
+    def _check_git_selection(ctx, param, value, repo, dbg):
+        """Shared preflight for legacy selectors and every enabled profile Git source."""
+        repo = DeployCommand.git_repo_callback(None, None, repo)
+        public_only = (ctx is not None and
+                       getattr(ctx, 'meta', {}).get('software_profile_document') is not None)
+
         # "latest" -> resolve the latest release ref and use that
         if value.strip().lower() == "latest":
             try:
-                resolved = DeployCommand._resolve_latest_ref(repo, dbg)
+                resolved = DeployCommand._resolve_latest_ref(repo, dbg, public_only=public_only)
             except (OSError, subprocess.SubprocessError) as e:
+                if public_only:
+                    raise click.BadParameter(
+                        'Anonymous public repository/latest-ref preflight failed; deployment refused.',
+                        ctx=ctx, param=param,
+                    ) from None
                 raise click.BadParameter(
                     colorize_error(
                         f"could not auto-detect the latest {param.name} release"
@@ -301,9 +468,34 @@ class DeployCommand(click.core.Command):
             ))
             return resolved
 
-        # a raw commit sha is a valid ref but cannot be matched by ls-remote; let it pass
+        # Full profile SHAs require the actual anonymously fetched commit object,
+        # not merely a nonempty advertisement. Legacy selectors remain syntax-only;
+        # abbreviated profile refs preserve their explicit unverified compatibility policy.
         if re.fullmatch(r"[0-9a-fA-F]{7,40}", value):
-            dbg(f"'{value}' looks like a commit sha - accepting without ls-remote")
+            if public_only and len(value) == 40:
+                from src.python.public_git import PublicGitError, prove_public_commit
+                try:
+                    prove_public_commit(repo, value)
+                except PublicGitError:
+                    raise click.BadParameter(
+                        'Anonymous full-SHA commit proof failed; deployment refused.',
+                        ctx=ctx, param=param,
+                    ) from None
+                return value
+            if public_only:
+                try:
+                    result = DeployCommand._anonymous_ls_remote(
+                        ['git', 'ls-remote', '--heads', '--tags', repo])
+                    DeployCommand._public_remote_refs(result)
+                except (OSError, subprocess.SubprocessError):
+                    raise click.BadParameter(
+                        'Anonymous public repository preflight failed; deployment refused.',
+                        ctx=ctx, param=param,
+                    ) from None
+                click.echo('Anonymous repository reachable; SHA syntax accepted, '
+                           'commit reachability unverified.', err=True)
+            else:
+                dbg(f"'{value}' looks like a commit sha - accepting without ls-remote")
             return value
 
         cmd = ["git", "ls-remote", "--quiet", repo,
@@ -311,19 +503,29 @@ class DeployCommand(click.core.Command):
         dbg(f"checking ref '{value}' in {repo}")
         dbg("running: " + " ".join(cmd))
         try:
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+            result = DeployCommand._anonymous_ls_remote(cmd)
+            if public_only:
+                refs = DeployCommand._public_remote_refs(result)
+                if not refs.intersection((value, f'refs/tags/{value}', f'refs/heads/{value}')):
+                    raise subprocess.SubprocessError('Requested ref not advertised')
+            elif getattr(result, 'returncode', 0) != 0:
+                raise click.BadParameter('Anonymous Git ref request failed.', ctx=ctx, param=param)
         except (OSError, subprocess.SubprocessError) as e:
-            # network/git problem: warn but do not block the deploy on it
+            if public_only:
+                raise click.BadParameter(
+                    'Anonymous public repository/ref preflight failed; deployment refused.',
+                    ctx=ctx, param=param,
+                ) from None
+            # Legacy explicit refs retain their warning-only exception policy.
             click.echo(colorize_error(
                 f"Warning: could not verify {param.name} ref '{value}' ({e}). Continuing."
             ), err=True)
             return value
 
         found = result.stdout.strip()
-        if debug:
-            if result.stderr.strip():
-                dbg("stderr: " + result.stderr.strip())
-            dbg("matched refs:\n" + found if found else "no matching refs returned")
+        if not public_only and getattr(result, 'stderr', '').strip():
+            dbg('stderr: ' + result.stderr.strip())
+        dbg("matched refs:\n" + found if found else "no matching refs returned")
 
         if not found:
             raise click.BadParameter(
@@ -370,6 +572,12 @@ class DeployCommand(click.core.Command):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        # --software-profile is desired software intent, not --security-profile.
+        self.params.append(click.Option(
+            ('--software-profile',), default=None,
+            callback=DeployCommand.software_profile_callback,
+            help='Reviewed software YAML; unsupported required mappings refuse before deployment.'))
 
         # add common options
 
@@ -545,8 +753,20 @@ class DeployCommand(click.core.Command):
             ),
         )
 
+        # Resolve repository selection before any revision callback, independent
+        # of argument order (including a repo flag following its revision).
+        for component, app in self._APP_NAMES.items():
+            self.params.append(click.Option(
+                (f"--{component.replace('_', '-')}-repo",),
+                default=config[f"{component}_git_repo"],
+                show_default=True,
+                is_eager=True,
+                callback=DeployCommand.git_repo_callback,
+                help=f"Public HTTPS repository for {app} validation and checkout.",
+            ))
+
         # --isaacsim
-        help = 'Install Isaac Sim? Valid values: "latest" (newest release), "no", or a git ref at https://github.com/isaac-sim/IsaacSim'
+        help = 'Install Isaac Sim? Valid values: "latest" (newest release), "no", or a git ref in the selected repository. Commit SHA reachability is not verified.'
         self.params.insert(
             len(self.params),
             click.core.Option(
@@ -560,7 +780,7 @@ class DeployCommand(click.core.Command):
         )
 
         # --isaaclab
-        help = 'Install Isaac Lab? Valid values: "latest" (newest release), "no", or a git ref at https://github.com/isaac-sim/IsaacLab'
+        help = 'Install Isaac Lab? Valid values: "latest" (newest release), "no", or a git ref in the selected repository. Commit SHA reachability is not verified.'
         self.params.insert(
             len(self.params),
             click.core.Option(
@@ -574,7 +794,7 @@ class DeployCommand(click.core.Command):
         )
 
         # --isaaclab-arena
-        help = 'Install Isaac Lab Arena? Valid values: "latest" (newest release), "no", or a git ref at https://github.com/isaac-sim/IsaacLab-Arena'
+        help = 'Install Isaac Lab Arena? Valid values: "latest" (newest release), "no", or a git ref in the selected repository. Commit SHA reachability is not verified.'
         self.params.insert(
             len(self.params),
             click.core.Option(

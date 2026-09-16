@@ -1,0 +1,22 @@
+STEP1_RESULT {"suite": "installer_discovery_cli", "tests": 16, "skipped": 1, "failures": 0, "errors": 0, "passed": true}
+test_custom_decisions_survive_package_argument_reordering (step1_installer_discovery_cli.DiscoveryCLITests) ... ok
+test_explicit_declarations_complete_missing_sim_and_lab_intent (step1_installer_discovery_cli.DiscoveryCLITests) ... ok
+test_explicit_git_metadata_uses_exact_file_admission (step1_installer_discovery_cli.DiscoveryCLITests) ... ok
+test_explicit_runtime_metadata_remains_reviewable_not_enabled (step1_installer_discovery_cli.DiscoveryCLITests) ... ok
+test_explicit_tool_metadata_flows_into_reviewable_proposals (step1_installer_discovery_cli.DiscoveryCLITests) ... ok
+test_invalid_report_inputs_are_bounded_and_sanitized (step1_installer_discovery_cli.DiscoveryCLITests) ... ok
+test_large_bounded_report_roundtrips_without_silent_loss (step1_installer_discovery_cli.DiscoveryCLITests) ... ok
+test_nonempty_reviewed_robotics_selection_reaches_local_consumer (step1_installer_discovery_cli.DiscoveryCLITests) ... ok
+test_observe_emits_non_executable_proposals_from_selected_metadata (step1_installer_discovery_cli.DiscoveryCLITests) ... ok
+test_real_entrypoint_uses_confined_observer_not_legacy_modules (step1_installer_discovery_cli.DiscoveryCLITests) ... ok
+test_report_reader_and_encoder_share_eight_mebibyte_budget (step1_installer_discovery_cli.DiscoveryCLITests) ... ok
+test_review_and_rescan_preserve_explicit_decision (step1_installer_discovery_cli.DiscoveryCLITests) ... ok
+test_reviewed_desired_yaml_reaches_both_consumers_and_concrete_plan (step1_installer_discovery_cli.DiscoveryCLITests) ... ok
+test_reviewed_workspace_exports_desired_yaml_through_real_entry (step1_installer_discovery_cli.DiscoveryCLITests) ... ok
+test_root_refuses_before_reading_inputs (step1_installer_discovery_cli.DiscoveryCLITests) ... skipped 'root-specific refusal'
+test_selected_entry_budget_truncates_explicitly_and_report_is_reviewable (step1_installer_discovery_cli.DiscoveryCLITests) ... ok
+
+----------------------------------------------------------------------
+Ran 16 tests in 1.890s
+
+OK (skipped=1)

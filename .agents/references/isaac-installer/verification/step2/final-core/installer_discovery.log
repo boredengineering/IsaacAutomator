@@ -1,0 +1,36 @@
+STEP1_RESULT {"suite": "installer_discovery", "tests": 30, "skipped": 0, "failures": 0, "errors": 0, "passed": true}
+test_ancestor_descriptors_do_not_require_directory_listing (step1_installer_discovery.DiscoveryTests) ... ok
+test_budget_validation_and_cancelled_observations_are_explicit (step1_installer_discovery.DiscoveryTests) ... ok
+test_byte_budget_is_shared_across_package_and_git_readers (step1_installer_discovery.DiscoveryTests) ... ok
+test_candidate_uses_selected_root_name_and_keeps_unknowns_explicit (step1_installer_discovery.DiscoveryTests) ... ok
+test_conda_directory_is_bounded_and_never_reads_extra_fields (step1_installer_discovery.DiscoveryTests) ... ok
+test_conda_positive_reader_works_inside_real_readonly_confinement (step1_installer_discovery.DiscoveryTests) ... ok
+test_conflicting_conda_versions_do_not_create_duplicate_candidate_fields (step1_installer_discovery.DiscoveryTests) ... ok
+test_custom_backlog_required_unsupported_stays_blocked_after_acceptance (step1_installer_discovery.DiscoveryTests) ... ok
+test_entry_budget_is_shared_across_all_selected_package_sources (step1_installer_discovery.DiscoveryTests) ... ok
+test_explicit_dist_info_extracts_only_name_version_without_imports (step1_installer_discovery.DiscoveryTests) ... ok
+test_fresh_review_acknowledges_selected_evidence_without_losing_intent (step1_installer_discovery.DiscoveryTests) ... ok
+test_invalid_workspace_names_are_rejected_at_every_companion_boundary (step1_installer_discovery.DiscoveryTests) ... ok
+test_later_observation_does_not_relabel_independent_manual_runtime (step1_installer_discovery.DiscoveryTests) ... ok
+test_manual_declarations_are_bounded_typed_and_cannot_launder_evidence (step1_installer_discovery.DiscoveryTests) ... ok
+test_manual_declared_intent_survives_rescan_without_observed_health_claim (step1_installer_discovery.DiscoveryTests) ... ok
+test_metadata_refuses_unsafe_incomplete_or_oversize_records (step1_installer_discovery.DiscoveryTests) ... ok
+test_named_workspace_layout_is_proposed_without_path_concatenation (step1_installer_discovery.DiscoveryTests) ... ok
+test_partial_package_coverage_cannot_collide_with_tool_named_coverage (step1_installer_discovery.DiscoveryTests) ... ok
+test_recomputed_forged_ids_and_opaque_versions_are_not_echoed (step1_installer_discovery.DiscoveryTests) ... ok
+test_report_export_is_exclusive_private_and_outside_inspected_roots (step1_installer_discovery.DiscoveryTests) ... ok
+test_rescan_marks_changed_evidence_even_when_selected_value_is_unchanged (step1_installer_discovery.DiscoveryTests) ... ok
+test_review_edits_can_fill_all_shared_source_runtime_pins (step1_installer_discovery.DiscoveryTests) ... ok
+test_review_preserves_decisions_and_exposes_rescan_discrepancies (step1_installer_discovery.DiscoveryTests) ... ok
+test_reviewed_pypi_tool_source_is_explicit_and_never_autoapproved (step1_installer_discovery.DiscoveryTests) ... ok
+test_selected_workspace_metadata_is_nonexecutable (step1_installer_discovery.DiscoveryTests) ... ok
+test_serialized_companions_are_strictly_validated_before_use (step1_installer_discovery.DiscoveryTests) ... ok
+test_unsafe_selection_is_rejected_without_leaking_input (step1_installer_discovery.DiscoveryTests) ... ok
+test_workspace_display_names_do_not_relax_ids_or_package_names (step1_installer_discovery.DiscoveryTests) ... ok
+test_workspace_names_preserve_spaces_case_through_review_and_rescan (step1_installer_discovery.DiscoveryTests) ... ok
+test_workspace_symlink_ancestors_missing_and_git_indirection_are_not_followed (step1_installer_discovery.DiscoveryTests) ... ok
+
+----------------------------------------------------------------------
+Ran 30 tests in 0.478s
+
+OK

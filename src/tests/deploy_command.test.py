@@ -146,6 +146,13 @@ class Test_GitRefCallback(unittest.TestCase):
             self.assertEqual(self._call("whatever", name="other"), "whatever")
             run.assert_not_called()
 
+    def test_direct_callback_revalidates_selected_repo_before_network(self):
+        ctx = SimpleNamespace(params={"isaaclab_repo": "ext::unsafe-placeholder"})
+        with mock.patch.object(subprocess, "run") as run:
+            with self.assertRaises(click.BadParameter):
+                DeployCommand.git_ref_callback(ctx, self._param("isaaclab"), "fork-only")
+            run.assert_not_called()
+
     def test_debug_traces_the_check_to_stderr(self):
         ctx = SimpleNamespace(params={"debug": True})
         buf = io.StringIO()

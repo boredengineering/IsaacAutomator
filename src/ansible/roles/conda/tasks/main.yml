@@ -49,18 +49,39 @@
 - name: Install UV for fast pip resolution
   shell: "{{ miniconda_install_dir }}/envs/{{ conda_env_name }}/bin/python -m pip install uv"
   become_user: "{{ ansible_user }}"
-  when: enable_uv
+  when: enable_uv | bool
   changed_when: false
+
+- name: Require requested GPU architecture before installing profile wheels
+  ansible.builtin.assert:
+    that:
+      - gpu_compute_cap is defined
+      - "('sm_' ~ (gpu_compute_cap | string | replace('.', ''))) == profile_lab_architecture"
+    fail_msg: "Requested profile GPU architecture does not match observed target; no parity assumed."
+  when: profile_lab_architecture is defined
 
 - name: Determine PyTorch wheel channel and spec
   set_fact:
-    torch_wheel_channel: "{{ 'https://download.pytorch.org/whl/cu128' if (gpu_compute_cap is defined and (gpu_compute_cap | float >= 12.0)) else 'https://download.pytorch.org/whl/cu124' }}"
-    torch_version_spec: "{{ 'torch==2.10.0+cu128 torchvision==0.25.0+cu128' if (gpu_compute_cap is defined and (gpu_compute_cap | float >= 12.0)) else 'torch==2.5.1+cu124 torchvision==0.20.1+cu124' }}"
+    torch_wheel_channel: "{{ ('https://download.pytorch.org/whl/cu' ~ (profile_lab_cuda_runtime | replace('.', ''))) if profile_lab_cuda_runtime is defined else ('https://download.pytorch.org/whl/cu128' if (gpu_compute_cap is defined and (gpu_compute_cap | float >= 12.0)) else 'https://download.pytorch.org/whl/cu124') }}"
+    torch_version_spec: "{{ (('torch==' ~ profile_lab_torch) if profile_lab_torch is defined else ('torch==2.10.0+cu128' if (gpu_compute_cap is defined and (gpu_compute_cap | float >= 12.0)) else 'torch==2.5.1+cu124')) ~ ' ' ~ (('torchvision==' ~ profile_lab_torchvision) if profile_lab_torchvision is defined else 'torchvision') if (profile_lab_torch is defined or profile_lab_torchvision is defined) else ('torch==2.10.0+cu128 torchvision==0.25.0+cu128' if (gpu_compute_cap is defined and (gpu_compute_cap | float >= 12.0)) else 'torch==2.5.1+cu124 torchvision==0.20.1+cu124') }}"
 
 - name: Install hardware-optimized PyTorch wheels
   shell: "{{ miniconda_install_dir }}/envs/{{ conda_env_name }}/bin/python -m pip install {{ torch_version_spec }} --index-url {{ torch_wheel_channel }}"
   become_user: "{{ ansible_user }}"
   changed_when: false
+
+- name: Install reviewed profile Lab dependencies
+  ansible.builtin.command:
+    argv:
+      - "{{ miniconda_install_dir }}/envs/{{ conda_env_name }}/bin/python"
+      - -m
+      - pip
+      - install
+      - --
+      - "{{ item }}"
+  loop: "{{ profile_lab_packages | default([]) }}"
+  become_user: "{{ ansible_user }}"
+  when: profile_lab_packages is defined
 
 - name: Ensure activation and deactivation hook directories exist
   file:

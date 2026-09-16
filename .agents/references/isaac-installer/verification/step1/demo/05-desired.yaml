@@ -1,0 +1,63 @@
+components:
+  arena:
+    enabled: false
+  gr00t:
+    enabled: false
+  lab:
+    enabled: true
+    execution: native
+    runtime: lab
+    source:
+      mode: git
+      ref: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+      repository: https://github.com/example/IsaacLab.git
+      revision: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  lerobot:
+    enabled: false
+  sim:
+    enabled: true
+    execution: native
+    runtime: kit
+    source:
+      mode: standalone
+      sha256: 613e30d9727baa5615e087148ce67c90d9e5ffa376f7cbb4f01580baeb1c8d13
+      url: https://example.org/synthetic-isaac-sim.zip
+      version: 6.0.1
+custom_dependencies:
+- environment: isaaclab
+  id: tool:synthetic-env:synthetic-robot-helper
+  location: null
+  name: synthetic-robot-helper
+  placement: environment
+  purpose: Synthetic robot calibration helper
+  required: false
+  source: pypi
+  support: unsupported
+  version: 1.2.3
+defaults: false
+draft: false
+environments:
+- id: environment:synthetic-env
+  location: /tmp/isaac-step1-demo-j0pu_ozq/inputs/environment.json
+  manager: conda
+  name: isaaclab
+  placement: environment
+  python: '3.12'
+  required: false
+  support: unsupported
+kind: workstation-profile
+name: synthetic-native-sim-lab
+runtimes:
+  kit:
+    environment: kit
+    manager: bundled
+  lab:
+    environment: isaaclab
+    manager: conda
+    python: '3.12'
+schema_version: v1alpha1
+target: offline
+workspace:
+  layout: named
+  name: BoredEngineer
+  root: /tmp/isaac-step1-demo-j0pu_ozq/inputs/Documents/GitHub

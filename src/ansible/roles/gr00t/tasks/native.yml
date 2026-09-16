@@ -2,6 +2,14 @@
 # SPDX-License-Identifier: Apache-2.0
 ---
 # Native-only source, environment, launcher and desktop provisioning.
+- name: Select isolated fresh profile Git source
+  ansible.builtin.include_tasks: "{{ playbook_dir }}/roles/public-git/tasks/source.yml"
+  vars:
+    public_git_repository: "{{ gr00t_git_repo }}"
+    public_git_ref: "{{ gr00t_git_checkpoint }}"
+    public_git_destination: "{{ gr00t_dir }}"
+  when: public_git_profile | default(false) | bool
+
 - name: Install system dependencies for Isaac-GR00T
   apt:
     name:
@@ -14,6 +22,7 @@
   shell: git lfs install --skip-repo 2>/dev/null || true
   become_user: "{{ ansible_user }}"
   changed_when: false
+  when: not (public_git_profile | default(false) | bool)
 
 - name: Create parent directories for Isaac-GR00T
   file:
@@ -35,7 +44,7 @@
     version: "{{ gr00t_git_checkpoint }}"
     force: true
   become_user: "{{ ansible_user }}"
-  when: not gr00t_repo_stat.stat.exists
+  when: (not gr00t_repo_stat.stat.exists) and not (public_git_profile | default(false) | bool)
 
 - name: Configure upstream remote for Isaac-GR00T
   git_config:
@@ -44,7 +53,7 @@
     repo: "{{ gr00t_dir }}"
     scope: local
   become_user: "{{ ansible_user }}"
-  when: gr00t_git_repo != gr00t_upstream_repo
+  when: (gr00t_git_repo != gr00t_upstream_repo) and not (public_git_profile | default(false) | bool)
 
 - name: Set branch pushRemote to origin
   git_config:
@@ -54,6 +63,7 @@
     scope: local
   become_user: "{{ ansible_user }}"
   ignore_errors: true
+  when: not (public_git_profile | default(false) | bool)
 
 - name: Update submodules and pull LFS objects
   shell: |
@@ -63,6 +73,7 @@
     chdir: "{{ gr00t_dir }}"
   become_user: "{{ ansible_user }}"
   changed_when: false
+  when: not (public_git_profile | default(false) | bool)
 
 - name: Check if isaaclab-env is available
   stat:
@@ -74,7 +85,26 @@
   args:
     chdir: "{{ gr00t_dir }}"
   become_user: "{{ ansible_user }}"
-  when: isaaclab_env_bin.stat.exists
+  when: isaaclab_env_bin.stat.exists and not (profile_gr00t_isolated | default(false) | bool)
+  async: 1800
+  poll: 15
+
+# uv is a tool provisioned by the earlier conda role, not GR00T's interpreter.
+# Its project environment must never resolve to the Lab environment.
+- name: Sync isolated profile GR00T environment
+  ansible.builtin.command:
+    argv:
+      - "{{ miniconda_install_dir }}/envs/{{ conda_env_name }}/bin/uv"
+      - sync
+    chdir: "{{ gr00t_dir }}"
+  environment:
+    UV_PROJECT_ENVIRONMENT: "{{ gr00t_dir }}/.venv"
+    PYTHONPATH: ""
+    PYTHONHOME: ""
+    VIRTUAL_ENV: ""
+    CONDA_PREFIX: ""
+  become_user: "{{ ansible_user }}"
+  when: profile_gr00t_isolated | default(false) | bool
   async: 1800
   poll: 15
 

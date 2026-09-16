@@ -1,0 +1,17 @@
+{
+  "passed": true,
+  "cli_calls": 10,
+  "fixture_files_unchanged": 15,
+  "workspace_spelling": "BoredEngineer",
+  "packages": 2,
+  "environments": 1,
+  "collection_complete": false,
+  "export_complete": true,
+  "both_renderers_supported": true,
+  "execution_authorized": false,
+  "limitations": [
+    "Entirely synthetic sources and versions; no installed health or source availability proof.",
+    "Host collection gaps remain in raw report; acceptance here is reviewed intent only.",
+    "Dry-run intentionally lacks live target evidence even though fixture paths exist."
+  ]
+}

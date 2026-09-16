@@ -60,6 +60,10 @@ class Deployer:
         self.params = params
         self.config = config
         self.existing_behavior = None
+        # Validate software mapping before any state-directory creation.
+        if params.get('software_profile') is not None:
+            report = self.software_profile_report()
+            self.params.update(report['deploy_params'])
         saved = self.require_saved_backend()
         if saved is not None:
             if self.cloud != saved.backend_spec.cloud:
@@ -72,6 +76,16 @@ class Deployer:
 
         # save original params so we can recreate command line
         self.input_params = params.copy()
+        if self.params.get('software_profile') is not None:
+            ctx = click.get_current_context(silent=True)
+            source = ctx.meta.get('software_profile_source') if ctx else None
+            # Persist resolved intent in params; recreation requires the explicit
+            # source document, and must not re-add conflicting generated flags.
+            self.input_params['software_profile'] = source
+            self.input_params.pop('software_profile_requested', None)
+            for component in ('isaacsim', 'isaaclab', 'isaaclab_arena'):
+                self.input_params.pop(component, None)
+                self.input_params.pop(component + '_repo', None)
 
         # convert "in_china"
         self.params["in_china"] = {"yes": True, "no": False, "auto": False}[
@@ -86,6 +100,11 @@ class Deployer:
 
         # resolve --security-profile: simple / team / enterprise
         self.resolve_security_profile()
+
+        # Registry/image intent is populated by security-profile normalization.
+        # Check the effective combination again before creating any state path.
+        if self.params.get('software_profile') is not None:
+            self.software_profile_report()
 
         # create state directory if it doesn't exist
         os.makedirs(self.config["state_dir"], exist_ok=True)
@@ -155,6 +174,15 @@ class Deployer:
                 if current in ("", "no", "none"):
                     default_ref = self.config.get(f"default_{app}_git_checkpoint")
                     if default_ref:
+                        # A CLI-disabled component skipped preflight. If a demo
+                        # enables it now, validate/resolve against the same eager
+                        # repo selection before passing it to Ansible. Non-CLI
+                        # callers retain their existing offline constructor path.
+                        from src.python.deploy_command import DeployCommand
+                        ctx = click.get_current_context(silent=True)
+                        if ctx is not None and isinstance(ctx.command, DeployCommand):
+                            option = click.Option((f"--{app.replace('_', '-')}",))
+                            default_ref = DeployCommand.git_ref_callback(ctx, option, default_ref)
                         self.params[app] = default_ref
                         click.echo(
                             colorize_info(
@@ -466,6 +494,8 @@ class Deployer:
         Recreate command line
         """
 
+        if self.params.get('software_profile') is not None and not self.input_params.get('software_profile'):
+            return '# Cannot recreate software intent without an explicit profile path; resolved intent is retained in saved params.'
         command_line = sys.argv[0]
 
         for k, v in self.input_params.items():
@@ -785,6 +815,23 @@ class Deployer:
                 else:
                     f.write(f"{key} = {value}\n")
 
+    def software_profile_report(self):
+        """Revalidate narrowly typed software intent at the inventory boundary."""
+        from src.python.profile_adapters import render_profile
+        try:
+            if self.params.get('from_image') or str(self.params.get('demos', 'no')).lower() not in ('', 'no', 'none'):
+                raise ValueError('Software profiles cannot combine with image or demo overrides.')
+            if (self.params.get('enable_artifact_registry') or
+                    self.params.get('container_registry', {}).get('enabled')):
+                raise ValueError('Software native intent cannot combine with registry image overrides.')
+            user = self.params.get('ssh_user') or self.config['default_ssh_user']
+            report = render_profile(self.params['software_profile'], 'ansible', '/home/' + user)
+            if not report['render_supported']:
+                raise ValueError('Software profile has required unmapped fields; inspect software-profile render coverage.')
+            return report
+        except (ValueError, TypeError) as exc:
+            raise click.ClickException(str(exc)) from None
+
     def create_ansible_inventory(self, write: bool = True):
         """
         Create Ansible inventory, return it as text
@@ -802,6 +849,17 @@ class Deployer:
 
         # add config
         ansible_vars["config"] = self.config
+
+        from src.python.deploy_command import DeployCommand
+
+        # Legacy callers/saved deployments without repo flags retain defaults.
+        # Revalidate at transport too: restored params can bypass Click parsing.
+        for component in ("isaacsim", "isaaclab", "isaaclab_arena"):
+            ansible_vars[f"{component}_git_repo"] = DeployCommand.git_repo_callback(
+                None, None, self.params.get(
+                    f"{component}_repo", self.config[f"{component}_git_repo"]
+                )
+            )
 
         # default resilience parameters
         ansible_vars.setdefault("gcs_backup_bucket", self.params.get("backup_bucket", "") or "")
@@ -862,8 +920,17 @@ class Deployer:
             if isinstance(v, bool):
                 ansible_vars[k] = ansible_booleans[v]
 
+        # Software variables are generated from the validated desired schema, not
+        # user-supplied extra-vars. Child-group values override legacy defaults.
+        software_variables = None
+        if self.params.get('software_profile') is not None:
+            software_variables = self.software_profile_report()['artifact']
         template = Path(f"{self.config['ansible_dir']}/inventory.template").read_text()
         res = template.format(**ansible_vars)
+        if software_variables is not None:
+            res += '\n[isaac_workstation:vars]\n' + ''.join(
+                key + '=' + json.dumps(value, sort_keys=True) + '\n'
+                for key, value in sorted(software_variables.items()))
         if endpoint is not None:
             # Child-group values override legacy parent key/user settings.
             # Explicit true overrides ansible.cfg's legacy host checking=false.

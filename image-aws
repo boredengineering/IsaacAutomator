@@ -25,8 +25,7 @@ import click
 from src.python.aws import aws_image_credentials
 from src.python.config import c as config
 from src.python.debug import debug_break, debug_start  # noqa
-from src.python.deploy_command import DeployCommand
-from src.python.image_command_utils import configure_image_preview, forward_image_command, local_image_mode, preview_image_build, run_packer_build
+from src.python.image_command_utils import ImageCommand, image_profile_report, configure_image_preview, forward_image_command, local_image_mode, preview_image_build, run_packer_build
 from src.python.utils import (
     colorize_error,
     colorize_info,
@@ -35,7 +34,7 @@ from src.python.utils import (
 )
 
 
-class ImageAWSCommand(DeployCommand):
+class ImageAWSCommand(ImageCommand):
     """
     Defines options specific for "image-aws" command.
     """
@@ -197,6 +196,7 @@ def build_ami(params, config):
     Build AWS AMI using Packer.
     """
 
+    software_report = image_profile_report(params)
     debug = params["debug"]
     region = params["region"]
     instance_type = params["isaac_workstation_instance_type"]
@@ -254,7 +254,8 @@ def build_ami(params, config):
     click.echo(colorize_info("* Building AWS AMI with Packer..."))
 
     run_packer_build(packer_dir, packer_vars, debug=debug,
-                     env=packer_env, force=existing == "overwrite")
+                     env=packer_env, force=existing == "overwrite",
+                     software_profile_vars=software_report["artifact"] if software_report else None)
 
     click.echo(colorize_info("* AMI build complete!"))
 
@@ -268,4 +269,4 @@ if __name__ == "__main__":
     if os.path.exists("/.dockerenv") or local_image_mode(main):
         main()
     else:
-        sys.exit(forward_image_command(__file__))
+        sys.exit(forward_image_command(__file__, main))

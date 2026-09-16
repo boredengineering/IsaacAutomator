@@ -1,0 +1,61 @@
+{
+  "passed": true,
+  "scope": "Stored real CLI outputs, not native execution or Ansible playbook execution",
+  "comparisons": {
+    "Lab repository": [
+      "https://github.com/example/IsaacLab.git",
+      "https://github.com/example/IsaacLab.git",
+      "https://github.com/example/IsaacLab.git"
+    ],
+    "Lab revision": [
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    ],
+    "Lab destination": [
+      "/tmp/isaac-step1-demo-j0pu_ozq/inputs/Documents/GitHub/BoredEngineer/IsaacLab",
+      "/tmp/isaac-step1-demo-j0pu_ozq/inputs/Documents/GitHub/BoredEngineer/IsaacLab",
+      "/tmp/isaac-step1-demo-j0pu_ozq/inputs/Documents/GitHub/BoredEngineer/IsaacLab"
+    ],
+    "Sim version": [
+      "6.0.1",
+      "6.0.1",
+      "6.0.1"
+    ],
+    "Sim URL": [
+      "https://example.org/synthetic-isaac-sim.zip",
+      "https://example.org/synthetic-isaac-sim.zip",
+      "https://example.org/synthetic-isaac-sim.zip"
+    ],
+    "Sim SHA256": [
+      "613e30d9727baa5615e087148ce67c90d9e5ffa376f7cbb4f01580baeb1c8d13",
+      "613e30d9727baa5615e087148ce67c90d9e5ffa376f7cbb4f01580baeb1c8d13",
+      "613e30d9727baa5615e087148ce67c90d9e5ffa376f7cbb4f01580baeb1c8d13"
+    ],
+    "Sim destination": [
+      "/tmp/isaac-step1-demo-j0pu_ozq/target-home/IsaacSim",
+      "/tmp/isaac-step1-demo-j0pu_ozq/target-home/IsaacSim",
+      "/tmp/isaac-step1-demo-j0pu_ozq/target-home/IsaacSim"
+    ],
+    "Lab Python": [
+      "3.12",
+      "3.12",
+      "3.12"
+    ],
+    "Lab environment": [
+      "isaaclab",
+      "isaaclab",
+      "isaaclab"
+    ],
+    "Custom tool": [
+      "synthetic-robot-helper==1.2.3",
+      "synthetic-robot-helper==1.2.3",
+      "synthetic-robot-helper==1.2.3"
+    ],
+    "Public Git isolation flag": [
+      true,
+      true,
+      true
+    ]
+  }
+}

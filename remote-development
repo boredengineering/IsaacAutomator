@@ -1,0 +1,10 @@
+#!/usr/bin/env python3
+"""Offline remote-development planning; no implicit sync, Docker or cloud setup."""
+if __name__ == '__main__':
+    try:
+        from src.python.remote_development_command import remote_development
+        remote_development()
+    except ModuleNotFoundError as exc:
+        if exc.name not in ('click', 'yaml'):
+            raise
+        raise SystemExit('Remote-development planning requires Click and PyYAML in the Automator Python environment; no automatic installation was attempted.') from None

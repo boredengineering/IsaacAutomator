@@ -33,7 +33,7 @@ else
 fi
 
 # 2. Check Isaac Lab _isaac_sim Symlink
-LAB_DIR="${TARGET_HOME}/IsaacLab"
+LAB_DIR="{{ isaaclab_dir | default('/home/' ~ ansible_user ~ '/IsaacLab') }}"
 if [[ -d "${LAB_DIR}" ]]; then
     if [[ -L "${LAB_DIR}/_isaac_sim" && -d "${LAB_DIR}/_isaac_sim" ]]; then
         echo "[OK] IsaacLab _isaac_sim symlink valid."

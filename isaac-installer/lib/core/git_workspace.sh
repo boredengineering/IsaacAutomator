@@ -6,27 +6,17 @@
 # Resolves the default workspace root directory
 resolve_default_workspace_dir() {
     detect_target_user
-    if [[ -n "${WORKSPACE_DIR:-}" ]]; then
-        mkdir -p "${WORKSPACE_DIR}"
-        echo "${WORKSPACE_DIR}"
-        return 0
+    local root="${WORKSPACE_DIR-${CFG_WORKSPACE_ROOT:-}}"
+    if [[ -z "$root" ]]; then
+        if [[ -d "${TARGET_HOME}/Documents/GitHub" || -x "$(command -v github-desktop 2>/dev/null)" ]]; then
+            root="${TARGET_HOME}/Documents/GitHub"
+        elif [[ -d "${TARGET_HOME}/workspace" ]]; then
+            root="${TARGET_HOME}/workspace"
+        else
+            root="${TARGET_HOME}"
+        fi
     fi
-
-    # Check for ~/Documents/GitHub
-    local gh_docs="${TARGET_HOME}/Documents/GitHub"
-    if [[ -d "${gh_docs}" || -x "$(command -v github-desktop 2>/dev/null)" ]]; then
-        mkdir -p "${gh_docs}"
-        chown -R "${TARGET_USER}:${TARGET_USER}" "${TARGET_HOME}/Documents" 2>/dev/null || true
-        echo "${gh_docs}"
-        return 0
-    fi
-
-    # Fallback to ~/workspace or ~/
-    if [[ -d "${TARGET_HOME}/workspace" ]]; then
-        echo "${TARGET_HOME}/workspace"
-    else
-        echo "${TARGET_HOME}"
-    fi
+    python3 -B "${BASH_SOURCE[0]%/*}/workspace_paths.py" root "$root" "$TARGET_HOME"
 }
 
 # Normalize a GitHub repo string (e.g. 'BoredEngineer/IsaacLab' -> 'https://github.com/BoredEngineer/IsaacLab.git')
@@ -57,39 +47,9 @@ extract_repo_owner() {
 
 # Search for existing repo clones across developer directory tree
 find_existing_repo() {
-    local repo_name="$1"
     detect_target_user
-
-    local search_paths=(
-        "${WORKSPACE_DIR:-}"
-        "${TARGET_HOME}/Documents/GitHub"
-        "${TARGET_HOME}/Documents/GitHub/*"
-        "${TARGET_HOME}/workspace"
-        "${TARGET_HOME}/projects"
-        "${TARGET_HOME}/dev"
-        "${TARGET_HOME}"
-    )
-
-    for base_pattern in "${search_paths[@]}"; do
-        if [[ -z "$base_pattern" ]]; then continue; fi
-        for base in $base_pattern; do
-            if [[ -d "${base}/${repo_name}/.git" ]]; then
-                echo "${base}/${repo_name}"
-                return 0
-            fi
-            # Case-insensitive match for repository directory
-            if [[ -d "$base" ]]; then
-                local match
-                match="$(find "$base" -maxdepth 1 -mindepth 1 -type d -iname "$repo_name" 2>/dev/null | head -n 1 || true)"
-                if [[ -n "$match" && -d "${match}/.git" ]]; then
-                    echo "$match"
-                    return 0
-                fi
-            fi
-        done
-    done
-
-    return 1
+    python3 -B "${BASH_SOURCE[0]%/*}/workspace_paths.py" discover \
+        "$TARGET_HOME" "$1" "${WORKSPACE_DIR:-}"
 }
 
 # Resolves the exact target destination folder for a repository taking layout into account
@@ -97,68 +57,23 @@ resolve_repo_dest_path() {
     local repo_name="$1"        # e.g. "IsaacLab"
     local repo_slug="${2:-}"    # e.g. "BoredEngineer/IsaacLab" or "https://..."
     local explicit_path="${3:-}" # Optional explicit path override
+    local layout="${WORKSPACE_LAYOUT-${CFG_WORKSPACE_LAYOUT:-auto}}"
+    local name="${WORKSPACE_NAME-${CFG_WORKSPACE_NAME:-}}"
+    local configured_owner="${WORKSPACE_DEFAULT_OWNER-${CFG_WORKSPACE_DEFAULT_OWNER:-}}"
+    python3 -B "${BASH_SOURCE[0]%/*}/workspace_paths.py" settings \
+        "$layout" "$name" "$configured_owner" || return 1
 
     detect_target_user
 
-    # 1. If explicit path is provided, expand and return
-    if [[ -n "$explicit_path" ]]; then
-        expand_tilde_path "$explicit_path"
-        return 0
+    # Settings/precedence live above; all destination rules live in the pure API.
+    # Overrides are independent of root defaulting/inspection.
+    local ws_root=""
+    if [[ -z "$explicit_path" ]]; then
+        ws_root="$(resolve_default_workspace_dir)" || return 1
     fi
-
-    # 2. Base workspace root (e.g. /home/tarfy/Documents/GitHub)
-    local ws_root
-    ws_root="$(resolve_default_workspace_dir)"
-
-    # 3. Determine layout strategy ("auto" | "org" | "flat")
-    local layout="${WORKSPACE_LAYOUT:-${CFG_WORKSPACE_LAYOUT:-auto}}"
-    if [[ "$layout" == "flat" ]]; then
-        echo "${ws_root}/${repo_name}"
-        return 0
-    fi
-
-    # Determine owner with strict priority:
-    # 1. Configured default owner (from active YAML profile)
-    local owner="${WORKSPACE_DEFAULT_OWNER:-${CFG_WORKSPACE_DEFAULT_OWNER:-}}"
-    if [[ "$owner" == *"<"* || "$owner" == *">"* ]]; then
-        owner=""
-    fi
-
-    # 2. If unset, extract from personal fork repo slug (ignoring upstream orgs)
-    if [[ -z "$owner" ]]; then
-        local slug_extracted
-        slug_extracted="$(extract_repo_owner "$repo_slug")"
-        if [[ "$slug_extracted" != "isaac-sim" && "$slug_extracted" != "NVIDIA" && "$slug_extracted" != "huggingface" ]]; then
-            owner="$slug_extracted"
-        fi
-    fi
-
-    # 3. Case-insensitive match against existing owner folders on disk (strictly reuses BoredEngineer vs boredengineering)
-    if [[ -d "${ws_root}" ]]; then
-        local candidate_names=()
-        if [[ -n "$owner" ]]; then candidate_names+=("$owner"); fi
-        local slug_owner
-        slug_owner="$(extract_repo_owner "$repo_slug")"
-        if [[ -n "$slug_owner" && "$slug_owner" != "$owner" ]]; then candidate_names+=("$slug_owner"); fi
-
-        for cand in "${candidate_names[@]}"; do
-            local matched_dir
-            matched_dir="$(find "${ws_root}" -maxdepth 1 -mindepth 1 -type d -iname "${cand}" 2>/dev/null | head -n 1 || true)"
-            if [[ -n "$matched_dir" && -d "$matched_dir" ]]; then
-                owner="$(basename "$matched_dir")"
-                break
-            fi
-        done
-    fi
-
-    # 4. In "org" or "auto", use resolved owner if available
-    if [[ -n "$owner" ]]; then
-        echo "${ws_root}/${owner}/${repo_name}"
-        return 0
-    fi
-
-    # 5. Default fallback to clean flat layout (prevents creating rogue folders named after system usernames)
-    echo "${ws_root}/${repo_name}"
+    python3 -B "${BASH_SOURCE[0]%/*}/workspace_paths.py" resolve \
+        "$TARGET_HOME" "$repo_name" "$repo_slug" "$explicit_path" \
+        "$ws_root" "$layout" "$name" "$configured_owner"
 }
 
 # Resolves currently active on-disk path or target destination path
@@ -167,10 +82,38 @@ resolve_active_repo_dir() {
     local repo_slug="${2:-}"
     local explicit_path="${3:-}"
 
-    local existing
+    # Status callers historically pass an empty source when no profile source
+    # is selected. Use the same canonical defaults as the module destination
+    # helpers, including legacy reuse of an existing official-owner directory.
+    if [[ -z "$repo_slug" ]]; then
+        case "$repo_name" in
+            IsaacLab) repo_slug="${ISAACLAB_REPO:-https://github.com/isaac-sim/IsaacLab.git}" ;;
+            IsaacLab-Arena) repo_slug="${ARENA_REPO:-https://github.com/isaac-sim/IsaacLab-Arena.git}" ;;
+            Isaac-GR00T) repo_slug="${GR00T_REPO:-https://github.com/NVIDIA/Isaac-GR00T.git}" ;;
+            lerobot) repo_slug="${LEROBOT_REPO:-https://github.com/huggingface/lerobot.git}" ;;
+        esac
+    fi
+
+    # Reviewed/configured selection is authoritative even when missing. Only
+    # unconfigured legacy auto/org retains discovery compatibility; discovery
+    # never overrides an explicit repository, root, owner or flat/named layout.
+    local layout="${WORKSPACE_LAYOUT-${CFG_WORKSPACE_LAYOUT:-auto}}"
+    if [[ -n "$explicit_path" || -n "${WORKSPACE_DIR-${CFG_WORKSPACE_ROOT:-}}" ||
+          -n "${WORKSPACE_DEFAULT_OWNER-${CFG_WORKSPACE_DEFAULT_OWNER:-}}" ||
+          "$layout" != auto && "$layout" != org ||
+          -n "${WORKSPACE_NAME-${CFG_WORKSPACE_NAME:-}}" ]]; then
+        resolve_repo_dest_path "$repo_name" "$repo_slug" "$explicit_path"
+        return $?
+    fi
+
+    local existing discovery_status
     if existing="$(find_existing_repo "$repo_name")"; then
         echo "$existing"
         return 0
+    else
+        discovery_status=$?
+        # Only proven absence permits fallback. Ambiguity/inaccessibility is not absence.
+        [[ "$discovery_status" -eq 1 ]] || return "$discovery_status"
     fi
 
     resolve_repo_dest_path "$repo_name" "$repo_slug" "$explicit_path"
@@ -179,6 +122,8 @@ resolve_active_repo_dir() {
 # Register a cloned or discovered repository with GitHub Desktop
 register_github_desktop_repo() {
     local repo_path="$1"
+    local auto_register="${WORKSPACE_AUTO_REGISTER_GITHUB_DESKTOP-${CFG_WORKSPACE_AUTO_REGISTER_GITHUB_DESKTOP:-true}}"
+    [[ "$auto_register" == "true" ]] || return 0
     detect_target_user
 
     if command -v github-desktop &>/dev/null && [[ -d "${repo_path}/.git" ]]; then
@@ -239,6 +184,11 @@ fetch_and_checkout_ref() {
     local repo_path="$1"
     local desired_ref="$2"
     local is_tag="${3:-false}"
+    # Selected profiles never enter legacy stash/fallback/upstream mutation.
+    if [[ "${CFG_PUBLIC_GIT_PROFILE:-false}" == true ]]; then
+        printf '%s\n' 'Profile source update of an existing checkout is not implemented; no Git operation attempted.' >&2
+        return 1
+    fi
     detect_target_user
 
     if [[ ! -d "${repo_path}/.git" || -z "$desired_ref" ]]; then
@@ -406,6 +356,37 @@ setup_git_repo_with_fork() {
     local branch="${4:-main}"
     local tag="${5:-}"
     local recurse_submodules="${6:-false}"
+
+    if [[ "${CFG_PUBLIC_GIT_PROFILE:-false}" == true ]]; then
+        # Refuse every existing destination, including origin mismatch, before
+        # ownership changes or any auth/Git probe. N6 adoption remains blocked.
+        if [[ -e "$dest_dir" || -L "$dest_dir" ]]; then
+            printf '%s\n' 'Profile destination/origin already exists; adoption/update is not implemented.' >&2
+            return 1
+        fi
+        if [[ "$recurse_submodules" == true ]]; then
+            printf '%s\n' 'Profile target submodules are not implemented; no recursive clone attempted.' >&2
+            return 1
+        fi
+        detect_target_user
+        local public_git_helper="${BASH_SOURCE[0]%/*}/../../../src/python/public_git.py"
+        [[ -f "$public_git_helper" ]] || return 1
+        mkdir -p -- "$(dirname "$dest_dir")" || return 1
+        chown "${TARGET_USER}:${TARGET_USER}" "$(dirname "$dest_dir")" || return 1
+        # Exact native URL/ref, no fork auto-creation, URL normalization, global
+        # rewrites, SSH probing, upstream fallback or discarded fetch errors.
+        sudo -H -u "${TARGET_USER}" /usr/bin/env -i /usr/bin/python3 -I \
+            "$public_git_helper" checkout "$fork_or_main_url" "${tag:-$branch}" "$dest_dir"
+        return $?
+    fi
+
+    # A named path selects a location, never permission to adopt/update user data.
+    # Stop before directory creation, ownership changes, auth, remotes or checkout.
+    if [[ "${WORKSPACE_LAYOUT-${CFG_WORKSPACE_LAYOUT:-auto}}" == "named" &&
+          ( -e "$dest_dir" || -L "$dest_dir" ) ]]; then
+        printf '%s\n' 'Named workspace destination already exists; explicit adoption/update policy is not implemented. No repository setup was attempted.' >&2
+        return 1
+    fi
 
     detect_target_user
     mkdir -p "$(dirname "$dest_dir")"

@@ -20,22 +20,27 @@ check_demos() {
     fi
 }
 
+# Bind reviewed paths at generation time; launchers never rediscover/adopt a
+# different checkout. %q preserves spaces/case and shell metacharacters as data.
+write_selected_demo_launcher() {
+    local output="$1" lab="$2" arena="$3" gr00t="$4"
+    {
+        printf '#!/usr/bin/env bash\n'
+        printf 'LAB_DIR=%q\nARENA_DIR=%q\nGR00T_DIR=%q\n' "$lab" "$arena" "$gr00t"
+        cat
+    } | run_as_user_stdin "$output"
+}
+
 install_demos_and_shortcuts() {
     detect_target_user
     log_step "Installing Desktop Shortcuts and Physical AI Demo Launchers (Optional)..."
 
-    local lab_dir="${ISAACLAB_DIR:-}"
-    if [[ -z "$lab_dir" ]]; then
-        lab_dir="$(resolve_active_repo_dir "IsaacLab" 2>/dev/null || echo "${TARGET_HOME}/IsaacLab")"
-    fi
-    local arena_dir="${ARENA_DIR:-}"
-    if [[ -z "$arena_dir" ]]; then
-        arena_dir="$(resolve_active_repo_dir "IsaacLab-Arena" 2>/dev/null || echo "${TARGET_HOME}/Documents/GitHub/IsaacLab-Arena")"
-    fi
-    local gr00t_dir="${GR00T_DIR:-}"
-    if [[ -z "$gr00t_dir" ]]; then
-        gr00t_dir="$(resolve_active_repo_dir "Isaac-GR00T" 2>/dev/null || echo "${TARGET_HOME}/Documents/GitHub/Isaac-GR00T")"
-    fi
+    local lab_dir arena_dir gr00t_dir
+    # Same canonical defaults/explicit overrides as install, audit and state.
+    # Validate all selections before any launcher/desktop output is created.
+    lab_dir="$(resolve_isaaclab_dir)" || return $?
+    arena_dir="$(resolve_arena_dir)" || return $?
+    gr00t_dir="$(resolve_gr00t_dir)" || return $?
     local demos_dir="${TARGET_HOME}/.local/share/isaac-demos"
     local desktop_dir="${TARGET_HOME}/Desktop"
 
@@ -43,10 +48,9 @@ install_demos_and_shortcuts() {
     chown -R "${TARGET_USER}:${TARGET_USER}" "${demos_dir}" "${desktop_dir}" 2>/dev/null || true
 
     # 1. Humanoid Locomotion Demo Launcher (Unitree G1 with RSL-RL)
-    cat << 'HUMANOID' | run_as_user_stdin "${demos_dir}/humanoid-locomotion.sh"
+    cat << 'HUMANOID' | write_selected_demo_launcher "${demos_dir}/humanoid-locomotion.sh" "$lab_dir" "$arena_dir" "$gr00t_dir"
 #!/usr/bin/env bash
 set -euo pipefail
-LAB_DIR="$(find "$HOME/Documents/GitHub" "$HOME" -maxdepth 4 -name "IsaacLab" -type d 2>/dev/null | head -n 1 || echo "$HOME/IsaacLab")"
 if [[ -d "$LAB_DIR" ]]; then
     cd "$LAB_DIR"
     echo "Starting Unitree G1 Humanoid Locomotion RL Training..."
@@ -56,16 +60,15 @@ if [[ -d "$LAB_DIR" ]]; then
         --max_iterations 300
 else
     echo "IsaacLab directory not found at $LAB_DIR"
-    sleep 3
+    exit 1
 fi
 HUMANOID
     chmod 0755 "${demos_dir}/humanoid-locomotion.sh" 2>/dev/null || true
 
     # 2. Quadruped Locomotion Demo Launcher (Unitree Go2)
-    cat << 'QUADRUPED' | run_as_user_stdin "${demos_dir}/quadruped-locomotion.sh"
+    cat << 'QUADRUPED' | write_selected_demo_launcher "${demos_dir}/quadruped-locomotion.sh" "$lab_dir" "$arena_dir" "$gr00t_dir"
 #!/usr/bin/env bash
 set -euo pipefail
-LAB_DIR="$(find "$HOME/Documents/GitHub" "$HOME" -maxdepth 4 -name "IsaacLab" -type d 2>/dev/null | head -n 1 || echo "$HOME/IsaacLab")"
 if [[ -d "$LAB_DIR" ]]; then
     cd "$LAB_DIR"
     echo "Starting Unitree Go2 Quadruped Locomotion RL Training..."
@@ -75,16 +78,15 @@ if [[ -d "$LAB_DIR" ]]; then
         --max_iterations 300
 else
     echo "IsaacLab directory not found at $LAB_DIR"
-    sleep 3
+    exit 1
 fi
 QUADRUPED
     chmod 0755 "${demos_dir}/quadruped-locomotion.sh" 2>/dev/null || true
 
     # 3. Franka Manipulation Demo Launcher
-    cat << 'FRANKA' | run_as_user_stdin "${demos_dir}/franka-manipulation.sh"
+    cat << 'FRANKA' | write_selected_demo_launcher "${demos_dir}/franka-manipulation.sh" "$lab_dir" "$arena_dir" "$gr00t_dir"
 #!/usr/bin/env bash
 set -euo pipefail
-LAB_DIR="$(find "$HOME/Documents/GitHub" "$HOME" -maxdepth 4 -name "IsaacLab" -type d 2>/dev/null | head -n 1 || echo "$HOME/IsaacLab")"
 if [[ -d "$LAB_DIR" ]]; then
     cd "$LAB_DIR"
     echo "Starting Franka Arm Cube Lift RL Training..."
@@ -94,33 +96,30 @@ if [[ -d "$LAB_DIR" ]]; then
         --max_iterations 300
 else
     echo "IsaacLab directory not found at $LAB_DIR"
-    sleep 3
+    exit 1
 fi
 FRANKA
     chmod 0755 "${demos_dir}/franka-manipulation.sh" 2>/dev/null || true
 
     # 4. IsaacLab-Arena Benchmark Kit GUI Launcher
-    cat << 'ARENA_DEMO' | run_as_user_stdin "${demos_dir}/arena-benchmark.sh"
+    cat << 'ARENA_DEMO' | write_selected_demo_launcher "${demos_dir}/arena-benchmark.sh" "$lab_dir" "$arena_dir" "$gr00t_dir"
 #!/usr/bin/env bash
 set -euo pipefail
-LAB_DIR="$(find "$HOME/Documents/GitHub" "$HOME" -maxdepth 4 -name "IsaacLab" -type d 2>/dev/null | head -n 1 || echo "$HOME/IsaacLab")"
-ARENA_DIR="$(find "$HOME/Documents/GitHub" "$HOME" -maxdepth 4 -name "IsaacLab-Arena" -type d 2>/dev/null | head -n 1 || echo "$HOME/Documents/GitHub/boredengineering/IsaacLab-Arena")"
 if [[ -d "$ARENA_DIR" && -d "$LAB_DIR" ]]; then
     cd "$ARENA_DIR"
     echo "Starting IsaacLab-Arena Visual Benchmark Rollout (cube_goal_pose)..."
     exec "$LAB_DIR/isaaclab.sh" -p isaaclab_arena/evaluation/policy_runner.py --viz kit --policy_type zero_action --num_steps 300 cube_goal_pose
 else
     echo "IsaacLab-Arena directory not found at $ARENA_DIR"
-    sleep 3
+    exit 1
 fi
 ARENA_DEMO
     chmod 0755 "${demos_dir}/arena-benchmark.sh" 2>/dev/null || true
 
     # 5. NVIDIA Isaac-GR00T Policy Server Launcher
-    cat << 'GR00T_SERVER' | run_as_user_stdin "${demos_dir}/gr00t-policy-server.sh"
+    cat << 'GR00T_SERVER' | write_selected_demo_launcher "${demos_dir}/gr00t-policy-server.sh" "$lab_dir" "$arena_dir" "$gr00t_dir"
 #!/usr/bin/env bash
 set -euo pipefail
-GR00T_DIR="$(find "$HOME/Documents/GitHub" "$HOME" -maxdepth 4 -name "Isaac-GR00T" -type d 2>/dev/null | head -n 1 || echo "$HOME/Documents/GitHub/boredengineering/Isaac-GR00T")"
 if [[ -d "$GR00T_DIR" ]]; then
     cd "$GR00T_DIR"
     export PATH="/usr/local/bin:$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
@@ -132,17 +131,15 @@ if [[ -d "$GR00T_DIR" ]]; then
         --device cuda:0
 else
     echo "Isaac-GR00T directory not found at $GR00T_DIR"
-    sleep 3
+    exit 1
 fi
 GR00T_SERVER
     chmod 0755 "${demos_dir}/gr00t-policy-server.sh" 2>/dev/null || true
 
     # 6. Arena + GR00T Closed-Loop Demo Launcher
-    cat << 'CLOSED_LOOP' | run_as_user_stdin "${demos_dir}/arena-gr00t-closed-loop.sh"
+    cat << 'CLOSED_LOOP' | write_selected_demo_launcher "${demos_dir}/arena-gr00t-closed-loop.sh" "$lab_dir" "$arena_dir" "$gr00t_dir"
 #!/usr/bin/env bash
 set -euo pipefail
-LAB_DIR="$(find "$HOME/Documents/GitHub" "$HOME" -maxdepth 4 -name "IsaacLab" -type d 2>/dev/null | head -n 1 || echo "$HOME/IsaacLab")"
-ARENA_DIR="$(find "$HOME/Documents/GitHub" "$HOME" -maxdepth 4 -name "IsaacLab-Arena" -type d 2>/dev/null | head -n 1 || echo "$HOME/Documents/GitHub/boredengineering/IsaacLab-Arena")"
 if [[ -d "$ARENA_DIR" && -d "$LAB_DIR" ]]; then
     cd "$ARENA_DIR"
     echo "Starting Closed-Loop IsaacLab-Arena + Isaac-GR00T Policy Benchmark..."
@@ -155,7 +152,7 @@ if [[ -d "$ARENA_DIR" && -d "$LAB_DIR" ]]; then
         cube_goal_pose
 else
     echo "IsaacLab-Arena directory not found at $ARENA_DIR"
-    sleep 3
+    exit 1
 fi
 CLOSED_LOOP
     chmod 0755 "${demos_dir}/arena-gr00t-closed-loop.sh" 2>/dev/null || true
@@ -168,7 +165,7 @@ Version=1.0
 Type=Application
 Name=Humanoid Locomotion RL (G1)
 Comment=Train Unitree G1 humanoid with RSL-RL in Isaac Lab
-Exec=gnome-terminal -- /bin/bash -c "DISPLAY=:0 ${demos_dir}/humanoid-locomotion.sh; exec bash"
+Exec=gnome-terminal -- /usr/bin/env DISPLAY=:0 /bin/bash "${demos_dir}/humanoid-locomotion.sh"
 Icon=utilities-terminal
 Terminal=false
 Categories=Development;Science;Robotics;
@@ -180,7 +177,7 @@ Version=1.0
 Type=Application
 Name=Quadruped Locomotion RL (Go2)
 Comment=Train Unitree Go2 quadruped with RSL-RL in Isaac Lab
-Exec=gnome-terminal -- /bin/bash -c "DISPLAY=:0 ${demos_dir}/quadruped-locomotion.sh; exec bash"
+Exec=gnome-terminal -- /usr/bin/env DISPLAY=:0 /bin/bash "${demos_dir}/quadruped-locomotion.sh"
 Icon=utilities-terminal
 Terminal=false
 Categories=Development;Science;Robotics;
@@ -192,7 +189,7 @@ Version=1.0
 Type=Application
 Name=Franka Cube Lift RL
 Comment=Train Franka robotic arm in object lifting with RSL-RL
-Exec=gnome-terminal -- /bin/bash -c "DISPLAY=:0 ${demos_dir}/franka-manipulation.sh; exec bash"
+Exec=gnome-terminal -- /usr/bin/env DISPLAY=:0 /bin/bash "${demos_dir}/franka-manipulation.sh"
 Icon=utilities-terminal
 Terminal=false
 Categories=Development;Science;Robotics;
@@ -204,7 +201,7 @@ Version=1.0
 Type=Application
 Name=IsaacLab-Arena Benchmark (Kit GUI)
 Comment=Launch IsaacLab-Arena task runner with live Omniverse Kit 3D viewport
-Exec=gnome-terminal -- /bin/bash -c "DISPLAY=:0 ${demos_dir}/arena-benchmark.sh; exec bash"
+Exec=gnome-terminal -- /usr/bin/env DISPLAY=:0 /bin/bash "${demos_dir}/arena-benchmark.sh"
 Icon=utilities-terminal
 Terminal=false
 Categories=Development;Science;Robotics;
@@ -216,7 +213,7 @@ Version=1.0
 Type=Application
 Name=Isaac-GR00T Policy Server
 Comment=Launch NVIDIA Isaac-GR00T ZeroMQ VLA Policy Server (Port 5556)
-Exec=gnome-terminal -- /bin/bash -c "DISPLAY=:0 ${demos_dir}/gr00t-policy-server.sh; exec bash"
+Exec=gnome-terminal -- /usr/bin/env DISPLAY=:0 /bin/bash "${demos_dir}/gr00t-policy-server.sh"
 Icon=utilities-terminal
 Terminal=false
 Categories=Development;Science;Robotics;
@@ -228,7 +225,7 @@ Version=1.0
 Type=Application
 Name=Arena + GR00T Closed-Loop Demo
 Comment=Launch closed-loop IsaacLab-Arena rollout driven by Isaac-GR00T VLA policy
-Exec=gnome-terminal -- /bin/bash -c "DISPLAY=:0 ${demos_dir}/arena-gr00t-closed-loop.sh; exec bash"
+Exec=gnome-terminal -- /usr/bin/env DISPLAY=:0 /bin/bash "${demos_dir}/arena-gr00t-closed-loop.sh"
 Icon=utilities-terminal
 Terminal=false
 Categories=Development;Science;Robotics;

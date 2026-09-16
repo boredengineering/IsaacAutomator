@@ -1,0 +1,306 @@
+{
+  "actions": [
+    {
+      "category": "workspace",
+      "desired": {},
+      "effects": [
+        "create new directory; never chown existing parents"
+      ],
+      "execution_supported": true,
+      "id": "workspace.root",
+      "operation": "mkdir",
+      "policy": {
+        "high_risk": false,
+        "ownership": "new-only"
+      },
+      "preconditions": {
+        "identity": [
+          93,
+          90067143
+        ],
+        "managed": false,
+        "mode": 493,
+        "state": "directory"
+      },
+      "reason": "exact existing directory; no ownership adoption or changes",
+      "status": "satisfied",
+      "target": "/tmp/isaac-step1-demo-j0pu_ozq/inputs/Documents/GitHub",
+      "unsupported_reason": null
+    },
+    {
+      "category": "workspace",
+      "desired": {},
+      "effects": [
+        "create new directory; never chown existing parents"
+      ],
+      "execution_supported": true,
+      "id": "workspace.group",
+      "operation": "mkdir",
+      "policy": {
+        "high_risk": false,
+        "ownership": "new-only"
+      },
+      "preconditions": {
+        "identity": [
+          93,
+          90067149
+        ],
+        "managed": false,
+        "mode": 493,
+        "state": "directory"
+      },
+      "reason": "exact existing directory; no ownership adoption or changes",
+      "status": "satisfied",
+      "target": "/tmp/isaac-step1-demo-j0pu_ozq/inputs/Documents/GitHub/BoredEngineer",
+      "unsupported_reason": null
+    },
+    {
+      "category": "repository",
+      "desired": {
+        "enabled": false
+      },
+      "effects": [
+        "repository checkout requires pinned revision, explicit new destination and isolated source adapter; network/build/submodules/LFS gated"
+      ],
+      "execution_supported": false,
+      "id": "component.arena",
+      "operation": "repository_checkout",
+      "policy": {
+        "high_risk": false,
+        "ownership": "no-adoption"
+      },
+      "preconditions": {},
+      "reason": "explicitly disabled",
+      "status": "excluded",
+      "target": "/tmp/isaac-step1-demo-j0pu_ozq/inputs/Documents/GitHub/BoredEngineer/IsaacLab-Arena",
+      "unsupported_reason": "repository checkout requires pinned revision, explicit new destination and isolated source adapter; network/build/submodules/LFS gated"
+    },
+    {
+      "category": "repository",
+      "desired": {
+        "enabled": false
+      },
+      "effects": [
+        "repository checkout requires pinned revision, explicit new destination and isolated source adapter; network/build/submodules/LFS gated"
+      ],
+      "execution_supported": false,
+      "id": "component.gr00t",
+      "operation": "repository_checkout",
+      "policy": {
+        "high_risk": false,
+        "ownership": "no-adoption"
+      },
+      "preconditions": {},
+      "reason": "explicitly disabled",
+      "status": "excluded",
+      "target": "/tmp/isaac-step1-demo-j0pu_ozq/inputs/Documents/GitHub/BoredEngineer/Isaac-GR00T",
+      "unsupported_reason": "repository checkout requires pinned revision, explicit new destination and isolated source adapter; network/build/submodules/LFS gated"
+    },
+    {
+      "category": "repository",
+      "desired": {
+        "mode": "git",
+        "ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "repository": "https://github.com/example/IsaacLab.git",
+        "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "effects": [
+        "repository checkout requires pinned revision, explicit new destination and isolated source adapter; network/build/submodules/LFS gated"
+      ],
+      "execution_supported": false,
+      "id": "component.lab",
+      "operation": "repository_checkout",
+      "policy": {
+        "high_risk": false,
+        "ownership": "no-adoption"
+      },
+      "preconditions": {
+        "identity": [
+          93,
+          90067150
+        ],
+        "managed": false,
+        "mode": 493,
+        "state": "directory"
+      },
+      "reason": "repository checkout requires pinned revision, explicit new destination and isolated source adapter; network/build/submodules/LFS gated",
+      "status": "blocked",
+      "target": "/tmp/isaac-step1-demo-j0pu_ozq/inputs/Documents/GitHub/BoredEngineer/IsaacLab",
+      "unsupported_reason": "repository checkout requires pinned revision, explicit new destination and isolated source adapter; network/build/submodules/LFS gated"
+    },
+    {
+      "category": "repository",
+      "desired": {
+        "enabled": false
+      },
+      "effects": [
+        "repository checkout requires pinned revision, explicit new destination and isolated source adapter; network/build/submodules/LFS gated"
+      ],
+      "execution_supported": false,
+      "id": "component.lerobot",
+      "operation": "repository_checkout",
+      "policy": {
+        "high_risk": false,
+        "ownership": "no-adoption"
+      },
+      "preconditions": {},
+      "reason": "explicitly disabled",
+      "status": "excluded",
+      "target": "/tmp/isaac-step1-demo-j0pu_ozq/inputs/Documents/GitHub/BoredEngineer/lerobot",
+      "unsupported_reason": "repository checkout requires pinned revision, explicit new destination and isolated source adapter; network/build/submodules/LFS gated"
+    },
+    {
+      "category": "artifact",
+      "desired": {
+        "mode": "standalone",
+        "sha256": "613e30d9727baa5615e087148ce67c90d9e5ffa376f7cbb4f01580baeb1c8d13",
+        "url": "https://example.org/synthetic-isaac-sim.zip",
+        "version": "6.0.1"
+      },
+      "effects": [
+        "download/verify artifact, extract into selected new prefix, separately review EULA and runtime setup"
+      ],
+      "execution_supported": false,
+      "id": "component.sim",
+      "operation": "artifact_install",
+      "policy": {
+        "high_risk": false,
+        "ownership": "no-adoption"
+      },
+      "preconditions": {
+        "managed": false,
+        "state": "missing"
+      },
+      "reason": "artifact integrity/extraction, EULA and runtime verification require a dedicated qualified adapter",
+      "status": "would_change",
+      "target": "/tmp/isaac-step1-demo-j0pu_ozq/target-home/IsaacSim",
+      "unsupported_reason": "artifact integrity/extraction, EULA and runtime verification require a dedicated qualified adapter"
+    },
+    {
+      "category": "environment",
+      "desired": {
+        "environment": "kit",
+        "manager": "bundled"
+      },
+      "effects": [
+        "bundled environment provisioning requires a qualified new-prefix adapter; existing environment mutation prohibited"
+      ],
+      "execution_supported": false,
+      "id": "runtime.kit",
+      "operation": "environment_create",
+      "policy": {
+        "high_risk": false,
+        "ownership": "no-adoption"
+      },
+      "preconditions": {},
+      "reason": "consumer runtime prefix depends on separately supplied installation evidence; no environment-name guess is a filesystem path",
+      "status": "unknown",
+      "target": "unresolved-runtime-prefix:bundled:kit",
+      "unsupported_reason": "bundled environment provisioning requires a qualified new-prefix adapter; existing environment mutation prohibited"
+    },
+    {
+      "category": "environment",
+      "desired": {
+        "environment": "isaaclab",
+        "manager": "conda",
+        "python": "3.12"
+      },
+      "effects": [
+        "conda environment provisioning requires a qualified new-prefix adapter; existing environment mutation prohibited"
+      ],
+      "execution_supported": false,
+      "id": "runtime.lab",
+      "operation": "environment_create",
+      "policy": {
+        "high_risk": false,
+        "ownership": "no-adoption"
+      },
+      "preconditions": {},
+      "reason": "consumer runtime prefix depends on separately supplied installation evidence; no environment-name guess is a filesystem path",
+      "status": "unknown",
+      "target": "unresolved-runtime-prefix:conda:isaaclab",
+      "unsupported_reason": "conda environment provisioning requires a qualified new-prefix adapter; existing environment mutation prohibited"
+    },
+    {
+      "category": "custom_dependency",
+      "desired": {
+        "environment": "isaaclab",
+        "id": "tool:synthetic-env:synthetic-robot-helper",
+        "location": null,
+        "name": "synthetic-robot-helper",
+        "placement": "environment",
+        "purpose": "Synthetic robot calibration helper",
+        "required": false,
+        "source": "pypi",
+        "support": "unsupported",
+        "version": "1.2.3"
+      },
+      "effects": [
+        "custom dependency has no qualified package/source/placement adapter"
+      ],
+      "execution_supported": false,
+      "id": "tool:synthetic-env:synthetic-robot-helper",
+      "operation": "package_install",
+      "policy": {
+        "high_risk": false,
+        "ownership": "no-adoption",
+        "required": false
+      },
+      "preconditions": {},
+      "reason": "custom dependency has no qualified package/source/placement adapter",
+      "status": "unknown",
+      "target": "environment:isaaclab:synthetic-robot-helper",
+      "unsupported_reason": "custom dependency has no qualified package/source/placement adapter"
+    },
+    {
+      "category": "declaration",
+      "desired": {
+        "id": "environment:synthetic-env",
+        "location": "/tmp/isaac-step1-demo-j0pu_ozq/inputs/environment.json",
+        "manager": "conda",
+        "name": "isaaclab",
+        "placement": "environment",
+        "python": "3.12",
+        "required": false,
+        "support": "unsupported"
+      },
+      "effects": [
+        "declaration remains unsupported; no implicit source execution or environment mutation"
+      ],
+      "execution_supported": false,
+      "id": "environment:synthetic-env",
+      "operation": "unsupported",
+      "policy": {
+        "high_risk": false,
+        "ownership": "no-adoption",
+        "required": false
+      },
+      "preconditions": {},
+      "reason": "declaration remains unsupported; no implicit source execution or environment mutation",
+      "status": "unknown",
+      "target": "environments:0",
+      "unsupported_reason": "declaration remains unsupported; no implicit source execution or environment mutation"
+    }
+  ],
+  "coverage": {
+    "components": "planned",
+    "custom_dependencies": "planned",
+    "defaults": "metadata",
+    "draft": "metadata",
+    "environments": "planned",
+    "kind": "metadata",
+    "name": "metadata",
+    "runtimes": "planned",
+    "schema_version": "metadata",
+    "target": "metadata",
+    "workspace": "planned"
+  },
+  "digest": "ea0523b201b8a51401903b4f6511f3b4a9f8174904f8188c45413bf743c1dd95",
+  "draft": false,
+  "evidence_scope": "supplied-metadata-unverified",
+  "execution_authorized": false,
+  "kind": "installer-action-plan",
+  "profile_digest": "e0b2988c191b11cce9ac3fce3994b719f058ce71cd80f95646846bfa5cfcd959",
+  "target_home": "/tmp/isaac-step1-demo-j0pu_ozq/target-home",
+  "version": 1
+}

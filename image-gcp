@@ -24,8 +24,7 @@ import click
 
 from src.python.config import c as config
 from src.python.debug import debug_break, debug_start  # noqa
-from src.python.deploy_command import DeployCommand
-from src.python.image_command_utils import configure_image_preview, forward_image_command, local_image_mode, preview_image_build, run_packer_build
+from src.python.image_command_utils import ImageCommand, image_profile_report, configure_image_preview, forward_image_command, local_image_mode, preview_image_build, run_packer_build
 from src.python.utils import (
     colorize_error,
     colorize_info,
@@ -43,7 +42,7 @@ def _normalize_gcp_image_name(name):
     return name.lower().replace(".", "-").replace("_", "-")
 
 
-class ImageGCPCommand(DeployCommand):
+class ImageGCPCommand(ImageCommand):
     """
     Defines options specific for "image-gcp" command.
     """
@@ -252,6 +251,7 @@ def build_gcp_image(params, config):
     Build GCP image using Packer.
     """
 
+    software_report = image_profile_report(params)
     debug = params["debug"]
     project = params["project"]
     zone = params["zone"]
@@ -315,7 +315,8 @@ def build_gcp_image(params, config):
     click.echo(colorize_info("* Building GCP image with Packer..."))
 
     run_packer_build(f"{packer_dir}/isaac-workstation.pkr.hcl", packer_vars,
-                     debug=debug, env={"GCP_PROJECT": project})
+                     debug=debug, env={"GCP_PROJECT": project},
+                     software_profile_vars=software_report["artifact"] if software_report else None)
 
     click.echo(colorize_info("* Image build complete!"))
 
@@ -329,4 +330,4 @@ if __name__ == "__main__":
     if os.path.exists("/.dockerenv") or local_image_mode(main):
         main()
     else:
-        sys.exit(forward_image_command(__file__))
+        sys.exit(forward_image_command(__file__, main))

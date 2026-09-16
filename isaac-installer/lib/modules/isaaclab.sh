@@ -9,6 +9,10 @@ resolve_isaaclab_dir() {
 }
 
 check_isaac_lab() {
+    if profile_lab_pins_selected; then
+        STAGE_CHECK_MSG='Selected Lab pins require post-dependency metadata conformance.'
+        return 1
+    fi
     local lab_dir
     lab_dir="$(resolve_isaaclab_dir)"
     if [[ -d "${lab_dir}" && -L "${lab_dir}/_isaac_sim" && -x "${lab_dir}/isaaclab.sh" ]]; then
@@ -20,7 +24,67 @@ check_isaac_lab() {
     fi
 }
 
+# A subshell bounds the private constraints lifetime, including failure paths.
+install_profile_lab_extensions() (
+    local lab_dir="$1" env_path conda_bin constraints ext
+    env_path="$(resolve_conda_env_path "$CONDA_ENV_NAME")" || return $?
+    conda_bin="$(resolve_conda_bin)" || return $?
+    constraints="$(profile_lab_metadata prepare "$env_path")" || return $?
+    trap 'run_profile_argv rm -f -- "$constraints" "${constraints%/*}/runtime.json"; run_profile_argv rmdir -- "${constraints%/*}"' EXIT
+    local -a runtime=(env -u PYTHONPATH -u PYTHONHOME -u LD_LIBRARY_PATH
+        "PIP_CONSTRAINT=$constraints" "UV_CONSTRAINT=$constraints"
+        "CONDA_PREFIX=$env_path" "CONDA_DEFAULT_ENV=$CONDA_ENV_NAME"
+        "PATH=$env_path/bin:$PATH" CONDA_NO_PLUGINS=true)
+    for ext in source/extensions/omni.isaac.lab source/extensions/omni.isaac.lab_assets \
+               source/extensions/omni.isaac.lab_tasks source/extensions/omni.isaac.lab_rl \
+               source/isaaclab source/isaaclab_assets source/isaaclab_tasks source/isaaclab_rl; do
+        [[ -d "$lab_dir/$ext" ]] || continue
+        run_profile_argv "${runtime[@]}" "$env_path/bin/python" -m pip install -e "$lab_dir/$ext" || return $?
+    done
+    # This fixed shell program receives all paths as argv, not shell source.
+    run_profile_argv "${runtime[@]}" "$conda_bin" run --prefix "$env_path" \
+        /bin/bash -c 'cd -- "$1" && ./isaaclab.sh -i' bash "$lab_dir" || return $?
+    profile_lab_metadata verify "$env_path" "$constraints" || return $?
+)
+
+install_profile_arena_dependencies() (
+    local arena_dir="$1" env_path constraints
+    env_path="$(resolve_conda_env_path "$CONDA_ENV_NAME")" || return $?
+    constraints="$(profile_lab_metadata prepare "$env_path")" || return $?
+    trap 'run_profile_argv rm -f -- "$constraints" "${constraints%/*}/runtime.json"; run_profile_argv rmdir -- "${constraints%/*}"' EXIT
+    local -a runtime=(env -u PYTHONPATH -u PYTHONHOME -u LD_LIBRARY_PATH
+        "PIP_CONSTRAINT=$constraints" "UV_CONSTRAINT=$constraints"
+        "CONDA_PREFIX=$env_path" "CONDA_DEFAULT_ENV=$CONDA_ENV_NAME"
+        "PATH=$env_path/bin:$PATH")
+    run_profile_argv "${runtime[@]}" "$env_path/bin/python" -m pip install -e "$arena_dir" || return $?
+    run_profile_argv "${runtime[@]}" "$env_path/bin/python" -m pip install \
+        cmeel pinocchio pin-pink qpsolvers daqp osqp mujoco || return $?
+    profile_lab_metadata verify "$env_path" "$constraints" || return $?
+)
+
+install_profile_isaac_lab() {
+    profile_lab_source_preflight || return $?
+    local lab_dir sim_dir="${ISAACSIM_DIR:-${TARGET_HOME}/IsaacSim}"
+    lab_dir="$(resolve_isaaclab_dir)" || return $?
+    [[ -d "$sim_dir" ]] || { log_error 'Isaac Sim directory is missing.'; return 1; }
+    setup_git_repo_with_fork "$lab_dir" "${ISAACLAB_REPO:-https://github.com/isaac-sim/IsaacLab.git}" \
+        "${ISAACLAB_UPSTREAM:-https://github.com/isaac-sim/IsaacLab.git}" \
+        "${ISAACLAB_BRANCH:-main}" "${ISAACLAB_TAG:-}" false || return $?
+    [[ -x "$lab_dir/isaaclab.sh" ]] || { log_error 'Lab setup did not provide the native installer.'; return 1; }
+    ln -sfn "$sim_dir" "$lab_dir/_isaac_sim.tmp.$$" || return $?
+    mv -Tf "$lab_dir/_isaac_sim.tmp.$$" "$lab_dir/_isaac_sim" || return $?
+    chown -h "${TARGET_USER}:${TARGET_USER}" "$lab_dir/_isaac_sim" || return $?
+    # No bundled-Python bridge or auto-upgrade branch can override this runtime.
+    install_profile_lab_extensions "$lab_dir" || return $?
+    register_github_desktop_repo "$lab_dir" || return $?
+    log_success 'Isaac Lab dependencies installed; selected runtime metadata conforms.'
+}
+
 install_isaac_lab() {
+    if profile_lab_pins_selected; then
+        install_profile_isaac_lab
+        return $?
+    fi
     log_step "Checking Isaac Lab Framework Status..."
 
     local sim_dir="${ISAACSIM_DIR:-${TARGET_HOME}/IsaacSim}"
@@ -129,7 +193,7 @@ cmd_lab() {
     shift || true
 
     local lab_dir
-    lab_dir="$(resolve_active_repo_dir "IsaacLab" "${ISAACLAB_REPO:-}" "${ISAACLAB_DIR:-}")"
+    lab_dir="$(resolve_active_repo_dir "IsaacLab" "${ISAACLAB_REPO:-}" "${ISAACLAB_DIR:-}")" || return $?
 
     case "$subcmd" in
         status)

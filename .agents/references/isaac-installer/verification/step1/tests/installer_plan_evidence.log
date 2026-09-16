@@ -1,0 +1,13 @@
+STEP1_RESULT {"suite": "installer_plan_evidence", "tests": 7, "skipped": 0, "failures": 0, "errors": 0, "passed": true}
+test_cycles_and_custom_objects_refuse_without_invoking_hooks (step1_installer_plan_evidence.EvidenceTests) ... ok
+test_exact_typed_fields_reject_malformed_values (step1_installer_plan_evidence.EvidenceTests) ... ok
+test_paths_and_nested_ancestor_records_are_strictly_bounded (step1_installer_plan_evidence.EvidenceTests) ... ok
+test_supported_typed_field_boundaries_are_copied (step1_installer_plan_evidence.EvidenceTests) ... ok
+test_total_path_budget_refuses_repeated_deep_metadata (step1_installer_plan_evidence.EvidenceTests) ... ok
+test_unknown_sensitive_keys_and_malformed_objects_refuse_without_content (step1_installer_plan_evidence.EvidenceTests) ... ok
+test_validator_performs_no_io_and_returns_strict_json (step1_installer_plan_evidence.EvidenceTests) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.063s
+
+OK

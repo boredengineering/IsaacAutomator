@@ -5,7 +5,8 @@
 # 1. Copy this file to create your personalized profile:
 #    mkdir -p ../configs/private
 #    cp config/example-profile.yaml ../configs/private/my-workstation.yaml
-# 2. Replace "<your_github_username>" with your GitHub username or organization.
+# 2. Choose workspace.name independently of your GitHub username/organization.
+#    Replace "<your_github_username>" in repository URLs below with your own owner.
 # 3. If you have personal forks of IsaacLab or Arena, point "repo" to your fork.
 #    If you do not have forks, set "repo" to the upstream repository URL.
 # 4. ../configs/private/ is excluded from Git and Docker builds. Never force-add it.
@@ -23,10 +24,10 @@ hardware:
 
 workspace:
   root: "~/Documents/GitHub"
-  layout: "auto"                         # "auto" | "org" | "flat"
-  default_owner: "<your_github_username>" # GitHub user or organization namespace folder
-  auto_register_github_desktop: true
-  auto_create_fork: true                 # Auto-creates GitHub fork via gh CLI if authenticated
+  layout: "named"                        # "named" | "flat"; legacy "auto"/"org" retained
+  name: "Robotics"                       # Exact local folder spelling, not a remote owner
+  auto_register_github_desktop: false     # Enable only when registration is intended
+  auto_create_fork: false                 # No implicit GitHub fork creation
 
 repositories:
   isaaclab:

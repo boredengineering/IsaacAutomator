@@ -8,8 +8,18 @@ User={{ ansible_user }}
 WorkingDirectory={{ gr00t_dir }}
 Environment="PATH=/usr/local/bin:/usr/bin:/bin:/home/{{ ansible_user }}/.local/bin"
 Environment="CUDA_VISIBLE_DEVICES=0"
+{% if profile_gr00t_isolated | default(false) | bool %}
+# Separate review/activation opt-ins; rendering/installing never starts this unit.
+ExecStart="{{ gr00t_dir }}/gr00t-policy-server.sh" serve{% if profile_gr00t_serving_reviewed | default(false) | bool %} --reviewed-source{% endif %}{% if profile_gr00t_serving_activate | default(false) | bool %} --activate{% endif %}
+
+{% else %}
 ExecStart=/usr/local/bin/isaaclab-env python gr00t/eval/run_gr00t_server.py --model-path {{ gr00t_model_path }} --embodiment-tag {{ gr00t_embodiment_tag }} --port {{ gr00t_port }} --device {{ gr00t_device }}
+{% endif %}
+{% if profile_gr00t_isolated | default(false) | bool %}
+Restart=no
+{% else %}
 Restart=on-failure
+{% endif %}
 RestartSec=5s
 
 [Install]

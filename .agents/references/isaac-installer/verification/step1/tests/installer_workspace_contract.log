@@ -1,0 +1,36 @@
+STEP1_RESULT {"suite": "installer_workspace_contract", "tests": 30, "skipped": 0, "failures": 0, "errors": 0, "passed": true}
+test_ancestor_traversal_never_requests_directory_read_access (step1_installer_workspace_contract.PureWorkspaceContract) ... ok
+test_default_root_uses_only_supplied_home_entries (step1_installer_workspace_contract.PureWorkspaceContract) ... ok
+test_explicit_home_and_typed_settings_refuse_malformed_values (step1_installer_workspace_contract.PureWorkspaceContract) ... ok
+test_legacy_owner_priority_case_reuse_and_ambiguity (step1_installer_workspace_contract.PureWorkspaceContract) ... ok
+test_named_and_override_are_pure_exact_paths (step1_installer_workspace_contract.PureWorkspaceContract) ... ok
+test_selected_leaf_case_collisions_refuse_in_every_layout (step1_installer_workspace_contract.PureWorkspaceContract) ... ok
+test_supplied_entries_validate_bounds_components_and_named_collisions (step1_installer_workspace_contract.PureWorkspaceContract) ... ok
+test_case_only_workspace_or_repo_collisions_refuse_even_with_exact_match (step1_installer_workspace_contract.InstallerWorkspaceContract) ... ok
+test_cleared_legacy_owner_does_not_fall_back_to_profile_owner (step1_installer_workspace_contract.InstallerWorkspaceContract) ... ok
+test_collision_inspection_has_a_bounded_entry_budget (step1_installer_workspace_contract.InstallerWorkspaceContract) ... ok
+test_default_documents_resolution_never_invokes_chown (step1_installer_workspace_contract.InstallerWorkspaceContract) ... ok
+test_disabled_desktop_registration_never_invokes_desktop_or_sudo (step1_installer_workspace_contract.InstallerWorkspaceContract) ... ok
+test_exact_existing_named_selection_is_read_only_including_git_file (step1_installer_workspace_contract.InstallerWorkspaceContract) ... ok
+test_existing_named_destinations_refuse_before_any_setup_action (step1_installer_workspace_contract.InstallerWorkspaceContract) ... ok
+test_explicit_override_is_validated_without_requiring_default_root (step1_installer_workspace_contract.InstallerWorkspaceContract) ... ok
+test_inaccessible_directory_is_not_reported_as_missing_or_usable (step1_installer_workspace_contract.InstallerWorkspaceContract) ... ok
+test_invalid_workspace_names_and_combinations_fail_closed (step1_installer_workspace_contract.InstallerWorkspaceContract) ... ok
+test_legacy_discovery_ambiguity_refuses_without_destination_fallback (step1_installer_workspace_contract.InstallerWorkspaceContract) ... ok
+test_legacy_discovery_unique_case_and_space_parent_remains_read_only (step1_installer_workspace_contract.InstallerWorkspaceContract) ... ok
+test_legacy_layout_owner_resolution_remains_compatible (step1_installer_workspace_contract.InstallerWorkspaceContract) ... ok
+test_legacy_owner_ambiguity_refuses_instead_of_find_first (step1_installer_workspace_contract.InstallerWorkspaceContract) ... ok
+test_named_active_selection_never_uses_unrelated_discovery (step1_installer_workspace_contract.InstallerWorkspaceContract) ... ok
+test_named_destination_preserves_explicit_spelling_not_remote_owner (step1_installer_workspace_contract.InstallerWorkspaceContract) ... ok
+test_repository_segment_cannot_escape_named_group (step1_installer_workspace_contract.InstallerWorkspaceContract) ... ok
+test_root_resolution_does_not_create_missing_directories (step1_installer_workspace_contract.InstallerWorkspaceContract) ... ok
+test_roots_expand_selected_home_and_reject_unsafe_paths (step1_installer_workspace_contract.InstallerWorkspaceContract) ... ok
+test_runtime_component_inspection_uses_nofollow_handles_not_path_lstat (step1_installer_workspace_contract.InstallerWorkspaceContract) ... ok
+test_runtime_selected_leaf_case_collision_is_bounded_in_every_layout (step1_installer_workspace_contract.InstallerWorkspaceContract) ... ok
+test_selected_path_components_reject_files_and_symlinks (step1_installer_workspace_contract.InstallerWorkspaceContract) ... ok
+test_shell_delegates_to_shared_pure_api (step1_installer_workspace_contract.InstallerWorkspaceContract) ... ok
+
+----------------------------------------------------------------------
+Ran 30 tests in 2.024s
+
+OK

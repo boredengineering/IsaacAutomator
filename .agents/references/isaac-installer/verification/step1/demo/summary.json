@@ -1,0 +1,98 @@
+{
+  "passed": true,
+  "synthetic_only": true,
+  "uid": 65534,
+  "enabled_components": [
+    "sim",
+    "lab"
+  ],
+  "real_cli_steps": 10,
+  "observation_has_evidence": true,
+  "rescan_preserves_review": true,
+  "export_complete": true,
+  "local_render_supported": true,
+  "ansible_render_supported": true,
+  "legacy_parser_consumed_artifact": true,
+  "custom_tool_mapped_both_consumers": "synthetic-robot-helper==1.2.3",
+  "dry_run_exit": 2,
+  "dry_run_reason": "Target state unobserved; concrete operations are not authorized.",
+  "actions": [
+    {
+      "id": "workspace.root",
+      "operation": "mkdir",
+      "target": "/tmp/isaac-step1-demo-j0pu_ozq/inputs/Documents/GitHub",
+      "status": "unknown"
+    },
+    {
+      "id": "workspace.group",
+      "operation": "mkdir",
+      "target": "/tmp/isaac-step1-demo-j0pu_ozq/inputs/Documents/GitHub/BoredEngineer",
+      "status": "unknown"
+    },
+    {
+      "id": "component.arena",
+      "operation": "repository_checkout",
+      "target": "/tmp/isaac-step1-demo-j0pu_ozq/inputs/Documents/GitHub/BoredEngineer/IsaacLab-Arena",
+      "status": "excluded"
+    },
+    {
+      "id": "component.gr00t",
+      "operation": "repository_checkout",
+      "target": "/tmp/isaac-step1-demo-j0pu_ozq/inputs/Documents/GitHub/BoredEngineer/Isaac-GR00T",
+      "status": "excluded"
+    },
+    {
+      "id": "component.lab",
+      "operation": "repository_checkout",
+      "target": "/tmp/isaac-step1-demo-j0pu_ozq/inputs/Documents/GitHub/BoredEngineer/IsaacLab",
+      "status": "unknown"
+    },
+    {
+      "id": "component.lerobot",
+      "operation": "repository_checkout",
+      "target": "/tmp/isaac-step1-demo-j0pu_ozq/inputs/Documents/GitHub/BoredEngineer/lerobot",
+      "status": "excluded"
+    },
+    {
+      "id": "component.sim",
+      "operation": "artifact_install",
+      "target": "/tmp/isaac-step1-demo-j0pu_ozq/target-home/IsaacSim",
+      "status": "unknown"
+    },
+    {
+      "id": "runtime.kit",
+      "operation": "environment_create",
+      "target": "unresolved-runtime-prefix:bundled:kit",
+      "status": "unknown"
+    },
+    {
+      "id": "runtime.lab",
+      "operation": "environment_create",
+      "target": "unresolved-runtime-prefix:conda:isaaclab",
+      "status": "unknown"
+    },
+    {
+      "id": "tool:synthetic-env:synthetic-robot-helper",
+      "operation": "package_install",
+      "target": "environment:isaaclab:synthetic-robot-helper",
+      "status": "unknown"
+    },
+    {
+      "id": "environment:synthetic-env",
+      "operation": "unsupported",
+      "target": "environments:0",
+      "status": "unknown"
+    }
+  ],
+  "fixture_metadata_statuses": {
+    "workspace.root": "satisfied",
+    "workspace.group": "satisfied",
+    "component.lab": "blocked",
+    "component.sim": "would_change"
+  },
+  "input_contents_and_modes_unchanged": true,
+  "installation_targets_created": false,
+  "fixture_home_precreated_and_remains_empty": true,
+  "source_reachability": "NOT_CHECKED; example URL and hash are intentionally synthetic",
+  "reports": "/tmp/isaac-step1-demo-j0pu_ozq/reports"
+}

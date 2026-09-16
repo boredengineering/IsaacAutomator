@@ -32,8 +32,8 @@
 
 - name: Probe Isaac Lab directory and commit
   shell: |
-    if [ -d "/home/{{ ansible_user }}/IsaacLab/.git" ]; then
-      cd "/home/{{ ansible_user }}/IsaacLab"
+    if [ -d "{{ isaaclab_dir | default('/home/' ~ ansible_user ~ '/IsaacLab') }}/.git" ]; then
+      cd "{{ isaaclab_dir | default('/home/' ~ ansible_user ~ '/IsaacLab') }}"
       git rev-parse HEAD
     else
       echo "none"

@@ -9,6 +9,10 @@ resolve_arena_dir() {
 }
 
 check_isaaclab_arena() {
+    if profile_lab_pins_selected; then
+        STAGE_CHECK_MSG='Arena dependencies require selected Lab pin conformance.'
+        return 1
+    fi
     local arena_dir
     arena_dir="$(resolve_arena_dir)"
     if [[ -d "${arena_dir}/.git" ]]; then
@@ -44,14 +48,21 @@ install_isaaclab_arena() {
     log_step "Installing IsaacLab-Arena Benchmark Suite..."
 
     local arena_dir
-    arena_dir="$(resolve_arena_dir)"
+    arena_dir="$(resolve_arena_dir)" || return $?
     local lab_dir
-    lab_dir="$(resolve_isaaclab_dir)"
+    lab_dir="$(resolve_isaaclab_dir)" || return $?
     local git_repo="${ARENA_REPO:-https://github.com/isaac-sim/IsaacLab-Arena.git}"
     local official_upstream="${ARENA_UPSTREAM:-https://github.com/isaac-sim/IsaacLab-Arena.git}"
     local git_branch="${ARENA_BRANCH:-release/0.3.0-prerelease}"
     local git_tag="${ARENA_TAG:-}"
 
+    # The pin-aware Lab consumer owns dependency resolution in the selected
+    # runtime. Never run this and then fall through to legacy bundled Python.
+    if profile_lab_pins_selected; then
+        profile_lab_source_preflight || return $?
+        setup_git_repo_with_fork "${arena_dir}" "${git_repo}" "${official_upstream}" "${git_branch}" "${git_tag}" true || return $?
+        install_profile_arena_dependencies "$arena_dir" || return $?
+    else
     # 1. Setup repository with Fork + Upstream support & Submodules
     setup_git_repo_with_fork "${arena_dir}" "${git_repo}" "${official_upstream}" "${git_branch}" "${git_tag}" true
 
@@ -70,6 +81,7 @@ install_isaaclab_arena() {
                 \"\${CONDA_PREFIX}/bin/pip\" install cmeel pinocchio pin-pink qpsolvers daqp osqp mujoco 2>/dev/null || true
             fi
         "
+    fi
     fi
 
     # 2b. Deploy declarative .env configuration template if missing
@@ -148,9 +160,9 @@ cmd_arena() {
     shift || true
 
     local arena_dir
-    arena_dir="$(resolve_active_repo_dir "IsaacLab-Arena" "${ARENA_REPO:-}" "${ARENA_DIR:-}")"
+    arena_dir="$(resolve_active_repo_dir "IsaacLab-Arena" "${ARENA_REPO:-}" "${ARENA_DIR:-}")" || return $?
     local lab_dir
-    lab_dir="$(resolve_active_repo_dir "IsaacLab" "${ISAACLAB_REPO:-}" "${ISAACLAB_DIR:-}")"
+    lab_dir="$(resolve_active_repo_dir "IsaacLab" "${ISAACLAB_REPO:-}" "${ISAACLAB_DIR:-}")" || return $?
 
     case "$subcmd" in
         status)

@@ -5,7 +5,156 @@
 
 CONDA_ENV_NAME="isaaclab"
 
+# Selected commands use argv directly, including across the sudo boundary. The
+# legacy run_as_user login-shell sanitizer interpolates HOME as shell source;
+# pin-aware installs must not pass profile paths through that old boundary.
+run_profile_argv() {
+    detect_target_user
+    if command -v sudo &>/dev/null && [[ "$EUID" -eq 0 && "${TARGET_USER}" != root && "${TARGET_USER}" != "${USER:-}" ]]; then
+        sudo -H -u "$TARGET_USER" -- "$@"
+    else
+        "$@"
+    fi
+}
+
+# Shared-profile runtime consumer. Called by install_python_env instead of the
+# legacy auto-detection/upgrade path. Deliberately no automatic pin substitution.
+install_profile_lab_runtime() {
+    # Other legacy modules still bind to isaaclab. Refuse an identity that they
+    # cannot consistently consume, rather than installing into the wrong env.
+    if [[ "${CONDA_ENV_NAME}" != isaaclab ]]; then
+        log_error 'Local Lab environment must be isaaclab; arbitrary identities are not integrated.'
+        return 1
+    fi
+    local pin
+    for pin in "${LAB_TORCH_VERSION:-}" "${LAB_TORCHVISION_VERSION:-}"; do
+        if [[ -n "$pin" && ! "$pin" =~ ^[0-9]+\.[0-9]+\.[0-9]+(\+cu[0-9]+)?$ ]]; then
+            log_error 'Invalid explicit PyTorch wheel version.'; return 1
+        fi
+        if [[ -n "${LAB_CUDA_RUNTIME:-}" && "$pin" == *+cu* && "${pin##*+cu}" != "${LAB_CUDA_RUNTIME//./}" ]]; then
+            log_error 'CUDA wheel channel conflicts with explicit wheel pin.'; return 1
+        fi
+    done
+    if [[ -n "${LAB_CUDA_RUNTIME:-}" && ! "$LAB_CUDA_RUNTIME" =~ ^[0-9]+\.[0-9]+$ ]]; then
+        log_error 'CUDA wheel channel requires major.minor.'; return 1
+    fi
+    if [[ -n "${LAB_ARCHITECTURE:-}" && ( ! "${GPU_COMPUTE_CAP:-}" =~ ^[0-9]+\.[0-9]+$ || "sm_${GPU_COMPUTE_CAP//./}" != "$LAB_ARCHITECTURE" ) ]]; then
+        log_error 'Requested GPU architecture is missing or mismatches the observed target.'; return 1
+    fi
+    if [[ -n "${LAB_PYTHON_VERSION:-}" && ! "$LAB_PYTHON_VERSION" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
+        log_error 'Invalid explicit Python version.'; return 1
+    fi
+    local package package_name
+    local -a packages=()
+    while IFS= read -r package; do
+        [[ -n "$package" ]] || continue
+        if [[ ! "$package" =~ ^[A-Za-z0-9][A-Za-z0-9_.-]*==[0-9]+\.[0-9]+[A-Za-z0-9.+-]*$ ]]; then
+            log_error 'Custom dependencies require exact PyPI name==version pins.'; return 1
+        fi
+        package_name="${package%%==*}"
+        case "${package_name,,}" in
+            torch|torchvision|python|pip|uv) log_error 'Custom dependency cannot override runtime pins.'; return 1 ;;
+        esac
+        packages+=("$package")
+    done <<< "${LAB_CUSTOM_PACKAGES:-}"
+    local conda_bin env_path actual_python
+    conda_bin="$(resolve_conda_bin)" || return $?
+    env_path="$(resolve_conda_env_path "${CONDA_ENV_NAME}")" || return $?
+    if [[ ! -x "${env_path}/bin/python" ]]; then
+        if [[ ! -x "$conda_bin" || -z "${LAB_PYTHON_VERSION:-}" ]]; then
+            log_error 'Explicit Lab runtime creation requires Conda and a Python pin.'; return 1
+        fi
+        # isaaclab.sh --conda chooses its own Python from Sim; it has no Python
+        # pin argument. Direct prefix creation is intentional, not a fallback.
+        run_profile_argv env -u LD_LIBRARY_PATH CONDA_NO_PLUGINS=true \
+            CONDA_PLUGINS_AUTO_ACCEPT_TOS=yes CONDA_SOLVER=classic \
+            "$conda_bin" create -y --prefix "$env_path" "python=${LAB_PYTHON_VERSION}" pip -c conda-forge || return $?
+    fi
+    actual_python="$(run_profile_argv "${env_path}/bin/python" -c 'import platform; print(platform.python_version())')" || return $?
+    if [[ -n "${LAB_PYTHON_VERSION:-}" && "$actual_python" != "$LAB_PYTHON_VERSION" && "$actual_python" != "$LAB_PYTHON_VERSION".* ]]; then
+        log_error 'Existing Python does not match requested pin; refusing implicit replacement.'; return 1
+    fi
+    local -a wheels=()
+    [[ -z "${LAB_TORCH_VERSION:-}" ]] || wheels+=("torch==${LAB_TORCH_VERSION}")
+    [[ -z "${LAB_TORCHVISION_VERSION:-}" ]] || wheels+=("torchvision==${LAB_TORCHVISION_VERSION}")
+    if [[ ${#wheels[@]} -gt 0 ]]; then
+        local -a channel=()
+        [[ -z "${LAB_CUDA_RUNTIME:-}" ]] || channel=(--index-url "https://download.pytorch.org/whl/cu${LAB_CUDA_RUNTIME//./}")
+        run_profile_argv "${env_path}/bin/python" -m pip install "${channel[@]}" -- "${wheels[@]}" || return $?
+    fi
+    if [[ ${#packages[@]} -gt 0 ]]; then
+        # Reviewed direct packages only: dependency resolution must not silently
+        # replace the pinned runtime. Missing transitive packages remain explicit.
+        run_profile_argv "${env_path}/bin/python" -m pip install --no-deps -- "${packages[@]}" || return $?
+    fi
+}
+
+# Pin-aware source installs never inherit a login shell's unrelated Python.
+profile_lab_pins_selected() {
+    [[ -v CFG_RUNTIMES_LAB_ENVIRONMENT || -n "${LAB_PYTHON_VERSION:-}${LAB_TORCH_VERSION:-}${LAB_TORCHVISION_VERSION:-}${LAB_CUDA_RUNTIME:-}${LAB_ARCHITECTURE:-}${LAB_CUSTOM_PACKAGES:-}" ]]
+}
+
+# Metadata only: do not import torch (or initialize a GPU) to prove wheel pins.
+# Unspecified wheel versions are frozen at their observed pre-pipeline versions,
+# not replaced with guessed compatibility defaults. Each run owns a fresh 0700
+# temporary directory and exclusive 0600 files; user paths are never overwritten.
+profile_lab_metadata() {
+    local mode="$1" env_path="$2" constraints="${3:-}"
+    run_profile_argv env -u PYTHONPATH -u PYTHONHOME "${env_path}/bin/python" -I -c '
+import importlib.metadata as metadata
+import json, os, pathlib, platform, re, sys, tempfile
+mode, prefix, python_pin, torch_pin, vision_pin, constraints = sys.argv[1:]
+if os.path.realpath(sys.prefix) != os.path.realpath(prefix):
+    raise SystemExit("Selected Lab environment prefix mismatch")
+actual_python = platform.python_version()
+if python_pin and not re.fullmatch(r"[0-9]+\.[0-9]+(?:\.[0-9]+)?", python_pin):
+    raise SystemExit("Invalid Python pin")
+if python_pin and actual_python != python_pin and not actual_python.startswith(python_pin + "."):
+    raise SystemExit("Selected Lab Python does not match pin")
+versions = {name: metadata.version(name) for name in ("torch", "torchvision")}
+for name, requested in (("torch", torch_pin), ("torchvision", vision_pin)):
+    if requested and versions[name] != requested:
+        raise SystemExit(name + " metadata does not match selected pin")
+    if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+(?:\+[A-Za-z0-9.]+)?", versions[name]):
+        raise SystemExit("Unsupported wheel version for constraint: " + name)
+state = dict(python=actual_python, versions=versions)
+if mode == "prepare":
+    directory = pathlib.Path(tempfile.mkdtemp(prefix="isaac-lab-pins-", dir="/tmp"))
+    path = directory / "constraints.txt"
+    for target, content in ((path, "".join(k + "==" + v + "\n" for k, v in versions.items())), (directory / "runtime.json", json.dumps(state))):
+        fd = os.open(target, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        with os.fdopen(fd, "w") as stream:
+            stream.write(content)
+    print(path)
+elif mode == "verify":
+    expected = json.loads(pathlib.Path(constraints).with_name("runtime.json").read_text())
+    if state != expected:
+        raise SystemExit("Lab runtime changed during dependency installation")
+elif mode != "validate":
+    raise SystemExit("Unknown conformance operation")
+' "$mode" "$env_path" "${LAB_PYTHON_VERSION:-}" "${LAB_TORCH_VERSION:-}" "${LAB_TORCHVISION_VERSION:-}" "$constraints"
+}
+
+profile_lab_source_preflight() {
+    if [[ "${CONDA_ENV_NAME}" != isaaclab ]]; then
+        log_error 'Local Lab environment must be isaaclab; refusing a different selected environment.'
+        return 1
+    fi
+    local conda_bin env_path
+    conda_bin="$(resolve_conda_bin)" || return $?
+    env_path="$(resolve_conda_env_path "$CONDA_ENV_NAME")" || return $?
+    if [[ ! -x "$conda_bin" || ! -x "$env_path/bin/python" ]]; then
+        log_error 'Pinned Lab source installation requires an existing selected Conda runtime.'
+        return 1
+    fi
+    profile_lab_metadata validate "$env_path"
+}
+
 resolve_target_python_version() {
+    if [[ -n "${LAB_PYTHON_VERSION:-}" ]]; then
+        printf '%s\n' "$LAB_PYTHON_VERSION"
+        return 0
+    fi
     local sim_version="${SIMULATION_VERSION:-${CFG_SIMULATION_ISAACSIM_VERSION:-6.0.1}}"
     if [[ "$sim_version" == 6.* ]]; then
         echo "3.12"
@@ -19,7 +168,11 @@ resolve_conda_bin() {
 
     # 1. Check user PATH
     local user_conda
-    user_conda="$(run_as_user "command -v conda 2>/dev/null" || true)"
+    if profile_lab_pins_selected; then
+        user_conda="$(run_profile_argv /bin/bash -c 'command -v conda' 2>/dev/null)" || user_conda=""
+    else
+        user_conda="$(run_as_user "command -v conda 2>/dev/null" || true)"
+    fi
     if [[ -n "$user_conda" && -x "$user_conda" ]]; then
         echo "$user_conda"
         return 0
@@ -48,6 +201,10 @@ resolve_conda_env_path() {
 }
 
 check_python_env() {
+    if [[ -v CFG_RUNTIMES_LAB_ENVIRONMENT || -n "${LAB_PYTHON_VERSION:-}${LAB_TORCH_VERSION:-}${LAB_TORCHVISION_VERSION:-}${LAB_CUDA_RUNTIME:-}${LAB_ARCHITECTURE:-}${LAB_CUSTOM_PACKAGES:-}" ]]; then
+        STAGE_CHECK_MSG='Explicit Lab pins require runtime revalidation; existence is not conformance.'
+        return 1
+    fi
     local py_ver
     py_ver="$(resolve_target_python_version)"
     local conda_bin
@@ -83,7 +240,16 @@ install_python_env() {
     conda_root="$(dirname "$(dirname "$conda_bin")")"
     local sim_dir="${ISAACSIM_DIR:-${TARGET_HOME}/IsaacSim}"
     local lab_dir
-    lab_dir="$(resolve_active_repo_dir "IsaacLab" 2>/dev/null || resolve_repo_dest_path "IsaacLab" 2>/dev/null || echo "")"
+    # Resolver refusal is fatal in every layout, before cleanup or installation.
+    lab_dir="$(resolve_active_repo_dir "IsaacLab" "${ISAACLAB_REPO:-}" "${ISAACLAB_DIR:-}")" || return $?
+
+    # Pinned profiles bypass legacy cleanup, native-helper defaults and automatic
+    # hardware wheel upgrades. Named repository rejection above still runs first.
+    if [[ -v CFG_RUNTIMES_LAB_ENVIRONMENT || -n "${LAB_PYTHON_VERSION:-}${LAB_TORCH_VERSION:-}${LAB_TORCHVISION_VERSION:-}${LAB_CUDA_RUNTIME:-}${LAB_ARCHITECTURE:-}" ]]; then
+        install_profile_lab_runtime || return $?
+        configure_python_env_hooks "$(resolve_conda_env_path "${CONDA_ENV_NAME}")" || return $?
+        return 0
+    fi
 
     # 1. Clean up any legacy or orphaned /opt/conda system directory and environments.txt entries
     if [[ -d "/opt/conda" ]]; then
@@ -189,9 +355,14 @@ install_python_env() {
         '${env_path}/bin/python' -m pip install ${torch_spec} --index-url '${torch_channel}' 2>/dev/null || true
     " || true
 
+    configure_python_env_hooks "$env_path"
+}
+
+configure_python_env_hooks() {
+    local env_path="$1"
     # 5. Configure Scoped Activation Hooks (Guarantees Zero Global Shell Contamination)
     log_info "Configuring scoped Conda activation hooks in ${env_path}/etc/conda/..."
-    run_as_user "mkdir -p '${env_path}/etc/conda/activate.d' '${env_path}/etc/conda/deactivate.d'"
+    run_profile_argv mkdir -p "${env_path}/etc/conda/activate.d" "${env_path}/etc/conda/deactivate.d" || return $?
 
     local vk_icd=""
     for icd_candidate in /usr/share/vulkan/icd.d/nvidia_icd.json \

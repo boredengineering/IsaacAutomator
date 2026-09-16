@@ -1,0 +1,246 @@
+{
+  "adapter": "local",
+  "apply_supported": false,
+  "artifact": {
+    "demos": {
+      "desktop_shortcuts": false
+    },
+    "devtools": {
+      "chromium": false,
+      "cloud_clis": {
+        "aws": false,
+        "gcloud": false,
+        "gh": false
+      },
+      "discord": false,
+      "docker": false,
+      "github_desktop": false,
+      "nvidia_container_toolkit": false,
+      "vscode": false
+    },
+    "profile_name": "synthetic-host",
+    "public_git_profile": true,
+    "repositories": {
+      "arena": {
+        "enabled": false
+      },
+      "gr00t": {
+        "enabled": false
+      },
+      "isaaclab": {
+        "branch": "",
+        "enabled": true,
+        "repo": "https://github.com/example/IsaacLab.git",
+        "tag": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "lerobot": {
+        "enabled": false
+      }
+    },
+    "runtimes": {
+      "lab": {
+        "environment": "isaaclab",
+        "python": "3.12"
+      }
+    },
+    "simulation": {
+      "isaacsim": {
+        "enabled": true,
+        "install_dir": "/tmp/isaac-host-demo-scl8fn_8/host-home/IsaacSim",
+        "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "source_type": "standalone",
+        "url": "https://example.org/synthetic-only.zip",
+        "version": "6.0.1"
+      }
+    },
+    "streaming": {
+      "provider": "none"
+    },
+    "teleoperation": {
+      "ftdi_1ms_latency_rule": false,
+      "manus_vr_gloves": false,
+      "realsense_cameras": false,
+      "spacemouse_daemon": false,
+      "xr_cloudxr": false
+    },
+    "version": "1.0",
+    "workspace": {
+      "auto_create_fork": false,
+      "auto_register_github_desktop": false,
+      "layout": "named",
+      "name": "BoredEngineer",
+      "root": "/tmp/isaac-host-demo-scl8fn_8/host-home/Documents/GitHub"
+    }
+  },
+  "blockers": [],
+  "coverage": {
+    "components.arena.enabled": {
+      "consumer": "repositories.arena.enabled",
+      "required": true,
+      "status": "mapped"
+    },
+    "components.gr00t.enabled": {
+      "consumer": "repositories.gr00t.enabled",
+      "required": true,
+      "status": "mapped"
+    },
+    "components.lab.enabled": {
+      "consumer": "repositories.isaaclab.enabled",
+      "required": true,
+      "status": "mapped"
+    },
+    "components.lab.execution": {
+      "consumer": "native installer modules",
+      "required": true,
+      "status": "mapped"
+    },
+    "components.lab.runtime": {
+      "consumer": "component-specific environment binding",
+      "required": true,
+      "status": "mapped"
+    },
+    "components.lab.source.mode": {
+      "consumer": "Git checkout",
+      "required": true,
+      "status": "mapped"
+    },
+    "components.lab.source.ref": {
+      "consumer": "repositories.isaaclab.tag",
+      "reason": "Explicit revision takes precedence; reachability unverified",
+      "required": true,
+      "status": "superseded"
+    },
+    "components.lab.source.repository": {
+      "consumer": "repositories.isaaclab.repo",
+      "required": true,
+      "status": "mapped"
+    },
+    "components.lab.source.revision": {
+      "consumer": "repositories.isaaclab.tag",
+      "required": true,
+      "status": "mapped"
+    },
+    "components.lerobot.enabled": {
+      "consumer": "repositories.lerobot.enabled",
+      "required": true,
+      "status": "mapped"
+    },
+    "components.sim.enabled": {
+      "consumer": "simulation.isaacsim.enabled",
+      "required": true,
+      "status": "mapped"
+    },
+    "components.sim.execution": {
+      "consumer": "native installer modules",
+      "required": true,
+      "status": "mapped"
+    },
+    "components.sim.runtime": {
+      "consumer": "component-specific environment binding",
+      "required": true,
+      "status": "mapped"
+    },
+    "components.sim.source.mode": {
+      "consumer": "simulation.isaacsim.source_type",
+      "required": true,
+      "status": "mapped"
+    },
+    "components.sim.source.sha256": {
+      "consumer": "simulation.isaacsim.sha256",
+      "reason": "Public artifact helper verifies exact URL/checksum pair before extraction",
+      "required": true,
+      "status": "mapped"
+    },
+    "components.sim.source.url": {
+      "consumer": "simulation.isaacsim.url",
+      "reason": "Public artifact helper verifies exact URL/checksum pair before extraction",
+      "required": true,
+      "status": "mapped"
+    },
+    "components.sim.source.version": {
+      "consumer": "simulation.isaacsim.version",
+      "required": true,
+      "status": "mapped"
+    },
+    "defaults": {
+      "reason": "Rendering metadata, not deployment authorization",
+      "required": true,
+      "status": "metadata"
+    },
+    "draft": {
+      "reason": "Rendering metadata, not deployment authorization",
+      "required": true,
+      "status": "metadata"
+    },
+    "kind": {
+      "reason": "Rendering metadata, not deployment authorization",
+      "required": true,
+      "status": "metadata"
+    },
+    "name": {
+      "reason": "Rendering metadata, not deployment authorization",
+      "required": true,
+      "status": "metadata"
+    },
+    "runtimes.kit.environment": {
+      "consumer": "fixed native environment identity",
+      "required": true,
+      "status": "mapped"
+    },
+    "runtimes.kit.manager": {
+      "consumer": "fixed native environment manager",
+      "required": true,
+      "status": "mapped"
+    },
+    "runtimes.lab.environment": {
+      "consumer": "fixed native environment identity",
+      "required": true,
+      "status": "mapped"
+    },
+    "runtimes.lab.manager": {
+      "consumer": "conda.sh install_profile_lab_runtime",
+      "required": true,
+      "status": "mapped"
+    },
+    "runtimes.lab.python": {
+      "consumer": "runtimes.lab.python",
+      "required": true,
+      "status": "mapped"
+    },
+    "schema_version": {
+      "reason": "Rendering metadata, not deployment authorization",
+      "required": true,
+      "status": "metadata"
+    },
+    "target": {
+      "reason": "Rendering metadata, not deployment authorization",
+      "required": true,
+      "status": "metadata"
+    },
+    "workspace.layout": {
+      "consumer": "workspace.layout",
+      "reason": "Pure target path translation; existing paths and collisions not inspected",
+      "required": true,
+      "status": "mapped"
+    },
+    "workspace.name": {
+      "consumer": "workspace.name",
+      "reason": "Pure target path translation; existing paths and collisions not inspected",
+      "required": true,
+      "status": "mapped"
+    },
+    "workspace.root": {
+      "consumer": "workspace.root",
+      "reason": "Pure target path translation; existing paths and collisions not inspected",
+      "required": true,
+      "status": "mapped"
+    }
+  },
+  "deploy_params": {},
+  "evidence_scope": "profile-only",
+  "execution_authorized": false,
+  "references_verified": false,
+  "render_supported": true,
+  "runtime_verified": false,
+  "warnings": []
+}

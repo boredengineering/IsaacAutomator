@@ -1,0 +1,197 @@
+[
+  {
+    "suite": "controls",
+    "exit_code": 0,
+    "log": "/tmp/isaac-step1-4itzamyt/controls.log"
+  },
+  {
+    "suite": "installer_metadata_readers",
+    "exit_code": 0,
+    "log": "/tmp/isaac-step1-4itzamyt/installer_metadata_readers.log",
+    "tests": 25,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0,
+    "passed": true
+  },
+  {
+    "suite": "installer_discovery",
+    "exit_code": 0,
+    "log": "/tmp/isaac-step1-4itzamyt/installer_discovery.log",
+    "tests": 30,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0,
+    "passed": true
+  },
+  {
+    "suite": "installer_desired_profile",
+    "exit_code": 0,
+    "log": "/tmp/isaac-step1-4itzamyt/installer_desired_profile.log",
+    "tests": 22,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0,
+    "passed": true
+  },
+  {
+    "suite": "workstation_profile",
+    "exit_code": 0,
+    "log": "/tmp/isaac-step1-4itzamyt/workstation_profile.log",
+    "tests": 11,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0,
+    "passed": true
+  },
+  {
+    "suite": "workstation_profile_extensions",
+    "exit_code": 0,
+    "log": "/tmp/isaac-step1-4itzamyt/workstation_profile_extensions.log",
+    "tests": 17,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0,
+    "passed": true
+  },
+  {
+    "suite": "profile_adapters",
+    "exit_code": 0,
+    "log": "/tmp/isaac-step1-4itzamyt/profile_adapters.log",
+    "tests": 11,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0,
+    "passed": true
+  },
+  {
+    "suite": "installer_action_plan",
+    "exit_code": 0,
+    "log": "/tmp/isaac-step1-4itzamyt/installer_action_plan.log",
+    "tests": 8,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0,
+    "passed": true
+  },
+  {
+    "suite": "installer_migration_preview",
+    "exit_code": 0,
+    "log": "/tmp/isaac-step1-4itzamyt/installer_migration_preview.log",
+    "tests": 12,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0,
+    "passed": true
+  },
+  {
+    "suite": "installer_profile_read_boundary",
+    "exit_code": 0,
+    "log": "/tmp/isaac-step1-4itzamyt/installer_profile_read_boundary.log",
+    "tests": 8,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0,
+    "passed": true
+  },
+  {
+    "suite": "installer_discovery_cli",
+    "exit_code": 0,
+    "log": "/tmp/isaac-step1-4itzamyt/installer_discovery_cli.log",
+    "tests": 16,
+    "skipped": 1,
+    "failures": 0,
+    "errors": 0,
+    "passed": true
+  },
+  {
+    "suite": "installer_profile_workflow",
+    "exit_code": 0,
+    "log": "/tmp/isaac-step1-4itzamyt/installer_profile_workflow.log",
+    "tests": 9,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0,
+    "passed": true
+  },
+  {
+    "suite": "installer_export_conflict",
+    "exit_code": 0,
+    "log": "/tmp/isaac-step1-4itzamyt/installer_export_conflict.log",
+    "tests": 1,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0,
+    "passed": true
+  },
+  {
+    "suite": "installer_output_entry",
+    "exit_code": 0,
+    "log": "/tmp/isaac-step1-4itzamyt/installer_output_entry.log",
+    "tests": 11,
+    "skipped": 1,
+    "failures": 0,
+    "errors": 0,
+    "passed": true
+  },
+  {
+    "suite": "installer_report_writer",
+    "exit_code": 0,
+    "log": "/tmp/isaac-step1-4itzamyt/installer_report_writer.log",
+    "tests": 20,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0,
+    "passed": true
+  },
+  {
+    "suite": "installer_writer_history",
+    "exit_code": 0,
+    "log": "/tmp/isaac-step1-4itzamyt/installer_writer_history.log",
+    "tests": 6,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0,
+    "passed": true
+  },
+  {
+    "suite": "installer_plan_evidence",
+    "exit_code": 0,
+    "log": "/tmp/isaac-step1-4itzamyt/installer_plan_evidence.log",
+    "tests": 7,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0,
+    "passed": true
+  },
+  {
+    "suite": "installer_workspace_contract",
+    "exit_code": 0,
+    "log": "/tmp/isaac-step1-4itzamyt/installer_workspace_contract.log",
+    "tests": 30,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0,
+    "passed": true
+  },
+  {
+    "suite": "installer_named_safety",
+    "exit_code": 0,
+    "log": "/tmp/isaac-step1-4itzamyt/installer_named_safety.log",
+    "tests": 12,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0,
+    "passed": true
+  },
+  {
+    "suite": "installer_target_observation",
+    "exit_code": 0,
+    "log": "/tmp/isaac-step1-4itzamyt/installer_target_observation.log",
+    "tests": 11,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0,
+    "passed": true
+  }
+]

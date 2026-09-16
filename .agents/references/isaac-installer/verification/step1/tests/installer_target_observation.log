@@ -1,0 +1,17 @@
+STEP1_RESULT {"suite": "installer_target_observation", "tests": 11, "skipped": 0, "failures": 0, "errors": 0, "passed": true}
+test_deadline_expiring_during_final_metadata_discards_result_and_closes_fds (step1_installer_target_observation.TargetObservationTests) ... ok
+test_existing_checkout_and_environment_never_infer_managed_or_clean (step1_installer_target_observation.TargetObservationTests) ... ok
+test_expired_deadline_does_not_open_any_target (step1_installer_target_observation.TargetObservationTests) ... ok
+test_inaccessible_ancestor_and_unavailable_mount_metadata_stay_unknown (step1_installer_target_observation.TargetObservationTests) ... ok
+test_invalid_selection_and_budgets_refuse_before_any_target_io (step1_installer_target_observation.TargetObservationTests) ... ok
+test_linked_special_and_non_directory_ancestors_are_blocked_without_identity (step1_installer_target_observation.TargetObservationTests) ... ok
+test_missing_and_present_targets_supply_strict_unmanaged_metadata (step1_installer_target_observation.TargetObservationTests) ... ok
+test_mount_transition_blocks_before_descendant_even_same_device (step1_installer_target_observation.TargetObservationTests) ... ok
+test_no_filesystem_targets_means_no_home_probe_or_implicit_discovery (step1_installer_target_observation.TargetObservationTests) ... ok
+test_only_selected_names_opened_and_profile_only_content_grants_remain (step1_installer_target_observation.TargetObservationTests) ... ok
+test_statx_failure_and_missing_mount_id_mask_fail_closed (step1_installer_target_observation.TargetObservationTests) ... ok
+
+----------------------------------------------------------------------
+Ran 11 tests in 0.223s
+
+OK

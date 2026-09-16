@@ -1,6 +1,21 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+{% if profile_gr00t_isolated | default(false) | bool %}
+{% if profile_gr00t_serving is defined %}
+# Self-contained transport of the SAME reviewed wrapper, not a code-hook variable.
+# Installation only writes this launcher; serve/download and permissions must be
+# explicitly supplied by the caller. No implicit activation from enabled=true.
+{% set serving_json %}{% include 'gr00t-serving.json.j2' %}{% endset %}
+exec /usr/bin/env -i PATH=/usr/bin:/bin {{ (gr00t_dir ~ '/.venv/bin/python') | quote }} -I - \
+    "$@" --repo-dir {{ gr00t_dir | quote }} --config-json {{ serving_json | trim | quote }} <<'ISAAC_GR00T_REVIEWED_CONSUMER'
+{{ lookup('file', playbook_dir ~ '/../python/gr00t_serving.py') }}
+ISAAC_GR00T_REVIEWED_CONSUMER
+{% else %}
+echo "Shared profile serving is unsupported for the selected source; no legacy launcher fallback." >&2
+exit 2
+{% endif %}
+{% else %}
 GR00T_DIR="{{ gr00t_dir }}"
 if [[ -d "$GR00T_DIR" ]]; then
     cd "$GR00T_DIR"
@@ -23,3 +38,4 @@ else
     echo "Isaac-GR00T directory not found at $GR00T_DIR"
     sleep 3
 fi
+{% endif %}

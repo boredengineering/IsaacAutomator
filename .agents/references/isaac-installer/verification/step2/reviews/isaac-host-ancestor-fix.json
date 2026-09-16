@@ -1,0 +1,100 @@
+{
+  "status": "HOST-CLOSURE-01_fixed_bounded_verified_source_frozen",
+  "files": [
+    {
+      "path": "isaac-installer/lib/core/host_inventory.py",
+      "sha256": "41a87d85602bba7d521c3b7d4bd7f2a102c9ccaee8dd9a68ac0062fd6fe44753"
+    },
+    {
+      "path": "src/tests/installer_host_inventory.test.py",
+      "sha256": "03fc8711e2f9243115569df75fed2a12f086e73040d27064e9055e15f415271f"
+    }
+  ],
+  "red_receipt": {
+    "home_ancestor": {
+      "path": "/tmp/isaac-step1-fo3rs_y_/results.json",
+      "sha256": "ca62561e47db46166fc292ef5c1b0db7c630505416f932a9f7cf68ef5f6f0579",
+      "results": [
+        {
+          "suite": "controls",
+          "exit_code": 0,
+          "log": "/tmp/isaac-step1-fo3rs_y_/controls.log"
+        },
+        {
+          "suite": "installer_host_inventory",
+          "exit_code": 1,
+          "log": "/tmp/isaac-step1-fo3rs_y_/installer_host_inventory.log",
+          "tests": 20,
+          "skipped": 0,
+          "failures": 1,
+          "errors": 0,
+          "passed": false
+        }
+      ]
+    },
+    "shallow_system_ancestor": {
+      "path": "/tmp/isaac-step1-nrb53p23/results.json",
+      "sha256": "16a118cc492528ff3e08b287e2f25d7102fc6dd4b5e02f0ca7fa13bada824d30",
+      "results": [
+        {
+          "suite": "controls",
+          "exit_code": 0,
+          "log": "/tmp/isaac-step1-nrb53p23/controls.log"
+        },
+        {
+          "suite": "installer_host_inventory",
+          "exit_code": 1,
+          "log": "/tmp/isaac-step1-nrb53p23/installer_host_inventory.log",
+          "tests": 21,
+          "skipped": 0,
+          "failures": 0,
+          "errors": 1,
+          "passed": false
+        }
+      ]
+    },
+    "expected_failures": [
+      "Documents fixture collector retained link, but real CLI import returned 2 rather than 0.",
+      "Pure synthetic /var issue raised InventoryError at raw path minimum-three-parts rule."
+    ]
+  },
+  "green_receipt": {
+    "path": "/tmp/isaac-step1-cgw2e1z6/results.json",
+    "sha256": "681dfd16b7434ebe5f82050e6d801351e043e69aba626f9f9c63204cbd6e6f2f",
+    "results": [
+      {
+        "suite": "controls",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-cgw2e1z6/controls.log"
+      },
+      {
+        "suite": "installer_host_inventory",
+        "exit_code": 0,
+        "log": "/tmp/isaac-step1-cgw2e1z6/installer_host_inventory.log",
+        "tests": 21,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "passed": true
+      }
+    ],
+    "intermediate_home_green": "/tmp/isaac-step1-w4gt4m9y/results.json",
+    "command": "/usr/bin/python3 -B .agents/references/isaac-installer/verification/step2/run_bounded_tests.py installer_host_inventory",
+    "controls_log": "{\"kernel_controls\": [\"r\", \"w\", \"network\"], \"inside_write\": true, \"uid\": 65534}\n"
+  },
+  "fix_summary": [
+    "Raw evidence paths now allow one canonical nonroot segment, retaining the explicit root=True slash exception, printable/control/traversal and credential-like restrictions.",
+    "Home link labels accept selected-seed descendants or ancestors only inside/equal declared home; system ancestor relation and declared-system-root confinement are unchanged.",
+    "Actual synthetic Documents symlink collect-to-CLI-import regression checks real descriptor opens retain O_NOFOLLOW, target checkout payload is not emitted, candidates/repositories remain empty, followup requests explicit scope, and only the report is an observed root.",
+    "Pure-data /var report uses existing synthetic host_report context/system source labels already rooted at slash, adds exact details, and recomputes followups/groups; no collector is invoked in this test. /home and /unselected link labels are rejected after lexical grammar acceptance with recomputed maps.",
+    "Tests retain local /var rejection through discovery._path, discovery._field_value, and baseline report-path validation; unsafe raw paths and implicit slash remain rejected.",
+    "Static rationale: baseline still validates its local report path through discovery._path; proposals still validate desired fields through discovery._field_value; no embedded evidence label is opened by host_inventory."
+  ],
+  "limitations": [
+    "Only the two owned repository files were modified; this JSON is the requested external receipt. Sources frozen immediately after final GREEN.",
+    "No generic runner, managed apply, fixture_builders, network, Git command, real host collection, or live package/proc/sys read was executed. Tests ran only through the retained confined inventory suite.",
+    "Initial test instrumentation produced a non-bug failure at /tmp/isaac-step1-ohm2rzou: wrapping os.open changed its capability-set identity, so collector failed closed before opens. Test wrapper now preserves supports_dir_fd membership and calls real os.open; this initial run is not claimed as bug RED.",
+    "Source hashes for all five non-owned reviewed files matched the review receipt: isaac-installer/tools/collect_host_metadata.py, src/tests/installer_host_collector.test.py, isaac-installer/docs/host-discovery.md, .agents/references/isaac-installer/verification/step2/demo_host_workflow.py, isaac-installer/lib/core/profile_discovery.py",
+    "No full collector/core rerun or independent final re-review performed; parent owns these follow-on checks. Synthetic evidence is not host attestation or new read/execution authority."
+  ]
+}

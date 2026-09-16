@@ -22,6 +22,14 @@
 - name: Install Hugging Face LeRobot Stack
   when: should_install_lerobot
   block:
+    - name: Select isolated fresh profile Git source
+      ansible.builtin.include_tasks: "{{ playbook_dir }}/roles/public-git/tasks/source.yml"
+      vars:
+        public_git_repository: "{{ lerobot_git_repo }}"
+        public_git_ref: "{{ lerobot_git_checkpoint }}"
+        public_git_destination: "{{ lerobot_dir }}"
+      when: public_git_profile | default(false) | bool
+
     - name: Install FFmpeg video codec development libraries
       apt:
         name:
@@ -56,7 +64,7 @@
         version: "{{ lerobot_git_checkpoint }}"
         force: true
       become_user: "{{ ansible_user }}"
-      when: not lerobot_repo_stat.stat.exists
+      when: (not lerobot_repo_stat.stat.exists) and not (public_git_profile | default(false) | bool)
 
     - name: Configure upstream remote for LeRobot
       git_config:
@@ -65,7 +73,7 @@
         repo: "{{ lerobot_dir }}"
         scope: local
       become_user: "{{ ansible_user }}"
-      when: lerobot_git_repo != lerobot_upstream_repo
+      when: (lerobot_git_repo != lerobot_upstream_repo) and not (public_git_profile | default(false) | bool)
 
     - name: Set branch pushRemote to origin
       git_config:
@@ -75,6 +83,7 @@
         scope: local
       become_user: "{{ ansible_user }}"
       ignore_errors: true
+      when: not (public_git_profile | default(false) | bool)
 
     - name: Check if isaaclab-env is available
       stat:
@@ -86,7 +95,40 @@
       args:
         chdir: "{{ lerobot_dir }}"
       become_user: "{{ ansible_user }}"
-      when: isaaclab_env_bin.stat.exists
+      when: isaaclab_env_bin.stat.exists and not (profile_lerobot_isolated | default(false) | bool)
+      async: 1800
+      poll: 15
+
+    - name: Create isolated profile LeRobot environment
+      ansible.builtin.command:
+        argv:
+          - "{{ miniconda_install_dir }}/bin/conda"
+          - create
+          - -y
+          - -n
+          - "{{ profile_lerobot_environment }}"
+          - "python={{ profile_lerobot_python | default('3.10') }}"
+          - pip
+        creates: "{{ miniconda_install_dir }}/envs/{{ profile_lerobot_environment }}/bin/python"
+      become_user: "{{ ansible_user }}"
+      when: profile_lerobot_isolated | default(false) | bool
+
+    - name: Install LeRobot into isolated profile environment
+      ansible.builtin.command:
+        argv:
+          - "{{ miniconda_install_dir }}/envs/{{ profile_lerobot_environment }}/bin/python"
+          - -m
+          - pip
+          - install
+          - -e
+          - .
+          - rerun-sdk
+        chdir: "{{ lerobot_dir }}"
+      environment:
+        PYTHONPATH: ""
+        PYTHONHOME: ""
+      become_user: "{{ ansible_user }}"
+      when: profile_lerobot_isolated | default(false) | bool
       async: 1800
       poll: 15
 

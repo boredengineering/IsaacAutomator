@@ -1,0 +1,127 @@
+[
+  {
+    "suite": "controls",
+    "exit_code": 0,
+    "log": "/tmp/isaac-step1-hi3ctpdx/controls.log"
+  },
+  {
+    "suite": "installer_metadata_readers",
+    "exit_code": 0,
+    "log": "/tmp/isaac-step1-hi3ctpdx/installer_metadata_readers.log",
+    "tests": 25,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0,
+    "passed": true
+  },
+  {
+    "suite": "installer_discovery",
+    "exit_code": 0,
+    "log": "/tmp/isaac-step1-hi3ctpdx/installer_discovery.log",
+    "tests": 30,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0,
+    "passed": true
+  },
+  {
+    "suite": "installer_desired_profile",
+    "exit_code": 0,
+    "log": "/tmp/isaac-step1-hi3ctpdx/installer_desired_profile.log",
+    "tests": 21,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0,
+    "passed": true
+  },
+  {
+    "suite": "workstation_profile",
+    "exit_code": 0,
+    "log": "/tmp/isaac-step1-hi3ctpdx/workstation_profile.log",
+    "tests": 11,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0,
+    "passed": true
+  },
+  {
+    "suite": "workstation_profile_extensions",
+    "exit_code": 0,
+    "log": "/tmp/isaac-step1-hi3ctpdx/workstation_profile_extensions.log",
+    "tests": 17,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0,
+    "passed": true
+  },
+  {
+    "suite": "installer_action_plan",
+    "exit_code": 0,
+    "log": "/tmp/isaac-step1-hi3ctpdx/installer_action_plan.log",
+    "tests": 8,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0,
+    "passed": true
+  },
+  {
+    "suite": "installer_migration_preview",
+    "exit_code": 0,
+    "log": "/tmp/isaac-step1-hi3ctpdx/installer_migration_preview.log",
+    "tests": 12,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0,
+    "passed": true
+  },
+  {
+    "suite": "installer_profile_read_boundary",
+    "exit_code": 0,
+    "log": "/tmp/isaac-step1-hi3ctpdx/installer_profile_read_boundary.log",
+    "tests": 8,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0,
+    "passed": true
+  },
+  {
+    "suite": "installer_output_entry",
+    "exit_code": 0,
+    "log": "/tmp/isaac-step1-hi3ctpdx/installer_output_entry.log",
+    "tests": 11,
+    "skipped": 1,
+    "failures": 0,
+    "errors": 0,
+    "passed": true
+  },
+  {
+    "suite": "installer_report_writer",
+    "exit_code": 0,
+    "log": "/tmp/isaac-step1-hi3ctpdx/installer_report_writer.log",
+    "tests": 20,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0,
+    "passed": true
+  },
+  {
+    "suite": "installer_writer_history",
+    "exit_code": 0,
+    "log": "/tmp/isaac-step1-hi3ctpdx/installer_writer_history.log",
+    "tests": 6,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0,
+    "passed": true
+  },
+  {
+    "suite": "installer_plan_evidence",
+    "exit_code": 1,
+    "log": "/tmp/isaac-step1-hi3ctpdx/installer_plan_evidence.log",
+    "tests": 8,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 1,
+    "passed": false
+  }
+]

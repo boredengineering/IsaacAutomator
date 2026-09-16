@@ -1,0 +1,5 @@
+#!/bin/bash
+# Run on the workstation, not through the cloud/Docker command wrappers.
+set -euo pipefail
+REPO_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+exec /usr/bin/python3 -I -S -B "$REPO_DIR/isaac-installer/tools/collect_repository_metadata.py" "$@"

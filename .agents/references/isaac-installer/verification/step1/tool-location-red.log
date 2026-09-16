@@ -1,0 +1,40 @@
+STEP1_RESULT {"suite": "installer_desired_profile", "tests": 22, "skipped": 0, "failures": 0, "errors": 1, "passed": false}
+test_all_known_manual_source_runtime_execution_fields_roundtrip (step1_installer_desired_profile.DesiredTests) ... ok
+test_changed_evidence_preserves_accepted_intent_but_blocks_stale_claims (step1_installer_desired_profile.DesiredTests) ... ok
+test_chosen_reviewed_host_runtime_is_not_vetoed_by_container_alternative (step1_installer_desired_profile.DesiredTests) ... ok
+test_enabled_components_do_not_invent_source_or_runtime (step1_installer_desired_profile.DesiredTests) ... ok
+test_explicit_component_source_association_requires_independent_review (step1_installer_desired_profile.DesiredTests) ... ok
+test_explicit_execution_rejection_cannot_be_overridden_by_observed_host (step1_installer_desired_profile.DesiredTests) ... ok
+test_legacy_workspace_review_does_not_prevent_draft_generation (step1_installer_desired_profile.DesiredTests) ... ok
+test_matching_placement_choice_and_selected_unknown_evidence_remain_visible (step1_installer_desired_profile.DesiredTests) ... ok
+test_multiple_workspace_scopes_never_silently_overwrite (step1_installer_desired_profile.DesiredTests) ... ok
+test_observe_review_manual_sim_intents_exports_nonempty_sim_lab (step1_installer_desired_profile.DesiredTests) ... ok
+test_optional_inaccessible_coverage_remains_visible_without_blocking_draft (step1_installer_desired_profile.DesiredTests) ... ok
+test_rejected_and_deferred_decisions_remain_distinct_in_coverage (step1_installer_desired_profile.DesiredTests) ... ok
+test_reviewed_custom_package_is_preserved_and_required_support_blocks (step1_installer_desired_profile.DesiredTests) ... ok
+test_reviewed_environment_tools_and_notes_survive_shared_yaml (step1_installer_desired_profile.DesiredTests) ... ok
+test_reviewed_pypi_intent_reaches_real_ansible_mapper_after_export (step1_installer_desired_profile.DesiredTests) ... ok
+test_reviewed_repository_identity_and_submodule_limits_are_preserved (step1_installer_desired_profile.DesiredTests) ... ok
+test_reviewed_runtime_binding_completes_selected_source_without_defaults (step1_installer_desired_profile.DesiredTests) ... ok
+test_reviewed_tool_can_use_consumer_environment_without_losing_origin (step1_installer_desired_profile.DesiredTests) ... ERROR
+test_reviewed_workspace_and_explicit_empty_selection_are_complete (step1_installer_desired_profile.DesiredTests) ... ok
+test_runtime_collision_is_required_draft_gap_and_review_can_correct_it (step1_installer_desired_profile.DesiredTests) ... ok
+test_selected_component_missing_dependency_is_incomplete_draft (step1_installer_desired_profile.DesiredTests) ... ok
+test_unreviewed_draft_is_loadable_without_inferred_approvals (step1_installer_desired_profile.DesiredTests) ... ok
+
+======================================================================
+ERROR: test_reviewed_tool_can_use_consumer_environment_without_losing_origin (step1_installer_desired_profile.DesiredTests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspaces/IsaacAutomator/src/tests/installer_desired_profile.test.py", line 269, in test_reviewed_tool_can_use_consumer_environment_without_losing_origin
+    candidate = discovery.review(candidate, field['id'], 'edit', value=desired_tool)
+  File "/workspaces/IsaacAutomator/isaac-installer/lib/core/profile_discovery.py", line 897, in review
+    _field_value(field_id, value)
+  File "/workspaces/IsaacAutomator/isaac-installer/lib/core/profile_discovery.py", line 588, in _field_value
+    raise DiscoveryError('Invalid customization metadata') from None
+profile_discovery.DiscoveryError: Invalid customization metadata
+
+----------------------------------------------------------------------
+Ran 22 tests in 0.467s
+
+FAILED (errors=1)

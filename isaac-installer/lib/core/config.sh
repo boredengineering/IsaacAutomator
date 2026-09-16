@@ -86,6 +86,12 @@ load_config_profile() {
     # Stage data before applying it: process substitution alone hides parser failures.
     # NUL-delimited records preserve whitespace, quotes and shell metacharacters.
     local profile_data key value
+    # Carry shell-local flag values to the parser without exporting them globally.
+    for key in CLI_WORKSPACE_DIR CLI_WORKSPACE_LAYOUT CLI_WORKSPACE_NAME CLI_WORKSPACE_DEFAULT_OWNER; do
+        if [[ -v "$key" ]]; then
+            local -x "$key=${!key}"
+        fi
+    done
     profile_data=$(mktemp) || return 1
     if ! python3 "${BASH_SOURCE[0]%/*}/profile_parser.py" "$resolved" > "$profile_data"; then
         rm -f -- "$profile_data"
@@ -108,14 +114,36 @@ load_config_profile() {
     PROFILE_NAME="${CFG_PROFILE_NAME:-default}"
     export PROFILE_NAME
 
-    # Workspace
-    if [[ -z "${WORKSPACE_DIR:-}" && -n "${CFG_WORKSPACE_ROOT:-}" ]]; then
-        WORKSPACE_DIR="$(expand_tilde_path "${CFG_WORKSPACE_ROOT}")"
-    fi
-    WORKSPACE_LAYOUT="${CFG_WORKSPACE_LAYOUT:-auto}"
-    WORKSPACE_DEFAULT_OWNER="${CFG_WORKSPACE_DEFAULT_OWNER:-}"
+    # Workspace CLI contract: CLI_WORKSPACE_{DIR,LAYOUT,NAME,DEFAULT_OWNER}
+    # are set only by explicit flags. Unset means no override; an empty DIR,
+    # NAME or DEFAULT_OWNER intentionally clears that profile value. Never use
+    # inherited/stale operational WORKSPACE_* values as profile overrides.
+    local field cli_key cfg_key operation source default_value
+    for field in DIR LAYOUT NAME DEFAULT_OWNER; do
+        cli_key="CLI_WORKSPACE_${field}"
+        cfg_key="CFG_WORKSPACE_${field}"
+        [[ "$field" != DIR ]] || cfg_key="CFG_WORKSPACE_ROOT"
+        operation="WORKSPACE_${field}"
+        default_value=""
+        [[ "$field" != LAYOUT ]] || default_value="auto"
+        if [[ -v "$cli_key" ]]; then
+            value="${!cli_key}"
+            source=cli
+        elif [[ -v "$cfg_key" ]]; then
+            value="${!cfg_key}"
+            source=profile
+        else
+            value="$default_value"
+            source=default
+        fi
+        if [[ "$field" == DIR && -n "$value" ]]; then
+            value="$(expand_tilde_path "$value")"
+        fi
+        export "$operation=$value" "${operation}_SOURCE=$source"
+    done
     WORKSPACE_AUTO_CREATE_FORK="${CFG_WORKSPACE_AUTO_CREATE_FORK:-true}"
-    export WORKSPACE_DIR WORKSPACE_LAYOUT WORKSPACE_DEFAULT_OWNER WORKSPACE_AUTO_CREATE_FORK
+    WORKSPACE_AUTO_REGISTER_GITHUB_DESKTOP="${CFG_WORKSPACE_AUTO_REGISTER_GITHUB_DESKTOP:-true}"
+    export WORKSPACE_AUTO_CREATE_FORK WORKSPACE_AUTO_REGISTER_GITHUB_DESKTOP
 
     # Repositories
     if [[ -z "${ISAACLAB_REPO:-}" && -n "${CFG_REPOSITORIES_ISAACLAB_REPO:-${CFG_ISAAC_LAB_REPO:-}}" ]]; then
@@ -155,12 +183,26 @@ load_config_profile() {
     GR00T_ISOLATED_ENV="${CFG_REPOSITORIES_GR00T_ISOLATED_ENV:-true}"
     export GR00T_REPO GR00T_UPSTREAM GR00T_BRANCH GR00T_TAG GR00T_MODEL_PATH GR00T_VLM_BACKBONE GR00T_SERVER_PORT GR00T_ISOLATED_ENV
 
+    # Explicit shared-profile Lab pins are data, never shell source. Do not carry
+    # operational values from an earlier profile into a newly loaded profile.
+    CONDA_ENV_NAME="${CFG_RUNTIMES_LAB_ENVIRONMENT:-isaaclab}"
+    LAB_PYTHON_VERSION="${CFG_RUNTIMES_LAB_PYTHON:-}"
+    LAB_TORCH_VERSION="${CFG_RUNTIMES_LAB_TORCH:-}"
+    LAB_TORCHVISION_VERSION="${CFG_RUNTIMES_LAB_TORCHVISION:-}"
+    LAB_CUDA_RUNTIME="${CFG_RUNTIMES_LAB_CUDA_RUNTIME:-}"
+    LAB_ARCHITECTURE="${CFG_RUNTIMES_LAB_ARCHITECTURE:-}"
+    LAB_CUSTOM_PACKAGES="${CFG_RUNTIMES_LAB_PACKAGES:-}"
+    export CONDA_ENV_NAME LAB_PYTHON_VERSION LAB_TORCH_VERSION LAB_TORCHVISION_VERSION LAB_CUDA_RUNTIME LAB_ARCHITECTURE LAB_CUSTOM_PACKAGES
+
     # Isaac Sim
     if [[ -z "${ISAACSIM_DIR:-}" && -n "${CFG_SIMULATION_ISAACSIM_INSTALL_DIR:-${CFG_ISAAC_SIM_INSTALL_PATH:-}}" ]]; then
         ISAACSIM_DIR="$(expand_tilde_path "${CFG_SIMULATION_ISAACSIM_INSTALL_DIR:-${CFG_ISAAC_SIM_INSTALL_PATH:-}}")"
     fi
     ISAACSIM_VERSION="${CFG_SIMULATION_ISAACSIM_VERSION:-6.0.1}"
     ISAACSIM_SOURCE_TYPE="${CFG_SIMULATION_ISAACSIM_SOURCE_TYPE:-standalone}"
+    ISAACSIM_ARCHIVE_URL="${CFG_SIMULATION_ISAACSIM_URL:-}"
+    ISAACSIM_ARCHIVE_SHA256="${CFG_SIMULATION_ISAACSIM_SHA256:-}"
+    export ISAACSIM_ARCHIVE_URL ISAACSIM_ARCHIVE_SHA256
     ISAACSIM_CUSTOM_BUILD_SOURCE_PATH="$(expand_tilde_path "${CFG_SIMULATION_ISAACSIM_CUSTOM_BUILD_SOURCE_PATH:-}")"
     ISAACSIM_CUSTOM_BUILD_COMMAND="${CFG_SIMULATION_ISAACSIM_CUSTOM_BUILD_COMMAND:-}"
     export ISAACSIM_DIR ISAACSIM_VERSION ISAACSIM_SOURCE_TYPE ISAACSIM_CUSTOM_BUILD_SOURCE_PATH ISAACSIM_CUSTOM_BUILD_COMMAND

@@ -1,0 +1,26 @@
+STEP1_RESULT {"suite": "installer_report_writer", "tests": 20, "skipped": 0, "failures": 0, "errors": 0, "passed": true}
+test_actual_sigterm_during_write_reports_owned_partial_without_cleanup (step1_installer_report_writer.ReportWriterTests) ... ok
+test_collisions_never_overwrite_existing_file_link_fifo_or_directory (step1_installer_report_writer.ReportWriterTests) ... ok
+test_confinement_failure_leaves_empty_identified_artifact_not_report_bytes (step1_installer_report_writer.ReportWriterTests) ... ok
+test_disk_full_and_fsync_failure_preserve_only_owned_partial_artifact (step1_installer_report_writer.ReportWriterTests) ... ok
+test_empty_roots_require_explicit_exclusive_writer_flag (step1_installer_report_writer.ReportWriterTests) ... ok
+test_explicit_creation_is_mode0600_even_with_restrictive_inherited_umask (step1_installer_report_writer.ReportWriterTests) ... ok
+test_explicit_new_report_has_exact_bytes_private_mode_and_receipt (step1_installer_report_writer.ReportWriterTests) ... ok
+test_failed_final_fd_metadata_or_close_never_claims_written (step1_installer_report_writer.ReportWriterTests) ... ok
+test_group_or_world_writable_destination_parent_refuses_before_creation (step1_installer_report_writer.ReportWriterTests) ... ok
+test_invalid_or_interrupted_payload_refuses_before_creation (step1_installer_report_writer.ReportWriterTests) ... ok
+test_kernel_and_synthetic_mount_refusals_have_no_creation_fallback (step1_installer_report_writer.ReportWriterTests) ... ok
+test_kernel_filesize_limit_enforces_selected_budget (step1_installer_report_writer.ReportWriterTests) ... ok
+test_main_refuses_regular_stdout_without_writing_even_a_receipt (step1_installer_report_writer.ReportWriterTests) ... ok
+test_maximum_admitted_bytes_succeed_and_exact_file_exclusion_is_supported (step1_installer_report_writer.ReportWriterTests) ... ok
+test_parent_swap_after_create_never_writes_report_bytes_through_alias (step1_installer_report_writer.ReportWriterTests) ... ok
+test_preflight_refuses_root_or_nonpipe_io_without_creating_output (step1_installer_report_writer.ReportWriterTests) ... ok
+test_selected_paths_refuse_observed_descendants_aliases_and_unsafe_types (step1_installer_report_writer.ReportWriterTests) ... ok
+test_sigterm_at_creation_boundary_retains_owned_identity (step1_installer_report_writer.ReportWriterTests) ... ok
+test_writer_confinement_denies_all_paths_network_exec_and_inherited_fds (step1_installer_report_writer.ReportWriterTests) ... ok
+test_yaml_size_cap_and_permission_refusals_create_no_file (step1_installer_report_writer.ReportWriterTests) ... ok
+
+----------------------------------------------------------------------
+Ran 20 tests in 0.880s
+
+OK

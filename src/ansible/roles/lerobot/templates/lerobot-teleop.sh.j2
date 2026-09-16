@@ -6,11 +6,16 @@ if [[ -d "$LEROBOT_DIR" ]]; then
     cd "$LEROBOT_DIR"
     export PATH="/usr/local/bin:$HOME/.local/bin:$PATH"
     echo "Starting Hugging Face LeRobot Visualizer..."
+{% if profile_lerobot_isolated | default(false) | bool %}
+    unset PYTHONPATH PYTHONHOME
+    exec "{{ miniconda_install_dir }}/bin/conda" run --no-capture-output -n "{{ profile_lerobot_environment }}" python -m lerobot.scripts.visualize_dataset "$@"
+{% else %}
     if command -v isaaclab-env &>/dev/null; then
         exec isaaclab-env python -m lerobot.scripts.visualize_dataset "$@"
     else
         exec python3 -m lerobot.scripts.visualize_dataset "$@"
     fi
+{% endif %}
 else
     echo "LeRobot directory not found at $LEROBOT_DIR"
     sleep 3

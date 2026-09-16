@@ -1,0 +1,174 @@
+[
+  {
+    "argv": [
+      "/usr/bin/python3",
+      "-I",
+      "-S",
+      "-B",
+      "/workspaces/IsaacAutomator/isaac-installer/tools/collect_host_metadata.py",
+      "--home",
+      "/tmp/isaac-host-demo-scl8fn_8/host-home",
+      "--system-root",
+      "/tmp/isaac-host-demo-scl8fn_8/host-system",
+      "--output",
+      "/tmp/isaac-host-demo-scl8fn_8/reports/01-host-inventory.json",
+      "--plan"
+    ],
+    "exit_code": 0,
+    "stdout": "{\"effects\": \"Plan reads no target roots; explicit collection reads metadata and creates one private report; access times may change.\", \"excluded\": [\"credentials\", \"shell history\", \".env\", \"assets\", \"caches\", \"runtime imports\", \"probes\", \"Git commands\", \"package-manager commands\", \"network\", \"worktree targets\", \"direct_url.json\", \"*.pth\", \"Conda history\", \"launchers\", \"settings changes\"], \"execution_authorized\": false, \"fields\": [\"repository HEAD/config/ref\", \"IsaacSim VERSION\", \"fixed machine records\", \"dpkg/APT records\", \"conda-meta\", \"pyvenv.cfg/dist-info\"], \"home\": \"/tmp/isaac-host-demo-scl8fn_8/host-home\", \"home_metadata\": [\".git/HEAD\", \".git/config\", \".git/refs/heads/*\", \".git/refs/tags/*\", \".git (worktree marker only; target never followed)\", \"IsaacSim/VERSION\", \"conda-meta/*.json\", \".venv/pyvenv.cfg\", \"lib/python*/site-packages/*.dist-info/METADATA\"], \"identity\": \"fixture\", \"kind\": \"host-inventory-plan\", \"limits\": {\"max_bytes\": 8388608, \"max_depth\": 4, \"max_entries\": 4096, \"max_seconds\": 10.0}, \"output\": \"/tmp/isaac-host-demo-scl8fn_8/reports/01-host-inventory.json\", \"schema_version\": 1, \"seeds\": [\"/tmp/isaac-host-demo-scl8fn_8/host-home/Documents/GitHub/BoredEngineer\", \"/tmp/isaac-host-demo-scl8fn_8/host-home/IsaacSim\", \"/tmp/isaac-host-demo-scl8fn_8/host-home/miniconda3\", \"/tmp/isaac-host-demo-scl8fn_8/host-home/anaconda3\", \"/tmp/isaac-host-demo-scl8fn_8/host-home/miniforge3\", \"/tmp/isaac-host-demo-scl8fn_8/host-home/mambaforge\", \"/tmp/isaac-host-demo-scl8fn_8/host-home/.conda/envs\"], \"system_records\": [\"/tmp/isaac-host-demo-scl8fn_8/host-system/etc/os-release\", \"/tmp/isaac-host-demo-scl8fn_8/host-system/usr/lib/os-release\", \"/tmp/isaac-host-demo-scl8fn_8/host-system/proc/sys/kernel/osrelease\", \"/tmp/isaac-host-demo-scl8fn_8/host-system/proc/cpuinfo\", \"/tmp/isaac-host-demo-scl8fn_8/host-system/proc/meminfo\", \"/tmp/isaac-host-demo-scl8fn_8/host-system/proc/driver/nvidia/version\", \"/tmp/isaac-host-demo-scl8fn_8/host-system/usr/local/cuda/version.json\", \"/tmp/isaac-host-demo-scl8fn_8/host-system/run/systemd/container\", \"/tmp/isaac-host-demo-scl8fn_8/host-system/var/lib/dpkg/status\", \"/tmp/isaac-host-demo-scl8fn_8/host-system/var/lib/apt/extended_states\"], \"system_root\": \"/tmp/isaac-host-demo-scl8fn_8/host-system\", \"workspace_names\": [\"BoredEngineer\", \"boredengineering\"]}\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "/usr/bin/python3",
+      "-I",
+      "-S",
+      "-B",
+      "/workspaces/IsaacAutomator/isaac-installer/tools/collect_host_metadata.py",
+      "--home",
+      "/tmp/isaac-host-demo-scl8fn_8/host-home",
+      "--system-root",
+      "/tmp/isaac-host-demo-scl8fn_8/host-system",
+      "--output",
+      "/tmp/isaac-host-demo-scl8fn_8/reports/01-host-inventory.json",
+      "--collect"
+    ],
+    "exit_code": 0,
+    "stdout": "Private host inventory written; coverage gaps remain evidence, not authority.\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "/bin/bash",
+      "/workspaces/IsaacAutomator/isaac-installer/bin/isaac-installer",
+      "import-host-report",
+      "--report",
+      "/tmp/isaac-host-demo-scl8fn_8/reports/01-host-inventory.json",
+      "--output",
+      "/tmp/isaac-host-demo-scl8fn_8/reports/02-imported.json"
+    ],
+    "exit_code": 0,
+    "stdout": "{\"bytes_written\": 27565, \"destination\": \"/tmp/isaac-host-demo-scl8fn_8/reports/02-imported.json\", \"execution_authorized\": false, \"owned_artifact\": {\"device\": 93, \"inode\": 90071064}, \"producer_exit_code\": 0, \"status\": \"written\"}\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "/bin/bash",
+      "/workspaces/IsaacAutomator/isaac-installer/bin/isaac-installer",
+      "review-profile",
+      "--report",
+      "/tmp/isaac-host-demo-scl8fn_8/reports/02-imported.json",
+      "--decisions",
+      "/tmp/isaac-host-demo-scl8fn_8/reports/03-decisions.json",
+      "--output",
+      "/tmp/isaac-host-demo-scl8fn_8/reports/04-reviewed.json"
+    ],
+    "exit_code": 0,
+    "stdout": "{\"bytes_written\": 31325, \"destination\": \"/tmp/isaac-host-demo-scl8fn_8/reports/04-reviewed.json\", \"execution_authorized\": false, \"owned_artifact\": {\"device\": 93, \"inode\": 90071067}, \"producer_exit_code\": 0, \"status\": \"written\"}\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "/bin/bash",
+      "/workspaces/IsaacAutomator/isaac-installer/bin/isaac-installer",
+      "import-host-report",
+      "--report",
+      "/tmp/isaac-host-demo-scl8fn_8/reports/01-host-inventory.json",
+      "--previous-report",
+      "/tmp/isaac-host-demo-scl8fn_8/reports/04-reviewed.json",
+      "--output",
+      "/tmp/isaac-host-demo-scl8fn_8/reports/05-reimported.json"
+    ],
+    "exit_code": 0,
+    "stdout": "{\"bytes_written\": 31325, \"destination\": \"/tmp/isaac-host-demo-scl8fn_8/reports/05-reimported.json\", \"execution_authorized\": false, \"owned_artifact\": {\"device\": 93, \"inode\": 90071068}, \"producer_exit_code\": 0, \"status\": \"written\"}\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "/bin/bash",
+      "/workspaces/IsaacAutomator/isaac-installer/bin/isaac-installer",
+      "export-profile",
+      "--report",
+      "/tmp/isaac-host-demo-scl8fn_8/reports/05-reimported.json",
+      "--name",
+      "synthetic-host",
+      "--format",
+      "yaml",
+      "--output",
+      "/tmp/isaac-host-demo-scl8fn_8/reports/06-desired.yaml"
+    ],
+    "exit_code": 0,
+    "stdout": "{\"bytes_written\": 967, \"destination\": \"/tmp/isaac-host-demo-scl8fn_8/reports/06-desired.yaml\", \"execution_authorized\": false, \"owned_artifact\": {\"device\": 93, \"inode\": 90071070}, \"producer_exit_code\": 0, \"status\": \"written\"}\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "/bin/bash",
+      "/workspaces/IsaacAutomator/isaac-installer/bin/isaac-installer",
+      "export-profile",
+      "--report",
+      "/tmp/isaac-host-demo-scl8fn_8/reports/05-reimported.json",
+      "--name",
+      "synthetic-host",
+      "--output",
+      "/tmp/isaac-host-demo-scl8fn_8/reports/07-export-review.json"
+    ],
+    "exit_code": 0,
+    "stdout": "{\"bytes_written\": 20774, \"destination\": \"/tmp/isaac-host-demo-scl8fn_8/reports/07-export-review.json\", \"execution_authorized\": false, \"owned_artifact\": {\"device\": 93, \"inode\": 90071073}, \"producer_exit_code\": 0, \"status\": \"written\"}\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "/bin/bash",
+      "/workspaces/IsaacAutomator/isaac-installer/bin/isaac-installer",
+      "render-profile",
+      "--desired-profile",
+      "/tmp/isaac-host-demo-scl8fn_8/reports/06-desired.yaml",
+      "--target-home",
+      "/tmp/isaac-host-demo-scl8fn_8/host-home",
+      "--adapter",
+      "local",
+      "--output",
+      "/tmp/isaac-host-demo-scl8fn_8/reports/08-local.json"
+    ],
+    "exit_code": 0,
+    "stdout": "{\"bytes_written\": 6909, \"destination\": \"/tmp/isaac-host-demo-scl8fn_8/reports/08-local.json\", \"execution_authorized\": false, \"owned_artifact\": {\"device\": 93, \"inode\": 90071074}, \"producer_exit_code\": 0, \"status\": \"written\"}\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "/bin/bash",
+      "/workspaces/IsaacAutomator/isaac-installer/bin/isaac-installer",
+      "render-profile",
+      "--desired-profile",
+      "/tmp/isaac-host-demo-scl8fn_8/reports/06-desired.yaml",
+      "--target-home",
+      "/tmp/isaac-host-demo-scl8fn_8/host-home",
+      "--adapter",
+      "ansible",
+      "--output",
+      "/tmp/isaac-host-demo-scl8fn_8/reports/09-ansible.json"
+    ],
+    "exit_code": 0,
+    "stdout": "{\"bytes_written\": 6324, \"destination\": \"/tmp/isaac-host-demo-scl8fn_8/reports/09-ansible.json\", \"execution_authorized\": false, \"owned_artifact\": {\"device\": 93, \"inode\": 90071109}, \"producer_exit_code\": 0, \"status\": \"written\"}\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "/bin/bash",
+      "/workspaces/IsaacAutomator/isaac-installer/bin/isaac-installer",
+      "install",
+      "--dry-run",
+      "--desired-profile",
+      "/tmp/isaac-host-demo-scl8fn_8/reports/06-desired.yaml",
+      "--target-home",
+      "/tmp/isaac-host-demo-scl8fn_8/host-home",
+      "--json",
+      "--output",
+      "/tmp/isaac-host-demo-scl8fn_8/reports/10-dry-run.json"
+    ],
+    "exit_code": 2,
+    "stdout": "{\"bytes_written\": 8132, \"destination\": \"/tmp/isaac-host-demo-scl8fn_8/reports/10-dry-run.json\", \"execution_authorized\": false, \"owned_artifact\": {\"device\": 93, \"inode\": 90071123}, \"producer_exit_code\": 2, \"status\": \"written\"}\n",
+    "stderr": ""
+  }
+]

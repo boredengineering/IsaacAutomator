@@ -62,5 +62,36 @@ def resolve_command(profile, disable, enable):
     click.echo(json.dumps(manifest, sort_keys=True, indent=2))
 
 
+@main.command("render")
+@click.argument("profile")
+@click.option("--adapter", required=True, type=click.Choice(["local", "ansible", "packer"]))
+@click.option("--target-home", required=True, help="Explicit home on the intended target, never the controller home.")
+@click.option("--format", "output_format", type=click.Choice(["json", "yaml"]), default="json")
+def render_command(profile, adapter, target_home, output_format):
+    """Render actual consumer configuration offline, with explicit coverage gaps.
+
+    JSON is an annotated report (exit 2 when blocked); YAML is consumer data and
+    refuses incomplete required mappings. Neither format authorizes application.
+    """
+    from src.python.workstation_profile import resolve_profile
+    from src.python.profile_adapters import render_profile
+    import yaml
+
+    try:
+        report = render_profile(resolve_profile(profile), adapter, target_home)
+    except (ValueError, OSError) as exc:
+        raise click.ClickException(str(exc)) from None
+    if output_format == 'json':
+        click.echo(json.dumps(report, sort_keys=True, indent=2))
+    elif report['render_supported']:
+        for warning in report['warnings']:
+            click.echo('Warning: ' + warning['field'] + ': ' + warning['reason'], err=True)
+        click.echo(yaml.safe_dump(report['artifact'], sort_keys=True), nl=False)
+    else:
+        raise click.ClickException('Required adapter mappings incomplete; inspect --format json coverage.')
+    if not report['render_supported']:
+        raise click.exceptions.Exit(2)
+
+
 if __name__ == "__main__":
     main()

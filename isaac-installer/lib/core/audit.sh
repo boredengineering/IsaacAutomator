@@ -126,8 +126,10 @@ audit_all_components() {
     local py_status="MISSING"
     local py_risk="None"
     local py_target="Miniforge + UV"
-    local conda_bin="$(resolve_conda_bin 2>/dev/null || echo "")"
-    local env_path="$(resolve_conda_env_path "isaaclab" 2>/dev/null || echo "")"
+    local conda_bin
+    conda_bin="$(resolve_conda_bin)" || return $?
+    local env_path
+    env_path="$(resolve_conda_env_path "isaaclab")" || return $?
     if [[ -x "$conda_bin" && -d "$env_path" ]]; then
         if command -v uv &>/dev/null; then
             py_cur="Conda ('isaaclab') + UV"
@@ -273,7 +275,7 @@ audit_all_components() {
 
     # 13. Isaac Sim Engine
     local sim_dir
-    sim_dir="$(resolve_isaacsim_dir 2>/dev/null || echo "${TARGET_HOME}/IsaacSim")"
+    sim_dir="$(resolve_isaacsim_dir)" || return $?
     local sim_cur="Missing"
     local sim_status="MISSING"
     local sim_risk="None"
@@ -288,7 +290,7 @@ audit_all_components() {
 
     # 14. Isaac Lab Framework
     local lab_dir
-    lab_dir="$(resolve_isaaclab_dir 2>/dev/null || echo "${TARGET_HOME}/IsaacLab")"
+    lab_dir="$(resolve_isaaclab_dir)" || return $?
     local lab_cur="Missing"
     local lab_status="MISSING"
     local lab_risk="None"
@@ -303,7 +305,7 @@ audit_all_components() {
 
     # 15. IsaacLab-Arena Benchmark Suite
     local arena_dir
-    arena_dir="$(resolve_arena_dir 2>/dev/null || resolve_active_repo_dir "IsaacLab-Arena" 2>/dev/null || echo "${TARGET_HOME}/Documents/GitHub/IsaacLab-Arena")"
+    arena_dir="$(resolve_arena_dir)" || return $?
     local arena_cur="Missing"
     local arena_status="MISSING"
     local arena_risk="None"
@@ -318,7 +320,7 @@ audit_all_components() {
 
     # 16. NVIDIA Isaac-GR00T Foundation Model Stack
     local gr00t_dir
-    gr00t_dir="$(resolve_gr00t_dir 2>/dev/null || echo "${TARGET_HOME}/Documents/GitHub/boredengineering/Isaac-GR00T")"
+    gr00t_dir="$(resolve_gr00t_dir)" || return $?
     local gr00t_cur="Missing"
     local gr00t_status="MISSING"
     local gr00t_risk="None"
@@ -373,7 +375,7 @@ audit_all_components() {
 # Pretty-print the audit diff matrix
 print_audit_report() {
     log_header "Workstation Pre-Flight Audit & Conflict Analysis"
-    audit_all_components
+    audit_all_components || return $?
 
     printf "${CLR_BOLD}%-28s | %-18s | %-18s | %-16s | %-30s${CLR_RESET}\n" \
         "Component" "Host State" "Target State" "Action / Status" "Risk / Conflicts"
@@ -409,7 +411,7 @@ print_audit_report() {
 
 # Export audit in JSON format
 export_audit_json() {
-    audit_all_components
+    audit_all_components || return $?
     python3 -c "
 import json
 rows = []

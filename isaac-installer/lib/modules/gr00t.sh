@@ -289,9 +289,21 @@ cmd_gr00t() {
     shift || true
 
     local gr00t_dir
-    gr00t_dir="$(resolve_active_repo_dir "Isaac-GR00T" "${GR00T_REPO:-}" "${GR00T_DIR:-}")"
+    gr00t_dir="$(resolve_active_repo_dir "Isaac-GR00T" "${GR00T_REPO:-}" "${GR00T_DIR:-}")" || return $?
 
     case "$subcmd" in
+        profile-serving)
+            # Explicit shared-profile transport only: never legacy port probes,
+            # automatic model downloads, uv resolution or Lab interpreter fallback.
+            # --config is the rendered gr00t_serving object as JSON. Activation
+            # and source-review acknowledgements must be supplied by the caller.
+            local serving_helper
+            serving_helper="$(cd "${BASH_SOURCE[0]%/*}/../../.." && pwd)/src/python/gr00t_serving.py"
+            run_profile_argv /usr/bin/env -i PATH=/usr/bin:/bin \
+                "${gr00t_dir}/.venv/bin/python" -I "$serving_helper" \
+                "$@" --repo-dir "$gr00t_dir"
+            return $?
+            ;;
         status)
             log_header "NVIDIA Isaac-GR00T Foundation Model Stack Status"
             if [[ ! -d "${gr00t_dir}/.git" ]]; then

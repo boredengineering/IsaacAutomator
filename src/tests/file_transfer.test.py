@@ -28,6 +28,29 @@ class TransferTests(unittest.TestCase):
         self.assertIsNotNone(spec, "Reusable transfer module is missing")
         return importlib.import_module("src.python.file_transfer")
 
+    def test_isolated_local_refuses_endpoint_before_trust_file_mutation(self):
+        transfer = self.module()
+        endpoint = transfer.TransferEndpoint('fixture.invalid', 'fixture', str(self.root / 'key'),
+                                             str(self.root / 'new-trust'))
+        with mock.patch.object(transfer.subprocess, 'run') as run:
+            with self.assertRaisesRegex(ValueError, 'local'):
+                transfer.transfer_directory(endpoint, 'push', self.source, str(self.destination),
+                                            isolated_local=True)
+            run.assert_not_called()
+        self.assertFalse((self.root / 'new-trust').exists())
+
+    def test_preview_endpoint_does_not_bypass_execution_revalidation(self):
+        transfer = self.module()
+        link = self.root / 'trust-link'
+        link.symlink_to(self.root / 'new-trust')
+        endpoint = transfer.TransferEndpoint('fixture.invalid', 'fixture', str(self.root / 'key'),
+                                             str(link), inspect_paths=False)
+        with mock.patch.object(transfer.subprocess, 'run') as run:
+            with self.assertRaisesRegex(ValueError, 'Known-hosts'):
+                transfer.transfer_directory(endpoint, 'push', self.source, str(self.destination))
+            run.assert_not_called()
+        self.assertFalse((self.root / 'new-trust').exists())
+
     @unittest.skipUnless(shutil.which("rsync"), "rsync not installed")
     def test_push_copies_contents_without_deleting_destination_files(self):
         transfer = self.module()
@@ -88,6 +111,9 @@ class TransferTests(unittest.TestCase):
             transfer.transfer_directory(endpoint, "push", self.source, remote)
         argv = run.call_args.args[0]
         self.assertEqual(argv[0], "rsync")
+        self.assertNotIn("--checksum", argv)
+        self.assertNotIn("env", run.call_args.kwargs)
+        self.assertNotIn("cwd", run.call_args.kwargs)
         self.assertNotIn("sudo", " ".join(argv))
         self.assertIn("--protect-args", argv)
         self.assertIn("--partial-dir=.rsync-partial", argv)

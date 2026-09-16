@@ -20,5 +20,10 @@
 
 - name: Clone and install Isaac Sim
   import_tasks: install.yml
-  when: isaacsim_git_checkpoint != 'no'
+  when: isaacsim_git_checkpoint != 'no' and not (profile_isaacsim_archive_enabled | default(false) | bool)
   tags: __isaacsim_source_build
+
+- name: Install explicitly selected standalone archive
+  import_tasks: standalone.yml
+  when: profile_isaacsim_archive_enabled | default(false) | bool
+  tags: __isaacsim_standalone

@@ -1,0 +1,36 @@
+{
+  "passed": true,
+  "security_concerns": [],
+  "logic_errors": [],
+  "suggestions": [],
+  "reviewed_files": [
+    {"path":"isaac-installer/tools/collect_host_metadata.py","sha256":"9099aba1d9bd5b963efaea75f3e853807eb692eae272ba5175dfc4ad25feed6e"},
+    {"path":"isaac-installer/lib/core/host_inventory.py","sha256":"41a87d85602bba7d521c3b7d4bd7f2a102c9ccaee8dd9a68ac0062fd6fe44753"},
+    {"path":"src/tests/installer_host_collector.test.py","sha256":"2917756705d498cb9eb5f9ee6fd1e59e7ecb83c9e65cf1ef3a37ce3fb17d42d8"},
+    {"path":"src/tests/installer_host_inventory.test.py","sha256":"03fc8711e2f9243115569df75fed2a12f086e73040d27064e9055e15f415271f"},
+    {"path":"isaac-installer/docs/host-discovery.md","sha256":"f7ac08746d9c4a0211e8b5a40f72fd46de5270f29fc5dba2776c827ba01bef11"},
+    {"path":".agents/references/isaac-installer/verification/step2/demo_host_workflow.py","sha256":"61739509a554363d261ef47d421b79d79b95f7693becee4de078f88f417fe191"},
+    {"path":"isaac-installer/lib/core/profile_discovery.py","sha256":"4b203b6fa021a3e8972d40a4524cd14e6e054d925446d27c840859d1899d3823"},
+    {"path":".agents/references/isaac-installer/main-workflow-action-plan.md","sha256":"47eec0b3d4e50ac4cfd0ea8ffe2efdad1a451761d00cc7414256cf8b0bebc1ac"}
+  ],
+  "supersedes": {
+    "review": "/tmp/isaac-host-closure-review.json",
+    "finding": "HOST-CLOSURE-01",
+    "scope": "Closes the remaining ancestor-link producer/importer defect for the frozen fix sources. Retains the prior full source review's other findings and limitations, rather than asserting a new broad audit.",
+    "fix_receipt": "/tmp/isaac-host-ancestor-fix.json",
+    "requirements_closure": "/tmp/isaac-host-completeness-final.json",
+    "requirements_closure_preserved": true
+  },
+  "limitations": [
+    "Independent bounded SOURCE-ONLY review. Read all current host_inventory.py, the two new regressions and their host_report/setup context, selected collector nofollow/link/read seams, discovery local-path/desired-field/origin seams, the supplied reviews and fix receipt, and the current plan. No tests, collectors, project imports, host/package/GPU/Git/network commands, or source edits were performed. Standard-library source/receipt reads and SHA256 calculations only; the sole created artifact is this review JSON.",
+    "Both changed source/test hashes match the frozen ancestor-fix receipt. All five other files in the prior full source review match their prior SHA256 values: collector, collector tests, discovery integration module, host-discovery documentation and retained synthetic demo. These unchanged files retain the earlier review coverage; they were not all reread in full here.",
+    "The extra plan hash check did NOT match the older requirements-audit hash e7b7c87cd2bd1b9c23d791a74e05ae6affbf4d80c97e3a40dfd498dd361f70b3. Therefore no unchanged-plan assertion is made. The current plan was read directly: original step-2 A/B1-B8/C/D and acceptance obligations remain present, with a requirement-to-evidence register that keeps the ancestor fix pending and actual host/apply/sync/cloud operations gated. This plan-byte difference does not invalidate the bounded implementation closure; no functionality removal was identified in the reviewed adapter or unchanged collector.",
+    "HOST-CLOSURE-01 is resolved in host_inventory.py:38-47,285-304. Raw canonical nonroot single-segment labels such as /var are accepted, but general path('/') still fails. Slash requires the existing explicit root=True call-site exception (system-root context and coverage issue labels), not a link-label or local-read grant. Printable/canonical/traversal/credential-like checks remain. Link labels must have matching symlink-skipped issues and deterministically recomputed followups/groups.",
+    "The home-side ancestor relation is now explicitly confined by inside(label, home), so home/Documents above the selected Documents/GitHub seed is admitted without admitting /home above the declared /home/synthetic-operator home. System labels remain selected-record ancestors inside the declared system root. With the synthetic slash system root, /var is a selected dpkg/APT ancestor, whereas /home and /unselected are not selected system ancestors. The negative regressions recompute issues and derived maps before validation, so they exercise scope rejection rather than stale-map rejection.",
+    "Raw evidence remains separate from local and desired authority: baseline validates its selected local report path using unchanged discovery._path; only that report and validated previous observed roots enter original_observed_roots. propose_fields validates desired values through discovery._field_value and emits request-explicit-scope notes, never an embedded-path read. Local /var, desired workspace root /var and baseline report path /var remain rejected. No automatic acceptance, apply support, target traversal or execution authorization is introduced.",
+    "The Documents regression at inventory-test lines 370-413 builds only temporary synthetic home/system roots and a valid checkout behind the link. Its spy saves real os.open before patching, calls that real function, asserts O_NOFOLLOW for every intercepted open, and unions the mock into supports_dir_fd so the collector's capability identity check remains meaningful. It asserts actual opens occurred, no checkout candidates/repositories or canary commit appeared, CLI import succeeds, the target is only explicit-scope evidence, and decisions/execution remain unapproved. Source inspection of unchanged descriptor-relative O_DIRECTORY/O_NOFOLLOW traversal and readlink confirms the fixture target contents are not read along this path. This is static reasoning, not a claim of a fresh runtime trace or a stronger read-spy assertion than the fixture actually contains; this reviewer read no canary file contents.",
+    "The /var regression at lines 415-462 uses host_report() as pure synthetic data with system_root '/'. It calls validation/baseline/proposal/review only, not collect or any target-path reader. Slash-rooted labels in this test are not real host collection.",
+    "Parsed the two RED results and the final GREEN results named by the fix receipt and independently verified their receipt SHA256 values. They record respectively 20 inventory tests with one failure, 21 with one error, and 21 with zero failures/errors/skips; controls exit zero in each. These are retained execution receipts, not tests run by this reviewer. The parent separately owns the post-freeze 49-new-test, 267-core-test and ten-command synthetic-demo reruns; none is certified as rerun here.",
+    "PASS is only this final narrow source-review gate and preservation of original step-2 implementation/synthetic requirements closure. Earlier bounded-source limitations remain applicable. It is not actual host attestation, exhaustive adversarial/runtime qualification, whole-plan completion, deployment approval, or permission to discover/apply/install/adopt/synchronize or perform cloud operations."
+  ]
+}

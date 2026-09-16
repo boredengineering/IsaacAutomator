@@ -1,0 +1,820 @@
+{
+  "passed": false,
+  "findings": [
+    {
+      "id": "STEP1-TEST-BOUNDARY",
+      "category": "concrete_test_scope_defect",
+      "severity": "high",
+      "blocking": true,
+      "title": "The nominal pure evidence suite imports managed_apply and transitively fixture_builders in its final two tests",
+      "source_refs": [
+        "src/tests/installer_plan_evidence.test.py:169-206",
+        "src/tests/installer_plan_evidence.test.py:208-226",
+        "isaac-installer/lib/core/managed_apply.py:24-31,332-361"
+      ],
+      "detail": "The penultimate test loads managed_apply, constructs Root, calls managed._builders.tree_digest, writes/chmods a synthetic verified journal, then calls inspect_fixture. The final test also loads managed_apply, creates a directory/file and calls inspect_fixture. Loading managed_apply executes the fixture_builders module loader. Neither of these two test bodies directly calls apply_plan, build_environment or build_repository; do not misdescribe them as actual installs. They nevertheless cross the explicit no-managed-module boundary and are not pure evidence validation. Excluding only installer_managed_apply is insufficient.",
+      "recommended_boundary": "Keep both tests excluded from any subsequently authorized Step1-only execution. The seven test methods at lines 29-167 have no managed_apply dependency in their bodies; any later run still needs explicit approval and exact method selection or source separation. No such run or edit was made."
+    },
+    {
+      "id": "STEP1-RUNNER-BOUNDARY",
+      "category": "concrete_test_scope_defect",
+      "severity": "high",
+      "blocking": true,
+      "title": "The default offline runner is not a Step1 allowlist",
+      "source_refs": [
+        "src/tests/run_profile_workflow_tests.py:17-45",
+        "src/tests/managed_pure_validation.test.py:30-37",
+        "src/tests/installer_managed_apply.test.py:42-55 (search matches)"
+      ],
+      "detail": "With no names supplied the runner selects every suite, including installer_managed_apply, managed_pure_validation, sync/transfer, deployment and runtime consumer suites. managed_pure_validation imports managed_apply and exposes managed._builders despite its pure-test label. installer_managed_apply contains actual approved=True apply_plan calls. installer_consumer_agreement has no managed imports but writes synthetic ledgers/launchers and executes shell seams; it is later-consumer coverage, not this source-only audit.",
+      "recommended_boundary": "Do not run the default runner or substitute managed_pure_validation for the blocked managed workflow. Existing target_observation and export_conflict suite omissions mentioned in old reports have been corrected in the current runner; that does not make the full runner Step1-safe."
+    },
+    {
+      "id": "STEP1-HASH-DRIFT",
+      "category": "changed_hash_requires_review_not_a_bug",
+      "severity": "medium",
+      "blocking": false,
+      "title": "Historical green receipts are not blanket certification of current source",
+      "source_refs": [
+        "/tmp/isaac-full-writer-final-review.json",
+        "/tmp/isaac-full-readonly-final-review.json",
+        "/tmp/isaac-full-export-rereview.json",
+        "/tmp/isaac-full-adapter-rereview.json"
+      ],
+      "detail": "SHA-256 was recomputed from source bytes, without importing repository modules. Each comparison is retained in reviewed_files. Changes alone are NOT implementation defects. Core workflow/entry/adapter/schema files listed below differ from applicable later receipts. This audit inspects their bounded current source paths but does not renew historical runtime or kernel-test certification. Later consumer hashes are included only for provenance; their changes are not authorization to fix/review apply, containers or sync.",
+      "core_revalidation_candidates": [
+        "isaac-installer/bin/isaac-installer",
+        "isaac-installer/lib/core/profile_workflow.py",
+        "isaac-installer/lib/core/safe_preview.py",
+        "isaac-installer/lib/core/workspace_paths.py",
+        "src/python/workstation_profile.py",
+        "src/python/profile_adapters.py"
+      ],
+      "changed_files_by_report": {
+        "/tmp/isaac-full-writer-final-review.json": [
+          "isaac-installer/bin/isaac-installer",
+          "isaac-installer/lib/core/profile_workflow.py",
+          "isaac-installer/lib/core/safe_preview.py",
+          "src/python/profile_adapters.py",
+          "src/python/workstation_profile.py"
+        ],
+        "/tmp/isaac-full-readonly-final-review.json": [
+          "isaac-installer/lib/core/desired_profile.py",
+          "isaac-installer/lib/core/discovery_cli.py",
+          "isaac-installer/lib/core/git_workspace.sh",
+          "isaac-installer/lib/core/profile_discovery.py",
+          "isaac-installer/lib/core/profile_workflow.py",
+          "isaac-installer/lib/core/workspace_paths.py",
+          "src/python/workstation_profile.py"
+        ],
+        "/tmp/isaac-full-export-rereview.json": [
+          "src/python/workstation_profile.py"
+        ],
+        "/tmp/isaac-full-adapter-rereview.json": [
+          "src/ansible/roles/gr00t/tasks/native.yml",
+          "src/ansible/roles/gr00t/templates/gr00t-policy-server.sh.j2",
+          "src/ansible/roles/gr00t/templates/isaac-gr00t.service.j2",
+          "src/ansible/roles/isaaclab-arena-source/tasks/install.yml",
+          "src/ansible/roles/lerobot/tasks/main.yml",
+          "src/python/deploy_command.py",
+          "src/python/profile_adapters.py",
+          "src/python/workstation_profile.py",
+          "src/tests/profile_adapter_transport.test.py",
+          "src/tests/profile_public_preflight.test.py"
+        ]
+      }
+    },
+    {
+      "id": "STEP1-CHAIN-COVERAGE",
+      "category": "verification_gap_not_demonstrated_product_bug",
+      "severity": "medium",
+      "blocking": true,
+      "title": "Candidate tests do not themselves establish one nonempty both-adapter concrete-preview acceptance chain",
+      "source_refs": [
+        "src/tests/installer_discovery_cli.test.py:238-318",
+        "src/tests/installer_profile_workflow.test.py:20-32,40-59,124-163",
+        "src/tests/installer_export_conflict.test.py:38-96",
+        "src/tests/installer_desired_profile.test.py:219-251"
+      ],
+      "detail": "The test named reviewed_desired_yaml_reaches_both_consumers_and_concrete_plan explicitly selects components=[] and accepts either render exit 0 or 2, checking only that an artifact exists. The nonempty LeRobot real-entry test exports actual YAML and asserts local render success but does not check Ansible rendering, and its plan assertion is only exit 2 plus the component ID substring. The conflict suite has a nonempty local positive control but serializes JSON-exported profile itself rather than exercising YAML-format export. Pure Ansible export coverage exists separately. These are useful complementary controls, not proof that one current nonempty reviewed artifact passes both renderers with exact selected sources/runtimes/targets and no unintended mutation.",
+      "recommended_boundary": "For any separately authorized verification, use a deliberately supported nonempty selection, require actual nonempty shared YAML and exact both-renderer mappings, preserve all negative/unsupported gates, and assert exact concrete plan statuses plus execution_authorized=false. This recommendation does not authorize a run now."
+    },
+    {
+      "id": "STEP1-NOCHANGE-SEMANTICS",
+      "category": "capability_limit_not_a_bug",
+      "severity": "medium",
+      "blocking": false,
+      "title": "A non-mutating concrete preview is not a converged no-change installation result",
+      "source_refs": [
+        "isaac-installer/lib/core/profile_workflow.py:77-109",
+        "isaac-installer/lib/core/action_plan.py:57-68,121-160,199-210",
+        "isaac-installer/lib/core/target_observation.py:80-148",
+        "src/python/workstation_profile.py:283-321"
+      ],
+      "detail": "The confined profile path resolves and renders/plans, never imports managed_apply, and always sets execution_authorized=false. Target observation is explicit only and emits managed=false. Existing mkdir targets can be satisfied; existing enabled component repositories/artifacts remain blocked, not automatically adopted. Bundled/Conda runtimes retain unresolved-runtime-prefix labels without separate prefix evidence; shared schema does not admit fixture_local/path/managed_files shortcuts. Thus a nonempty robotics plan can correctly return exit 2 with concrete repository targets and explicit runtime unknowns. Do not make it all-satisfied by importing managed fixtures, fabricating ownership, deleting selected actions or weakening assertions. If no-change means no mutation, verify that boundary separately; if it means zero proposed changes/full conformance, the current scoped path does not establish that."
+    },
+    {
+      "id": "STEP1-CURRENT-SOURCE-POSITIVES",
+      "category": "source_review_result",
+      "severity": "info",
+      "blocking": false,
+      "title": "Core review/export separation and prior collision correction remain present",
+      "source_refs": [
+        "isaac-installer/bin/isaac-installer:7-78",
+        "isaac-installer/lib/core/discovery_cli.py:79-85,192-215,236-261",
+        "isaac-installer/lib/core/profile_discovery.py:847-939",
+        "isaac-installer/lib/core/desired_profile.py:125-168",
+        "src/python/workstation_profile.py:406-417",
+        "src/python/profile_adapters.py:402-409"
+      ],
+      "detail": "Source inspection shows safe predispatch precedes legacy sources; selected content is consumed after reader confinement; ordinary reviews validate companion data and stale evidence; explicit declarations do not become observations; YAML export emits the shared profile; render coverage exposes blockers and keeps apply/runtime/reference verification false. The older FINAL-LOGIC-1 runtime collision finding is addressed by shared _dependencies before export completeness. desired_profile.py matches the later export rereview hash; discovery_cli/profile_discovery match later writer/export receipts. No new definite core implementation/security bug was established by this bounded source-only review. This is not a test result or full security certificate."
+    }
+  ],
+  "reviewed_files": [
+    {
+      "path": "isaac-installer/bin/isaac-installer",
+      "sha256": "b21fd5aa906669cc392d66fe9d72a13956a3155589d9da6875cd1df3fe548e4d",
+      "historical_comparisons": [
+        {
+          "report": "/tmp/isaac-full-writer-final-review.json",
+          "recorded_sha256": "4947b4426a45aef697d189f6ad5be7de3adccf3fda45d2da358ced6821c74874",
+          "matches": false
+        }
+      ],
+      "review_extent": "1-180; safe predispatch only, not legacy execution approval",
+      "changed_against_any_report": true
+    },
+    {
+      "path": "isaac-installer/lib/core/action_plan.py",
+      "sha256": "92e5d89c4f57da118cb747a0cce74e625da8c070e0a634417c02c6fa4ef2e543",
+      "historical_comparisons": [],
+      "review_extent": "full file",
+      "changed_against_any_report": false
+    },
+    {
+      "path": "isaac-installer/lib/core/config.sh",
+      "sha256": "76d438c3704fc8138aab2ad446cfac84206da43476a00b5bb21504f93aefccda",
+      "historical_comparisons": [
+        {
+          "report": "/tmp/isaac-full-adapter-rereview.json",
+          "recorded_sha256": "76d438c3704fc8138aab2ad446cfac84206da43476a00b5bb21504f93aefccda",
+          "matches": true
+        }
+      ],
+      "review_extent": "hash comparison only; source behavior not independently reviewed in this bounded audit",
+      "changed_against_any_report": false
+    },
+    {
+      "path": "isaac-installer/lib/core/desired_profile.py",
+      "sha256": "57a8af6abdbd9128de51e630245a85a9b29add92fbd54648f0eaab50838ffe97",
+      "historical_comparisons": [
+        {
+          "report": "/tmp/isaac-full-writer-final-review.json",
+          "recorded_sha256": "57a8af6abdbd9128de51e630245a85a9b29add92fbd54648f0eaab50838ffe97",
+          "matches": true
+        },
+        {
+          "report": "/tmp/isaac-full-readonly-final-review.json",
+          "recorded_sha256": "b09ed1d0d20bdd70567634ed9956f47422ee3dcb85e9f946c2aa9828e88f2650",
+          "matches": false
+        },
+        {
+          "report": "/tmp/isaac-full-export-rereview.json",
+          "recorded_sha256": "57a8af6abdbd9128de51e630245a85a9b29add92fbd54648f0eaab50838ffe97",
+          "matches": true
+        }
+      ],
+      "review_extent": "full file",
+      "changed_against_any_report": true
+    },
+    {
+      "path": "isaac-installer/lib/core/discovery_cli.py",
+      "sha256": "fcbb27ff3a6e3ac04018d3569dc252fcd31241de144e6885b7bed17e1f9c10ce",
+      "historical_comparisons": [
+        {
+          "report": "/tmp/isaac-full-writer-final-review.json",
+          "recorded_sha256": "fcbb27ff3a6e3ac04018d3569dc252fcd31241de144e6885b7bed17e1f9c10ce",
+          "matches": true
+        },
+        {
+          "report": "/tmp/isaac-full-readonly-final-review.json",
+          "recorded_sha256": "a2ad439fe60d8359426757046c3c7debe74054ca88c2d179b9314bc71a9be736",
+          "matches": false
+        },
+        {
+          "report": "/tmp/isaac-full-export-rereview.json",
+          "recorded_sha256": "fcbb27ff3a6e3ac04018d3569dc252fcd31241de144e6885b7bed17e1f9c10ce",
+          "matches": true
+        }
+      ],
+      "review_extent": "full file",
+      "changed_against_any_report": true
+    },
+    {
+      "path": "isaac-installer/lib/core/git_workspace.sh",
+      "sha256": "7d53d35f8e22a5f8c6f90293730ee8a0371123855d18e590d3e8622188800eeb",
+      "historical_comparisons": [
+        {
+          "report": "/tmp/isaac-full-readonly-final-review.json",
+          "recorded_sha256": "fe0a8650df4dc8e74d58718ca5a7e174a093818ce09ab1da7d19efa6eb8d935b",
+          "matches": false
+        }
+      ],
+      "review_extent": "hash comparison only; source behavior not independently reviewed in this bounded audit",
+      "changed_against_any_report": true
+    },
+    {
+      "path": "isaac-installer/lib/core/managed_apply.py",
+      "sha256": "017c8907839b250b2c2eb8e344fa6ab3ffd563ab4c5d7bb2af75a89b3efdc581",
+      "historical_comparisons": [],
+      "review_extent": "1-42,299-363; text-only import/inspect_fixture dependency trace, NOT executor review",
+      "changed_against_any_report": false
+    },
+    {
+      "path": "isaac-installer/lib/core/metadata_readers.py",
+      "sha256": "5e992e248f74c5a965f2ab12f570d3ceed1ed8ddc2654bf744332cf6248430db",
+      "historical_comparisons": [
+        {
+          "report": "/tmp/isaac-full-writer-final-review.json",
+          "recorded_sha256": "5e992e248f74c5a965f2ab12f570d3ceed1ed8ddc2654bf744332cf6248430db",
+          "matches": true
+        },
+        {
+          "report": "/tmp/isaac-full-readonly-final-review.json",
+          "recorded_sha256": "5e992e248f74c5a965f2ab12f570d3ceed1ed8ddc2654bf744332cf6248430db",
+          "matches": true
+        }
+      ],
+      "review_extent": "hash comparison only; source behavior not independently reviewed in this bounded audit",
+      "changed_against_any_report": false
+    },
+    {
+      "path": "isaac-installer/lib/core/migration_preview.py",
+      "sha256": "8f6a6aee8c6e0f934367eb0906ac574c0377e8d2b211c068c246d42fd0670e6c",
+      "historical_comparisons": [
+        {
+          "report": "/tmp/isaac-full-readonly-final-review.json",
+          "recorded_sha256": "8f6a6aee8c6e0f934367eb0906ac574c0377e8d2b211c068c246d42fd0670e6c",
+          "matches": true
+        }
+      ],
+      "review_extent": "hash comparison only; source behavior not independently reviewed in this bounded audit",
+      "changed_against_any_report": false
+    },
+    {
+      "path": "isaac-installer/lib/core/plan_evidence.py",
+      "sha256": "a5e09926a1aacfd07d46b3ee5c0906bd807b480aaf0fe87127156e9e5df26695",
+      "historical_comparisons": [],
+      "review_extent": "hash comparison only; source behavior not independently reviewed in this bounded audit",
+      "changed_against_any_report": false
+    },
+    {
+      "path": "isaac-installer/lib/core/preview_sandbox.py",
+      "sha256": "e59f4d2fd50e6a554249f42b1d22e915f686824895c77cf6197af694c022728f",
+      "historical_comparisons": [
+        {
+          "report": "/tmp/isaac-full-writer-final-review.json",
+          "recorded_sha256": "e59f4d2fd50e6a554249f42b1d22e915f686824895c77cf6197af694c022728f",
+          "matches": true
+        }
+      ],
+      "review_extent": "26-235; reader boundary only",
+      "changed_against_any_report": false
+    },
+    {
+      "path": "isaac-installer/lib/core/profile_discovery.py",
+      "sha256": "6079d3b88ad5e75cb934ba03d20e5cf7d85684d9d7366b09b905f2096801bfb6",
+      "historical_comparisons": [
+        {
+          "report": "/tmp/isaac-full-writer-final-review.json",
+          "recorded_sha256": "6079d3b88ad5e75cb934ba03d20e5cf7d85684d9d7366b09b905f2096801bfb6",
+          "matches": true
+        },
+        {
+          "report": "/tmp/isaac-full-readonly-final-review.json",
+          "recorded_sha256": "95cbc97010ddb733cdffba13432cc73f6db2a0bc223be8bf2a78d72abaa3028d",
+          "matches": false
+        },
+        {
+          "report": "/tmp/isaac-full-export-rereview.json",
+          "recorded_sha256": "6079d3b88ad5e75cb934ba03d20e5cf7d85684d9d7366b09b905f2096801bfb6",
+          "matches": true
+        }
+      ],
+      "review_extent": "326-503,757-966; observation/proposal/review/export-entry logic",
+      "changed_against_any_report": true
+    },
+    {
+      "path": "isaac-installer/lib/core/profile_output.py",
+      "sha256": "4c3e64b7ff88db6c53f163d9a12bc74c7aa83ee40f46a2c85fee6459f5f901e1",
+      "historical_comparisons": [
+        {
+          "report": "/tmp/isaac-full-writer-final-review.json",
+          "recorded_sha256": "4c3e64b7ff88db6c53f163d9a12bc74c7aa83ee40f46a2c85fee6459f5f901e1",
+          "matches": true
+        }
+      ],
+      "review_extent": "full file; source inspection only, no new writer security qualification",
+      "changed_against_any_report": false
+    },
+    {
+      "path": "isaac-installer/lib/core/profile_workflow.py",
+      "sha256": "3f29380fd1e9912853fa9bef9fb18de1959b932bbb36047dd8799370ebd89b6f",
+      "historical_comparisons": [
+        {
+          "report": "/tmp/isaac-full-writer-final-review.json",
+          "recorded_sha256": "6181b070f9ef39d788003f4ae1fdfe0eb1a11fc18c8bb03307f86736aaeee28f",
+          "matches": false
+        },
+        {
+          "report": "/tmp/isaac-full-readonly-final-review.json",
+          "recorded_sha256": "6181b070f9ef39d788003f4ae1fdfe0eb1a11fc18c8bb03307f86736aaeee28f",
+          "matches": false
+        }
+      ],
+      "review_extent": "full file",
+      "changed_against_any_report": true
+    },
+    {
+      "path": "isaac-installer/lib/core/report_writer.py",
+      "sha256": "4a1dec2a2a5cfb7d2c8f2adc78976c9cd598ebd0c8f4cd03d192f43fcc51f18e",
+      "historical_comparisons": [
+        {
+          "report": "/tmp/isaac-full-writer-final-review.json",
+          "recorded_sha256": "4a1dec2a2a5cfb7d2c8f2adc78976c9cd598ebd0c8f4cd03d192f43fcc51f18e",
+          "matches": true
+        }
+      ],
+      "review_extent": "hash comparison only; source behavior not independently reviewed in this bounded audit",
+      "changed_against_any_report": false
+    },
+    {
+      "path": "isaac-installer/lib/core/safe_preview.py",
+      "sha256": "dc574d10f83f239e116784f6ad3c4f66af7c7389bd17958dbce54036a1a0a6fe",
+      "historical_comparisons": [
+        {
+          "report": "/tmp/isaac-full-writer-final-review.json",
+          "recorded_sha256": "9444ab523b915d619b9db10ed22fd728fd2667b28c3e54e9b731b62a324905b3",
+          "matches": false
+        }
+      ],
+      "review_extent": "full file",
+      "changed_against_any_report": true
+    },
+    {
+      "path": "isaac-installer/lib/core/target_observation.py",
+      "sha256": "8fc336d3108d65fd3657f421c375cce47c48a66a76114d530f90dd4a9d7f0e72",
+      "historical_comparisons": [
+        {
+          "report": "/tmp/isaac-full-writer-final-review.json",
+          "recorded_sha256": "8fc336d3108d65fd3657f421c375cce47c48a66a76114d530f90dd4a9d7f0e72",
+          "matches": true
+        },
+        {
+          "report": "/tmp/isaac-full-readonly-final-review.json",
+          "recorded_sha256": "8fc336d3108d65fd3657f421c375cce47c48a66a76114d530f90dd4a9d7f0e72",
+          "matches": true
+        }
+      ],
+      "review_extent": "full file",
+      "changed_against_any_report": false
+    },
+    {
+      "path": "isaac-installer/lib/core/workspace_paths.py",
+      "sha256": "b0bd13d23feb6eacbd5df41eb97a11987e4124357ed23127af9ad894e4f60a8e",
+      "historical_comparisons": [
+        {
+          "report": "/tmp/isaac-full-readonly-final-review.json",
+          "recorded_sha256": "e97699f40db8107e4ae0add8780033958ccad54caced5a49d1fe44d21c91c464",
+          "matches": false
+        }
+      ],
+      "review_extent": "hash comparison only; source behavior not independently reviewed in this bounded audit",
+      "changed_against_any_report": true
+    },
+    {
+      "path": "isaac-installer/lib/modules/isaacsim.sh",
+      "sha256": "7b1aa61615d13fafaa04d981b0c2c0cee9e9783a95de5b73ca1a317c3ab60835",
+      "historical_comparisons": [
+        {
+          "report": "/tmp/isaac-full-adapter-rereview.json",
+          "recorded_sha256": "7b1aa61615d13fafaa04d981b0c2c0cee9e9783a95de5b73ca1a317c3ab60835",
+          "matches": true
+        }
+      ],
+      "review_extent": "hash comparison only; source behavior not independently reviewed in this bounded audit",
+      "changed_against_any_report": false
+    },
+    {
+      "path": "src/ansible/inventory.template",
+      "sha256": "31ed2722adf84744e28c8c74c56abe8d91c78e43fbd4b39a30c946d5b81b03b7",
+      "historical_comparisons": [
+        {
+          "report": "/tmp/isaac-full-adapter-rereview.json",
+          "recorded_sha256": "31ed2722adf84744e28c8c74c56abe8d91c78e43fbd4b39a30c946d5b81b03b7",
+          "matches": true
+        }
+      ],
+      "review_extent": "hash comparison only; source behavior not independently reviewed in this bounded audit",
+      "changed_against_any_report": false
+    },
+    {
+      "path": "src/ansible/roles/gr00t/tasks/native.yml",
+      "sha256": "8308d8a1c304089db0f5f97afac8bd58c6147bbee2fa315e3a8eff2ad47abde8",
+      "historical_comparisons": [
+        {
+          "report": "/tmp/isaac-full-adapter-rereview.json",
+          "recorded_sha256": "56fef21ba31c183986af74d09d3dd5caa9dc03df6f8f1b9092abcdb4e89d986a",
+          "matches": false
+        }
+      ],
+      "review_extent": "hash comparison only; source behavior not independently reviewed in this bounded audit",
+      "changed_against_any_report": true
+    },
+    {
+      "path": "src/ansible/roles/gr00t/templates/gr00t-policy-server.sh.j2",
+      "sha256": "f45a6b0c75194dd5aab6fde1c06bb76b66359c81f2c8e1b652e1850d17195616",
+      "historical_comparisons": [
+        {
+          "report": "/tmp/isaac-full-adapter-rereview.json",
+          "recorded_sha256": "edd3234a40eee0cf5b405ce7914ed4d01025d3fbc8e4f7a9a005572f4b0f229e",
+          "matches": false
+        }
+      ],
+      "review_extent": "hash comparison only; source behavior not independently reviewed in this bounded audit",
+      "changed_against_any_report": true
+    },
+    {
+      "path": "src/ansible/roles/gr00t/templates/isaac-gr00t.service.j2",
+      "sha256": "5978e3110e9f919e0887f471dc36195d4a33143d2a6867fe3166467017c503ee",
+      "historical_comparisons": [
+        {
+          "report": "/tmp/isaac-full-adapter-rereview.json",
+          "recorded_sha256": "86cc8102a556c94cfd2183c25624206995c7f341809722c9aedadf6a181ce167",
+          "matches": false
+        }
+      ],
+      "review_extent": "hash comparison only; source behavior not independently reviewed in this bounded audit",
+      "changed_against_any_report": true
+    },
+    {
+      "path": "src/ansible/roles/isaaclab-arena-source/tasks/install.yml",
+      "sha256": "598d7705b0916f79b558ad93089a22e97a8697012417085052bca84182953b5b",
+      "historical_comparisons": [
+        {
+          "report": "/tmp/isaac-full-adapter-rereview.json",
+          "recorded_sha256": "2557baca890d27ed5ef7ff896c40ec8dd8714de0b3a8bde90da26f176f6d9ba0",
+          "matches": false
+        }
+      ],
+      "review_extent": "hash comparison only; source behavior not independently reviewed in this bounded audit",
+      "changed_against_any_report": true
+    },
+    {
+      "path": "src/ansible/roles/isaacsim-source/tasks/main.yml",
+      "sha256": "4811ea6f27d52194563abb17c796787b3510263e3360768069dfd7ac6007fb18",
+      "historical_comparisons": [
+        {
+          "report": "/tmp/isaac-full-adapter-rereview.json",
+          "recorded_sha256": "4811ea6f27d52194563abb17c796787b3510263e3360768069dfd7ac6007fb18",
+          "matches": true
+        }
+      ],
+      "review_extent": "hash comparison only; source behavior not independently reviewed in this bounded audit",
+      "changed_against_any_report": false
+    },
+    {
+      "path": "src/ansible/roles/isaacsim-source/tasks/standalone.yml",
+      "sha256": "3afe6479f43a3a54b44d1a50af61696a587fe52968fa08d59d19eaedb1daa37d",
+      "historical_comparisons": [
+        {
+          "report": "/tmp/isaac-full-adapter-rereview.json",
+          "recorded_sha256": "3afe6479f43a3a54b44d1a50af61696a587fe52968fa08d59d19eaedb1daa37d",
+          "matches": true
+        }
+      ],
+      "review_extent": "hash comparison only; source behavior not independently reviewed in this bounded audit",
+      "changed_against_any_report": false
+    },
+    {
+      "path": "src/ansible/roles/lerobot/tasks/main.yml",
+      "sha256": "121aa390fc7dc9cca12202e3cb1194a701f62b396089e2ec43cac420842c563e",
+      "historical_comparisons": [
+        {
+          "report": "/tmp/isaac-full-adapter-rereview.json",
+          "recorded_sha256": "344484028c2f90ac9bbe21f6f2a1354d92352d07c3e80d5385a7e154878ea692",
+          "matches": false
+        }
+      ],
+      "review_extent": "hash comparison only; source behavior not independently reviewed in this bounded audit",
+      "changed_against_any_report": true
+    },
+    {
+      "path": "src/ansible/roles/lerobot/templates/lerobot-dataset-viz.j2",
+      "sha256": "aa55d2372fb548cc269c63ec4dc8588c0d569f952f753b5737db542edf544fdb",
+      "historical_comparisons": [
+        {
+          "report": "/tmp/isaac-full-adapter-rereview.json",
+          "recorded_sha256": "aa55d2372fb548cc269c63ec4dc8588c0d569f952f753b5737db542edf544fdb",
+          "matches": true
+        }
+      ],
+      "review_extent": "hash comparison only; source behavior not independently reviewed in this bounded audit",
+      "changed_against_any_report": false
+    },
+    {
+      "path": "src/ansible/roles/lerobot/templates/lerobot-teleop.sh.j2",
+      "sha256": "5e29337485c8c371d373c825725df1db8a4b15c7c915e3d663892a1e91f65597",
+      "historical_comparisons": [
+        {
+          "report": "/tmp/isaac-full-adapter-rereview.json",
+          "recorded_sha256": "5e29337485c8c371d373c825725df1db8a4b15c7c915e3d663892a1e91f65597",
+          "matches": true
+        }
+      ],
+      "review_extent": "hash comparison only; source behavior not independently reviewed in this bounded audit",
+      "changed_against_any_report": false
+    },
+    {
+      "path": "src/python/deploy_command.py",
+      "sha256": "5ecda253856412583233fec239c83b6e110fce31fab5d5f637f55ce3ab3d8bab",
+      "historical_comparisons": [
+        {
+          "report": "/tmp/isaac-full-adapter-rereview.json",
+          "recorded_sha256": "6b26248179098e4cf214586c5c4b7b37356d5025cf88f3a72846c356b0a44cb4",
+          "matches": false
+        }
+      ],
+      "review_extent": "hash comparison only; source behavior not independently reviewed in this bounded audit",
+      "changed_against_any_report": true
+    },
+    {
+      "path": "src/python/deployer.py",
+      "sha256": "9fcebaff7c84bf8adc94feae06708efeebc95f737da33df5b104ccc87b7a57e6",
+      "historical_comparisons": [
+        {
+          "report": "/tmp/isaac-full-adapter-rereview.json",
+          "recorded_sha256": "9fcebaff7c84bf8adc94feae06708efeebc95f737da33df5b104ccc87b7a57e6",
+          "matches": true
+        }
+      ],
+      "review_extent": "hash comparison only; source behavior not independently reviewed in this bounded audit",
+      "changed_against_any_report": false
+    },
+    {
+      "path": "src/python/profile_adapters.py",
+      "sha256": "8449d69203202fb2936069c2e7a5a6c2220487da5e30f7eb03ef82dd16e9df7b",
+      "historical_comparisons": [
+        {
+          "report": "/tmp/isaac-full-writer-final-review.json",
+          "recorded_sha256": "7950867542d74f719c0f28f4171ef4fbf5593fbdf6fcea7c9f593cbffb986c43",
+          "matches": false
+        },
+        {
+          "report": "/tmp/isaac-full-adapter-rereview.json",
+          "recorded_sha256": "96c9883cc923396f97eecd90be998ffde33461ed8e7ac4081eeeef0d5ce64833",
+          "matches": false
+        }
+      ],
+      "review_extent": "full file; render mapping only, not installation consumers",
+      "changed_against_any_report": true
+    },
+    {
+      "path": "src/python/public_artifact.py",
+      "sha256": "b1b4235593dfd755b1dd4755ee2e79e3e2f40cd2009c562cc16807c7166b1aa3",
+      "historical_comparisons": [
+        {
+          "report": "/tmp/isaac-full-adapter-rereview.json",
+          "recorded_sha256": "b1b4235593dfd755b1dd4755ee2e79e3e2f40cd2009c562cc16807c7166b1aa3",
+          "matches": true
+        }
+      ],
+      "review_extent": "hash comparison only; source behavior not independently reviewed in this bounded audit",
+      "changed_against_any_report": false
+    },
+    {
+      "path": "src/python/workstation_profile.py",
+      "sha256": "c90a1ff5bd4ca77a28efb16a26220507b53e19c92fc9cf26140bca8162b829cd",
+      "historical_comparisons": [
+        {
+          "report": "/tmp/isaac-full-writer-final-review.json",
+          "recorded_sha256": "472b4263141f96af4e18e7e493cbe2ef1cef783315e9fe09dda2f13e19afede9",
+          "matches": false
+        },
+        {
+          "report": "/tmp/isaac-full-readonly-final-review.json",
+          "recorded_sha256": "dc251c01d1fa2050e4056f12f3796f6f2d02bfa19f7848d490a287ebd7597ba4",
+          "matches": false
+        },
+        {
+          "report": "/tmp/isaac-full-export-rereview.json",
+          "recorded_sha256": "472b4263141f96af4e18e7e493cbe2ef1cef783315e9fe09dda2f13e19afede9",
+          "matches": false
+        },
+        {
+          "report": "/tmp/isaac-full-adapter-rereview.json",
+          "recorded_sha256": "472b4263141f96af4e18e7e493cbe2ef1cef783315e9fe09dda2f13e19afede9",
+          "matches": false
+        }
+      ],
+      "review_extent": "full file",
+      "changed_against_any_report": true
+    },
+    {
+      "path": "src/tests/deploy_fork_transport.test.py",
+      "sha256": "da6276d4ea922ef0f05d2cb8321f098f16e1e1cd5373406fba3f43e41c0a64fe",
+      "historical_comparisons": [
+        {
+          "report": "/tmp/isaac-full-adapter-rereview.json",
+          "recorded_sha256": "da6276d4ea922ef0f05d2cb8321f098f16e1e1cd5373406fba3f43e41c0a64fe",
+          "matches": true
+        }
+      ],
+      "review_extent": "hash comparison only; source behavior not independently reviewed in this bounded audit",
+      "changed_against_any_report": false
+    },
+    {
+      "path": "src/tests/installer_action_plan.test.py",
+      "sha256": "1defc2e75c394844d64ed48736b683096b9a8d6c099c33ea4bc7748ee007a27c",
+      "historical_comparisons": [],
+      "review_extent": "full file",
+      "changed_against_any_report": false
+    },
+    {
+      "path": "src/tests/installer_consumer_agreement.test.py",
+      "sha256": "d1ee31816cc47254da713b97bc800ef845846a36982b6c8bab31682037e7435d",
+      "historical_comparisons": [],
+      "review_extent": "full file; later-consumer suite boundary, not step1 qualification",
+      "changed_against_any_report": false
+    },
+    {
+      "path": "src/tests/installer_desired_profile.test.py",
+      "sha256": "e3696f47487132473b464e92bd2ed3da92938533d8a14a5404b1175a2a2ea004",
+      "historical_comparisons": [
+        {
+          "report": "/tmp/isaac-full-export-rereview.json",
+          "recorded_sha256": "e3696f47487132473b464e92bd2ed3da92938533d8a14a5404b1175a2a2ea004",
+          "matches": true
+        }
+      ],
+      "review_extent": "targeted test-name/render/assertion search only",
+      "changed_against_any_report": false
+    },
+    {
+      "path": "src/tests/installer_discovery_cli.test.py",
+      "sha256": "746318b1ccbae192d4818d31524462d2ee34ceb9591a0b78acf7240780a7e53c",
+      "historical_comparisons": [],
+      "review_extent": "238-385 plus targeted searches of earlier cases",
+      "changed_against_any_report": false
+    },
+    {
+      "path": "src/tests/installer_export_conflict.test.py",
+      "sha256": "4a631c2528f6c9a7cb451386761608830567888e976840e16dd066cc55d16bdc",
+      "historical_comparisons": [
+        {
+          "report": "/tmp/isaac-full-export-rereview.json",
+          "recorded_sha256": "4a631c2528f6c9a7cb451386761608830567888e976840e16dd066cc55d16bdc",
+          "matches": true
+        }
+      ],
+      "review_extent": "full file",
+      "changed_against_any_report": false
+    },
+    {
+      "path": "src/tests/installer_plan_evidence.test.py",
+      "sha256": "a9d7bcdbcf584bfd77ca79af6bd8b5b6e537495a04c9b7f53573426cb15dc72b",
+      "historical_comparisons": [],
+      "review_extent": "full file plus AST enumeration, not import/execution",
+      "changed_against_any_report": false
+    },
+    {
+      "path": "src/tests/installer_profile_workflow.test.py",
+      "sha256": "711f39951a309f2bc16778c7725c280e453a844c31491eb0998518a8f5ddcf19",
+      "historical_comparisons": [],
+      "review_extent": "full file",
+      "changed_against_any_report": false
+    },
+    {
+      "path": "src/tests/installer_runtime_consumers.test.py",
+      "sha256": "8df91f2924b37c103c33c31641aed022e0c8be8ff2a6a008d33b8bcf50c8d557",
+      "historical_comparisons": [
+        {
+          "report": "/tmp/isaac-full-adapter-rereview.json",
+          "recorded_sha256": "8df91f2924b37c103c33c31641aed022e0c8be8ff2a6a008d33b8bcf50c8d557",
+          "matches": true
+        }
+      ],
+      "review_extent": "hash comparison only; source behavior not independently reviewed in this bounded audit",
+      "changed_against_any_report": false
+    },
+    {
+      "path": "src/tests/managed_pure_validation.test.py",
+      "sha256": "8a7c5dd106948f843761a8fe9b86f042ee31d296facf2ce470628809b5687900",
+      "historical_comparisons": [],
+      "review_extent": "1-90; import boundary only",
+      "changed_against_any_report": false
+    },
+    {
+      "path": "src/tests/profile_adapter_transport.test.py",
+      "sha256": "d55cb91bc40bd8efa9a7add4c0ca882d9d87a571c03f99f4b9d287279769c791",
+      "historical_comparisons": [
+        {
+          "report": "/tmp/isaac-full-adapter-rereview.json",
+          "recorded_sha256": "cdf60bfb1253567e6bf4f497935199485bd255d960d835f26c01ae650b70d4ab",
+          "matches": false
+        }
+      ],
+      "review_extent": "hash comparison only; source behavior not independently reviewed in this bounded audit",
+      "changed_against_any_report": true
+    },
+    {
+      "path": "src/tests/profile_adapters.test.py",
+      "sha256": "fb757a06cf1fcd0ad1b10240998631abc8a59fefaa01203e80317c7008fb0b8c",
+      "historical_comparisons": [
+        {
+          "report": "/tmp/isaac-full-adapter-rereview.json",
+          "recorded_sha256": "fb757a06cf1fcd0ad1b10240998631abc8a59fefaa01203e80317c7008fb0b8c",
+          "matches": true
+        }
+      ],
+      "review_extent": "hash comparison only; source behavior not independently reviewed in this bounded audit",
+      "changed_against_any_report": false
+    },
+    {
+      "path": "src/tests/profile_ansible_runtime_consumers.test.py",
+      "sha256": "1c1ddc9fc3779fe61d8bffc6fdd7ef78b5b7c3bec8d8a67dd008ecf0cec505ee",
+      "historical_comparisons": [
+        {
+          "report": "/tmp/isaac-full-adapter-rereview.json",
+          "recorded_sha256": "1c1ddc9fc3779fe61d8bffc6fdd7ef78b5b7c3bec8d8a67dd008ecf0cec505ee",
+          "matches": true
+        }
+      ],
+      "review_extent": "hash comparison only; source behavior not independently reviewed in this bounded audit",
+      "changed_against_any_report": false
+    },
+    {
+      "path": "src/tests/profile_public_preflight.test.py",
+      "sha256": "afa431079ac0324fbba1866e9a34a4735ed95a388e5ef42318e2662fffaca59e",
+      "historical_comparisons": [
+        {
+          "report": "/tmp/isaac-full-adapter-rereview.json",
+          "recorded_sha256": "591ca7e3d881116fcfd7438448888a76f80a582c2b9123ab3a4f861dbc634ec8",
+          "matches": false
+        }
+      ],
+      "review_extent": "hash comparison only; source behavior not independently reviewed in this bounded audit",
+      "changed_against_any_report": true
+    },
+    {
+      "path": "src/tests/public_artifact.test.py",
+      "sha256": "bebb166e8ea874697a172a1ca36f52f15eabfc123de4e2035502dac59e03739c",
+      "historical_comparisons": [
+        {
+          "report": "/tmp/isaac-full-adapter-rereview.json",
+          "recorded_sha256": "bebb166e8ea874697a172a1ca36f52f15eabfc123de4e2035502dac59e03739c",
+          "matches": true
+        }
+      ],
+      "review_extent": "hash comparison only; source behavior not independently reviewed in this bounded audit",
+      "changed_against_any_report": false
+    },
+    {
+      "path": "src/tests/run_profile_workflow_tests.py",
+      "sha256": "c73804a069673544eb4d716853cd355db8bb35c4d19a48fb9c64ff139c721cb8",
+      "historical_comparisons": [],
+      "review_extent": "full file",
+      "changed_against_any_report": false
+    }
+  ],
+  "limitations": [
+    "Verdict meaning: Step1 acceptance is not independently verified; passed=false reflects concrete test-boundary defects and incomplete acceptance evidence, not a demonstrated new production security bug or a failure merely because hashes changed.",
+    "One bounded source-only audit in /workspaces/IsaacAutomator. No tests, probes, repository imports, fixture creation, installer commands, managed workflow/equivalent, delegation, network, real workstation/credential/home/settings inspection, or Git commands/mutations were performed.",
+    "Only read/search operations and Python stdlib JSON/AST/hash processing were used. The only deliverable written is /tmp/isaac-step1-independent-review.json. No repository source edits were made.",
+    "The four historical receipts were read as evidence documents, not executed. Their recorded test counts/results were not independently reproduced. Exact receipt fingerprints and recorded verdicts are included below.",
+    "Review extent is recorded per file. Hash-only rows are not behavioral approvals. Writer security, metadata-reader internals, legacy workspace shell changes and later Ansible/native deployment consumers were not fully re-reviewed.",
+    "No source freeze or historical source copies were available: SHA differences establish nonidentity, not the semantic diff or cause. Final fingerprints identify the observed snapshot and do not certify a concurrently edited tree.",
+    "No container, sync, apply, installation, credentials, settings, live runtime or full-plan implementation is authorized. The blocked managed workflow remains untouched and unlaunched.",
+    "An attempted read of src/python/__init__.py returned absent; no failure or fallback execution followed. Initial broad file listing and large writer receipt were truncated; targeted source reads and JSON key extraction supplied the relevant evidence.",
+    {
+      "consulted_receipts": {
+        "/tmp/isaac-full-writer-final-review.json": {
+          "sha256": "6475f8a6243cb227c971b12bb62d9f2f28d8a28ff376fdbcc73225151b51fc5d",
+          "recorded_passed": true
+        },
+        "/tmp/isaac-full-readonly-final-review.json": {
+          "sha256": "d8b473af84223bf3e95485dfc4bf724b417b15e64dce362bdbf9517c2acb268e",
+          "recorded_passed": false
+        },
+        "/tmp/isaac-full-export-rereview.json": {
+          "sha256": "3bf5e47794a3a3b45a8e3b43527717597d7e72c404e0d341c1477d511d85ee78",
+          "recorded_passed": true
+        },
+        "/tmp/isaac-full-adapter-rereview.json": {
+          "sha256": "6d2fd5d4b58ff7d26d2cb4103bdae589f48bfac378b9af7100ef992baa071e8f",
+          "recorded_passed": true
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,76 @@
+[
+  {
+    "field_id": "workspace:workspace.root",
+    "decision": "accept"
+  },
+  {
+    "field_id": "workspace:workspace.name",
+    "decision": "accept"
+  },
+  {
+    "field_id": "workspace:workspace.layout",
+    "decision": "accept"
+  },
+  {
+    "field_id": "components.selection",
+    "decision": "edit",
+    "value": [
+      "sim",
+      "lab"
+    ]
+  },
+  {
+    "field_id": "component:lab.source",
+    "decision": "accept"
+  },
+  {
+    "field_id": "runtime:lab",
+    "decision": "accept"
+  },
+  {
+    "field_id": "environment:synthetic-env",
+    "decision": "accept"
+  },
+  {
+    "field_id": "component:sim.source",
+    "decision": "declare",
+    "value": {
+      "mode": "standalone",
+      "version": "6.0.1",
+      "url": "https://example.org/synthetic-isaac-sim.zip",
+      "sha256": "613e30d9727baa5615e087148ce67c90d9e5ffa376f7cbb4f01580baeb1c8d13"
+    }
+  },
+  {
+    "field_id": "runtime:kit",
+    "decision": "declare",
+    "value": {
+      "manager": "bundled",
+      "environment": "kit"
+    }
+  },
+  {
+    "field_id": "component:sim.execution",
+    "decision": "declare",
+    "value": "native"
+  },
+  {
+    "field_id": "component:lab.execution",
+    "decision": "declare",
+    "value": "native"
+  },
+  {
+    "field_id": "tool:synthetic-env:synthetic-robot-helper",
+    "decision": "edit",
+    "required": false,
+    "value": {
+      "environment": "isaaclab",
+      "location": null,
+      "name": "synthetic-robot-helper",
+      "placement": "environment",
+      "purpose": "Synthetic robot calibration helper",
+      "source": "pypi",
+      "version": "1.2.3"
+    }
+  }
+]

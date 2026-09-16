@@ -14,7 +14,7 @@ resolve_isaacsim_dir() {
         fi
     fi
 
-    if [[ -n "${ISAACSIM_DIR:-}" && -d "${ISAACSIM_DIR}" ]]; then
+    if [[ -n "${ISAACSIM_DIR:-}" ]]; then
         echo "${ISAACSIM_DIR}"
         return 0
     fi
@@ -111,6 +111,10 @@ PTH
 }
 
 check_isaac_sim() {
+    if [[ -n "${ISAACSIM_ARCHIVE_URL:-}${ISAACSIM_ARCHIVE_SHA256:-}" ]]; then
+        STAGE_CHECK_MSG='Explicit archive identity is not verified by launcher existence; installation/adoption requires review.'
+        return 1
+    fi
     local install_dir
     install_dir="$(resolve_isaacsim_dir)"
 
@@ -129,12 +133,52 @@ check_isaac_sim() {
     fi
 }
 
+# Explicit profile archives use the shared anonymous public-source boundary,
+# never wget/curl ambient credentials or unchecked cached files. This is an
+# installer seam, NOT qualification of managed adoption/update or archive safety.
+install_isaac_sim_archive() (
+    local install_dir="$1" stage archive digest
+    if [[ -e "$install_dir" || -L "$install_dir" ]]; then
+        log_error 'Explicit archive target already exists; qualified adoption/update is required.'; return 1
+    fi
+    if [[ -z "${ISAACSIM_ARCHIVE_URL:-}" || ! "${ISAACSIM_ARCHIVE_SHA256:-}" =~ ^[a-f0-9]{64}$ ]]; then
+        log_error 'Explicit standalone archive requires a URL and a lowercase SHA256.'; return 1
+    fi
+    local helper
+    helper="$(cd "${BASH_SOURCE[0]%/*}/../../.." && pwd)/src/python/public_artifact.py"
+    [[ -f "$helper" ]] || { log_error 'Public artifact helper is missing.'; return 1; }
+    stage="$(sudo -H -u "${TARGET_USER}" mktemp -d "${TARGET_HOME}/.isaacsim-archive.XXXXXXXX")" || return $?
+    trap 'sudo -H -u "${TARGET_USER}" rm -rf -- "$stage"' EXIT
+    archive="${stage}/archive.zip"
+    sudo -H -u "${TARGET_USER}" python3 -I "$helper" \
+        --url "$ISAACSIM_ARCHIVE_URL" --sha256 "$ISAACSIM_ARCHIVE_SHA256" --output "$archive" || return $?
+    # Recheck the exact output before extraction. stdin hashing avoids filename
+    # escaping/newline semantics in sha256sum's textual filename format.
+    [[ -f "$archive" && ! -L "$archive" ]] || { log_error 'No verified archive output.'; return 1; }
+    digest="$(sha256sum < "$archive")" || return $?
+    [[ "${digest%% *}" == "$ISAACSIM_ARCHIVE_SHA256" ]] || { log_error 'Archive checksum mismatch.'; return 1; }
+    # Exclusive leaf creation also refuses a target appearing during download.
+    sudo -H -u "${TARGET_USER}" mkdir -- "$install_dir" || return $?
+    sudo -H -u "${TARGET_USER}" unzip -q -o "$archive" -d "$install_dir" || return $?
+    [[ -x "${install_dir}/isaac-sim.sh" ]] || { log_error 'Archive has no Isaac Sim launcher.'; return 1; }
+    sudo -H -u "${TARGET_USER}" touch "${install_dir}/.eula_accepted" || return $?
+    if [[ -x "${install_dir}/post_install.sh" ]]; then
+        sudo -H -u "${TARGET_USER}" bash "${install_dir}/post_install.sh" || return $?
+    fi
+    log_success "Verified-checksum standalone archive extracted at ${install_dir}; runtime unverified."
+)
+
 install_isaac_sim() {
     log_step "Checking NVIDIA Isaac Sim Engine..."
 
     local install_dir
     install_dir="$(resolve_isaacsim_dir)"
     local source_type="${ISAACSIM_SOURCE_TYPE:-standalone}"
+    if [[ -n "${ISAACSIM_ARCHIVE_URL:-}${ISAACSIM_ARCHIVE_SHA256:-}" ]]; then
+        [[ "$source_type" == standalone ]] || { log_error 'Archive overrides require standalone source.'; return 1; }
+        install_isaac_sim_archive "$install_dir"
+        return $?
+    fi
 
     # Handle Custom Source Build
     if [[ "$source_type" == "custom_build" ]]; then

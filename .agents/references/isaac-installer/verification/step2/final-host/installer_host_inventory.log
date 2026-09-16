@@ -1,0 +1,27 @@
+STEP1_RESULT {"suite": "installer_host_inventory", "tests": 21, "skipped": 0, "failures": 0, "errors": 0, "passed": true}
+test_ambiguous_workspace_does_not_choose_a_name (step1_installer_host_inventory.HostInventoryIntegration) ... ok
+test_changed_evidence_requires_review_and_keeps_local_origin_history (step1_installer_host_inventory.HostInventoryIntegration) ... ok
+test_collector_epoch_versions_and_private_env_name_are_importable_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok
+test_collector_printable_paths_import_without_becoming_desired_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok
+test_collector_schema_caps_keep_large_fixture_importable (step1_installer_host_inventory.HostInventoryIntegration) ... ok
+test_documents_symlink_ancestor_collects_and_imports_without_target_grant (step1_installer_host_inventory.HostInventoryIntegration) ... ok
+test_environment_proposal_identity_survives_reordering (step1_installer_host_inventory.HostInventoryIntegration) ... ok
+test_extended_sim_version_retained_without_breaking_review_grammar (step1_installer_host_inventory.HostInventoryIntegration) ... ok
+test_invalid_reports_refuse_without_output_or_echoing_payload (step1_installer_host_inventory.HostInventoryIntegration) ... ok
+test_links_and_targeted_followups_are_data_only_and_visible_in_review (step1_installer_host_inventory.HostInventoryIntegration) ... ok
+test_noncanonical_checkout_requires_explicit_path_review (step1_installer_host_inventory.HostInventoryIntegration) ... ok
+test_output_collision_and_link_input_refuse (step1_installer_host_inventory.HostInventoryIntegration) ... ok
+test_package_group_membership_is_deterministic_review_evidence_not_install_intent (step1_installer_host_inventory.HostInventoryIntegration) ... ok
+test_portable_import_proposes_paths_without_reading_host (step1_installer_host_inventory.HostInventoryIntegration) ... ok
+test_report_budget_and_orphan_provenance_leave_cli_envelope_headroom (step1_installer_host_inventory.HostInventoryIntegration) ... ok
+test_review_export_both_renderers_and_dry_run_with_remote_paths (step1_installer_host_inventory.HostInventoryIntegration) ... ok
+test_selected_sources_and_dpkg_status_survive_import_and_bind_to_records (step1_installer_host_inventory.HostInventoryIntegration) ... ok
+test_shallow_system_ancestor_is_raw_evidence_not_a_local_grant (step1_installer_host_inventory.HostInventoryIntegration) ... ok
+test_system_packages_stay_grouped_with_complete_raw_evidence (step1_installer_host_inventory.HostInventoryIntegration) ... ok
+test_unrepresentable_workspace_name_remains_unresolved_not_fatal (step1_installer_host_inventory.HostInventoryIntegration) ... ok
+test_unverified_basic_markers_offer_exact_selected_scope_followups (step1_installer_host_inventory.HostInventoryIntegration) ... ok
+
+----------------------------------------------------------------------
+Ran 21 tests in 3.050s
+
+OK

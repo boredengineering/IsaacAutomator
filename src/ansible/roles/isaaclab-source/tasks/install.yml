@@ -14,6 +14,18 @@
 # limitations under the License.
 # endregion
 
+- name: Select isolated fresh profile Git source
+  ansible.builtin.include_tasks: "{{ playbook_dir }}/roles/public-git/tasks/source.yml"
+  vars:
+    public_git_repository: "{{ isaaclab_git_repo }}"
+    public_git_ref: "{{ isaaclab_git_checkpoint }}"
+    public_git_destination: "{{ isaaclab_dir }}"
+  when: public_git_profile | default(false) | bool
+
+- name: Select explicit Lab pin pipeline
+  ansible.builtin.set_fact:
+    profile_lab_pins_selected: "{{ profile_lab_torch is defined or profile_lab_torchvision is defined or profile_lab_cuda_runtime is defined or profile_lab_architecture is defined }}"
+
 - name: Create Isaac Lab directory
   file:
     path: "{{ isaaclab_dir }}"
@@ -23,9 +35,14 @@
     mode: 0755
 
 - name: Check existing install tag
-  shell: cat "{{ isaaclab_dir }}/.install-tag" 2>/dev/null || true
+  ansible.builtin.command:
+    argv:
+      - cat
+      - --
+      - "{{ isaaclab_dir }}/.install-tag"
   register: isaaclab_install_tag
   changed_when: false
+  failed_when: false
 
 - name: Clone Isaac Lab repository
   git:
@@ -35,10 +52,13 @@
     force: true
     depth: 1
   become_user: "{{ ansible_user }}"
-  when: isaaclab_install_tag.stdout | trim == ''
+  when: (isaaclab_install_tag.stdout | trim == '') and not (public_git_profile | default(false) | bool)
 
 - name: Get current commit hash
-  shell: git rev-parse HEAD
+  shell: >-
+    /usr/bin/env -i PATH=/usr/bin:/bin HOME=/nonexistent
+    GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_SYSTEM=/dev/null GIT_CONFIG_GLOBAL=/dev/null
+    GIT_NO_REPLACE_OBJECTS=1 /usr/bin/git -c core.hooksPath=/dev/null rev-parse HEAD
   args:
     chdir: "{{ isaaclab_dir }}"
   become_user: "{{ ansible_user }}"
@@ -60,7 +80,7 @@
     repo: "{{ isaaclab_dir }}"
     scope: local
   become_user: "{{ ansible_user }}"
-  when: isaaclab_git_repo != isaaclab_upstream_repo and isaaclab_install_needed
+  when: (isaaclab_git_repo != isaaclab_upstream_repo and isaaclab_install_needed) and not (public_git_profile | default(false) | bool)
   ignore_errors: true
 
 - name: Set branch pushRemote to origin
@@ -70,7 +90,7 @@
     repo: "{{ isaaclab_dir }}"
     scope: local
   become_user: "{{ ansible_user }}"
-  when: isaaclab_install_needed
+  when: (isaaclab_install_needed) and not (public_git_profile | default(false) | bool)
   ignore_errors: true
 
 - name: Check if Isaac Sim source directory exists
@@ -97,6 +117,12 @@
     path: /usr/local/bin/isaaclab-env
   register: isaaclab_env_check
 
+- name: Install source dependencies with selected Lab pins
+  ansible.builtin.include_tasks: "{{ playbook_dir }}/roles/isaaclab-source/tasks/pinned.yml"
+  vars:
+    profile_lab_install_kind: lab
+  when: profile_lab_pins_selected | bool
+
 - name: Install Isaac Lab into conda environment
   shell: ./isaaclab.sh --conda {{ conda_env_name }} 2>&1 | tee /tmp/isaaclab-install.log
   args:
@@ -104,7 +130,7 @@
   become_user: "{{ ansible_user }}"
   async: 3600
   poll: 30
-  when: isaaclab_install_needed and isaaclab_env_check.stat.exists
+  when: (isaaclab_install_needed and isaaclab_env_check.stat.exists) and not (profile_lab_pins_selected | bool)
 
 - name: Install Isaac Lab standalone (fallback)
   shell: ./isaaclab.sh --install 2>&1 | tee /tmp/isaaclab-install.log
@@ -113,7 +139,7 @@
   become_user: "{{ ansible_user }}"
   async: 3600
   poll: 30
-  when: isaaclab_install_needed and not isaaclab_env_check.stat.exists
+  when: (isaaclab_install_needed and not isaaclab_env_check.stat.exists) and not (profile_lab_pins_selected | bool)
 
 - name: Write install tag
   copy:

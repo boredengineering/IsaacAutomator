@@ -1,0 +1,135 @@
+{
+  "status": "implemented_verified_source_frozen",
+  "files": [
+    {
+      "path": "isaac-installer/tools/collect_host_metadata.py",
+      "sha256": "9099aba1d9bd5b963efaea75f3e853807eb692eae272ba5175dfc4ad25feed6e"
+    },
+    {
+      "path": "isaac-installer/lib/core/host_inventory.py",
+      "sha256": "100adf715b8db8fbed641869858929e2388fcb40818ab81d35843bff051cc2ee"
+    },
+    {
+      "path": "src/tests/installer_host_collector.test.py",
+      "sha256": "2917756705d498cb9eb5f9ee6fd1e59e7ecb83c9e65cf1ef3a37ce3fb17d42d8"
+    },
+    {
+      "path": "src/tests/installer_host_inventory.test.py",
+      "sha256": "5dfedfbd60fac0b1ff65f1257f15470fee5cf484f13497171ce472e4026bd9ca"
+    }
+  ],
+  "schema_changes": {
+    "compatibility": "schema_version 1 retained. Optional strict details version 1 emitted by collector. Older reports accepted with limited-selected-provenance review note.",
+    "evidence_paths": "Canonical printable absolute Linux path labels allow punctuation and Unicode; traversal/control/credential-like labels remain restricted. Local report paths still use discovery._path; unsupported desired field values become unresolved.",
+    "details.repositories": "Map repository path -> {head: selected .git/HEAD, config: selected .git/config, ref: selected loose-ref path or null}. Fixed selector semantics are documented in validate_details.",
+    "details.isaacsim": "Map installation path -> {version: selected VERSION path}.",
+    "details.environments": "Map environment path -> {python: selected Conda python record path or pyvenv.cfg or null, packages: map package name -> selected conda-meta JSON or dist-info METADATA path}.",
+    "details.system_packages": "Shared status_source and manual_source fixed to declared system_root var/lib/dpkg/status and var/lib/apt/extended_states; status map keyed by name:architecture retains install ok installed / hold ok installed. Base package manual field carries selected Auto-Installed classification or unknown.",
+    "details.links": "Map encountered selected link path -> {target: bounded lexical target or null, status: recorded or redacted}. Never traverses targets.",
+    "details.followups": "At most 128 stable SHA256(kind NUL path)[:24] keyed {kind,path,target,records,action:request-explicit-scope}; kinds workspace, isaacsim, repository-metadata, git-worktree, repository-ref, linked-path, environment-descriptors, editable-metadata. Candidate/review notes point to exact retained keys and scope metadata.",
+    "details.package_groups": "{basis:name-heuristic-review-only, groups:{os-baseline,drivers-cuda,build-tools,optional-applications,uncertain}}. Members are sorted name:architecture identities into raw packages and shared selected-source/status evidence. No native install intent.",
+    "bounds": "32 environments, 128 repositories/workspace candidates, 20000 package records and issues; links/followups 128. _finish reserves CLI envelope headroom with <=1MiB raw JSON, emits explicit gaps and prunes orphan source/scope maps after truncation or interruption.",
+    "coverage": "Explicit unsupported-package-managers and driver-cuda-level-not-collected (no toolkit inference). Existing broad software/editable limitations retained."
+  },
+  "requirements_fixed": [
+    "HOST-FINAL-01",
+    "HOST-FINAL-03",
+    "B3 symlink targets and targeted scope proposals",
+    "B8 per-fact selected-source provenance and pure binding",
+    "B6 installed dpkg status and unsupported-manager coverage",
+    "B7 editable and UV/environment descriptor proposals",
+    "B5 explicit unknown driver-supported CUDA level",
+    "C useful grouped package review membership"
+  ],
+  "preserved_parent_fix": "HOST-FINAL-02 underscore/128-character raw environment names and PEP440 epochs preserved; parent regression remains passing.",
+  "test_receipts": [
+    {
+      "behavior": "FINAL01 printable evidence paths",
+      "red": "/tmp/isaac-step1-ymbo_5ik",
+      "green": "/tmp/isaac-step1-n7e65tjz"
+    },
+    {
+      "behavior": "FINAL03 actual 33 environments and 129 repositories",
+      "red": "/tmp/isaac-step1-ok3x7vdb",
+      "green": "/tmp/isaac-step1-xcvgofes"
+    },
+    {
+      "behavior": "B8 selected sources, B6 installed status, B5 driver CUDA unknown",
+      "red": "/tmp/isaac-step1-l2eyggn5",
+      "green": "/tmp/isaac-step1-y4_7th1h"
+    },
+    {
+      "behavior": "Source scalar lengths and unsafe label gaps",
+      "red": "/tmp/isaac-step1-9tst2loy",
+      "green": "/tmp/isaac-step1-y4_7th1h"
+    },
+    {
+      "behavior": "B3 links and B7 selected scope followups in review",
+      "red": "/tmp/isaac-step1-kt6esnzv",
+      "green": "/tmp/isaac-step1-7vpon6dw"
+    },
+    {
+      "behavior": "C grouped package membership",
+      "red": "/tmp/isaac-step1-plqj_ouq",
+      "green": "/tmp/isaac-step1-_fkow6uw"
+    },
+    {
+      "behavior": "FINAL03 report budget and orphan source normalization",
+      "red": "/tmp/isaac-step1-n3ur4be6",
+      "green": "/tmp/isaac-step1-tz0w3aer"
+    },
+    {
+      "behavior": "Credential-like scalar/ref and canonical ref gaps",
+      "red": "/tmp/isaac-step1-y92n4kwy",
+      "green": "/tmp/isaac-step1-2efy4uv2"
+    },
+    {
+      "behavior": "Unverified basic VERSION and Git markers followup scope",
+      "red": "/tmp/isaac-step1-8vree0ja",
+      "green": "/tmp/isaac-step1-no5nqey6"
+    },
+    {
+      "behavior": "Output truncation removes orphan repository environment scope",
+      "red": "/tmp/isaac-step1-xqpdr14v",
+      "green": "/tmp/isaac-step1-jz912n5k"
+    }
+  ],
+  "final_tests": {
+    "artifact_root": "/tmp/isaac-step1-jz912n5k",
+    "tests": 47,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "inventory_tests": 19,
+    "collector_tests": 28,
+    "controls_passed": true
+  },
+  "fixture_cli_demo": {
+    "artifact_root": "/tmp/isaac-host-demo-8ga6s34j/reports",
+    "passed": true,
+    "cli_calls": 10,
+    "fixture_files_unchanged": 15,
+    "workspace_spelling": "BoredEngineer",
+    "packages": 2,
+    "environments": 1,
+    "collection_complete": false,
+    "export_complete": true,
+    "both_renderers_supported": true,
+    "execution_authorized": false,
+    "limitations": [
+      "Entirely synthetic sources and versions; no installed health or source availability proof.",
+      "Host collection gaps remain in raw report; acceptance here is reviewed intent only.",
+      "Dry-run intentionally lacks live target evidence even though fixture paths exist."
+    ]
+  },
+  "remaining_gaps": [],
+  "limitations": [
+    "Only owned sources/tests modified; no runner, docs, plan, demo, other source, commit or push edits. Source freeze now active.",
+    "Only explicit retained bounded fixture runner and exact synthetic CLI demo executed. No real-host inventory/package/GPU/Git/network/managed apply/fixture_builders runs.",
+    "Embedded source labels and link targets are data claims validated lexically against declared selected scope, never local read grants or attestation that source contents are genuine.",
+    "Relative link targets containing dot/dot-dot or unsupported/control/credential-like strings are redacted unknown; no alternate roots or targets are read.",
+    "Package grouping is a deliberately limited name heuristic; manual flags and installed status do not approve installation. Full editable/UV parsing, packed refs, probes, package-manager execution and adoption/sync remain outside scope.",
+    "Bounded truncation sacrifices evidence with explicit gaps rather than promising complete inventories. A 1MiB collector raw budget is conservative CLI headroom, not acceptance of arbitrary user-crafted 8MiB evidence envelopes.",
+    "Independent final re-review is still the parent workflow; these are implementation and fixture verification receipts, not live-host/security certification."
+  ]
+}

@@ -1,0 +1,139 @@
+{
+  "requirements": [
+    {
+      "id": "A-historical-hints-and-step2-scope",
+      "status": "met",
+      "evidence": "Plan lines 52-71, 146-148; collector lines 567-603 use invoking-home seeds and collected metadata, not historical Ubuntu/GPU/version assertions. Docs lines 46-49 distinguish fixture and user-supplied-host identity.",
+      "gap": "No whole-plan completion or actual host-state claim is warranted. The old 'not implemented yet' sentence is stale documentation, not evidence that the collector is absent."
+    },
+    {
+      "id": "B1-plan-and-context",
+      "status": "met",
+      "evidence": "Collector main lines 615-664: default plan, invoking-home default, explicit seeds/records/limits/exclusions/effects/output and identity; collection only after --collect. Collector tests lines 135-149 and 342-354 exercise plan output without target reads/output creation.",
+      "gap": "User-supplied-host is explicitly a label, not an attestation of bare-metal execution; documentation states this appropriately."
+    },
+    {
+      "id": "B2-algorithmic-basic-discovery",
+      "status": "substantially_met",
+      "evidence": "Collector lines 257-275 and 580-600 enumerate bounded GitHub-parent names, preserve casing and ambiguity, identify repositories from Git origin/HEAD rather than checkout names, and discover IsaacSim before machine/package/environment collection. Tests cover casing collisions, legacy alias ambiguity, stale directory names, depth/entry/time bounds.",
+      "gap": "Implementation enumerates the parent before selecting BoredEngineer, then traverses repositories before checking IsaacSim; it does not literally check both exact seeds before all other enumeration. This is a minor ordering difference, not a missing algorithmic candidate pipeline. Non-Git project metadata is not supported, but Git-backed candidates satisfy the basic demonstrated workflow."
+    },
+    {
+      "id": "B3-IsaacSim-selected-marker",
+      "status": "met_with_stated_limits",
+      "evidence": "Collector lines 591-600 reads only ~/IsaacSim/VERSION; tests lines 66-75 verify version extraction, malformed version handling, and no launcher execution. Docs lines 62-63 disclaim source/runtime verification.",
+      "gap": "Only this selected marker/layout is implemented; alternate installations and a directory with missing/invalid VERSION remain unverified evidence. No obligation to execute a launcher or inspect assets exists."
+    },
+    {
+      "id": "B3-symlink-target-recording-and-root-proposals",
+      "status": "missing_required_behavior",
+      "evidence": "Plan lines 88-90 expressly require recording symlink targets and targeted additional-search-root proposals. Collector lines 29-45, 185-186 reject/skip links; issues have only code/path (lines 86-90). Missing/ambiguous seeds produce only missing-workspace/ambiguous-workspace/missing-isaacsim issues (lines 590, 600). Adapter lines 237-238 adds only a generic incomplete-collection note.",
+      "gap": "The issue path is the encountered link or failed seed, not its target and not an actionable additional-root proposal. Add bounded link-target metadata recording without traversing the target, plus a targeted review backlog/proposal describing the additional root or scope decision needed. Unsafe/unrepresentable target text can remain explicitly redacted/unknown. Do not add automatic traversal, whole-home scans, or blanket approval. Safe refusal alone does not implement the promised recording/proposal behavior."
+    },
+    {
+      "id": "B4-selected-Git-metadata",
+      "status": "met_with_stated_limits",
+      "evidence": "Collector lines 202-254 normalize supported origin URLs to credential-free GitHub URLs, read HEAD/config/selected loose ref, and keep dirty unknown. Lines 264-267 report worktree markers without following their target. Tests lines 54-64, 198-206, and 356-362 cover credentials, external worktree refusal and misleading config defaults.",
+      "gap": "Packed refs, non-GitHub remotes, worktree/common-dir consumption and nonstandard Git layouts are not implemented. Unresolved refs/worktrees are visible gaps, not evidence of a healthy/current checkout. Full support for these layouts is not expressly required for the minimal selected-metadata collector; actionable additional-scope handling is covered by the B3 obligation, rather than demanding unsafe reads."
+    },
+    {
+      "id": "B5-machine-facts-and-normal-Ubuntu-markers",
+      "status": "substantially_met",
+      "evidence": "Collector lines 282-347 collect source-bearing OS/kernel/CPU/RAM/loaded-driver/toolkit facts. Lines 290-307 independently admit usr/lib/os-release if etc/os-release is unavailable, including the symlink case tested at collector-test lines 231-239. Proc records with st_size zero are handled explicitly at collector lines 157-160.",
+      "gap": "A symlinked /usr/local/cuda is rejected, so an otherwise normal CUDA installation can yield toolkit unknown; this is not repaired by the os-release fallback. Do not claim representative live Ubuntu/CUDA coverage from the synthetic regular-file demo. Retain this as a coverage limit and use the promised link-target/additional-root proposals rather than silently following alternatives."
+    },
+    {
+      "id": "B5-distinct-NVIDIA-facts",
+      "status": "partial",
+      "evidence": "Collector records installed packages separately from loaded driver and cuda_toolkit; gpu is null with gpu-probe-not-enabled (lines 326-343). Adapter's machine schema at lines 110-111 has no driver-supported CUDA-level field.",
+      "gap": "The optional nvidia-smi probe need not be implemented. However driver-supported CUDA level is expressly named as a distinct fact in plan lines 95-99 and is currently absent rather than explicitly unavailable. Add an explicit unknown/not-collected fact or coverage item for that level; do not infer it from toolkit version or installed NVIDIA packages. No live probe is necessary to close this narrow representation gap."
+    },
+    {
+      "id": "B6-system-package-selected-records",
+      "status": "partial",
+      "evidence": "Collector lines 350-413 parse only selected local dpkg/APT fields, retain installed multiarch name/version/architecture and evidence-based manual/automatic/unknown, exclude removed records, and report truncated/malformed/conflicting records. Collector test lines 95-108 cover multiarch, removed packages and absent manual flags.",
+      "gap": "Status is read to filter records but dropped from every emitted package (lines 396, 412); adapter package shape lines 58-64 also forbids status. The plan explicitly promised installed name/version/architecture/status. Retain the observed installed status, including hold versus install, through validation/import. Missing dpkg files communicate unavailable records, but unsupported-manager coverage is only generic; make that scope gap explicit without adding manager execution."
+    },
+    {
+      "id": "B7-environment-metadata-and-next-batch-proposals",
+      "status": "partial",
+      "evidence": "Collector lines 438-549 implement selected Conda records, pyvenv.cfg and dist-info name/version from bounded known prefixes and discovered .venv directories. Unsupported editable metadata is explicitly reported at line 520. Docs lines 73-82 disclose selected coverage and excluded software classes.",
+      "gap": "The plan promises proposing selected editable metadata and known UV/environment descriptors for review after the basics; no UV descriptor detection, named UV coverage item, or actionable next-batch proposal exists. Implement a targeted review/scope proposal for these selected metadata categories. Broad editable/UV parsing, activation, arbitrary config dumps, Snap/Flatpak/container inventory and complete Python dependency reproduction are not necessary to close this proposal-level obligation. Blanket unsupported-editable-metadata is an honest limit, but not itself the promised next-batch proposal."
+    },
+    {
+      "id": "B8-exclusive-private-report-and-side-effects",
+      "status": "substantially_met_static_only",
+      "evidence": "Collector lines 665-676 rejects listed observation-tree overlap and creates a new nofollow exclusive mode-0600 report. Main rejects root/inherited regular output streams. Tests lines 151-183, 208-215, 253-300, 323-331 cover exclusivity, modes, input/output links, limits and unsafe/unstable files. Docs lines 34-38 and 84-88 correctly distinguish report/access-time effects and portable collector versus CLI confinement.",
+      "gap": "This requirements audit is not an independent security qualification of every read/output boundary; that is assigned to a separate reviewer. No new security approval is implied."
+    },
+    {
+      "id": "B8-per-fact-provenance-and-roots",
+      "status": "partial",
+      "evidence": "Machine facts carry individual source paths (collector lines 286-289). Other records carry installation/repository paths or only package name/version, while selected source files are omitted (repository return lines 253-254, system package return line 412, environment returns lines 469 and 521-522). Adapter baseline lines 157-178 preserves the whole imported report and its local original_observed_roots; all proposed fields cite the single host:inventory observation (lines 185-187).",
+      "gap": "The local imported-report root is correctly separated from embedded host paths, which must remain data rather than local read grants. But a single report-level observation and inferable fixed paths do not fully provide the promised per-fact source: retain selected metadata source/field evidence for repository revision/origin, IsaacSim version, individual Conda/dist-info packages, and dpkg status/APT manual classification. Source paths should be attributable to the declared home/system root and selected record scope; current machine-source validation checks path syntax but not this association. This is provenance validation, not permission to inspect host paths."
+    },
+    {
+      "id": "C-useful-existing-candidate-pipeline",
+      "status": "met",
+      "evidence": "Adapter validate_report/baseline/propose_fields validate and preserve the host report, emit workspace/source/environment/tool proposals, leave decisions unset, and retain evidence across reimports. Inventory tests lines 53-71, 91-135 and 186-197 cover actual CLI import, review, export, both renderers, dry-run and evidence changes. Demo lines 62-116 wires real collector CLI to import/review/reimport/nonempty YAML/render/dry-run with synthetic declarations.",
+      "gap": "Export requires explicit human declarations for missing Sim source and runtime intent; that is correct, not a disconnected inventory or failure to auto-adopt installations. System-package/native installed-software consumption is not required until consumer mappings exist."
+    },
+    {
+      "id": "C-useful-grouped-package-backlog",
+      "status": "missing_required_behavior",
+      "evidence": "Plan lines 128-130 explicitly name OS baseline, drivers/CUDA, build tools and optional application dependencies. Adapter lines 213-215 emits a machine note and one aggregate package-count note; it contains no package category/group membership. Inventory test lines 176-184 checks only fewer than 12 fields, preserved raw inventory and no per-system-package tool proposals. Docs lines 119-120 describe this more strongly as grouped evidence/backlog.",
+      "gap": "Avoiding thousands of approvals is delivered, but one count plus a raw list does not implement the promised useful grouping. Add bounded category summaries/backlog with package membership/evidence (OS baseline, NVIDIA/CUDA, build tools, optional application dependencies and an uncertain/unclassified bucket as needed). Classification is a review hint, not desired install intent. No native installation mapping or automatic package acceptance is required."
+    },
+    {
+      "id": "D-fixtures-integration-and-user-handoff",
+      "status": "substantially_met_receipts_not_rerun",
+      "evidence": "Read both requested test files and retained .agents/references/isaac-installer/verification/step2/demo_host_workflow.py. They contain casing, missing seeds, budgets, symlink escape, malformed markers, multiarch/removed packages, missing manual flags, misleading hints, collision and secret fixtures. Demo uses synthetic roots, actual CLI calls, declared synthetic source details, unchanged fixture hashes/modes and unauthorized dry-run. Docs provide short host plan/collect/import commands and their scope.",
+      "gap": "Parent reports 37 new tests with zero skips at /tmp/isaac-step1-3bhe3jbr; 19 scoped suites/267 tests/two skips at /tmp/isaac-step1-s1i972z4; and a 10-step CLI synthetic demo with 15 unchanged input files at /tmp/isaac-host-demo-7uno3n6g/reports. These are supplied receipts, not this reviewer's runs or independently inspected outputs. Existing tests do not establish the missing target/proposal/provenance/status/grouping behaviors; add fixtures for those narrow changes."
+    }
+  ],
+  "acceptance_met": false,
+  "blocking_omissions": [
+    {
+      "id": "B3",
+      "obligation": "Record bounded symlink-target metadata without following it, and turn missing/ambiguous/linked basic seeds into targeted additional-root/scope proposals. Issue paths alone are insufficient."
+    },
+    {
+      "id": "C-grouping",
+      "obligation": "Implement useful package review-backlog categories and evidence membership, rather than a single package-count note over an ungrouped raw inventory."
+    },
+    {
+      "id": "B8-provenance",
+      "obligation": "Carry per-fact selected source evidence for non-machine metadata through report validation/import, including package status and manual-classification sources; preserve local-report roots separately from embedded host evidence."
+    },
+    {
+      "id": "B6-status",
+      "obligation": "Preserve the expressly promised installed dpkg status in the report/import schema; filtering on status is not the same as reporting it. Make unsupported package-manager coverage explicit."
+    },
+    {
+      "id": "B7-proposals",
+      "obligation": "Add explicit targeted follow-up review/scope proposals for selected editable/UV/environment descriptors. Full readers or runtime execution are not required."
+    },
+    {
+      "id": "B5-CUDA-level",
+      "obligation": "Explicitly represent driver-supported CUDA level as unknown/not collected, separate from toolkit/driver/package versions; optional nvidia-smi execution remains optional."
+    }
+  ],
+  "optional_or_future_items": [
+    "Implementing fixed-field nvidia-smi execution is optional, not a step-2 blocker. GPU model may remain explicitly unavailable without that probe.",
+    "Fixed read-only dpkg-query/apt-mark command modes are expressly future work; selected local database parsing is the agreed default and is present.",
+    "Native installed-package adoption, machine configuration application and actual system-package consumer mappings are deferred by section C; keep evidence/backlog rather than inventing install intent.",
+    "Packed-ref resolution, separate Git worktree/common-dir consumption and broader remote/layout support may remain selected-metadata gaps; unresolved revision/source must not be invented. Implementing the promised targeted additional-scope proposal is narrower than adding those readers.",
+    "Full editable/UV descriptor parsing and Snap/Flatpak/container or arbitrary-prefix inventory are not required for the minimal batch. The promised selected-metadata follow-up proposals are required and currently absent.",
+    "Actual host execution and host-report return intentionally remain user-run later. Their absence is not a missing code requirement, failed test, or reason to open host mounts/SSH.",
+    "The core outcome is substantially delivered: algorithmic basic paths, useful machine/package/environment evidence, private portable report, and a genuine existing review/export candidate pipeline. Narrow explicit obligations remain, so original step 2 should not be described as fully implemented yet."
+  ],
+  "limitations": [
+    "Static independent requirements/completeness audit only; no tests, project imports, host probes, package reads, network, Git commands or source edits were performed.",
+    "Only /tmp/isaac-host-completeness-review.json was written. The review skill was loaded for independent-review guidance, but its Git/test/security-scan workflow was not executed because this task expressly prohibits those actions.",
+    "The first attempted demo path under isaac-installer/verification was absent; the actual retained demo was read under .agents/references/isaac-installer/verification/step2, as documented in host-discovery.md.",
+    "Supplied parent test/demo receipts are accepted as context only and were not rerun or independently inspected. Source review cannot establish RED-before-GREEN chronology or live-host compatibility.",
+    "The active separate code/security review remains responsible for detailed boundary and exploit analysis. This report does not certify confinement or authorize collection/application.",
+    "The acceptance boolean refers to all expressly promised original step-2 implementation obligations, not whether useful core functionality exists. It is false for the narrow missing behaviors listed above, not for optional probes, later consumer mappings, or the intentionally pending host run.",
+    "No conclusion is made about completion of steps 1, 3, 4, 5 or 6."
+  ]
+}

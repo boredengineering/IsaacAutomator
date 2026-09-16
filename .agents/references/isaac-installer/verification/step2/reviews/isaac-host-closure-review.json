@@ -1,0 +1,40 @@
+{
+  "passed": false,
+  "security_concerns": [],
+  "logic_errors": [
+    {
+      "id": "HOST-CLOSURE-01",
+      "severity": "medium",
+      "title": "New link details poison import when a selected home seed has a symlink ancestor",
+      "detail": "The collector records the first symlink inode encountered along a selected path when that inode is anywhere beneath home. The importer instead accepts home-side link labels only at or below its selected_home seeds. Thus an ancestor of a seed, notably home/Documents above home/Documents/GitHub, is emitted by the collector but rejected by validate_details. _finish retains the link because its matching symlink-skipped issue is present, so successful collection produces an unusable whole report. No target traversal is needed for this failure.",
+      "source_refs": [
+        "isaac-installer/tools/collect_host_metadata.py:129-160",
+        "isaac-installer/tools/collect_host_metadata.py:234-255,759-760,819-820",
+        "isaac-installer/lib/core/host_inventory.py:283-290"
+      ],
+      "source_derived_reproduction": "Use an otherwise ordinary synthetic home and system root, but make home/Documents a symlink to an unselected directory. Collection of home/Documents/GitHub fails safely at the symlink, then record_link retains details.links[home/Documents] plus a symlink-skipped issue. validate_details rejects that label: it is not inside home/Documents/GitHub, home/IsaacSim, home/.conda, or a Conda seed, and it is not an ancestor of a selected system record. This is source-derived, not executed by this reviewer. The existing symlink tests cover the seed itself or descendants, not this home-side ancestor seam.",
+      "related_boundary": "With system_root '/', the collector can also retain shallow selected system ancestors such as /var. Such labels fail the raw path validator's minimum-three-parts rule at coverage.issues[].path or details.links before the otherwise ancestor-aware system scope check. Keep this same producer/importer ancestor-label contract in view when closing the finding.",
+      "recommendation": "Align the producer and raw-evidence validator for encountered ancestors of explicitly selected paths without following targets or granting new reads. Either admit appropriately bound ancestor labels as evidence, including their lexical depth, or omit unsupported link details and emit an importable bounded gap at an admitted selected path. Add collector-to-import regressions for a Documents ancestor symlink and a shallow selected system ancestor label."
+    }
+  ],
+  "suggestions": [],
+  "reviewed_files": [
+    {"path":"isaac-installer/tools/collect_host_metadata.py","sha256":"9099aba1d9bd5b963efaea75f3e853807eb692eae272ba5175dfc4ad25feed6e"},
+    {"path":"isaac-installer/lib/core/host_inventory.py","sha256":"100adf715b8db8fbed641869858929e2388fcb40818ab81d35843bff051cc2ee"},
+    {"path":"src/tests/installer_host_collector.test.py","sha256":"2917756705d498cb9eb5f9ee6fd1e59e7ecb83c9e65cf1ef3a37ce3fb17d42d8"},
+    {"path":"src/tests/installer_host_inventory.test.py","sha256":"5dfedfbd60fac0b1ff65f1257f15470fee5cf484f13497171ce472e4026bd9ca"},
+    {"path":"isaac-installer/docs/host-discovery.md","sha256":"f7ac08746d9c4a0211e8b5a40f72fd46de5270f29fc5dba2776c827ba01bef11"},
+    {"path":".agents/references/isaac-installer/verification/step2/demo_host_workflow.py","sha256":"61739509a554363d261ef47d421b79d79b95f7693becee4de078f88f417fe191"},
+    {"path":"isaac-installer/lib/core/profile_discovery.py","sha256":"4b203b6fa021a3e8972d40a4524cd14e6e054d925446d27c840859d1899d3823"}
+  ],
+  "limitations": [
+    "Independent source-only re-review: no tests, application imports, target inventory, host/package/GPU/Git/network reads or commands, or source edits. Standard-library AST parsing and source/receipt hashing only. Only /tmp/isaac-host-closure-review.json was written. One initial read used the abbreviated repository-root lib/core path and returned not found; subsequent review used the exact isaac-installer/lib/core path from the supplied receipts.",
+    "All four frozen source/test SHA256 values match /tmp/isaac-host-closure-result.json. Both implementation modules and both test sources were read in full, as were the updated documentation and demo. profile_discovery.py was inspected only at host integration, local-path grammar, and output-size seams, and its full-file hash matches the earlier review. This is not a new full legacy/native/CLI qualification.",
+    "HOST-FINAL-01's specific punctuation/printable-Unicode failures are fixed: raw labels accept them, unsafe labels become gaps, and unsupported desired paths/names remain unresolved instead of failing the report. HOST-FINAL-02 is fixed: underscore-leading/128-character raw environment names and epoch-bearing versions are admitted, while desired-field validation remains separate. HOST-FINAL-03's specific cardinality failures are fixed: collection and finalization enforce repository/environment/package/issue caps, with explicit coverage markers and regression sources. The newly identified ancestor-link defect is separate from those original examples.",
+    "New details use exact record identities and fixed selected-source relations, with pure lexical validation rather than reads or source-content attestation. Finalization removes orphan provenance, repairs repository-dependent .venv scope after truncation, recalculates groups/followups, and bounds the raw report to 1 MiB. Existing synthetic budget fixtures exercise an import envelope; this does not establish that every arbitrary crafted 8 MiB input envelope is writable or certify hard real-time finalization/I/O bounds.",
+    "No new execution-authority or target-following security blocker was identified. Selected file reads retain descriptor-relative nofollow, regular/single-link checks and bounds; link-target text is evidence only, with unsafe text redacted. Scope proposals are deterministically recomputed request-explicit-scope records, not collection requests executed by the importer. Group memberships are recomputed name heuristics and do not become native package installation intent. Optional older reports without details remain supported and receive the limited-provenance note.",
+    "Existing receipts were read and aggregated, not rerun: /tmp/isaac-step1-jz912n5k/results.json records 47 tests, zero failures/errors/skips, and all exit codes zero (SHA256 88db19786b28240597153ae038ad3490a0bffb4ea0f179a006f8151932f83f99); /tmp/isaac-step1-btii9amn/results.json records 267 tests, two skips, zero failures/errors, and all exit codes zero (SHA256 eb1b6e400525e7c7fd1cd83f2bb33dd6e7fdec138f028f18e8df7fcfed9def65). These receipts do not cover HOST-CLOSURE-01. The evolving parentvp94b_9d failure was not treated as a passing final receipt; the parent's pending final rerun is not certified here.",
+    "/tmp/isaac-host-demo-8ga6s34j/reports/summary.json records ten expected synthetic CLI calls, fifteen unchanged fixture files, complete export, both renderers supported and execution_authorized false. The current retained demo additionally checks details/source/group/followup relationships and directory-entry preservation. Reading its source does not certify that this exact updated demo source produced the older receipt.",
+    "No actual host health, source availability, runtime compatibility, full-machine parity, deployment, installation, adoption or synchronization authorization is certified. Hashes provide version identity/consistency, not host attestation. Verdict is fail-closed on the concrete producer/importer defect above, not a request for optional scope expansion."
+  ]
+}

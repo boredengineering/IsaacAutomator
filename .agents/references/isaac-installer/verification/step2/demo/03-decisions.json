@@ -1,0 +1,63 @@
+[
+  {
+    "field_id": "workspace:host.root",
+    "decision": "accept"
+  },
+  {
+    "field_id": "workspace:host.name",
+    "decision": "accept"
+  },
+  {
+    "field_id": "workspace:host.layout",
+    "decision": "accept"
+  },
+  {
+    "field_id": "components.selection",
+    "decision": "edit",
+    "value": [
+      "sim",
+      "lab"
+    ]
+  },
+  {
+    "field_id": "component:lab.source",
+    "decision": "accept"
+  },
+  {
+    "field_id": "component:lab.execution",
+    "decision": "declare",
+    "value": "native"
+  },
+  {
+    "field_id": "runtime:lab",
+    "decision": "declare",
+    "value": {
+      "manager": "conda",
+      "environment": "isaaclab",
+      "python": "3.12"
+    }
+  },
+  {
+    "field_id": "component:sim.source",
+    "decision": "declare",
+    "value": {
+      "mode": "standalone",
+      "version": "6.0.1",
+      "url": "https://example.org/synthetic-only.zip",
+      "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    }
+  },
+  {
+    "field_id": "component:sim.execution",
+    "decision": "declare",
+    "value": "native"
+  },
+  {
+    "field_id": "runtime:kit",
+    "decision": "declare",
+    "value": {
+      "manager": "bundled",
+      "environment": "kit"
+    }
+  }
+]

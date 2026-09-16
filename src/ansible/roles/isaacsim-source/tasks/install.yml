@@ -14,6 +14,14 @@
 # limitations under the License.
 # endregion
 
+- name: Select isolated fresh profile Git source
+  ansible.builtin.include_tasks: "{{ playbook_dir }}/roles/public-git/tasks/source.yml"
+  vars:
+    public_git_repository: "{{ isaacsim_git_repo }}"
+    public_git_ref: "{{ isaacsim_git_checkpoint }}"
+    public_git_destination: "{{ isaacsim_source_dir }}"
+  when: public_git_profile | default(false) | bool
+
 - name: Create Isaac Sim source directory
   file:
     path: "{{ isaacsim_source_dir }}"
@@ -35,10 +43,13 @@
     force: true
     depth: 1
   become_user: "{{ ansible_user }}"
-  when: isaacsim_build_tag.stdout | trim == ''
+  when: (isaacsim_build_tag.stdout | trim == '') and not (public_git_profile | default(false) | bool)
 
 - name: Get current commit hash
-  shell: git rev-parse HEAD
+  shell: >-
+    /usr/bin/env -i PATH=/usr/bin:/bin HOME=/nonexistent
+    GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_SYSTEM=/dev/null GIT_CONFIG_GLOBAL=/dev/null
+    GIT_NO_REPLACE_OBJECTS=1 /usr/bin/git -c core.hooksPath=/dev/null rev-parse HEAD
   args:
     chdir: "{{ isaacsim_source_dir }}"
   become_user: "{{ ansible_user }}"
@@ -58,7 +69,7 @@
   args:
     chdir: "{{ isaacsim_source_dir }}"
   become_user: "{{ ansible_user }}"
-  when: isaacsim_build_needed
+  when: (isaacsim_build_needed) and not (public_git_profile | default(false) | bool)
 
 - name: Accept EULA
   file:
@@ -138,7 +149,7 @@
   ignore_errors: true
 
 - name: Check Conda site-packages directory
-  shell: find /home/{{ ansible_user }}/miniconda3/envs/isaaclab/lib -maxdepth 2 -type d -name "site-packages" 2>/dev/null | head -n 1
+  shell: find "{{ miniconda_install_dir | default('/home/' ~ ansible_user ~ '/miniconda3') }}/envs/{{ conda_env_name | default('isaaclab') }}/lib" -maxdepth 2 -type d -name "site-packages" 2>/dev/null | head -n 1
   register: conda_sp_dir
   changed_when: false
   failed_when: false

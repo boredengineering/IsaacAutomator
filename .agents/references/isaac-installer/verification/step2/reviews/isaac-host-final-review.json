@@ -1,0 +1,68 @@
+{
+  "passed": false,
+  "security_concerns": [],
+  "logic_errors": [
+    {
+      "id": "HOST-FINAL-01",
+      "severity": "medium",
+      "title": "Collector emits ordinary Linux paths that the importer rejects globally",
+      "detail": "The collector's _absolute accepts canonical absolute Linux paths without restricting their characters, and directory discovery retains literal names in repository paths and coverage issue paths. The importer applies /[A-Za-z0-9_./ -]+ to all those paths. Consequently a successfully written collector report can be unusable solely because an unrelated skipped entry contains '+', '@', parentheses or Unicode. This is a collector/importer contract defect, not a request to follow additional paths or weaken nofollow protections.",
+      "source_refs": [
+        "isaac-installer/tools/collect_host_metadata.py:20-25,176-193,253-254,580-582,674-678",
+        "isaac-installer/lib/core/host_inventory.py:38-43,91,144-146,159",
+        "isaac-installer/lib/core/discovery_cli.py:221-225,273-276"
+      ],
+      "reproduction": "In the existing synthetic collector fixture, create a symlink named old@backup directly under home/Documents/GitHub alongside BoredEngineer. Collection does not follow it, but records {'code':'symlink-skipped','path':'.../Documents/GitHub/old@backup'}. Importing that report fails at validation of coverage.issues[].path, losing otherwise usable inventory. A selected checkout directory named IsaacLab+local independently fails repositories[].path. Source-derived reproductions; not executed by this reviewer.",
+      "recommendation": "Make the portable evidence path contract and producer agree while preserving lexical/no-follow checks and treating embedded host paths as data. Unsupported names must become bounded importable coverage evidence rather than poisoning the whole report. Keep candidate/local-read path validation separate where its grammar is intentionally narrower. Add a collector-to-import regression for a skipped punctuation-bearing entry."
+    },
+    {
+      "id": "HOST-FINAL-02",
+      "severity": "medium",
+      "title": "Collector-supported environment scalars exceed the inventory schema",
+      "detail": "The collector accepts environment names beginning with underscore and up to 128 characters, but host_inventory requires an alphanumeric first character and at most 64. The collector also accepts package versions containing the PEP 440 epoch separator '!', while host_inventory.package routes versions to text(), whose grammar excludes '!'. Both are reachable through explicitly supported Conda/venv metadata. Optional package proposal filtering cannot help: whole-report validation fails before propose_fields runs.",
+      "source_refs": [
+        "isaac-installer/tools/collect_host_metadata.py:419-423,438-442,458-469,515-522",
+        "isaac-installer/lib/core/host_inventory.py:33-35,58-62,127-138,183,226-234"
+      ],
+      "reproduction": "Create home/miniconda3/envs/_robot/conda-meta/numpy.json containing {\"name\":\"numpy\",\"version\":\"1.0\"}. Collection emits environment name '_robot'; import rejects it. Independently use envs/robot and a record {\"name\":\"sample\",\"version\":\"1!2.0\"}; collection retains the package and import rejects its version. Neither case needs target execution or network access. Source-derived reproductions; not executed by this reviewer.",
+      "recommendation": "Align producer and raw-evidence scalar contracts. If a value cannot map to desired candidate grammar, preserve it as evidence and leave its proposal unresolved or omitted with an explicit gap, rather than aborting import. Add direct collector-to-import regressions for underscore environment names and epoch versions."
+    },
+    {
+      "id": "HOST-FINAL-03",
+      "severity": "medium",
+      "title": "Collection budgets do not enforce importer collection cardinalities",
+      "detail": "The importer caps environments at 32 and repositories at 128, but the collector only applies its global entry/read/time budgets and appends every discovered matching environment/repository. Those budgets do not imply either schema cap. A modest inventory within the default entry budget can therefore produce a successful collection that the importer refuses instead of a truncated usable inventory with coverage gaps.",
+      "source_refs": [
+        "isaac-installer/tools/collect_host_metadata.py:257-275,525-549,552-558,561-575,603-605",
+        "isaac-installer/lib/core/host_inventory.py:50-51,88,127"
+      ],
+      "reproduction": "Under a synthetic home/miniconda3/envs, create 33 named environments env00 through env32, each with a conda-meta directory and one tiny name/version JSON record. With default limits and no other substantial metadata, _environments appends 33 records. Import rejects array(report['environments'], 32). Source-derived reproduction; not executed by this reviewer.",
+      "recommendation": "Enforce portable-schema cardinalities during collection, reporting bounded truncation through coverage, or reconcile the schema caps with the explicitly supported producer limits. Add a 33-environment collector-to-import boundary regression."
+    }
+  ],
+  "suggestions": [],
+  "reviewed_files": [
+    {"path":"isaac-installer/tools/collect_host_metadata.py","sha256":"dd3d38090888437e517013b473c7fb433c44e6dbfa6e091b430d96999447b80e"},
+    {"path":"isaac-installer/lib/core/host_inventory.py","sha256":"761ce8faf3ef9e83e887c79d75a42152325ee94ce633727ad5fde54cefa4f3f4"},
+    {"path":"isaac-installer/lib/core/profile_discovery.py","sha256":"4b203b6fa021a3e8972d40a4524cd14e6e054d925446d27c840859d1899d3823"},
+    {"path":"isaac-installer/lib/core/discovery_cli.py","sha256":"481f7b69f4fa138ee1f6ca62ed9b8ea1eceee823d97c18965f21d14a0d7f0a8f"},
+    {"path":"isaac-installer/lib/core/profile_output.py","sha256":"3e059d2fa363cbbbaa667835132237ac24c015a891148071a80c3c0afd3b6d87"},
+    {"path":"isaac-installer/bin/isaac-installer","sha256":"8e8877d284aded27b0cbab1ee13e522b5a7b5068f457d90a1d4139f222f93b32"},
+    {"path":"src/tests/installer_host_collector.test.py","sha256":"b7f8932a2da7fa2354d797c3da31a3c56fe0cdbc8a38fab53722ff8a679f6f7d"},
+    {"path":"src/tests/installer_host_inventory.test.py","sha256":"db8e2b618d93251d8c04667746695947cc16f8d677022173cac136077ececc17"},
+    {"path":".agents/references/isaac-installer/verification/step2/run_bounded_tests.py","sha256":"52e8425c8b3d0f8b8ed98e520397e10130ece56d61041ff9e2997bafc5556d43"},
+    {"path":".agents/references/isaac-installer/verification/step2/demo_host_workflow.py","sha256":"176bfef06beb08ed2d1fbe6d3e5cbc469ceaae5dec96044988c263eb5126d1d1"},
+    {"path":"isaac-installer/docs/host-discovery.md","sha256":"b90b9fe40db7e268e45685efb5276b793e22fe83a6e41aa8ab610354a96cbd8b"}
+  ],
+  "limitations": [
+    "Independent source-only review. No tests, project imports, host inventory, probes, live package metadata, network or Git commands were run. Only /tmp/isaac-host-final-review.json was written. The source-derived reproductions above require future bounded fixture execution; no execution results are invented.",
+    "Reviewed all 11 requested source/test/document files, with profile_discovery scoped to host integration and relevant validation/proposal/review/output contracts, and the shell entry scoped to predispatch. Full-file hashes identify exact versions, not a whole-file audit of legacy integration modules. The abbreviated lib/core and bin paths resolve under isaac-installer; an initial read at repository-root lib/core returned not found and was corrected using the supplied prior review's exact paths.",
+    "The original plus-bearing IsaacSim note defect is fixed: the original version remains in raw evidence and the proposed note is generic grammar-safe text. The workspace-name defect is fixed: _field_value validation failure yields an unresolved required name without losing its original path. Both regression tests are present. /tmp/isaac-step1-1xeovamx/results.json records 11 importer tests, no errors/failures/skips; these are existing receipts, not this reviewer's rerun.",
+    "Collector/test SHA256 values match the frozen /tmp/isaac-host-collector-result.json receipt, which records 26 tests with no failures/errors/skips. /tmp/isaac-host-demo-ldtjwa1h/reports/summary.json records 10 successful expected CLI steps and 15 unchanged synthetic input files, complete export, supported renderers and no execution authorization. Neither receipt covers the newly identified contract examples. Parent's combined rerun was not certified here.",
+    "No new security blocker identified in inspected seams: collector uses descriptor-relative nofollow traversal, single-link regular-file checks, bounded reads and a collection watchdog; main creates only a new exclusive mode-0600 destination and refuses root/regular-file diagnostic streams. It does not execute Git, hooks, package managers, probes, launchers or observed Python environments, and strips credential-bearing URL components rather than propagating them. Fixed metadata records can contain arbitrary data; this is not generic secret detection or hostile-code isolation. Failed collection may leave a partial new file as documented.",
+    "Importer admits only explicitly selected local report/previous-report inputs, validates exact shapes and limits, and treats embedded host paths as evidence rather than read grants. Predispatch reaches isolated trusted entry code before legacy sources. Output supervision keeps original local evidence roots as exclusions and does not treat remote paths as local grants. The complete legacy writer and OS confinement implementation were not re-audited or requalified.",
+    "Recognized repository source proposals use the observed 40-character commit for both ref and revision; unsupported 64-character commits remain unresolved, and conflicting sources use the existing alternative merge. Machine/system packages remain grouped evidence/backlog. Path-review notes remain unsupported intent, not an implemented adoption/mapping operation. No sources, revisions, archive URLs or checksums were verified over the network.",
+    "Reimport canonicalizes major array order and uses path-derived environment identities. Prior bundles are validated and review summaries recomputed; evidence revisions include observation content and the local report path. Changed or unselected evidence stays marked for renewed review, whereas independent declared intent remains separate. Digests are consistency checks, not signatures or proof of the user's identity. This does not certify the entire downstream export/managed execution system.",
+    "No actual host, runtime health, full-machine parity, managed execution, installation, synchronization or deployment authorization is certified. Read syscall interruption has the documented POSIX/foreground-thread prerequisites; no generic hard real-time guarantee for arbitrary filesystems or final output I/O is inferred."
+  ]
+}

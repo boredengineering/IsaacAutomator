@@ -1,0 +1,157 @@
+{
+  "acceptance_met": true,
+  "requirements": [
+    {
+      "id": "A-original-step2-scope",
+      "status": "met",
+      "evidence": "Formal plan lines 52-71 and 150-152; collector collect/main derive home and fixture/user-supplied-host context, not historical workstation assertions. Docs lines 51-54 distinguish labels from attestation.",
+      "gap": "Acceptance here is original step-2 implementation/synthetic closure only, not steps 1 or 3-6, actual host observation, or security qualification."
+    },
+    {
+      "id": "B1-plan-and-context",
+      "status": "met",
+      "evidence": "Collector main lines 861-910 implements default plan with invoking-home seeds, exact selected records, budgets, exclusions, output and effects before collection. Collector tests test_cli_default_plan_has_no_target_reads_or_report_write and test_plan_discloses_fixed_metadata_scope cover inaccessible fixture roots and absent output. Docs lines 8-25 give isolated ordinary-user invocation.",
+      "gap": ""
+    },
+    {
+      "id": "B2-bounded-basic-discovery",
+      "status": "met_with_stated_limits",
+      "evidence": "Collector lines 324-346 and 796-845 select bounded case-preserving GitHub-parent candidates, refuse ambiguity, identify repository components from selected Git metadata, and inspect IsaacSim before machine/package/environment batches. Tests cover case collisions, known legacy shadow, missing seeds, stale checkout names, entry/time/depth and retained-schema caps.",
+      "gap": "As in the original audit, parent-name enumeration precedes workspace selection and repository traversal precedes IsaacSim marker inspection. This minor ordering difference is not a missing basic discovery pipeline. Git-backed project identification is the demonstrated minimal scope."
+    },
+    {
+      "id": "B3-IsaacSim-selected-marker",
+      "status": "met_with_stated_limits",
+      "evidence": "Collector lines 833-845 retain selected ~/IsaacSim/VERSION or explicit missing/malformed evidence, without launchers/assets. Tests test_sim_version_is_metadata_only and test_unverified_basic_markers_offer_exact_selected_scope_followups exercise these cases.",
+      "gap": "Alternate layouts and version-to-runtime/source verification remain unsupported, not inferred."
+    },
+    {
+      "id": "B3-link-targets-and-targeted-scope-proposals",
+      "status": "met",
+      "evidence": "CLOSES original B3 omission: collector _Reader.record_link lines 129-162 reads bounded link text with readlink and no-follow ancestor descriptors; details.links retains recorded target or redacted unknown. _followups lines 677-707 adds exact seed/workspace, linked-path, unresolved-ref/worktree and unverified-marker scope requests. host_inventory.validate_details lines 283-299 binds links and recomputed followups; propose_fields lines 362-366 exposes stable-key review notes pointing to retained exact paths/records. Inventory tests lines 240-258 and 331-367 assert actual targets/redaction, missing-seed proposals, no target payload and visible backlog.",
+      "gap": "Relative targets containing dot/dot-dot and unsafe labels may be redacted. No target is automatically traversed and no generic missing-path issue is being counted as a proposal. Additional root choice is a review request, not an invented installation location."
+    },
+    {
+      "id": "B4-selected-repository-metadata",
+      "status": "met_with_stated_limits",
+      "evidence": "Collector _repository/_workspace_repositories lines 265-346 read HEAD/config/selected loose ref, normalize supported origin URLs to credential-free GitHub URLs, retain dirty unknown, and refuse worktree target consumption. Followups now include worktree/ref/unknown-source scope. Collector tests cover credential stripping, misleading DEFAULT config, malformed refs, and external worktree refusal.",
+      "gap": "Packed refs, broader remotes and separate worktree/common-dir readers are selected-scope gaps/future work, not silently treated as implemented. No Git command or repository modification is required."
+    },
+    {
+      "id": "B5-machine-facts-and-distinct-driver-CUDA-unknown",
+      "status": "met_with_stated_limits",
+      "evidence": "CLOSES original B5 omission: collector _machine lines 353-421 retains separate OS/kernel/CPU/RAM/loaded-driver/toolkit/GPU facts and explicitly emits driver-cuda-level-not-collected at line 405. Installed NVIDIA packages remain separate package evidence; no CUDA capability is inferred from toolkit or driver package version. host_inventory validates fixed machine-source bindings at lines 269-282. Inventory test lines 369-420 asserts the CUDA-level coverage item and rejects cross-root source claims.",
+      "gap": "GPU model remains null with gpu-probe-not-enabled. Symlinked CUDA layouts can yield unknown toolkit plus link/scope evidence. Fixed-field nvidia-smi remains optional; representative live-host compatibility is unproven."
+    },
+    {
+      "id": "B6-installed-status-and-package-manager-coverage",
+      "status": "met",
+      "evidence": "CLOSES original B6 omission: collector _records/_packages lines 424-496 parse selected local dpkg/APT fields, preserve multiarch name/version/architecture/manual or unknown, and retain install ok installed versus hold ok installed in details.system_packages.status keyed by name:architecture. Explicit unsupported-package-managers coverage is emitted at line 470; truncation/conflicts remain gaps. Adapter lines 269-275 binds shared dpkg/APT paths and exactly matching installed-status identities. Inventory selected-sources test lines 383-420 checks held status, sources, coverage and rejection of removed-status substitution; collector multiarch/manual test covers removed records and absent flags.",
+      "gap": "Shared source paths plus documented Package/Architecture/Version/Status/Auto-Installed selectors satisfy provenance; per-package duplicated paths or array-index bindings are not required. Unsupported managers are not claimed implemented."
+    },
+    {
+      "id": "B7-selected-environments-and-UV-editable-proposals",
+      "status": "met",
+      "evidence": "CLOSES original B7 omission: collector lines 524-651 retains selected Conda and pyvenv/dist-info metadata without activation; _followups lines 703-706 creates path-targeted environment-descriptors records [pyproject.toml, uv.lock, environment.yml] and editable-metadata records [direct_url.json, *.pth], each request-explicit-scope. Adapter independently validates expected proposals and emits linked review notes. Inventory test lines 331-365 asserts descriptor names, environment path, review visibility and refusal of scan-now.",
+      "gap": "These are genuine proposal-level behaviors, not full UV/editable readers or evidence that a descriptor exists. Snap/Flatpak/containers/arbitrary prefixes and full environment reproduction remain outside coverage. Manual classification is not desired-installation intent."
+    },
+    {
+      "id": "B8-private-report-and-observation-boundary",
+      "status": "met_static_requirements_only",
+      "evidence": "Collector main lines 911-927 provides exclusive no-follow mode-0600 output, overlap checks and fixed diagnostics; read helpers bound metadata and reject unsafe records. Plan/docs disclose report creation and possible access-time effects, exclude secrets/history/.env/runtime/probes/commands/network, and explicitly distinguish portable collector from confined CLI. Owned fixture tests cover exclusivity, observed-tree output, input/output links, unstable files, redirects and budget failures.",
+      "gap": "This establishes implementation presence and fixture coverage, NOT an independent exploit/read-output-boundary clearance. The concurrent security review must judge security defects separately and may still block operational acceptance."
+    },
+    {
+      "id": "B8-per-fact-stable-source-bindings",
+      "status": "met",
+      "evidence": "CLOSES original B8 provenance omission: collector writes details.repositories[path] HEAD/config/ref, details.isaacsim[path].version, details.environments[path] Python/package-name source maps, and shared dpkg/APT plus name:architecture status sources. host_inventory.validate_details lines 219-300 documents fixed field selectors, enforces exact record keys/selected paths and declared-root relationships, and recomputes scope/group mappings. baseline lines 303-324 preserves these details while original_observed_roots includes only selected local report paths. Tests lines 369-420 cover Conda, dist-info, Git, Sim, held status, order stability and mismatched provenance rejection. _finish lines 710-784 removes orphan maps after interruption/truncation.",
+      "gap": "Embedded provenance is a lexically validated source claim, not a local read grant or authenticity attestation. Legacy reports without details remain explicitly limited rather than receiving retroactive provenance credit."
+    },
+    {
+      "id": "C-existing-baseline-candidate-review-export",
+      "status": "met",
+      "evidence": "Adapter baseline/propose_fields lines 303-407 feeds existing discovery document/field APIs and preserves raw machine/package evidence. Owned integration tests lines 54-136 and 187-199 cover actual CLI import, explicit review/declarations, reimport, nonempty YAML, both renderers, dry-run and changed-evidence review. Exact retained demo lines 63-125 covers the same path with synthetic Sim/Lab intent and no execution authority.",
+      "gap": "Machine/system-package consumer mappings are deliberately not invented. Explicit Sim source/runtime declarations are correct human intent, not an automatic presence-to-installation conversion."
+    },
+    {
+      "id": "C-useful-heuristic-package-membership-groups",
+      "status": "met",
+      "evidence": "CLOSES original C-grouping omission: collector _package_groups lines 654-674 and adapter package_groups lines 163-183 provide os-baseline, drivers-cuda, build-tools, optional-applications and uncertain groups with sorted name:architecture memberships. Adapter validate_details recomputes membership; propose_fields lines 373-377 emits bounded group notes pointing to baseline details/raw evidence. Inventory test lines 304-329 checks all five concrete categories, customization backlog visibility, no per-system-package tool proposals, unset decisions, stable reordering and invalid-member rejection.",
+      "gap": "Name heuristics are deliberately approximate review hints; uncertain dependencies stay visible. No desired package installation, necessity, personal ownership or compatibility is inferred."
+    },
+    {
+      "id": "D-fixtures-integration-receipts-and-user-handoff",
+      "status": "met_source_and_supplied_receipts",
+      "evidence": "Read both complete owned tests, original formal D, docs and the exact .agents/references/isaac-installer/verification/step2/demo_host_workflow.py. Parsed /tmp/isaac-step1-jz912n5k/results.json: controls exit 0; inventory 19 and collector 28 tests, zero failures/errors/skips. All four current owned source/test SHA256 values match /tmp/isaac-host-closure-result.json. Parsed retained demo commands.json: 10 CLI calls, first nine exit 0, final unauthorized dry-run expected exit 2; summary.json reports 15 unchanged fixture files, nonempty complete export, both renderers supported, execution_authorized false. Current exact demo lines 77-86 add detailed source/status/group/proposal assertions; lines 126-128 assert unchanged file hashes/modes and directory entries. Docs lines 8-38 and 124-171 give short plan/collect/import and review handoff.",
+      "gap": "Receipts were parsed, not rerun; directory-entry preservation is an assertion in the reviewed demo and supplied parent execution evidence, not this reviewer comparing live fixture trees. Parent reports 267 core tests with two skips, but those separate core receipts were not independently re-read here. RED-before-GREEN chronology and active security-review completion are not certified."
+    }
+  ],
+  "blocking_omissions": [],
+  "optional_or_future_items": [
+    "Actual host plan/collection and private report return remain a separate user-run gate; no host facts or approved real desired profile are established.",
+    "Fixed-field nvidia-smi is optional; driver-supported CUDA capability/GPU model may remain explicitly uncollected.",
+    "Fixed read-only dpkg-query/apt-mark execution is future separately admitted work; package update/install/repair is not step-2 discovery.",
+    "Full editable/UV parsing, arbitrary environment roots, Snap/Flatpak/container inventory and exhaustive installed-software reproduction are not required; targeted descriptor proposals are implemented.",
+    "Packed-ref resolution, broader remotes, separate Git worktree/common-dir consumption and alternate IsaacSim/CUDA layouts may remain explicit scope gaps; no safe refusal is credited as implementation of those readers.",
+    "Actual consumer mappings for system packages/machine settings, adoption/apply, synchronization and all other workflow steps remain separately scoped.",
+    "Operational read/output security acceptance remains subject to the independent active security review; this is requirements closure, not security certification."
+  ],
+  "reviewed_files": [
+    {
+      "path": "/workspaces/IsaacAutomator/.agents/references/isaac-installer/main-workflow-action-plan.md",
+      "sha256": "e7b7c87cd2bd1b9c23d791a74e05ae6affbf4d80c97e3a40dfd498dd361f70b3"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/isaac-installer/tools/collect_host_metadata.py",
+      "sha256": "9099aba1d9bd5b963efaea75f3e853807eb692eae272ba5175dfc4ad25feed6e"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/isaac-installer/lib/core/host_inventory.py",
+      "sha256": "100adf715b8db8fbed641869858929e2388fcb40818ab81d35843bff051cc2ee"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/src/tests/installer_host_collector.test.py",
+      "sha256": "2917756705d498cb9eb5f9ee6fd1e59e7ecb83c9e65cf1ef3a37ce3fb17d42d8"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/src/tests/installer_host_inventory.test.py",
+      "sha256": "5dfedfbd60fac0b1ff65f1257f15470fee5cf484f13497171ce472e4026bd9ca"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/isaac-installer/docs/host-discovery.md",
+      "sha256": "f7ac08746d9c4a0211e8b5a40f72fd46de5270f29fc5dba2776c827ba01bef11"
+    },
+    {
+      "path": "/workspaces/IsaacAutomator/.agents/references/isaac-installer/verification/step2/demo_host_workflow.py",
+      "sha256": "61739509a554363d261ef47d421b79d79b95f7693becee4de078f88f417fe191"
+    },
+    {
+      "path": "/tmp/isaac-host-completeness-review.json",
+      "sha256": "6c63ae75d4ab74ed3ec69dc6c429fcba6129088c12223a07b440ba68dd5d71d3"
+    },
+    {
+      "path": "/tmp/isaac-host-closure-result.json",
+      "sha256": "c3100eb2dde446de7c94c66a29ac66b4c68260e6ed50e43d468d3826fde7e014"
+    },
+    {
+      "path": "/tmp/isaac-step1-jz912n5k/results.json",
+      "sha256": "88db19786b28240597153ae038ad3490a0bffb4ea0f179a006f8151932f83f99"
+    },
+    {
+      "path": "/tmp/isaac-host-demo-8ga6s34j/reports/summary.json",
+      "sha256": "9ba6d58636d5f37c352cc313eb40dbb725ec079a75cef9fb79e1a929de4331ab"
+    },
+    {
+      "path": "/tmp/isaac-host-demo-8ga6s34j/reports/commands.json",
+      "sha256": "5c21a54c3b86ccea2e712b0a151b2bcc30c905a6c503880cff645539baf351ff"
+    }
+  ],
+  "limitations": [
+    "Source-only independent audit of all original step-2 B1-B8, C and D obligations, with historical A scope checked. All six original firm omissions are now implemented at their required level; optional exclusions were not promoted to blockers.",
+    "No tests, project imports, host/package/GPU probes, Git commands, network requests or source edits were performed. Only source reads/hashes and retained receipt parsing were used.",
+    "Only /tmp/isaac-host-completeness-final.json is written by this audit; plan status and source files remain unchanged.",
+    "acceptance_met=true means original step-2 implementation/synthetic requirements closure. It does not mean actual host collection is done, whole-plan completion, permission to install/sync, or completion of the separate security gate.",
+    "No execution was repeated; fixture receipt contents and parent-supplied execution claims are not live-host observations. Source hashing confirms reviewed-byte identity, not integrity of the original execution environment.",
+    "Review skill loaded for independent-review guidance; Git/test/auto-fix steps were not followed because this source-only task explicitly forbids them."
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "passed": false,
+  "findings": [
+    {
+      "id": "HOST-IMPORT-01",
+      "severity": "medium",
+      "detail": "An inventory accepted by the new exact schema can make the entire import fail when optional evidence is converted into candidate fields. In particular isaacsim.version explicitly permits '+' (for example '6.0.1+build'), but propose_fields interpolates that value verbatim into note:hostsim0:0. Candidate validation routes the note to metadata_readers.note, whose grammar excludes '+'. discovery_cli then refuses the whole report in build_review, losing usable workspace/repository proposals rather than retaining the unsupported optional version as raw evidence. This is a source-proven contract mismatch, not an executed reproduction. Keep the exact original version in the observation and emit a grammar-safe generic note (or otherwise reconcile the note contract). Add a schema-valid plus-bearing version import regression; the current fixture only exercises '6.0.1'. The same general seam deserves an explicit policy for workspace candidate basenames: host path validation accepts leading underscore/hyphen or trailing space, while proposing the selected basename invokes the stricter existing workspace-name grammar. Unsupported desired names should remain editable unresolved proposals rather than aborting import of all evidence.",
+      "source_refs": [
+        "isaac-installer/lib/core/host_inventory.py:38-43,83-87,107-108,189-190,208-210",
+        "isaac-installer/lib/core/profile_discovery.py:113-118,587-603,737,937-940",
+        "isaac-installer/lib/core/metadata_readers.py:167-170",
+        "isaac-installer/lib/core/workspace_paths.py:16-20",
+        "isaac-installer/lib/core/discovery_cli.py:269-275",
+        "src/tests/installer_host_inventory.test.py:30,137-160"
+      ]
+    }
+  ],
+  "reviewed_files": [
+    {"path":"isaac-installer/lib/core/host_inventory.py","sha256":"2b29a97075b86457b57360b851bd5d8fa7fbc0fdffa61857fa64e5b1544c74a2"},
+    {"path":"isaac-installer/lib/core/profile_discovery.py","sha256":"4b203b6fa021a3e8972d40a4524cd14e6e054d925446d27c840859d1899d3823"},
+    {"path":"isaac-installer/lib/core/discovery_cli.py","sha256":"481f7b69f4fa138ee1f6ca62ed9b8ea1eceee823d97c18965f21d14a0d7f0a8f"},
+    {"path":"isaac-installer/lib/core/profile_output.py","sha256":"3e059d2fa363cbbbaa667835132237ac24c015a891148071a80c3c0afd3b6d87"},
+    {"path":"isaac-installer/bin/isaac-installer","sha256":"8e8877d284aded27b0cbab1ee13e522b5a7b5068f457d90a1d4139f222f93b32"},
+    {"path":"src/tests/installer_host_inventory.test.py","sha256":"4d2dbc817db2f161ee45d55243d6ca4f48483d624bf042f1a949f65400ce1638"},
+    {"path":".agents/references/isaac-installer/main-workflow-action-plan.md","sha256":"f73b25090c56e707fad299eddd11966e916eede5509b7a469b829bc406f9185c"},
+    {"path":"isaac-installer/lib/core/metadata_readers.py","sha256":"7e006d3c3cdca265a95836601b07d5c7e650c778b2565dbe8631514473eae182"},
+    {"path":"isaac-installer/lib/core/desired_profile.py","sha256":"57a8af6abdbd9128de51e630245a85a9b29add92fbd54648f0eaab50838ffe97"},
+    {"path":"isaac-installer/lib/core/report_writer.py","sha256":"4a1dec2a2a5cfb7d2c8f2adc78976c9cd598ebd0c8f4cd03d192f43fcc51f18e"},
+    {"path":"isaac-installer/lib/core/workspace_paths.py","sha256":"685abd283ce40907880461aa88a8db38d37f3f2d314af11b56379717c10d1364"},
+    {"path":"src/python/workstation_profile.py","sha256":"c90a1ff5bd4ca77a28efb16a26220507b53e19c92fc9cf26140bca8162b829cd"}
+  ],
+  "limitations": [
+    "Source-only review. No tests, application imports, probes, real-host/package reads, network or Git commands were run. Only the requested review report was written; repository source was not modified.",
+    "Reviewed host_inventory and importer tests in full, and the narrow integration sections plus necessary existing validator/export/writer contracts. Full-file hashes identify the source versions, not a whole-file or whole-repository audit of supporting legacy code. The bash review stops at predispatch; collector implementation was intentionally not reviewed while its worker runs.",
+    "Read existing receipts /tmp/isaac-step1-rkhw69vw/results.json and installer_host_inventory.log: nine tests, no skips/failures/errors, including the synthetic CLI fullchain. Read /tmp/isaac-step1-lqrod8jc/results.json: seven suites, 114 tests, two skips, all recorded exits zero. These are prior execution receipts, not tests rerun by this reviewer or independently requalified confinement/native acceptance.",
+    "No new local read-grant expansion or overwrite defect found in the inspected import seams: discovery_cli admits only report and previous-report paths; host paths remain observation data. profile_output derives exclusions from local input/evidence paths and validated prior origin history, not remote embedded paths. report_writer's O_CREAT|O_EXCL|O_NOFOLLOW refuses replacement of existing output. On the same host, an explicitly selected new file under a path mentioned in imported data is still a new authorized output, not an overwrite of original data; it is not automatically an observed-root exclusion. No generic sandbox guarantee is inferred.",
+    "Exact shapes, booleans, array/byte bounds, narrow package fields and credential-looking syntax rejection are present. This is not a guarantee of detecting arbitrary secrets disguised as legitimate scalar metadata. Machine/system packages stay raw evidence plus grouped backlog, not supported installation intent.",
+    "Exact-case workspace ambiguity remains unresolved; component-source merge preserves conflicting alternatives; environment IDs derive from paths; major enumerated collections are sorted before baseline hashing. Same-path unchanged rescans preserve approvals; changed observation content or the evidence report path changes evidence revisions and requires review. The existing test for changed content also changes the report path, so it does not isolate those two causes.",
+    "Component selection/execution/runtime intent still needs explicit review/declarations; no execution authority is inferred. Noncanonical repository paths are retained in observation data with required review notes. Those notes use the existing unsupported-note export mapping: merely accepting them does not make them supported or remove their required export gap; consciously changing requiredness is a separate review choice. No adoption, repository mutation, native apply, managed acceptance or actual host observation is qualified.",
+    "A stdlib hash/receipt aggregation command initially had a Python syntax error; corrected aggregation completed successfully without importing application code or writing any file."
+  ]
+}

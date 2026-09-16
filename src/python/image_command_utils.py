@@ -10,8 +10,75 @@ from pathlib import Path
 
 import click
 
+from src.python.deploy_command import DeployCommand
 
-def forward_image_command(entrypoint):
+
+class ImageCommand(DeployCommand):
+    """Image-only shared intent parsing; legacy deploy parsing stays untouched."""
+
+    def get_params(self, ctx):
+        # Profiles transport repositories through the Ansible JSON file, not
+        # independently overridable legacy repository flags.
+        return [param for param in click.Command.get_params(self, ctx)
+                if param.name not in {name + '_repo' for name in self._APP_NAMES}]
+
+    def parse_args(self, ctx, args):
+        if ctx.resilient_parsing or '--help' in args:
+            return click.Command.parse_args(self, ctx, args)
+        opts, _, _ = self.make_parser(ctx).parse_args(args=list(args))
+        source = opts.get('software_profile')
+        if source is None:
+            return super().parse_args(ctx, args)
+        conflicts = set(self._APP_NAMES) | {'isaaclab_private_git', 'demos'}
+        if conflicts.intersection(opts):
+            raise click.UsageError('Software profiles cannot combine with component/ref, private repository or demo overrides.')
+        if opts.get('ssh_user', 'ubuntu') != 'ubuntu':
+            raise click.UsageError('Software profiles cannot combine with another SSH user; image templates use ubuntu.')
+        from src.python.workstation_profile import resolve_profile
+        try:
+            document = resolve_profile(source)['profile']
+            report = image_profile_report({**opts, 'software_profile': document})
+        except (ValueError, OSError) as exc:
+            raise click.BadParameter(str(exc), param_hint='--software-profile') from None
+        ctx.meta['software_profile_document'] = document
+        ctx.meta['software_profile_source'] = source
+        if not opts.get('dry_run'):
+            for component, value in document.get('components', {}).items():
+                selection = value.get('source', {})
+                if value.get('enabled') and selection.get('mode') == 'git':
+                    resolved = self._check_git_selection(
+                        ctx, click.Option(('--' + component,)),
+                        selection.get('revision') or selection['ref'],
+                        selection['repository'], lambda message: None)
+                    if not selection.get('revision'):
+                        selection['ref'] = resolved
+            report = image_profile_report({'software_profile': document})
+        args = list(args)
+        for name in self._APP_NAMES:
+            args.extend(['--' + name.replace('_', '-'), report['deploy_params'][name]])
+        # Skip legacy callbacks, whose repository defaults do not describe the
+        # profile. Selected source pairs were preflighted above (except dry-run).
+        return click.Command.parse_args(self, ctx, args)
+
+
+def image_profile_report(params):
+    """Render for the fixed ubuntu image user, before any cloud effects."""
+    if params.get('software_profile') is None:
+        return None
+    from src.python.profile_adapters import render_profile
+    report = render_profile(params['software_profile'], 'packer', '/home/ubuntu')
+    if not report['render_supported']:
+        raise ValueError('Software profile has required unmapped fields; inspect software-profile render coverage.')
+    expected = {**report['deploy_params'], 'install_gr00t': report['artifact']['install_gr00t']}
+    if (any(name in params and params[name] != value for name, value in expected.items())
+            or DeployCommand.demos_callback(None, None, params.get('demos')) != 'no'
+            or params.get('isaaclab_private_git')
+            or params.get('ssh_user', 'ubuntu') != 'ubuntu'):
+        raise ValueError('Software profiles cannot combine with conflicting source, demo or image-user overrides.')
+    return report
+
+
+def forward_image_command(entrypoint, image_command=None):
     """Use the existing /app bind mount, never shell/OS argv for user arguments.
 
     __* is excluded by both .gitignore and .dockerignore, including a first-run
@@ -20,9 +87,35 @@ def forward_image_command(entrypoint):
     root = Path(entrypoint).resolve().parent
     try:
         with tempfile.TemporaryDirectory(prefix="__isaac-image-", dir=root) as directory:
+            arguments = list(sys.argv[1:])
+            if image_command is not None:
+                # Use the actual command parser, not substring matching (a
+                # password or other option value may itself resemble a flag).
+                with click.Context(image_command) as ctx:
+                    options, positional, _ = image_command.make_parser(ctx).parse_args(list(arguments))
+                    parameters = {p.name: p for p in image_command.get_params(ctx)}
+                source = options.get('software_profile')
+                if source is not None:
+                    from src.python.workstation_profile import resolve_profile
+                    document = resolve_profile(source)['profile']
+                    image_profile_report({'software_profile': document})
+                    with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8', suffix='.yaml',
+                                                     dir=directory, delete=False) as profile_stream:
+                        # JSON is a YAML subset accepted by the shared reader;
+                        # fully resolved intent needs no host-only parent paths.
+                        json.dump(document, profile_stream)
+                        options['software_profile'] = str(Path('/app') / Path(profile_stream.name).relative_to(root))
+                    arguments = list(positional)
+                    for name, value in options.items():
+                        parameter = parameters[name]
+                        if parameter.is_flag:
+                            arguments.append((parameter.opts if value else parameter.secondary_opts)[0])
+                        else:
+                            for item in (value if parameter.multiple else [value]):
+                                arguments.extend([parameter.opts[0], str(item)])
             with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", suffix=".json",
                                              dir=directory, delete=False) as stream:
-                json.dump([Path(entrypoint).name, *sys.argv[1:]], stream)
+                json.dump([Path(entrypoint).name, *arguments], stream)
                 relative = Path(stream.name).relative_to(root)
             command = shlex.join(["python3", "-m", "src.python.image_command_utils",
                                   str(Path("/app") / relative)])
@@ -72,7 +165,7 @@ def configure_image_preview(command):
         elif param.name in ("isaacsim", "isaaclab", "isaaclab_arena"):
             original = param.callback
             def callback(ctx, option, value, original=original):
-                if ctx.params.get("dry_run", False):
+                if ctx.params.get("dry_run", False) or ctx.meta.get("software_profile_document") is not None:
                     return value
                 return original(ctx, option, value)
             param.callback = callback
@@ -92,6 +185,9 @@ def preview_image_build(provider, params, version):
         "inputs": {key: params[key] for key in fields if key in params},
         "system_user_password": "<redacted>",
     }
+    report = image_profile_report(params)
+    if report is not None:
+        preview["software_profile"] = report
     click.echo(json.dumps(preview, indent=2, sort_keys=True))
     click.echo(
         "Dry-run rendering-only: Packer and Ansible not validated; "
@@ -101,7 +197,7 @@ def preview_image_build(provider, params, version):
     return preview
 
 
-def run_packer_build(template, variables, *, debug=False, env=None, force=False):
+def run_packer_build(template, variables, *, debug=False, env=None, force=False, software_profile_vars=None):
     """Keep variable values out of shell/child argv and remove the private file."""
     environment = os.environ.copy()
     environment.update(env or {})
@@ -122,12 +218,14 @@ def run_packer_build(template, variables, *, debug=False, env=None, force=False)
         return text
 
     with tempfile.TemporaryDirectory(prefix="isaac-packer-") as directory:
-        # Ansible runs on the controller, so this file must survive the entire
-        # Packer provisioning process. Never interpolate passwords into its argv.
+        # Every existing provider HCL passes this file LAST to the same Ansible
+        # playbook, so profile variables override legacy software/path defaults.
+        # It survives the entire provisioning process; no values enter argv.
         with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", suffix=".ansible.json",
                                          dir=directory, delete=False) as stream:
-            json.dump({key: variables.get(key, "") for key in
-                       ("system_user_password", "vnc_password")}, stream)
+            json.dump({**(software_profile_vars or {}),
+                       **{key: variables.get(key, "") for key in
+                          ("system_user_password", "vnc_password")}}, stream)
             variables = {**variables, "ansible_secret_vars_file": stream.name}
         with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", suffix=".pkrvars.json",
                                          dir=directory, delete=False) as stream:

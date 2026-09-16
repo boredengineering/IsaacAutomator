@@ -1,0 +1,40 @@
+---
+# Shared only by Lab and Arena source roles. Never use installer --conda here:
+# its Python choice is upstream-owned, not a selected profile pin.
+- name: Allocate private Lab conformance helper directory
+  ansible.builtin.tempfile:
+    state: directory
+    prefix: isaac-lab-conformance-
+  become_user: "{{ ansible_user }}"
+  register: profile_lab_helper_dir
+
+- name: Execute selected Lab runtime pipeline
+  become_user: "{{ ansible_user }}"
+  block:
+    - name: Stage reviewed Lab runtime helpers
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/../../isaac-installer/lib/modules/{{ item }}"
+        dest: "{{ profile_lab_helper_dir.path }}/{{ item }}"
+        mode: '0600'
+      loop:
+        - conda.sh
+        - isaaclab.sh
+
+    - name: Render selected Lab runtime pipeline
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/roles/isaaclab-source/templates/profile-lab-install.sh.j2"
+        dest: "{{ profile_lab_helper_dir.path }}/install.sh"
+        mode: '0700'
+
+    - name: Run constrained Lab dependency pipeline
+      ansible.builtin.command:
+        argv:
+          - /bin/bash
+          - "{{ profile_lab_helper_dir.path }}/install.sh"
+      async: 3600
+      poll: 15
+  always:
+    - name: Remove private Lab conformance helpers
+      ansible.builtin.file:
+        path: "{{ profile_lab_helper_dir.path }}"
+        state: absent

@@ -1,0 +1,12 @@
+STEP1_RESULT {"suite": "installer_writer_history", "tests": 6, "skipped": 0, "failures": 0, "errors": 0, "passed": true}
+test_history_origin_never_grants_content_reads (step1_installer_writer_history.WriterHistoryTests) ... ok
+test_history_union_across_empty_omission_decisions_and_repeated_continuation (step1_installer_writer_history.WriterHistoryTests) ... ok
+test_legacy_supervisor_fault_controls_refuse_before_writer_and_valid_faults_remain_partial (step1_installer_writer_history.WriterHistoryTests) ... ok
+test_origin_contract_malformed_bounds_and_missing_roots_fail_without_artifacts (step1_installer_writer_history.WriterHistoryTests) ... ok
+test_singleton_path_duplicates_and_equals_do_not_choose_first_authority (step1_installer_writer_history.WriterHistoryTests) ... ok
+test_source_free_history_is_known_and_legacy_missing_origin_is_refused (step1_installer_writer_history.WriterHistoryTests) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 15.464s
+
+OK

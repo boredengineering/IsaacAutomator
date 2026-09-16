@@ -1,0 +1,327 @@
+{
+  "adapter": "ansible",
+  "apply_supported": false,
+  "artifact": {
+    "conda_env_name": "isaaclab",
+    "conda_python_version": "3.12",
+    "gr00t_git_checkpoint": "no",
+    "gr00t_service_enabled": false,
+    "install_gr00t": false,
+    "install_lerobot": false,
+    "isaaclab_arena_git_checkpoint": "no",
+    "isaaclab_dir": "/tmp/isaac-step1-demo-j0pu_ozq/inputs/Documents/GitHub/BoredEngineer/IsaacLab",
+    "isaaclab_git_checkpoint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "isaaclab_git_repo": "https://github.com/example/IsaacLab.git",
+    "isaacsim_archive_sha256": "613e30d9727baa5615e087148ce67c90d9e5ffa376f7cbb4f01580baeb1c8d13",
+    "isaacsim_archive_url": "https://example.org/synthetic-isaac-sim.zip",
+    "isaacsim_git_checkpoint": "no",
+    "isaacsim_install_dir": "/tmp/isaac-step1-demo-j0pu_ozq/target-home/IsaacSim",
+    "isaacsim_version": "6.0.1",
+    "lerobot_git_checkpoint": "no",
+    "profile_isaacsim_archive_enabled": true,
+    "profile_lab_packages": [
+      "synthetic-robot-helper==1.2.3"
+    ],
+    "public_git_profile": true,
+    "workspace_dir": "/tmp/isaac-step1-demo-j0pu_ozq/inputs/Documents/GitHub/BoredEngineer"
+  },
+  "blockers": [],
+  "coverage": {
+    "components.arena.enabled": {
+      "consumer": "isaaclab_arena_git_checkpoint",
+      "required": true,
+      "status": "mapped"
+    },
+    "components.gr00t.enabled": {
+      "consumer": "install_gr00t",
+      "required": true,
+      "status": "mapped"
+    },
+    "components.lab.enabled": {
+      "consumer": "isaaclab_git_checkpoint",
+      "required": true,
+      "status": "mapped"
+    },
+    "components.lab.execution": {
+      "consumer": "native installer modules",
+      "required": true,
+      "status": "mapped"
+    },
+    "components.lab.runtime": {
+      "consumer": "component-specific environment binding",
+      "required": true,
+      "status": "mapped"
+    },
+    "components.lab.source.mode": {
+      "consumer": "isaaclab_git_checkpoint",
+      "required": true,
+      "status": "mapped"
+    },
+    "components.lab.source.ref": {
+      "consumer": "isaaclab_git_checkpoint",
+      "required": true,
+      "status": "superseded"
+    },
+    "components.lab.source.repository": {
+      "consumer": "isaaclab_git_repo",
+      "required": true,
+      "status": "mapped"
+    },
+    "components.lab.source.revision": {
+      "consumer": "isaaclab_git_checkpoint",
+      "required": true,
+      "status": "mapped"
+    },
+    "components.lerobot.enabled": {
+      "consumer": "install_lerobot",
+      "required": true,
+      "status": "mapped"
+    },
+    "components.sim.enabled": {
+      "consumer": "profile_isaacsim_archive_enabled",
+      "required": true,
+      "status": "mapped"
+    },
+    "components.sim.execution": {
+      "consumer": "native installer modules",
+      "required": true,
+      "status": "mapped"
+    },
+    "components.sim.runtime": {
+      "consumer": "component-specific environment binding",
+      "required": true,
+      "status": "mapped"
+    },
+    "components.sim.source.mode": {
+      "consumer": "isaacsim-source standalone.yml (no Git build)",
+      "required": true,
+      "status": "mapped"
+    },
+    "components.sim.source.sha256": {
+      "consumer": "isaacsim_archive_sha256",
+      "reason": "Explicit archive checksum required; no checksum is fabricated or fetched",
+      "required": true,
+      "status": "mapped"
+    },
+    "components.sim.source.url": {
+      "consumer": "isaacsim_archive_url",
+      "reason": "Explicit reviewed URL only; no URL constructed or fetched",
+      "required": true,
+      "status": "mapped"
+    },
+    "components.sim.source.version": {
+      "consumer": "isaacsim_version",
+      "reason": "Standalone role currently supports 6.0.1; archive contents and runtime remain unverified",
+      "required": true,
+      "status": "mapped"
+    },
+    "custom_dependencies.0.environment": {
+      "consumer": "profile_lab_packages",
+      "required": false,
+      "status": "mapped"
+    },
+    "custom_dependencies.0.id": {
+      "reason": "Review declaration retained in coverage",
+      "required": false,
+      "status": "metadata"
+    },
+    "custom_dependencies.0.location": {
+      "consumer": "profile_lab_packages",
+      "required": false,
+      "status": "mapped"
+    },
+    "custom_dependencies.0.name": {
+      "consumer": "profile_lab_packages",
+      "required": false,
+      "status": "mapped"
+    },
+    "custom_dependencies.0.placement": {
+      "consumer": "profile_lab_packages",
+      "required": false,
+      "status": "mapped"
+    },
+    "custom_dependencies.0.purpose": {
+      "reason": "Review declaration retained in coverage",
+      "required": false,
+      "status": "metadata"
+    },
+    "custom_dependencies.0.required": {
+      "reason": "Review declaration retained in coverage",
+      "required": false,
+      "status": "metadata"
+    },
+    "custom_dependencies.0.source": {
+      "consumer": "profile_lab_packages",
+      "required": false,
+      "status": "mapped"
+    },
+    "custom_dependencies.0.support": {
+      "reason": "Review declaration retained in coverage",
+      "required": false,
+      "status": "metadata"
+    },
+    "custom_dependencies.0.version": {
+      "consumer": "profile_lab_packages",
+      "required": false,
+      "status": "mapped"
+    },
+    "defaults": {
+      "reason": "Rendering metadata, not deployment authorization",
+      "required": true,
+      "status": "metadata"
+    },
+    "draft": {
+      "reason": "Rendering metadata, not deployment authorization",
+      "required": true,
+      "status": "metadata"
+    },
+    "environments.0.id": {
+      "reason": "Declaration retained for review; no matching consumer",
+      "required": false,
+      "status": "unsupported"
+    },
+    "environments.0.location": {
+      "reason": "Declaration retained for review; no matching consumer",
+      "required": false,
+      "status": "unsupported"
+    },
+    "environments.0.manager": {
+      "reason": "Declaration retained for review; no matching consumer",
+      "required": false,
+      "status": "unsupported"
+    },
+    "environments.0.name": {
+      "reason": "Declaration retained for review; no matching consumer",
+      "required": false,
+      "status": "unsupported"
+    },
+    "environments.0.placement": {
+      "reason": "Declaration retained for review; no matching consumer",
+      "required": false,
+      "status": "unsupported"
+    },
+    "environments.0.python": {
+      "reason": "Declaration retained for review; no matching consumer",
+      "required": false,
+      "status": "unsupported"
+    },
+    "environments.0.required": {
+      "reason": "Declaration retained for review; no matching consumer",
+      "required": false,
+      "status": "unsupported"
+    },
+    "environments.0.support": {
+      "reason": "Declaration retained for review; no matching consumer",
+      "required": false,
+      "status": "unsupported"
+    },
+    "kind": {
+      "reason": "Rendering metadata, not deployment authorization",
+      "required": true,
+      "status": "metadata"
+    },
+    "name": {
+      "reason": "Rendering metadata, not deployment authorization",
+      "required": true,
+      "status": "metadata"
+    },
+    "runtimes.kit.environment": {
+      "consumer": "fixed native environment identity",
+      "required": true,
+      "status": "mapped"
+    },
+    "runtimes.kit.manager": {
+      "consumer": "fixed native environment manager",
+      "required": true,
+      "status": "mapped"
+    },
+    "runtimes.lab.environment": {
+      "consumer": "conda_env_name",
+      "required": true,
+      "status": "mapped"
+    },
+    "runtimes.lab.manager": {
+      "consumer": "conda role",
+      "required": true,
+      "status": "mapped"
+    },
+    "runtimes.lab.python": {
+      "consumer": "conda_python_version",
+      "required": true,
+      "status": "mapped"
+    },
+    "schema_version": {
+      "reason": "Rendering metadata, not deployment authorization",
+      "required": true,
+      "status": "metadata"
+    },
+    "target": {
+      "reason": "Rendering metadata, not deployment authorization",
+      "required": true,
+      "status": "metadata"
+    },
+    "workspace.layout": {
+      "consumer": "component directory variables",
+      "reason": "Pure target path translation; existing paths and collisions not inspected",
+      "required": true,
+      "status": "mapped"
+    },
+    "workspace.name": {
+      "consumer": "component directory variables",
+      "reason": "Pure target path translation; existing paths and collisions not inspected",
+      "required": true,
+      "status": "mapped"
+    },
+    "workspace.root": {
+      "consumer": "component directory variables",
+      "reason": "Pure target path translation; existing paths and collisions not inspected",
+      "required": true,
+      "status": "mapped"
+    }
+  },
+  "deploy_params": {
+    "isaaclab": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "isaaclab_arena": "no",
+    "isaaclab_repo": "https://github.com/example/IsaacLab.git",
+    "isaacsim": "no"
+  },
+  "evidence_scope": "profile-only",
+  "execution_authorized": false,
+  "references_verified": false,
+  "render_supported": true,
+  "runtime_verified": false,
+  "warnings": [
+    {
+      "field": "environments.0.id",
+      "reason": "Declaration retained for review; no matching consumer"
+    },
+    {
+      "field": "environments.0.location",
+      "reason": "Declaration retained for review; no matching consumer"
+    },
+    {
+      "field": "environments.0.manager",
+      "reason": "Declaration retained for review; no matching consumer"
+    },
+    {
+      "field": "environments.0.name",
+      "reason": "Declaration retained for review; no matching consumer"
+    },
+    {
+      "field": "environments.0.placement",
+      "reason": "Declaration retained for review; no matching consumer"
+    },
+    {
+      "field": "environments.0.python",
+      "reason": "Declaration retained for review; no matching consumer"
+    },
+    {
+      "field": "environments.0.required",
+      "reason": "Declaration retained for review; no matching consumer"
+    },
+    {
+      "field": "environments.0.support",
+      "reason": "Declaration retained for review; no matching consumer"
+    }
+  ]
+}

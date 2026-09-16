@@ -1,0 +1,451 @@
+STEP1_RESULT {"suite": "installer_workspace_contract", "tests": 30, "skipped": 0, "failures": 24, "errors": 9, "passed": false}
+test_ancestor_traversal_never_requests_directory_read_access (step1_installer_workspace_contract.PureWorkspaceContract) ... FAIL
+test_default_root_uses_only_supplied_home_entries (step1_installer_workspace_contract.PureWorkspaceContract) ... ok
+test_explicit_home_and_typed_settings_refuse_malformed_values (step1_installer_workspace_contract.PureWorkspaceContract) ... ok
+test_legacy_owner_priority_case_reuse_and_ambiguity (step1_installer_workspace_contract.PureWorkspaceContract) ... ok
+test_named_and_override_are_pure_exact_paths (step1_installer_workspace_contract.PureWorkspaceContract) ... ok
+test_selected_leaf_case_collisions_refuse_in_every_layout (step1_installer_workspace_contract.PureWorkspaceContract) ... ok
+test_supplied_entries_validate_bounds_components_and_named_collisions (step1_installer_workspace_contract.PureWorkspaceContract) ... ok
+test_case_only_workspace_or_repo_collisions_refuse_even_with_exact_match (step1_installer_workspace_contract.InstallerWorkspaceContract) ... test_cleared_legacy_owner_does_not_fall_back_to_profile_owner (step1_installer_workspace_contract.InstallerWorkspaceContract) ... FAIL
+test_collision_inspection_has_a_bounded_entry_budget (step1_installer_workspace_contract.InstallerWorkspaceContract) ... FAIL
+test_default_documents_resolution_never_invokes_chown (step1_installer_workspace_contract.InstallerWorkspaceContract) ... FAIL
+test_disabled_desktop_registration_never_invokes_desktop_or_sudo (step1_installer_workspace_contract.InstallerWorkspaceContract) ... ok
+test_exact_existing_named_selection_is_read_only_including_git_file (step1_installer_workspace_contract.InstallerWorkspaceContract) ... FAIL
+test_existing_named_destinations_refuse_before_any_setup_action (step1_installer_workspace_contract.InstallerWorkspaceContract) ... ok
+test_explicit_override_is_validated_without_requiring_default_root (step1_installer_workspace_contract.InstallerWorkspaceContract) ... FAIL
+test_inaccessible_directory_is_not_reported_as_missing_or_usable (step1_installer_workspace_contract.InstallerWorkspaceContract) ... FAIL
+test_invalid_workspace_names_and_combinations_fail_closed (step1_installer_workspace_contract.InstallerWorkspaceContract) ... ok
+test_legacy_discovery_ambiguity_refuses_without_destination_fallback (step1_installer_workspace_contract.InstallerWorkspaceContract) ... FAIL
+test_legacy_discovery_unique_case_and_space_parent_remains_read_only (step1_installer_workspace_contract.InstallerWorkspaceContract) ... FAIL
+test_legacy_layout_owner_resolution_remains_compatible (step1_installer_workspace_contract.InstallerWorkspaceContract) ... test_legacy_owner_ambiguity_refuses_instead_of_find_first (step1_installer_workspace_contract.InstallerWorkspaceContract) ... FAIL
+test_named_active_selection_never_uses_unrelated_discovery (step1_installer_workspace_contract.InstallerWorkspaceContract) ... FAIL
+test_named_destination_preserves_explicit_spelling_not_remote_owner (step1_installer_workspace_contract.InstallerWorkspaceContract) ... FAIL
+test_repository_segment_cannot_escape_named_group (step1_installer_workspace_contract.InstallerWorkspaceContract) ... ok
+test_root_resolution_does_not_create_missing_directories (step1_installer_workspace_contract.InstallerWorkspaceContract) ... FAIL
+test_roots_expand_selected_home_and_reject_unsafe_paths (step1_installer_workspace_contract.InstallerWorkspaceContract) ... FAIL
+test_runtime_component_inspection_uses_nofollow_handles_not_path_lstat (step1_installer_workspace_contract.InstallerWorkspaceContract) ... ERROR
+test_runtime_selected_leaf_case_collision_is_bounded_in_every_layout (step1_installer_workspace_contract.InstallerWorkspaceContract) ... test_selected_path_components_reject_files_and_symlinks (step1_installer_workspace_contract.InstallerWorkspaceContract) ... ok
+test_shell_delegates_to_shared_pure_api (step1_installer_workspace_contract.InstallerWorkspaceContract) ... FAIL
+
+======================================================================
+ERROR: test_runtime_component_inspection_uses_nofollow_handles_not_path_lstat (step1_installer_workspace_contract.InstallerWorkspaceContract)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py", line 322, in test_runtime_component_inspection_uses_nofollow_handles_not_path_lstat
+    self.assertEqual(api.resolve_runtime(str(self.home), 'IsaacLab', '', '',
+  File "/workspaces/IsaacAutomator/isaac-installer/lib/core/workspace_paths.py", line 253, in resolve_runtime
+    entries[result['root']] = bounded_directory_entries(result['root'])
+  File "/workspaces/IsaacAutomator/isaac-installer/lib/core/workspace_paths.py", line 227, in bounded_directory_entries
+    fd = open_directory_nofollow(path)
+  File "/workspaces/IsaacAutomator/isaac-installer/lib/core/workspace_paths.py", line 51, in open_directory_nofollow
+    fd = os.open('/', os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+PermissionError: [Errno 13] Permission denied: '/'
+
+======================================================================
+ERROR: test_runtime_selected_leaf_case_collision_is_bounded_in_every_layout (step1_installer_workspace_contract.InstallerWorkspaceContract) (layout='flat', exact=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py", line 343, in test_runtime_selected_leaf_case_collision_is_bounded_in_every_layout
+    api.resolve_runtime(str(self.home), 'IsaacLab', '', '', str(root), layout,
+  File "/workspaces/IsaacAutomator/isaac-installer/lib/core/workspace_paths.py", line 253, in resolve_runtime
+    entries[result['root']] = bounded_directory_entries(result['root'])
+  File "/usr/lib/python3.10/unittest/mock.py", line 1114, in __call__
+    return self._mock_call(*args, **kwargs)
+  File "/usr/lib/python3.10/unittest/mock.py", line 1118, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+  File "/usr/lib/python3.10/unittest/mock.py", line 1188, in _execute_mock_call
+    return self._mock_wraps(*args, **kwargs)
+  File "/workspaces/IsaacAutomator/isaac-installer/lib/core/workspace_paths.py", line 227, in bounded_directory_entries
+    fd = open_directory_nofollow(path)
+  File "/workspaces/IsaacAutomator/isaac-installer/lib/core/workspace_paths.py", line 51, in open_directory_nofollow
+    fd = os.open('/', os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+PermissionError: [Errno 13] Permission denied: '/'
+
+======================================================================
+ERROR: test_runtime_selected_leaf_case_collision_is_bounded_in_every_layout (step1_installer_workspace_contract.InstallerWorkspaceContract) (layout='flat', exact=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py", line 343, in test_runtime_selected_leaf_case_collision_is_bounded_in_every_layout
+    api.resolve_runtime(str(self.home), 'IsaacLab', '', '', str(root), layout,
+  File "/workspaces/IsaacAutomator/isaac-installer/lib/core/workspace_paths.py", line 253, in resolve_runtime
+    entries[result['root']] = bounded_directory_entries(result['root'])
+  File "/usr/lib/python3.10/unittest/mock.py", line 1114, in __call__
+    return self._mock_call(*args, **kwargs)
+  File "/usr/lib/python3.10/unittest/mock.py", line 1118, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+  File "/usr/lib/python3.10/unittest/mock.py", line 1188, in _execute_mock_call
+    return self._mock_wraps(*args, **kwargs)
+  File "/workspaces/IsaacAutomator/isaac-installer/lib/core/workspace_paths.py", line 227, in bounded_directory_entries
+    fd = open_directory_nofollow(path)
+  File "/workspaces/IsaacAutomator/isaac-installer/lib/core/workspace_paths.py", line 51, in open_directory_nofollow
+    fd = os.open('/', os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+PermissionError: [Errno 13] Permission denied: '/'
+
+======================================================================
+ERROR: test_runtime_selected_leaf_case_collision_is_bounded_in_every_layout (step1_installer_workspace_contract.InstallerWorkspaceContract) (layout='auto', exact=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py", line 343, in test_runtime_selected_leaf_case_collision_is_bounded_in_every_layout
+    api.resolve_runtime(str(self.home), 'IsaacLab', '', '', str(root), layout,
+  File "/workspaces/IsaacAutomator/isaac-installer/lib/core/workspace_paths.py", line 253, in resolve_runtime
+    entries[result['root']] = bounded_directory_entries(result['root'])
+  File "/usr/lib/python3.10/unittest/mock.py", line 1114, in __call__
+    return self._mock_call(*args, **kwargs)
+  File "/usr/lib/python3.10/unittest/mock.py", line 1118, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+  File "/usr/lib/python3.10/unittest/mock.py", line 1188, in _execute_mock_call
+    return self._mock_wraps(*args, **kwargs)
+  File "/workspaces/IsaacAutomator/isaac-installer/lib/core/workspace_paths.py", line 227, in bounded_directory_entries
+    fd = open_directory_nofollow(path)
+  File "/workspaces/IsaacAutomator/isaac-installer/lib/core/workspace_paths.py", line 51, in open_directory_nofollow
+    fd = os.open('/', os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+PermissionError: [Errno 13] Permission denied: '/'
+
+======================================================================
+ERROR: test_runtime_selected_leaf_case_collision_is_bounded_in_every_layout (step1_installer_workspace_contract.InstallerWorkspaceContract) (layout='auto', exact=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py", line 343, in test_runtime_selected_leaf_case_collision_is_bounded_in_every_layout
+    api.resolve_runtime(str(self.home), 'IsaacLab', '', '', str(root), layout,
+  File "/workspaces/IsaacAutomator/isaac-installer/lib/core/workspace_paths.py", line 253, in resolve_runtime
+    entries[result['root']] = bounded_directory_entries(result['root'])
+  File "/usr/lib/python3.10/unittest/mock.py", line 1114, in __call__
+    return self._mock_call(*args, **kwargs)
+  File "/usr/lib/python3.10/unittest/mock.py", line 1118, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+  File "/usr/lib/python3.10/unittest/mock.py", line 1188, in _execute_mock_call
+    return self._mock_wraps(*args, **kwargs)
+  File "/workspaces/IsaacAutomator/isaac-installer/lib/core/workspace_paths.py", line 227, in bounded_directory_entries
+    fd = open_directory_nofollow(path)
+  File "/workspaces/IsaacAutomator/isaac-installer/lib/core/workspace_paths.py", line 51, in open_directory_nofollow
+    fd = os.open('/', os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+PermissionError: [Errno 13] Permission denied: '/'
+
+======================================================================
+ERROR: test_runtime_selected_leaf_case_collision_is_bounded_in_every_layout (step1_installer_workspace_contract.InstallerWorkspaceContract) (layout='org', exact=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py", line 343, in test_runtime_selected_leaf_case_collision_is_bounded_in_every_layout
+    api.resolve_runtime(str(self.home), 'IsaacLab', '', '', str(root), layout,
+  File "/workspaces/IsaacAutomator/isaac-installer/lib/core/workspace_paths.py", line 253, in resolve_runtime
+    entries[result['root']] = bounded_directory_entries(result['root'])
+  File "/usr/lib/python3.10/unittest/mock.py", line 1114, in __call__
+    return self._mock_call(*args, **kwargs)
+  File "/usr/lib/python3.10/unittest/mock.py", line 1118, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+  File "/usr/lib/python3.10/unittest/mock.py", line 1188, in _execute_mock_call
+    return self._mock_wraps(*args, **kwargs)
+  File "/workspaces/IsaacAutomator/isaac-installer/lib/core/workspace_paths.py", line 227, in bounded_directory_entries
+    fd = open_directory_nofollow(path)
+  File "/workspaces/IsaacAutomator/isaac-installer/lib/core/workspace_paths.py", line 51, in open_directory_nofollow
+    fd = os.open('/', os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+PermissionError: [Errno 13] Permission denied: '/'
+
+======================================================================
+ERROR: test_runtime_selected_leaf_case_collision_is_bounded_in_every_layout (step1_installer_workspace_contract.InstallerWorkspaceContract) (layout='org', exact=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py", line 343, in test_runtime_selected_leaf_case_collision_is_bounded_in_every_layout
+    api.resolve_runtime(str(self.home), 'IsaacLab', '', '', str(root), layout,
+  File "/workspaces/IsaacAutomator/isaac-installer/lib/core/workspace_paths.py", line 253, in resolve_runtime
+    entries[result['root']] = bounded_directory_entries(result['root'])
+  File "/usr/lib/python3.10/unittest/mock.py", line 1114, in __call__
+    return self._mock_call(*args, **kwargs)
+  File "/usr/lib/python3.10/unittest/mock.py", line 1118, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+  File "/usr/lib/python3.10/unittest/mock.py", line 1188, in _execute_mock_call
+    return self._mock_wraps(*args, **kwargs)
+  File "/workspaces/IsaacAutomator/isaac-installer/lib/core/workspace_paths.py", line 227, in bounded_directory_entries
+    fd = open_directory_nofollow(path)
+  File "/workspaces/IsaacAutomator/isaac-installer/lib/core/workspace_paths.py", line 51, in open_directory_nofollow
+    fd = os.open('/', os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+PermissionError: [Errno 13] Permission denied: '/'
+
+======================================================================
+ERROR: test_runtime_selected_leaf_case_collision_is_bounded_in_every_layout (step1_installer_workspace_contract.InstallerWorkspaceContract) (layout='named', exact=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py", line 343, in test_runtime_selected_leaf_case_collision_is_bounded_in_every_layout
+    api.resolve_runtime(str(self.home), 'IsaacLab', '', '', str(root), layout,
+  File "/workspaces/IsaacAutomator/isaac-installer/lib/core/workspace_paths.py", line 253, in resolve_runtime
+    entries[result['root']] = bounded_directory_entries(result['root'])
+  File "/usr/lib/python3.10/unittest/mock.py", line 1114, in __call__
+    return self._mock_call(*args, **kwargs)
+  File "/usr/lib/python3.10/unittest/mock.py", line 1118, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+  File "/usr/lib/python3.10/unittest/mock.py", line 1188, in _execute_mock_call
+    return self._mock_wraps(*args, **kwargs)
+  File "/workspaces/IsaacAutomator/isaac-installer/lib/core/workspace_paths.py", line 227, in bounded_directory_entries
+    fd = open_directory_nofollow(path)
+  File "/workspaces/IsaacAutomator/isaac-installer/lib/core/workspace_paths.py", line 51, in open_directory_nofollow
+    fd = os.open('/', os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+PermissionError: [Errno 13] Permission denied: '/'
+
+======================================================================
+ERROR: test_runtime_selected_leaf_case_collision_is_bounded_in_every_layout (step1_installer_workspace_contract.InstallerWorkspaceContract) (layout='named', exact=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py", line 343, in test_runtime_selected_leaf_case_collision_is_bounded_in_every_layout
+    api.resolve_runtime(str(self.home), 'IsaacLab', '', '', str(root), layout,
+  File "/workspaces/IsaacAutomator/isaac-installer/lib/core/workspace_paths.py", line 253, in resolve_runtime
+    entries[result['root']] = bounded_directory_entries(result['root'])
+  File "/usr/lib/python3.10/unittest/mock.py", line 1114, in __call__
+    return self._mock_call(*args, **kwargs)
+  File "/usr/lib/python3.10/unittest/mock.py", line 1118, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+  File "/usr/lib/python3.10/unittest/mock.py", line 1188, in _execute_mock_call
+    return self._mock_wraps(*args, **kwargs)
+  File "/workspaces/IsaacAutomator/isaac-installer/lib/core/workspace_paths.py", line 227, in bounded_directory_entries
+    fd = open_directory_nofollow(path)
+  File "/workspaces/IsaacAutomator/isaac-installer/lib/core/workspace_paths.py", line 51, in open_directory_nofollow
+    fd = os.open('/', os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+PermissionError: [Errno 13] Permission denied: '/'
+
+======================================================================
+FAIL: test_ancestor_traversal_never_requests_directory_read_access (step1_installer_workspace_contract.PureWorkspaceContract)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py", line 32, in test_ancestor_traversal_never_requests_directory_read_access
+    fd = api.open_directory_nofollow(target)
+  File "/workspaces/IsaacAutomator/isaac-installer/lib/core/workspace_paths.py", line 51, in open_directory_nofollow
+    fd = os.open('/', os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+  File "/usr/lib/python3.10/unittest/mock.py", line 1114, in __call__
+    return self._mock_call(*args, **kwargs)
+  File "/usr/lib/python3.10/unittest/mock.py", line 1118, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+  File "/usr/lib/python3.10/unittest/mock.py", line 1179, in _execute_mock_call
+    result = effect(*args, **kwargs)
+  File "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py", line 26, in selected_read_only
+    self.assertTrue(flags & os.O_PATH, 'ancestor traversal requested read access')
+AssertionError: 0 is not true : ancestor traversal requested read access
+
+======================================================================
+FAIL: test_case_only_workspace_or_repo_collisions_refuse_even_with_exact_match (step1_installer_workspace_contract.InstallerWorkspaceContract) (level='workspace', exact=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py", line 207, in test_case_only_workspace_or_repo_collisions_refuse_even_with_exact_match
+    self.assertIn("collision", result.stderr.lower())
+AssertionError: 'collision' not found in "invalid workspace: [errno 13] permission denied: '/'\n"
+
+======================================================================
+FAIL: test_case_only_workspace_or_repo_collisions_refuse_even_with_exact_match (step1_installer_workspace_contract.InstallerWorkspaceContract) (level='workspace', exact=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py", line 207, in test_case_only_workspace_or_repo_collisions_refuse_even_with_exact_match
+    self.assertIn("collision", result.stderr.lower())
+AssertionError: 'collision' not found in "invalid workspace: [errno 13] permission denied: '/'\n"
+
+======================================================================
+FAIL: test_case_only_workspace_or_repo_collisions_refuse_even_with_exact_match (step1_installer_workspace_contract.InstallerWorkspaceContract) (level='repo', exact=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py", line 207, in test_case_only_workspace_or_repo_collisions_refuse_even_with_exact_match
+    self.assertIn("collision", result.stderr.lower())
+AssertionError: 'collision' not found in "invalid workspace: [errno 13] permission denied: '/'\n"
+
+======================================================================
+FAIL: test_case_only_workspace_or_repo_collisions_refuse_even_with_exact_match (step1_installer_workspace_contract.InstallerWorkspaceContract) (level='repo', exact=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py", line 207, in test_case_only_workspace_or_repo_collisions_refuse_even_with_exact_match
+    self.assertIn("collision", result.stderr.lower())
+AssertionError: 'collision' not found in "invalid workspace: [errno 13] permission denied: '/'\n"
+
+======================================================================
+FAIL: test_cleared_legacy_owner_does_not_fall_back_to_profile_owner (step1_installer_workspace_contract.InstallerWorkspaceContract)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py", line 438, in test_cleared_legacy_owner_does_not_fall_back_to_profile_owner
+    self.assert_path(self.resolve(slug="isaac-sim/IsaacLab", WORKSPACE_LAYOUT="auto",
+  File "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py", line 166, in assert_path
+    self.assertEqual(result.returncode, 0, result.stderr)
+AssertionError: 1 != 0 : Invalid workspace: [Errno 13] Permission denied: '/'
+
+
+======================================================================
+FAIL: test_collision_inspection_has_a_bounded_entry_budget (step1_installer_workspace_contract.InstallerWorkspaceContract)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py", line 435, in test_collision_inspection_has_a_bounded_entry_budget
+    self.assertIn("limit", result.stderr.lower())
+AssertionError: 'limit' not found in "invalid workspace: [errno 13] permission denied: '/'\n"
+
+======================================================================
+FAIL: test_default_documents_resolution_never_invokes_chown (step1_installer_workspace_contract.InstallerWorkspaceContract)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py", line 446, in test_default_documents_resolution_never_invokes_chown
+    self.assert_path(result, self.workspace)
+  File "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py", line 166, in assert_path
+    self.assertEqual(result.returncode, 0, result.stderr)
+AssertionError: 1 != 0 : Invalid workspace: [Errno 13] Permission denied: '/'
+
+
+======================================================================
+FAIL: test_exact_existing_named_selection_is_read_only_including_git_file (step1_installer_workspace_contract.InstallerWorkspaceContract)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py", line 313, in test_exact_existing_named_selection_is_read_only_including_git_file
+    self.assert_path(self.resolve(function, WORKSPACE_DIR=str(self.workspace / marker),
+  File "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py", line 166, in assert_path
+    self.assertEqual(result.returncode, 0, result.stderr)
+AssertionError: 1 != 0 : Invalid workspace: [Errno 13] Permission denied: '/'
+
+
+======================================================================
+FAIL: test_explicit_override_is_validated_without_requiring_default_root (step1_installer_workspace_contract.InstallerWorkspaceContract)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py", line 257, in test_explicit_override_is_validated_without_requiring_default_root
+    self.assert_path(self.resolve(explicit="~/override dir", WORKSPACE_DIR=str(invalid_root),
+  File "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py", line 166, in assert_path
+    self.assertEqual(result.returncode, 0, result.stderr)
+AssertionError: 1 != 0 : Invalid workspace: [Errno 13] Permission denied: '/'
+
+
+======================================================================
+FAIL: test_inaccessible_directory_is_not_reported_as_missing_or_usable (step1_installer_workspace_contract.InstallerWorkspaceContract)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py", line 411, in test_inaccessible_directory_is_not_reported_as_missing_or_usable
+    self.assertIn("inaccessible", result.stderr.lower())
+AssertionError: 'inaccessible' not found in "invalid workspace: [errno 13] permission denied: '/'\n"
+
+======================================================================
+FAIL: test_legacy_discovery_ambiguity_refuses_without_destination_fallback (step1_installer_workspace_contract.InstallerWorkspaceContract)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py", line 359, in test_legacy_discovery_ambiguity_refuses_without_destination_fallback
+    self.assertIn(reason, result.stderr)
+AssertionError: 'ambigu' not found in "Invalid workspace: [Errno 13] Permission denied: '/'\n"
+
+======================================================================
+FAIL: test_legacy_discovery_unique_case_and_space_parent_remains_read_only (step1_installer_workspace_contract.InstallerWorkspaceContract)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py", line 366, in test_legacy_discovery_unique_case_and_space_parent_remains_read_only
+    self.assert_path(self.resolve('find_existing_repo'), target)
+  File "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py", line 166, in assert_path
+    self.assertEqual(result.returncode, 0, result.stderr)
+AssertionError: 2 != 0 : Invalid workspace: [Errno 13] Permission denied: '/'
+
+
+======================================================================
+FAIL: test_legacy_layout_owner_resolution_remains_compatible (step1_installer_workspace_contract.InstallerWorkspaceContract) (layout='auto', owner='', slug='fork/repo')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py", line 401, in test_legacy_layout_owner_resolution_remains_compatible
+    self.assert_path(self.resolve(slug=slug, WORKSPACE_LAYOUT=layout,
+  File "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py", line 166, in assert_path
+    self.assertEqual(result.returncode, 0, result.stderr)
+AssertionError: 1 != 0 : Invalid workspace: [Errno 13] Permission denied: '/'
+
+
+======================================================================
+FAIL: test_legacy_layout_owner_resolution_remains_compatible (step1_installer_workspace_contract.InstallerWorkspaceContract) (layout='org', owner='Configured', slug='fork/repo')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py", line 401, in test_legacy_layout_owner_resolution_remains_compatible
+    self.assert_path(self.resolve(slug=slug, WORKSPACE_LAYOUT=layout,
+  File "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py", line 166, in assert_path
+    self.assertEqual(result.returncode, 0, result.stderr)
+AssertionError: 1 != 0 : Invalid workspace: [Errno 13] Permission denied: '/'
+
+
+======================================================================
+FAIL: test_legacy_layout_owner_resolution_remains_compatible (step1_installer_workspace_contract.InstallerWorkspaceContract) (layout='auto', owner='existingowner', slug='fork/repo')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py", line 401, in test_legacy_layout_owner_resolution_remains_compatible
+    self.assert_path(self.resolve(slug=slug, WORKSPACE_LAYOUT=layout,
+  File "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py", line 166, in assert_path
+    self.assertEqual(result.returncode, 0, result.stderr)
+AssertionError: 1 != 0 : Invalid workspace: [Errno 13] Permission denied: '/'
+
+
+======================================================================
+FAIL: test_legacy_layout_owner_resolution_remains_compatible (step1_installer_workspace_contract.InstallerWorkspaceContract) (layout='auto', owner='', slug='isaac-sim/IsaacLab')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py", line 401, in test_legacy_layout_owner_resolution_remains_compatible
+    self.assert_path(self.resolve(slug=slug, WORKSPACE_LAYOUT=layout,
+  File "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py", line 166, in assert_path
+    self.assertEqual(result.returncode, 0, result.stderr)
+AssertionError: 1 != 0 : Invalid workspace: [Errno 13] Permission denied: '/'
+
+
+======================================================================
+FAIL: test_legacy_layout_owner_resolution_remains_compatible (step1_installer_workspace_contract.InstallerWorkspaceContract) (layout='flat', owner='Configured', slug='fork/repo')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py", line 401, in test_legacy_layout_owner_resolution_remains_compatible
+    self.assert_path(self.resolve(slug=slug, WORKSPACE_LAYOUT=layout,
+  File "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py", line 166, in assert_path
+    self.assertEqual(result.returncode, 0, result.stderr)
+AssertionError: 1 != 0 : Invalid workspace: [Errno 13] Permission denied: '/'
+
+
+======================================================================
+FAIL: test_legacy_owner_ambiguity_refuses_instead_of_find_first (step1_installer_workspace_contract.InstallerWorkspaceContract)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py", line 375, in test_legacy_owner_ambiguity_refuses_instead_of_find_first
+    self.assertIn('ambigu', result.stderr)
+AssertionError: 'ambigu' not found in "Invalid workspace: [Errno 13] Permission denied: '/'\n"
+
+======================================================================
+FAIL: test_named_active_selection_never_uses_unrelated_discovery (step1_installer_workspace_contract.InstallerWorkspaceContract)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py", line 248, in test_named_active_selection_never_uses_unrelated_discovery
+    self.assert_path(self.resolve("resolve_active_repo_dir", WORKSPACE_LAYOUT="named",
+  File "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py", line 166, in assert_path
+    self.assertEqual(result.returncode, 0, result.stderr)
+AssertionError: 1 != 0 : Invalid workspace: [Errno 13] Permission denied: '/'
+
+
+======================================================================
+FAIL: test_named_destination_preserves_explicit_spelling_not_remote_owner (step1_installer_workspace_contract.InstallerWorkspaceContract)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py", line 172, in test_named_destination_preserves_explicit_spelling_not_remote_owner
+    self.assert_path(self.resolve(WORKSPACE_LAYOUT="named", WORKSPACE_NAME="Bored Engineer"),
+  File "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py", line 166, in assert_path
+    self.assertEqual(result.returncode, 0, result.stderr)
+AssertionError: 1 != 0 : Invalid workspace: [Errno 13] Permission denied: '/'
+
+
+======================================================================
+FAIL: test_root_resolution_does_not_create_missing_directories (step1_installer_workspace_contract.InstallerWorkspaceContract)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py", line 450, in test_root_resolution_does_not_create_missing_directories
+    self.assert_path(self.resolve("resolve_default_workspace_dir"), self.workspace)
+  File "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py", line 166, in assert_path
+    self.assertEqual(result.returncode, 0, result.stderr)
+AssertionError: 1 != 0 : Invalid workspace: [Errno 13] Permission denied: '/'
+
+
+======================================================================
+FAIL: test_roots_expand_selected_home_and_reject_unsafe_paths (step1_installer_workspace_contract.InstallerWorkspaceContract)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py", line 210, in test_roots_expand_selected_home_and_reject_unsafe_paths
+    self.assert_path(self.resolve("resolve_default_workspace_dir", WORKSPACE_DIR="~/Repo Space"),
+  File "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py", line 166, in assert_path
+    self.assertEqual(result.returncode, 0, result.stderr)
+AssertionError: 1 != 0 : Invalid workspace: [Errno 13] Permission denied: '/'
+
+
+======================================================================
+FAIL: test_shell_delegates_to_shared_pure_api (step1_installer_workspace_contract.InstallerWorkspaceContract)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspaces/IsaacAutomator/src/tests/installer_workspace_contract.test.py", line 390, in test_shell_delegates_to_shared_pure_api
+    self.assertIn('SHARED-RESOLVER-SENTINEL', result.stderr)
+AssertionError: 'SHARED-RESOLVER-SENTINEL' not found in "Invalid workspace: [Errno 13] Permission denied: '/'\n"
+
+----------------------------------------------------------------------
+Ran 30 tests in 1.248s
+
+FAILED (failures=24, errors=9)

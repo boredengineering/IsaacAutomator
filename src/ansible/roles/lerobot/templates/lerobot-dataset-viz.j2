@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
+{% if profile_lerobot_isolated | default(false) | bool %}
+unset PYTHONPATH PYTHONHOME
+exec "{{ miniconda_install_dir }}/bin/conda" run --no-capture-output -n "{{ profile_lerobot_environment }}" python -m lerobot.scripts.visualize_dataset "$@"
+{% else %}
 if command -v isaaclab-env &>/dev/null; then
     exec isaaclab-env python -m lerobot.scripts.visualize_dataset "$@"
 else
     exec python3 -m lerobot.scripts.visualize_dataset "$@"
 fi
+{% endif %}

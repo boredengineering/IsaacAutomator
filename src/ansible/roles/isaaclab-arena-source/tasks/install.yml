@@ -14,6 +14,18 @@
 # limitations under the License.
 # endregion
 
+- name: Select isolated fresh profile Git source
+  ansible.builtin.include_tasks: "{{ playbook_dir }}/roles/public-git/tasks/source.yml"
+  vars:
+    public_git_repository: "{{ isaaclab_arena_git_repo }}"
+    public_git_ref: "{{ isaaclab_arena_git_checkpoint }}"
+    public_git_destination: "{{ isaaclab_arena_dir }}"
+  when: public_git_profile | default(false) | bool
+
+- name: Select explicit Lab pin pipeline
+  ansible.builtin.set_fact:
+    profile_lab_pins_selected: "{{ profile_lab_torch is defined or profile_lab_torchvision is defined or profile_lab_cuda_runtime is defined or profile_lab_architecture is defined }}"
+
 - name: Check if Isaac Lab Arena is already installed
   stat:
     path: "{{ isaaclab_arena_dir }}/.git"
@@ -21,20 +33,30 @@
 
 - name: Get current Isaac Lab Arena git ref
   shell: |
-    cd "{{ isaaclab_arena_dir }}"
-    # check if the desired ref matches the current HEAD
-    # resolve the desired ref to a commit hash via ls-remote
-    DESIRED_HASH=$(git ls-remote "{{ isaaclab_arena_git_repo }}" "{{ isaaclab_arena_git_checkpoint }}" | head -1 | awk '{print $1}')
+    set -euo pipefail
+    cd {{ isaaclab_arena_dir | quote }}
+    if [ "$(git config --local --get remote.origin.url)" != {{ isaaclab_arena_git_repo | quote }} ]; then
+      echo "Arena origin differs from requested source; refusing to adopt existing checkout." >&2
+      exit 2
+    fi
+    # Immutable commits are not branch/tag names advertised by ls-remote.
+    if [[ {{ isaaclab_arena_git_checkpoint | quote }} =~ ^[0-9a-f]{40}$ ]]; then
+      DESIRED_HASH={{ isaaclab_arena_git_checkpoint | quote }}
+    else
+      DESIRED_HASH=$(git ls-remote {{ isaaclab_arena_git_repo | quote }} {{ isaaclab_arena_git_checkpoint | quote }} | head -1 | awk '{print $1}')
+    fi
     CURRENT_HASH=$(git rev-parse HEAD)
     if [ "$DESIRED_HASH" = "$CURRENT_HASH" ]; then
       echo "match"
     else
       echo "mismatch"
     fi
+  args:
+    executable: /bin/bash
   become_user: "{{ ansible_user }}"
   register: isaaclab_arena_ref_check
   changed_when: false
-  when: isaaclab_arena_existing.stat.exists
+  when: (isaaclab_arena_existing.stat.exists) and not (public_git_profile | default(false) | bool)
 
 - name: Detect whether Isaac Lab Arena installation is needed
   set_fact:
@@ -58,24 +80,39 @@
     git config --global url.https://github.com/.insteadOf git@github.com:
   become_user: "{{ ansible_user }}"
   changed_when: false
-  when: isaaclab_arena_needs_install
+  when: (isaaclab_arena_needs_install) and not (public_git_profile | default(false) | bool)
 
 - name: Clone Isaac Lab Arena repository
   shell: |
-    if [ -d "{{ isaaclab_arena_dir }}/.git" ]; then
-      cd "{{ isaaclab_arena_dir }}"
-      git fetch --depth 1 origin "{{ isaaclab_arena_git_checkpoint }}"
+    set -e
+    if [ -d {{ (isaaclab_arena_dir ~ '/.git') | quote }} ]; then
+      cd {{ isaaclab_arena_dir | quote }}
+      if [ "$(git config --local --get remote.origin.url)" != {{ isaaclab_arena_git_repo | quote }} ]; then
+        echo "Arena origin differs from requested source; refusing to adopt existing checkout." >&2
+        exit 2
+      fi
+      git fetch --depth 1 origin {{ isaaclab_arena_git_checkpoint | quote }}
       git checkout FETCH_HEAD
+      git submodule update --init --recursive --depth 1
+    elif [[ {{ isaaclab_arena_git_checkpoint | quote }} =~ ^[0-9a-f]{40}$ ]]; then
+      # git clone -b accepts branches/tags, not immutable commit objects.
+      git init {{ isaaclab_arena_dir | quote }}
+      cd {{ isaaclab_arena_dir | quote }}
+      git remote add origin {{ isaaclab_arena_git_repo | quote }}
+      git fetch --depth 1 origin {{ isaaclab_arena_git_checkpoint | quote }}
+      git checkout --detach FETCH_HEAD
       git submodule update --init --recursive --depth 1
     else
       git clone --depth 1 --recurse-submodules --shallow-submodules \
-        -b "{{ isaaclab_arena_git_checkpoint }}" \
-        "{{ isaaclab_arena_git_repo }}" "{{ isaaclab_arena_dir }}"
+        -b {{ isaaclab_arena_git_checkpoint | quote }} \
+        {{ isaaclab_arena_git_repo | quote }} {{ isaaclab_arena_dir | quote }}
     fi
+  args:
+    executable: /bin/bash
   become_user: "{{ ansible_user }}"
   register: clone_result
   changed_when: "'Already up to date' not in clone_result.stdout"
-  when: isaaclab_arena_needs_install
+  when: (isaaclab_arena_needs_install) and not (public_git_profile | default(false) | bool)
 
 - name: Configure upstream remote for Isaac Lab Arena
   git_config:
@@ -84,7 +121,7 @@
     repo: "{{ isaaclab_arena_dir }}"
     scope: local
   become_user: "{{ ansible_user }}"
-  when: isaaclab_arena_git_repo != isaaclab_arena_upstream_repo and isaaclab_arena_needs_install
+  when: (isaaclab_arena_git_repo != isaaclab_arena_upstream_repo and isaaclab_arena_needs_install) and not (public_git_profile | default(false) | bool)
   ignore_errors: true
 
 - name: Check if isaaclab-env is available for Arena installation
@@ -92,17 +129,23 @@
     path: /usr/local/bin/isaaclab-env
   register: isaaclab_env_check
 
+- name: Install source dependencies with selected Lab pins
+  ansible.builtin.include_tasks: "{{ playbook_dir }}/roles/isaaclab-source/tasks/pinned.yml"
+  vars:
+    profile_lab_install_kind: arena
+  when: profile_lab_pins_selected | bool
+
 - name: Install IsaacLab-Arena in editable mode
   shell: /usr/local/bin/isaaclab-env pip install -e . 2>&1 | tee /tmp/arena-install.log
   args:
     chdir: "{{ isaaclab_arena_dir }}"
   become_user: "{{ ansible_user }}"
-  when: isaaclab_arena_needs_install and isaaclab_env_check.stat.exists
+  when: (isaaclab_arena_needs_install and isaaclab_env_check.stat.exists) and not (profile_lab_pins_selected | bool)
   async: 1800
   poll: 15
 
 - name: Install Pinocchio, Pink WBC, and QP Solvers for Locomanipulation
   shell: /usr/local/bin/isaaclab-env pip install cmeel pinocchio pin-pink qpsolvers daqp osqp mujoco 2>&1 | tee -a /tmp/arena-install.log
   become_user: "{{ ansible_user }}"
-  when: isaaclab_arena_needs_install and isaaclab_env_check.stat.exists
+  when: (isaaclab_arena_needs_install and isaaclab_env_check.stat.exists) and not (profile_lab_pins_selected | bool)
   ignore_errors: true
