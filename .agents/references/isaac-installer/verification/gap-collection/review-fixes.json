@@ -1,0 +1,217 @@
+{
+  "passed": true,
+  "files_stable": true,
+  "scope": "Five confirmed review defects only; original three plus two explicitly delegated final-review defects. No new metadata features or architecture.",
+  "reviews": [
+    "/tmp/isaac-gap-first-review.json",
+    "/tmp/isaac-gap-final-review.json"
+  ],
+  "runner": "python3 -B .agents/references/isaac-installer/verification/step2/run_bounded_tests.py",
+  "fixes": [
+    {
+      "id": "CONDA-CAP-BOUNDARY",
+      "production": "isaac-installer/tools/collect_host_metadata.py:229-245",
+      "change": "After unchanged before/after/current signatures, positive ordinary-file st_size equal to bytes consumed proves completeness at the inclusive cap. Zero-size virtual records and metadata-header reads retain conservative boundary behavior. No extra read byte; existing nofollow, regular-file, link-count and stability checks unchanged.",
+      "tests": [
+        "src/tests/installer_host_collector.test.py:250",
+        "src/tests/installer_host_collector.test.py:273",
+        "src/tests/installer_host_collector.test.py:303"
+      ],
+      "coverage": [
+        "cap-1/cap/cap+1",
+        "remaining shared budget cap-1/cap/cap+1 after another source",
+        "read request and consumption budget assertions",
+        "zero-size synthetic virtual record at budget"
+      ],
+      "red": {
+        "command_suffix": "installer_host_collector",
+        "root": "/tmp/isaac-step1-2uinfjw9",
+        "log": "/tmp/isaac-step1-2uinfjw9/installer_host_collector.log",
+        "tests": 48,
+        "failures": 3,
+        "errors": 0,
+        "reason": "Python null at exact cap and sufficient global budgets"
+      },
+      "green": {
+        "command_suffix": "installer_host_collector",
+        "root": "/tmp/isaac-step1-url10lp1",
+        "log": "/tmp/isaac-step1-url10lp1/installer_host_collector.log",
+        "tests": 48,
+        "failures": 0,
+        "errors": 0
+      }
+    },
+    {
+      "id": "CONDA-PYTHON-PRIORITY",
+      "production": "isaac-installer/tools/collect_host_metadata.py:567-571",
+      "change": "Metadata-only filename ranking: exact python.json first, then numeric dotted Python version/build filenames, then unrelated packages. No file reads during sorting.",
+      "tests": [
+        "src/tests/installer_host_collector.test.py:224",
+        "src/tests/installer_host_collector.test.py:237"
+      ],
+      "coverage": [
+        "80 KB shared budget with approximately 70 KB records",
+        "exact python.json outranks another Python version and python-dateutil",
+        "versioned Python outranks lexically earlier python-2fa and python-dateutil"
+      ],
+      "red": {
+        "command_suffix": "installer_host_collector",
+        "root": "/tmp/isaac-step1-d_mseat9",
+        "log": "/tmp/isaac-step1-d_mseat9/installer_host_collector.log",
+        "tests": 50,
+        "failures": 2,
+        "errors": 0,
+        "reason": "Wrong Python version or null under tight budget"
+      },
+      "green": {
+        "command_suffix": "installer_host_collector",
+        "root": "/tmp/isaac-step1-k0jpyr3v",
+        "log": "/tmp/isaac-step1-k0jpyr3v/installer_host_collector.log",
+        "tests": 50,
+        "failures": 0,
+        "errors": 0
+      }
+    },
+    {
+      "id": "CONDA-LEGACY-REPORT-GRAMMAR",
+      "production": "isaac-installer/lib/core/host_inventory.py:62-67",
+      "change": "Restored old alphanumeric-leading [A-Za-z0-9][A-Za-z0-9_.+:-]* grammar and added only the narrow Conda underscore-leading alternative. System, venv and unknown managers do not gain underscore names; collector emission grammar unchanged.",
+      "tests": [
+        "src/tests/installer_host_inventory.test.py:99",
+        "src/tests/installer_host_inventory.test.py:113"
+      ],
+      "coverage": [
+        "legacy version-1 reports without optional details survive pure import/review with + and :",
+        "old grammar retained across managers",
+        "underscore accepted only for Conda",
+        "underscore +/:/slash/control/credential labels rejected"
+      ],
+      "red": {
+        "command_suffix": "installer_host_inventory",
+        "root": "/tmp/isaac-step1-i4n4v2lc",
+        "log": "/tmp/isaac-step1-i4n4v2lc/installer_host_inventory.log",
+        "tests": 25,
+        "failures": 0,
+        "errors": 3,
+        "reason": "Valid legacy Conda package names rejected with InventoryError; not setup errors"
+      },
+      "green": {
+        "command_suffix": "installer_host_inventory",
+        "root": "/tmp/isaac-step1-ebhcye8s",
+        "log": "/tmp/isaac-step1-ebhcye8s/installer_host_inventory.log",
+        "tests": 25,
+        "failures": 0,
+        "errors": 0
+      }
+    },
+    {
+      "id": "EMPTY-EDITABLE-TRUNCATION-TERMINATION",
+      "production": "isaac-installer/tools/collect_host_metadata.py:958-990",
+      "change": "Only editable evidence with removable records is a truncation candidate. Every iteration must reduce serialized bytes; otherwise collapse long limit issues/links and normalize. Fail closed with fixed ValueError if even that fallback cannot make progress, rather than loop outside the watchdog.",
+      "tests": [
+        "src/tests/installer_host_collector.test.py:968"
+      ],
+      "coverage": [
+        "350 long limit issues with empty editable envelope",
+        "same case with a retained empty-record environment",
+        "independent 2-second SIGALRM regression deadline",
+        "bounded final report remains importable"
+      ],
+      "red": {
+        "command_suffix": "installer_host_collector",
+        "root": "/tmp/isaac-step1-2vljcv3u",
+        "log": "/tmp/isaac-step1-2vljcv3u/installer_host_collector.log",
+        "tests": 51,
+        "failures": 2,
+        "errors": 0,
+        "reason": "Both subcases exceeded independent deadline in nonterminating _finish"
+      },
+      "green": {
+        "command_suffix": "",
+        "root": "/tmp/isaac-step1-t4k5enp1",
+        "log": "/tmp/isaac-step1-t4k5enp1/installer_host_collector.log",
+        "collector_tests": 51,
+        "inventory_tests": 25,
+        "failures": 0,
+        "errors": 0
+      }
+    },
+    {
+      "id": "OPTIONAL-CONTAINER-VALIDATION-ORDER",
+      "production": [
+        "isaac-installer/lib/core/host_inventory.py:87-94",
+        "isaac-installer/lib/core/host_inventory.py:240-243"
+      ],
+      "change": "Require workspace/details mappings before optional-key membership and validate workspace parent path before requested-name concatenation.",
+      "tests": [
+        "src/tests/installer_host_inventory.test.py:255",
+        "src/tests/installer_host_inventory.test.py:270"
+      ],
+      "coverage": [
+        "null/scalar/list/empty mapping containers",
+        "requested_name with invalid parent types/path",
+        "fixed InventoryError diagnostic",
+        "three CLI malformed report cases refuse without output"
+      ],
+      "red": {
+        "command_suffix": "installer_host_inventory",
+        "root": "/tmp/isaac-step1-omn5ml_2",
+        "log": "/tmp/isaac-step1-omn5ml_2/installer_host_inventory.log",
+        "tests": 26,
+        "failures": 0,
+        "errors": 11,
+        "reason": "Raw TypeError instead of the requested InventoryError for malformed values"
+      },
+      "green": {
+        "command_suffix": "",
+        "root": "/tmp/isaac-step1-4pzpbfno",
+        "log": "/tmp/isaac-step1-4pzpbfno/installer_host_inventory.log",
+        "collector_tests": 51,
+        "inventory_tests": 26,
+        "failures": 0,
+        "errors": 0
+      }
+    }
+  ],
+  "final_verification": {
+    "bounded_runner": {
+      "root": "/tmp/isaac-step1-4pzpbfno",
+      "results": "/tmp/isaac-step1-4pzpbfno/results.json",
+      "tests": 77,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "kernel_controls_passed": true
+    },
+    "independent_probes": {
+      "command": "python3 -B /tmp/isaac-gap-first-probes.py > /tmp/isaac-gap-review-fixes-probes.log 2>&1",
+      "script_read_before_execution": true,
+      "log": "/tmp/isaac-gap-review-fixes-probes.log",
+      "root": "/tmp/isaac-first-probes-n0lkfe6e",
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "exit_code": 0,
+      "uid": 65534,
+      "snapshot_stable": true
+    },
+    "git_diff_check": "No diagnostics",
+    "confinement": "Retained step2 allowlisted runner and separately supplied probe using retained confine(): unprivileged UID 65534, Landlock synthetic writable root/repository read-only, seccomp network denial.",
+    "live_host_collection": false,
+    "existing_private_reports_read": false,
+    "commits_stashes_resets_pushes": false
+  },
+  "modified_files": [
+    "isaac-installer/tools/collect_host_metadata.py",
+    "isaac-installer/lib/core/host_inventory.py",
+    "src/tests/installer_host_collector.test.py",
+    "src/tests/installer_host_inventory.test.py"
+  ],
+  "stable_sha256": {
+    "isaac-installer/tools/collect_host_metadata.py": "737d1da3625f2c4d136d0fed4e79408f9f7cbd57960038f8a33202473041c88d",
+    "isaac-installer/lib/core/host_inventory.py": "96683f8ee0d87757fee13972e324f16332afe825fe1070a1d4019c71b62c1616",
+    "src/tests/installer_host_collector.test.py": "d7ac63fa462ef4b9c82e82ff006356d450e6e5e8e7f3731343aa3faa9d4363d0",
+    "src/tests/installer_host_inventory.test.py": "15554c7693da787250de393405de949591700ff76bf672d4a837a863fa43cadd"
+  },
+  "handoff_note": "A previous-owner inventory test handoff edit was detected by patch warning; current source and test region were reread before subsequent edits. Their edits were preserved. Final probe hashes match before/after. Parent validator/docs were not edited. All source edits used V4A patch mode."
+}

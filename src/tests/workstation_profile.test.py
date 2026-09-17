@@ -44,6 +44,24 @@ class WorkstationProfileTests(unittest.TestCase):
             with self.subTest(field=field), self.assertRaises(wp.ProfileError):
                 wp.resolve_profile('full', {'runtimes': {'gr00t': {field: value}}})
 
+    def test_sim_prerelease_and_build_survive_profile_roundtrip(self):
+        import yaml
+        for version in ('6.0.1-rc.7+release.42383.32955d8d.gl',
+                        '6.0.1-rc.7', '6.0.1+release.42383'):
+            with self.subTest(version=version):
+                resolved = wp.resolve_profile('minimal', {
+                    'components': {'sim': {'source': {'version': version}}}})
+                self.assertEqual(resolved['profile']['components']['sim']['source']['version'], version)
+                self.assertFalse(resolved['ready_for_apply'])
+                self.write(yaml.safe_dump(resolved['profile']))
+                self.assertEqual(wp.resolve_profile(self.path)['profile']['components']['sim']['source']['version'], version)
+        for version in ('6.0.1-', '6.0.1+', '6.0.1-rc..7', '6.0.1+build+extra',
+                        '6.0.1-rc;DO_NOT_ECHO', '6.0.1\nDO_NOT_ECHO',
+                        '6.0.1-password-DO_NOT_ECHO', '6.0.1-' + 'a' * 64):
+            with self.subTest(version=version), self.assertRaises(wp.ProfileError) as ctx:
+                wp.resolve_profile('minimal', {'components': {'sim': {'source': {'version': version}}}})
+            self.assertNotIn('DO_NOT_ECHO', str(ctx.exception))
+
     def test_gr00t_preserves_repo_local_uv_runtime_intent(self):
         runtimes = wp.resolve_profile('full')['profile']['runtimes']
         self.assertEqual(runtimes['gr00t']['manager'], 'uv')

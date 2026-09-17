@@ -52,6 +52,88 @@ class HostInventoryIntegration(unittest.TestCase):
         return subprocess.run(['/bin/bash', str(ENTRY), *map(str, args)],
                               capture_output=True, text=True, env=self.env, timeout=30)
 
+    def editable_fixture(self):
+        spec = importlib.util.spec_from_file_location('editable_collector', ROOT/'isaac-installer/tools/collect_host_metadata.py')
+        assert spec is not None and spec.loader is not None
+        module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+        home, system = self.base/'home', self.base/'system'
+        system.mkdir()
+        env = home/'Documents/GitHub/BoredEngineer/.venv'
+        site = env/'lib/python3.12/site-packages'
+        site.mkdir(parents=True)
+        (env/'pyvenv.cfg').write_text('version = 3.12.1\n')
+        (site/'local.pth').write_text('/unselected/synthetic-source\n')
+        report = module.collect(str(home), str(system), workspace_name='BoredEngineer', include_editable=True, scope='software')
+        return module, report, str(env)
+
+    def test_editable_schema_refuses_malformed_sections_and_unbound_sources(self):
+        _, report, env = self.editable_fixture()
+        discovery._host.validate_report(report)
+        with patch('builtins.open', side_effect=AssertionError('host evidence is not a read grant')):
+            baseline = discovery._host.baseline(report, str(self.source), discovery)
+            discovery.build_review(baseline, discovery.propose(baseline))
+        self.assertEqual(baseline['observations'][0]['value']['details']['editable'], report['details']['editable'])
+        self.assertEqual(baseline['original_observed_roots'], [str(self.source)])
+        mutations = [
+            lambda r: r['details'].update(editable=[]),
+            lambda r: r['details']['editable'].update(environments=[]),
+            lambda r: r['details']['editable']['environments'].update({env:None}),
+            lambda r: r['details']['editable'].update(version=True),
+            lambda r: r['details']['editable']['environments'][env].update(records=True),
+            lambda r: r['details']['editable']['environments'][env]['records'][0].update(source='/unselected/source.pth'),
+            lambda r: r['details']['editable']['environments'][env]['records'][0].update(source=env+'/secrets/source.pth'),
+            lambda r: r['details']['editable']['environments'][env]['records'][0].update(local_path='import PRIVATE'),
+            lambda r: r['details']['editable']['environments'][env]['records'][0].update(line=True),
+            lambda r: r['details']['editable']['environments'][env]['records'][0].update(local_path='../escape'),
+            lambda r: r['workspace'].update(requested_name='other'),
+        ]
+        for index, mutate in enumerate(mutations):
+            with self.subTest(index=index):
+                bad = deepcopy(report); mutate(bad)
+                with self.assertRaises(ValueError): discovery._host.validate_report(bad)
+        bad = deepcopy(report)
+        bad['details']['editable']['environments'][env]['records'] *= 129
+        with self.assertRaises(ValueError): discovery._host.validate_report(bad)
+
+
+    def test_legacy_report_package_punctuation_survives_import_and_review(self):
+        for manager in ('conda', 'venv', 'unknown'):
+            for name in ('pkg+local', 'pkg:local', '9pkg_.+:-'):
+                with self.subTest(manager=manager, name=name):
+                    report = host_report()
+                    self.assertNotIn('details', report)
+                    report['environments'] = [{'path':report['context']['home']+'/legacy-env',
+                        'name':'legacy-env', 'manager':manager, 'python':None,
+                        'packages':[{'name':name, 'version':'1.0'}]}]
+                    with patch('builtins.open', side_effect=AssertionError('report paths are not read grants')):
+                        baseline = discovery._host.baseline(report, str(self.source), discovery)
+                        discovery.build_review(baseline, discovery.propose(baseline))
+                    self.assertEqual(baseline['observations'][0]['value']['environments'], report['environments'])
+
+    def test_underscore_package_names_are_a_narrow_conda_only_report_extension(self):
+        report = host_report()
+        pair = {'name':'_libgcc_mutex', 'version':'0.1'}
+        report['environments'] = [{'path':report['context']['home']+'/legacy-env',
+            'name':'legacy-env', 'manager':'conda', 'python':None, 'packages':[pair]}]
+        discovery._host.validate_report(report)
+        for manager in ('venv', 'unknown'):
+            with self.subTest(manager=manager):
+                bad = deepcopy(report)
+                bad['environments'][0]['manager'] = manager
+                with self.assertRaises(discovery._host.InventoryError):
+                    discovery._host.validate_report(bad)
+        for conda in (False, True):
+            with self.assertRaises(discovery._host.InventoryError):
+                discovery._host.package({**pair, 'architecture':'all', 'manual':None}, system=True, conda=conda)
+        with self.assertRaises(discovery._host.InventoryError):
+            discovery._host.package(pair)
+        for name in ('_name+extra', '_name:extra', '_name/escape', '_name\n', '_token-private'):
+            with self.subTest(name=name):
+                bad = deepcopy(report)
+                bad['environments'][0]['packages'][0]['name'] = name
+                with self.assertRaises(discovery._host.InventoryError):
+                    discovery._host.validate_report(bad)
+
     def test_portable_import_proposes_paths_without_reading_host(self):
         output = self.base / 'imported.json'
         before = self.source.read_bytes()
@@ -71,6 +153,40 @@ class HostInventoryIntegration(unittest.TestCase):
         self.assertEqual(bundle['baseline']['observations'][0]['value']['packages'][0]['name'], 'cmake')
         self.assertEqual(self.source.read_bytes(), before)
         self.assertEqual(output.stat().st_mode & 0o777, 0o600)
+
+    def test_software_followup_import_keeps_ambiguous_sources_unapproved(self):
+        spec = importlib.util.spec_from_file_location('followup_collector', ROOT/'isaac-installer/tools/collect_host_metadata.py')
+        assert spec is not None and spec.loader is not None
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        home, system = self.base/'home', self.base/'system'
+        home.mkdir(); system.mkdir()
+        for name, commit in (('BoredEngineer', 'a'), ('boredengineering', 'b')):
+            git = home/'Documents/GitHub'/name/'IsaacLab/.git'
+            git.mkdir(parents=True)
+            (git/'HEAD').write_text(commit*40+'\n')
+            (git/'config').write_text('[remote "origin"]\nurl=https://github.com/NVIDIA/IsaacLab.git\n')
+        meta = home/'miniconda3/envs/robot/conda-meta'
+        meta.mkdir(parents=True)
+        (meta/'python.json').write_text('{"name":"python","version":"3.12.1"}')
+        report = module.collect(str(home), str(system), scope='software')
+        self.source.write_text(json.dumps(report))
+        before = self.source.read_bytes()
+        output = self.base/'software-candidate.json'
+        result = self.cli('import-host-report', '--report', self.source, '--output', output)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        bundle = json.loads(output.read_text())
+        fields = {f['id']: f for f in bundle['candidate']['fields']}
+        self.assertIsNone(fields['workspace:host.name']['value'])
+        self.assertIsNone(fields['component:lab.source']['value'])
+        self.assertEqual(len(fields['component:lab.source']['alternatives']), 2)
+        self.assertTrue(any(f['id'].startswith('environment:') for f in fields.values()))
+        self.assertTrue(all(f['decision'] is None for f in fields.values()))
+        self.assertFalse(bundle['candidate']['apply_supported'])
+        retained = bundle['baseline']['observations'][0]['value']
+        self.assertEqual(retained['machine'], {})
+        self.assertEqual(len(retained['repositories']), 2)
+        self.assertEqual(self.source.read_bytes(), before)
 
     def test_environment_proposal_identity_survives_reordering(self):
         report = host_report()
@@ -136,9 +252,27 @@ class HostInventoryIntegration(unittest.TestCase):
         self.assertEqual(lab['target'], host_report()['repositories'][0]['path'])
         self.assertEqual(lab['status'], 'unknown')
 
+    def test_malformed_optional_containers_raise_fixed_inventory_errors(self):
+        for section in ('workspace', 'details'):
+            for value in (None, 17, True, 'not-a-container', [], {}):
+                with self.subTest(section=section, value=value):
+                    report = host_report()
+                    report[section] = value
+                    with self.assertRaisesRegex(discovery._host.InventoryError, r'^Invalid host inventory report\.$'):
+                        discovery._host.validate_report(report)
+        for parent in (None, 17, True, [], {}, '/wrong-parent'):
+            with self.subTest(parent=parent):
+                report = host_report()
+                report['workspace'].update(parent=parent, requested_name='BoredEngineer')
+                with self.assertRaisesRegex(discovery._host.InventoryError, r'^Invalid host inventory report\.$'):
+                    discovery._host.validate_report(report)
+
     def test_invalid_reports_refuse_without_output_or_echoing_payload(self):
         mutations = [
             lambda r: r.update(schema_version=True),
+            lambda r: r.update(workspace=None),
+            lambda r: r.update(details=None),
+            lambda r: r['workspace'].update(parent=None, requested_name='BoredEngineer'),
             lambda r: r['context'].update(execution_authorized=True),
             lambda r: r['context'].update(home='/'),
             lambda r: r['repositories'][0].update(repository='https://user:SYNTHETIC_SECRET@github.com/example/IsaacLab.git'),

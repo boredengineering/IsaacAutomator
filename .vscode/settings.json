@@ -33,6 +33,8 @@
     },
     "terraform.languageServer.enable": true,
     "markdown.extension.toc.levels": "2..4",
-    "terminal.integrated.gpuAcceleration": "off"
+    "terminal.integrated.gpuAcceleration": "off",
+    "remote.autoForwardPorts": false,
+    "remote.restoreForwardedPorts": false
 }
 

@@ -4,6 +4,8 @@ Master index of session memory checkpoints for Isaac Automator.
 
 | Date / Time (UTC) | Short UUID | Topic | Summary | Log File |
 | :--- | :--- | :--- | :--- | :--- |
+| 2026-09-17 06:12 | `e01393e1` | BoredEngineer collector gaps and offline handoff | Exact scope, full Sim version, bounded Conda/headers and opt-in editable metadata; 343 passed, two skips; independent reviews pass; real host report/proposal pending | [`20260917_061218_e01393e1.md`](./sessions/20260917_061218_e01393e1.md) |
+| 2026-09-16 04:55 | `8a7a617c` | Targeted collector coverage follow-up | Ambiguous candidate observation, software-only scope, metadata-first Git discovery and fresh private report naming; 324 passed, two skips; real host follow-up pending | [`20260916_045559_8a7a617c.md`](./sessions/20260916_045559_8a7a617c.md) |
 | 2026-09-15 17:28 | `15cc029b` | Host discovery collector and portable profile import | Step-2 offline implementation complete; 314 passed, two skips; actual ten-command synthetic pipeline; independent code and requirements closure; no real host collection | [`20260915_172847_15cc029b.md`](./sessions/20260915_172847_15cc029b.md) |
 | 2026-09-15 15:24 | `bc289b27` | Core workflow step-1 verification | 267 selected tests, two skips; real synthetic review/YAML/render/dry-run chain; two fixes and independent scoped review; actual workstation untouched | [`20260915_152415_bc289b27.md`](./sessions/20260915_152415_bc289b27.md) |
 | 2026-09-15 05:01 | `5fd2e642` | Bounded installer discovery and naming | Observation/review, confined incomplete preview, named paths and cloud fork transport; 274 scoped tests pass; review-discovered safety gaps fixed; real apply/sync remain gated | [`20260915_050101_5fd2e642.md`](./sessions/20260915_050101_5fd2e642.md) |

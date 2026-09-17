@@ -1,0 +1,43 @@
+components:
+  arena:
+    enabled: false
+  gr00t:
+    enabled: false
+  lab:
+    enabled: true
+    execution: native
+    runtime: lab
+    source:
+      mode: git
+      ref: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+      repository: https://github.com/example/IsaacLab.git
+      revision: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  lerobot:
+    enabled: false
+  sim:
+    enabled: true
+    execution: native
+    runtime: kit
+    source:
+      mode: standalone
+      sha256: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+      url: https://example.org/synthetic-only.zip
+      version: 6.0.1
+defaults: false
+draft: false
+kind: workstation-profile
+name: synthetic-host
+runtimes:
+  kit:
+    environment: kit
+    manager: bundled
+  lab:
+    environment: isaaclab
+    manager: conda
+    python: '3.12'
+schema_version: v1alpha1
+target: offline
+workspace:
+  layout: named
+  name: BoredEngineer
+  root: /tmp/isaac-host-demo-c7mjvq43/host-home/Documents/GitHub

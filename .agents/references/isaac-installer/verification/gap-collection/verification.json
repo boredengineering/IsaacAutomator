@@ -1,0 +1,518 @@
+{
+  "status": "offline implementation, tests and independent reviews passed; actual host evidence and reviewed profile pending",
+  "review_artifacts": {
+    "code": "code-review.json",
+    "completeness": "completeness-review.json",
+    "fixes": "review-fixes.json",
+    "reviewed_hashes_rechecked_against_final_tree": true
+  },
+  "synthetic_only": true,
+  "counts": {
+    "tests": 345,
+    "skipped": 2,
+    "failures": 0,
+    "errors": 0,
+    "passed": 343
+  },
+  "suite_count": 21,
+  "runs": [
+    {
+      "path": "/tmp/isaac-step1-b_w_5ba5/results.json",
+      "results": [
+        {
+          "suite": "controls",
+          "exit_code": 0,
+          "log": "/tmp/isaac-step1-b_w_5ba5/controls.log"
+        },
+        {
+          "suite": "installer_host_inventory",
+          "exit_code": 0,
+          "log": "/tmp/isaac-step1-b_w_5ba5/installer_host_inventory.log",
+          "tests": 26,
+          "skipped": 0,
+          "failures": 0,
+          "errors": 0,
+          "passed": true
+        },
+        {
+          "suite": "installer_host_collector",
+          "exit_code": 0,
+          "log": "/tmp/isaac-step1-b_w_5ba5/installer_host_collector.log",
+          "tests": 51,
+          "skipped": 0,
+          "failures": 0,
+          "errors": 0,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "path": "/tmp/isaac-step1-0gh0aj0o/results.json",
+      "results": [
+        {
+          "suite": "controls",
+          "exit_code": 0,
+          "log": "/tmp/isaac-step1-0gh0aj0o/controls.log"
+        },
+        {
+          "suite": "installer_metadata_readers",
+          "exit_code": 0,
+          "log": "/tmp/isaac-step1-0gh0aj0o/installer_metadata_readers.log",
+          "tests": 25,
+          "skipped": 0,
+          "failures": 0,
+          "errors": 0,
+          "passed": true
+        },
+        {
+          "suite": "installer_discovery",
+          "exit_code": 0,
+          "log": "/tmp/isaac-step1-0gh0aj0o/installer_discovery.log",
+          "tests": 30,
+          "skipped": 0,
+          "failures": 0,
+          "errors": 0,
+          "passed": true
+        },
+        {
+          "suite": "installer_desired_profile",
+          "exit_code": 0,
+          "log": "/tmp/isaac-step1-0gh0aj0o/installer_desired_profile.log",
+          "tests": 22,
+          "skipped": 0,
+          "failures": 0,
+          "errors": 0,
+          "passed": true
+        },
+        {
+          "suite": "workstation_profile",
+          "exit_code": 0,
+          "log": "/tmp/isaac-step1-0gh0aj0o/workstation_profile.log",
+          "tests": 12,
+          "skipped": 0,
+          "failures": 0,
+          "errors": 0,
+          "passed": true
+        },
+        {
+          "suite": "workstation_profile_extensions",
+          "exit_code": 0,
+          "log": "/tmp/isaac-step1-0gh0aj0o/workstation_profile_extensions.log",
+          "tests": 17,
+          "skipped": 0,
+          "failures": 0,
+          "errors": 0,
+          "passed": true
+        },
+        {
+          "suite": "profile_adapters",
+          "exit_code": 0,
+          "log": "/tmp/isaac-step1-0gh0aj0o/profile_adapters.log",
+          "tests": 11,
+          "skipped": 0,
+          "failures": 0,
+          "errors": 0,
+          "passed": true
+        },
+        {
+          "suite": "installer_action_plan",
+          "exit_code": 0,
+          "log": "/tmp/isaac-step1-0gh0aj0o/installer_action_plan.log",
+          "tests": 8,
+          "skipped": 0,
+          "failures": 0,
+          "errors": 0,
+          "passed": true
+        },
+        {
+          "suite": "installer_migration_preview",
+          "exit_code": 0,
+          "log": "/tmp/isaac-step1-0gh0aj0o/installer_migration_preview.log",
+          "tests": 12,
+          "skipped": 0,
+          "failures": 0,
+          "errors": 0,
+          "passed": true
+        },
+        {
+          "suite": "installer_profile_read_boundary",
+          "exit_code": 0,
+          "log": "/tmp/isaac-step1-0gh0aj0o/installer_profile_read_boundary.log",
+          "tests": 8,
+          "skipped": 0,
+          "failures": 0,
+          "errors": 0,
+          "passed": true
+        },
+        {
+          "suite": "installer_discovery_cli",
+          "exit_code": 0,
+          "log": "/tmp/isaac-step1-0gh0aj0o/installer_discovery_cli.log",
+          "tests": 16,
+          "skipped": 1,
+          "failures": 0,
+          "errors": 0,
+          "passed": true
+        },
+        {
+          "suite": "installer_profile_workflow",
+          "exit_code": 0,
+          "log": "/tmp/isaac-step1-0gh0aj0o/installer_profile_workflow.log",
+          "tests": 9,
+          "skipped": 0,
+          "failures": 0,
+          "errors": 0,
+          "passed": true
+        },
+        {
+          "suite": "installer_export_conflict",
+          "exit_code": 0,
+          "log": "/tmp/isaac-step1-0gh0aj0o/installer_export_conflict.log",
+          "tests": 1,
+          "skipped": 0,
+          "failures": 0,
+          "errors": 0,
+          "passed": true
+        },
+        {
+          "suite": "installer_output_entry",
+          "exit_code": 0,
+          "log": "/tmp/isaac-step1-0gh0aj0o/installer_output_entry.log",
+          "tests": 11,
+          "skipped": 1,
+          "failures": 0,
+          "errors": 0,
+          "passed": true
+        },
+        {
+          "suite": "installer_report_writer",
+          "exit_code": 0,
+          "log": "/tmp/isaac-step1-0gh0aj0o/installer_report_writer.log",
+          "tests": 20,
+          "skipped": 0,
+          "failures": 0,
+          "errors": 0,
+          "passed": true
+        },
+        {
+          "suite": "installer_writer_history",
+          "exit_code": 0,
+          "log": "/tmp/isaac-step1-0gh0aj0o/installer_writer_history.log",
+          "tests": 6,
+          "skipped": 0,
+          "failures": 0,
+          "errors": 0,
+          "passed": true
+        },
+        {
+          "suite": "installer_plan_evidence",
+          "exit_code": 0,
+          "log": "/tmp/isaac-step1-0gh0aj0o/installer_plan_evidence.log",
+          "tests": 7,
+          "skipped": 0,
+          "failures": 0,
+          "errors": 0,
+          "passed": true
+        },
+        {
+          "suite": "installer_workspace_contract",
+          "exit_code": 0,
+          "log": "/tmp/isaac-step1-0gh0aj0o/installer_workspace_contract.log",
+          "tests": 30,
+          "skipped": 0,
+          "failures": 0,
+          "errors": 0,
+          "passed": true
+        },
+        {
+          "suite": "installer_named_safety",
+          "exit_code": 0,
+          "log": "/tmp/isaac-step1-0gh0aj0o/installer_named_safety.log",
+          "tests": 12,
+          "skipped": 0,
+          "failures": 0,
+          "errors": 0,
+          "passed": true
+        },
+        {
+          "suite": "installer_target_observation",
+          "exit_code": 0,
+          "log": "/tmp/isaac-step1-0gh0aj0o/installer_target_observation.log",
+          "tests": 11,
+          "skipped": 0,
+          "failures": 0,
+          "errors": 0,
+          "passed": true
+        }
+      ]
+    }
+  ],
+  "acceptance_receipt": "/tmp/isaac-gap-synthetic-hn62_k69/confined/receipts/receipt.json",
+  "acceptance": {
+    "ansible_prerelease_blocker_verified": true,
+    "ansible_render_supported": false,
+    "artifact_root": "/tmp/isaac-gap-synthetic-hn62_k69/confined",
+    "boundary": "unchanged step1 runner.confine; no additional grants",
+    "candidate_unapproved_before_review": true,
+    "collection_complete": false,
+    "exact_sim_version": "6.0.1-rc.7+release.42383.32955d8d.gl",
+    "execution_authorized": false,
+    "execution_marker_absent": true,
+    "limitations": [
+      "No real workstation observed; no user-approved desired YAML.",
+      "Synthetic source URL/checksum are not availability or integrity proof.",
+      "Cross-consumer rehearsal only, not full source/security review.",
+      "Ansible standalone role accepts final 6.0.1 only; exact prerelease must remain blocked."
+    ],
+    "local_render_supported": true,
+    "passed": true,
+    "raw_report_unchanged_after_import": true,
+    "source_canaries_unchanged": true,
+    "source_canary_entries": 56,
+    "steps": [
+      {
+        "denied": [
+          "r",
+          "w",
+          "network"
+        ],
+        "exit_code": 0,
+        "status": "passed",
+        "step": "controls"
+      },
+      {
+        "argv": [
+          "/bin/bash",
+          "/tmp/isaac-gap-synthetic-hn62_k69/confined/synthetic-wrapper-checkout/collect-host-metadata",
+          "--plan",
+          "--scope",
+          "software",
+          "--workspace-name",
+          "BoredEngineer",
+          "--include-editable",
+          "--report-name",
+          "host-software-03.json",
+          "--home",
+          "/tmp/isaac-gap-synthetic-hn62_k69/confined/synthetic-home",
+          "--system-root",
+          "/tmp/isaac-gap-synthetic-hn62_k69/confined/synthetic-system"
+        ],
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "status": "passed",
+        "stderr": "/tmp/isaac-gap-synthetic-hn62_k69/confined/receipts/wrapper-plan.stderr",
+        "stdout": "/tmp/isaac-gap-synthetic-hn62_k69/confined/receipts/wrapper-plan.stdout",
+        "step": "wrapper-plan"
+      },
+      {
+        "argv": [
+          "/bin/bash",
+          "/tmp/isaac-gap-synthetic-hn62_k69/confined/synthetic-wrapper-checkout/collect-host-metadata",
+          "--collect",
+          "--scope",
+          "software",
+          "--workspace-name",
+          "BoredEngineer",
+          "--include-editable",
+          "--report-name",
+          "host-software-03.json",
+          "--home",
+          "/tmp/isaac-gap-synthetic-hn62_k69/confined/synthetic-home",
+          "--system-root",
+          "/tmp/isaac-gap-synthetic-hn62_k69/confined/synthetic-system"
+        ],
+        "artifact": "/tmp/isaac-gap-synthetic-hn62_k69/confined/synthetic-wrapper-checkout/configs/private/host-software-03.json",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "status": "passed",
+        "stderr": "/tmp/isaac-gap-synthetic-hn62_k69/confined/receipts/wrapper-collect.stderr",
+        "stdout": "/tmp/isaac-gap-synthetic-hn62_k69/confined/receipts/wrapper-collect.stdout",
+        "step": "wrapper-collect"
+      },
+      {
+        "argv": [
+          "/bin/bash",
+          "/workspaces/IsaacAutomator/isaac-installer/bin/isaac-installer",
+          "import-host-report",
+          "--report",
+          "/tmp/isaac-gap-synthetic-hn62_k69/confined/synthetic-wrapper-checkout/configs/private/host-software-03.json",
+          "--output",
+          "/tmp/isaac-gap-synthetic-hn62_k69/confined/receipts/02-imported.json"
+        ],
+        "artifact": "/tmp/isaac-gap-synthetic-hn62_k69/confined/receipts/02-imported.json",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "status": "passed",
+        "stderr": "/tmp/isaac-gap-synthetic-hn62_k69/confined/receipts/import-host-report.stderr",
+        "stdout": "/tmp/isaac-gap-synthetic-hn62_k69/confined/receipts/import-host-report.stdout",
+        "step": "import-host-report"
+      },
+      {
+        "argv": [
+          "/bin/bash",
+          "/workspaces/IsaacAutomator/isaac-installer/bin/isaac-installer",
+          "review-profile",
+          "--report",
+          "/tmp/isaac-gap-synthetic-hn62_k69/confined/receipts/02-imported.json",
+          "--decisions",
+          "/tmp/isaac-gap-synthetic-hn62_k69/confined/receipts/03-SYNTHETIC-decisions.json",
+          "--output",
+          "/tmp/isaac-gap-synthetic-hn62_k69/confined/receipts/04-reviewed.json"
+        ],
+        "artifact": "/tmp/isaac-gap-synthetic-hn62_k69/confined/receipts/04-reviewed.json",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "status": "passed",
+        "stderr": "/tmp/isaac-gap-synthetic-hn62_k69/confined/receipts/review-profile.stderr",
+        "stdout": "/tmp/isaac-gap-synthetic-hn62_k69/confined/receipts/review-profile.stdout",
+        "step": "review-profile"
+      },
+      {
+        "argv": [
+          "/bin/bash",
+          "/workspaces/IsaacAutomator/isaac-installer/bin/isaac-installer",
+          "import-host-report",
+          "--report",
+          "/tmp/isaac-gap-synthetic-hn62_k69/confined/synthetic-wrapper-checkout/configs/private/host-software-03.json",
+          "--previous-report",
+          "/tmp/isaac-gap-synthetic-hn62_k69/confined/receipts/04-reviewed.json",
+          "--output",
+          "/tmp/isaac-gap-synthetic-hn62_k69/confined/receipts/05-reimported.json"
+        ],
+        "artifact": "/tmp/isaac-gap-synthetic-hn62_k69/confined/receipts/05-reimported.json",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "status": "passed",
+        "stderr": "/tmp/isaac-gap-synthetic-hn62_k69/confined/receipts/reimport-host-report.stderr",
+        "stdout": "/tmp/isaac-gap-synthetic-hn62_k69/confined/receipts/reimport-host-report.stdout",
+        "step": "reimport-host-report"
+      },
+      {
+        "argv": [
+          "/bin/bash",
+          "/workspaces/IsaacAutomator/isaac-installer/bin/isaac-installer",
+          "export-profile",
+          "--report",
+          "/tmp/isaac-gap-synthetic-hn62_k69/confined/receipts/05-reimported.json",
+          "--name",
+          "synthetic-gap-acceptance",
+          "--format",
+          "yaml",
+          "--output",
+          "/tmp/isaac-gap-synthetic-hn62_k69/confined/receipts/06-SYNTHETIC-desired.yaml"
+        ],
+        "artifact": "/tmp/isaac-gap-synthetic-hn62_k69/confined/receipts/06-SYNTHETIC-desired.yaml",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "status": "passed",
+        "stderr": "/tmp/isaac-gap-synthetic-hn62_k69/confined/receipts/export-yaml.stderr",
+        "stdout": "/tmp/isaac-gap-synthetic-hn62_k69/confined/receipts/export-yaml.stdout",
+        "step": "export-yaml"
+      },
+      {
+        "argv": [
+          "/bin/bash",
+          "/workspaces/IsaacAutomator/isaac-installer/bin/isaac-installer",
+          "render-profile",
+          "--desired-profile",
+          "/tmp/isaac-gap-synthetic-hn62_k69/confined/receipts/06-SYNTHETIC-desired.yaml",
+          "--target-home",
+          "/tmp/isaac-gap-synthetic-hn62_k69/confined/synthetic-home",
+          "--adapter",
+          "local",
+          "--output",
+          "/tmp/isaac-gap-synthetic-hn62_k69/confined/receipts/render-local.json"
+        ],
+        "artifact": "/tmp/isaac-gap-synthetic-hn62_k69/confined/receipts/render-local.json",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "status": "passed",
+        "stderr": "/tmp/isaac-gap-synthetic-hn62_k69/confined/receipts/render-local.stderr",
+        "stdout": "/tmp/isaac-gap-synthetic-hn62_k69/confined/receipts/render-local.stdout",
+        "step": "render-local"
+      },
+      {
+        "argv": [
+          "/bin/bash",
+          "/workspaces/IsaacAutomator/isaac-installer/bin/isaac-installer",
+          "render-profile",
+          "--desired-profile",
+          "/tmp/isaac-gap-synthetic-hn62_k69/confined/receipts/06-SYNTHETIC-desired.yaml",
+          "--target-home",
+          "/tmp/isaac-gap-synthetic-hn62_k69/confined/synthetic-home",
+          "--adapter",
+          "ansible",
+          "--output",
+          "/tmp/isaac-gap-synthetic-hn62_k69/confined/receipts/render-ansible.json"
+        ],
+        "artifact": "/tmp/isaac-gap-synthetic-hn62_k69/confined/receipts/render-ansible.json",
+        "exit_code": 2,
+        "expected_blocker": [
+          {
+            "field": "components.sim.source.version",
+            "reason": "Standalone role currently supports 6.0.1; archive contents and runtime remain unverified"
+          }
+        ],
+        "expected_exit_code": 2,
+        "status": "passed",
+        "stderr": "/tmp/isaac-gap-synthetic-hn62_k69/confined/receipts/render-ansible.stderr",
+        "stdout": "/tmp/isaac-gap-synthetic-hn62_k69/confined/receipts/render-ansible.stdout",
+        "step": "render-ansible"
+      },
+      {
+        "argv": [
+          "/bin/bash",
+          "/workspaces/IsaacAutomator/isaac-installer/bin/isaac-installer",
+          "install",
+          "--dry-run",
+          "--desired-profile",
+          "/tmp/isaac-gap-synthetic-hn62_k69/confined/receipts/06-SYNTHETIC-desired.yaml",
+          "--target-home",
+          "/tmp/isaac-gap-synthetic-hn62_k69/confined/synthetic-home",
+          "--json",
+          "--output",
+          "/tmp/isaac-gap-synthetic-hn62_k69/confined/receipts/10-dry-run.json"
+        ],
+        "artifact": "/tmp/isaac-gap-synthetic-hn62_k69/confined/receipts/10-dry-run.json",
+        "exit_code": 2,
+        "expected_exit_code": 2,
+        "status": "passed",
+        "stderr": "/tmp/isaac-gap-synthetic-hn62_k69/confined/receipts/install-dry-run.stderr",
+        "stdout": "/tmp/isaac-gap-synthetic-hn62_k69/confined/receipts/install-dry-run.stdout",
+        "step": "install-dry-run"
+      }
+    ],
+    "synthetic_decisions": "/tmp/isaac-gap-synthetic-hn62_k69/confined/receipts/03-SYNTHETIC-decisions.json",
+    "synthetic_only": true,
+    "uid": 65534,
+    "wrapper_copy_hashes": "/tmp/isaac-gap-synthetic-hn62_k69/confined/receipts/wrapper-source-sha256.json"
+  },
+  "wrapper_hashes_match": true,
+  "review_fix_hashes_match": true,
+  "source_hashes": {
+    ".agents/references/isaac-installer/verification/gap-collection/run_acceptance.py": "880935ae58023a354f609fc3a16ad6aa484ae997f84210218c44e88553735c14",
+    "collect-host-metadata": "aa1b5bd167682e32bad59881cba6f283829f561f800f1063d0e3b805ab837075",
+    "isaac-installer/lib/core/host_inventory.py": "96683f8ee0d87757fee13972e324f16332afe825fe1070a1d4019c71b62c1616",
+    "isaac-installer/tools/collect_host_metadata.py": "737d1da3625f2c4d136d0fed4e79408f9f7cbd57960038f8a33202473041c88d",
+    "isaac-installer/tools/collect_repository_metadata.py": "c3e60161f00c5e4107ccb728a76e69d4efcbc36563ad0b86a8e120baa61a703c",
+    "src/python/workstation_profile.py": "4ad8e1b9d3ad7e19cebf40478c9a3cd6291971c141c607ab4ac6b885111c8232",
+    "src/tests/installer_host_collector.test.py": "d7ac63fa462ef4b9c82e82ff006356d450e6e5e8e7f3731343aa3faa9d4363d0",
+    "src/tests/installer_host_inventory.test.py": "15554c7693da787250de393405de949591700ff76bf672d4a837a863fa43cadd",
+    "src/tests/workstation_profile.test.py": "fb4aae391ddfdad6810aab34c5813454604938408e9c0c71bdc5996b8d432fd4"
+  },
+  "syntax": "passed",
+  "diff_check": "passed",
+  "production_added_line_security_scan": [],
+  "additional_independent_probes": {
+    "tests": 7,
+    "passed": 7,
+    "root": "/tmp/isaac-first-probes-erg3awu9",
+    "startup_retry": "-S hid system PyYAML; same confined script passed with -I -B."
+  },
+  "real_host_collection": false,
+  "real_install_or_cloud_test": false,
+  "pending": [
+    "new actual host report",
+    "actual readable proposal, reviewed intent and YAML"
+  ]
+}

@@ -1,0 +1,14 @@
+STEP1_RESULT {"suite": "installer_profile_read_boundary", "tests": 8, "skipped": 0, "failures": 0, "errors": 0, "passed": true}
+test_aliases_and_duplicate_keys_are_refused_by_both_validation_passes (step1_installer_profile_read_boundary.ProfileReadBoundaryTests) ... ok
+test_changed_or_replaced_descriptor_is_rejected_with_bounded_reads (step1_installer_profile_read_boundary.ProfileReadBoundaryTests) ... ok
+test_confined_double_validation_uses_one_descriptor_read_and_no_reopen (step1_installer_profile_read_boundary.ProfileReadBoundaryTests) ... ok
+test_file_mount_boundary_and_unavailable_statx_fail_before_read (step1_installer_profile_read_boundary.ProfileReadBoundaryTests) ... ok
+test_input_byte_budget_applies_before_yaml_or_file_content_read (step1_installer_profile_read_boundary.ProfileReadBoundaryTests) ... ok
+test_profile_path_rejects_links_special_files_without_reading (step1_installer_profile_read_boundary.ProfileReadBoundaryTests) ... ok
+test_text_api_matches_legacy_payload_and_workspace_overrides (step1_installer_profile_read_boundary.ProfileReadBoundaryTests) ... ok
+test_yaml_depth_nodes_and_flattened_expansion_are_bounded (step1_installer_profile_read_boundary.ProfileReadBoundaryTests) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.660s
+
+OK

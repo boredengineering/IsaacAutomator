@@ -1,0 +1,27 @@
+[
+  {
+    "suite": "controls",
+    "exit_code": 0,
+    "log": "/tmp/isaac-step1-kmd9fs9w/controls.log"
+  },
+  {
+    "suite": "installer_host_inventory",
+    "exit_code": 0,
+    "log": "/tmp/isaac-step1-kmd9fs9w/installer_host_inventory.log",
+    "tests": 22,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0,
+    "passed": true
+  },
+  {
+    "suite": "installer_host_collector",
+    "exit_code": 0,
+    "log": "/tmp/isaac-step1-kmd9fs9w/installer_host_collector.log",
+    "tests": 37,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0,
+    "passed": true
+  }
+]

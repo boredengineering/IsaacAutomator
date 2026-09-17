@@ -1,0 +1,31 @@
+STEP1_RESULT {"suite": "installer_metadata_readers", "tests": 25, "skipped": 0, "failures": 0, "errors": 0, "passed": true}
+test_admission_paths_is_pure_exact_and_rejects_unsafe_selections (step1_installer_metadata_readers.MetadataTests) ... ok
+test_cancellation_stops_between_file_chunks_without_finishing_parse (step1_installer_metadata_readers.MetadataTests) ... ok
+test_config_includes_refused_and_partial_coverage_visible (step1_installer_metadata_readers.MetadataTests) ... ok
+test_deadline_expiry_during_parse_cannot_be_reported_observed (step1_installer_metadata_readers.MetadataTests) ... ok
+test_dynamic_project_and_worktree_config_stay_unknown (step1_installer_metadata_readers.MetadataTests) ... ok
+test_environment_tool_and_user_notes_share_review_decision_path (step1_installer_metadata_readers.MetadataTests) ... ok
+test_explicit_component_association_proposes_source_not_enablement (step1_installer_metadata_readers.MetadataTests) ... ok
+test_explicit_ref_falls_back_to_bounded_packed_refs (step1_installer_metadata_readers.MetadataTests) ... ok
+test_explicit_runtime_association_uses_known_manifest_not_guesses (step1_installer_metadata_readers.MetadataTests) ... ok
+test_explicit_worktree_indirection_resolves_only_selected_ref (step1_installer_metadata_readers.MetadataTests) ... ok
+test_forged_new_baseline_collisions_are_rejected_before_proposal (step1_installer_metadata_readers.MetadataTests) ... ok
+test_hostile_manifest_content_never_reaches_reports_or_review_values (step1_installer_metadata_readers.MetadataTests) ... ok
+test_metadata_mount_identity_guard_fails_closed_before_content_read (step1_installer_metadata_readers.MetadataTests) ... ok
+test_multi_evidence_and_alternatives_reject_malformed_values (step1_installer_metadata_readers.MetadataTests) ... ok
+test_multiple_associated_repositories_offer_alternatives_and_preserve_choice (step1_installer_metadata_readers.MetadataTests) ... ok
+test_multiple_runtime_environments_offer_explicit_review_choices (step1_installer_metadata_readers.MetadataTests) ... ok
+test_new_metadata_files_reject_links_special_files_and_missing_parser (step1_installer_metadata_readers.MetadataTests) ... ok
+test_parsed_records_and_notes_share_global_entry_budget (step1_installer_metadata_readers.MetadataTests) ... ok
+test_pyproject_toml_extracts_declared_tools_without_importing_project (step1_installer_metadata_readers.MetadataTests) ... ok
+test_report_export_refuses_external_selected_git_metadata_directory (step1_installer_metadata_readers.MetadataTests) ... ok
+test_selected_detached_head_enters_review_without_dirty_claim (step1_installer_metadata_readers.MetadataTests) ... ok
+test_selected_ref_rejects_symlink_ancestor_without_reading_target (step1_installer_metadata_readers.MetadataTests) ... ok
+test_submodule_metadata_and_remote_urls_are_nonexecuting_redacted_evidence (step1_installer_metadata_readers.MetadataTests) ... ok
+test_tool_duplicates_are_deduped_and_conflicts_remain_unresolved (step1_installer_metadata_readers.MetadataTests) ... ok
+test_uv_lock_json_and_toml_are_declared_pins_not_installed_proof (step1_installer_metadata_readers.MetadataTests) ... ok
+
+----------------------------------------------------------------------
+Ran 25 tests in 0.415s
+
+OK

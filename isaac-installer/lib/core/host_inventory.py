@@ -59,9 +59,12 @@ def unique(items, key):
     require(len({key(item) for item in items}) == len(items))
 
 
-def package(value, system=False):
+def package(value, system=False, conda=False):
     shape(value, {'name', 'version', 'architecture', 'manual'} if system else {'name', 'version'})
-    text(value['name'], r'[A-Za-z0-9][A-Za-z0-9_.+:-]*', 128)
+    # Preserve version-1 alphanumeric names; only Conda gains the narrow
+    # underscore-leading alternative, without + or : on that new path.
+    text(value['name'], r'(?:[A-Za-z0-9][A-Za-z0-9_.+:-]*|_[A-Za-z0-9_.-]*)' if conda and not system
+         else r'[A-Za-z0-9][A-Za-z0-9_.+:-]*', 128)
     text(value['version'], r'[A-Za-z0-9][A-Za-z0-9_.!+~:-]*')
     if system:
         text(value['architecture'], r'[A-Za-z0-9][A-Za-z0-9_-]*', 64)
@@ -82,8 +85,12 @@ def validate_report(report):
     require(context['execution_authorized'] is False)
     require((context['identity'] == 'fixture') == (context['system_root'] != '/'))
     ws = report['workspace']
-    shape(ws, {'parent', 'candidates', 'selected'})
+    require(type(ws) is dict)
+    shape(ws, {'parent', 'candidates', 'selected'} | ({'requested_name'} if 'requested_name' in ws else set()))
     path(ws['parent'])
+    if 'requested_name' in ws:
+        text(ws['requested_name'], r'[A-Za-z0-9][A-Za-z0-9_.-]*', 128)
+        require(ws['candidates'] in ([], [ws['parent'] + '/' + ws['requested_name']]))
     require(ws['parent'] == context['home'] + '/Documents/GitHub')
     array(ws['candidates'], 128)
     for candidate in ws['candidates']:
@@ -140,7 +147,7 @@ def validate_report(report):
             text(env['python'], r'[0-9]+\.[0-9]+(?:\.[0-9]+)?', 32)
         array(env['packages'])
         for item in env['packages']:
-            package(item)
+            package(item, conda=env['manager'] == 'conda')
         unique(env['packages'], lambda p: p['name'])
     unique(report['environments'], lambda e: e['path'])
     coverage = report['coverage']
@@ -193,7 +200,9 @@ def followups(report):
         result[key] = {'kind': kind, 'path': path, 'target': target,
             'records': records, 'action': 'request-explicit-scope'}
     if report['workspace']['selected'] is None:
-        add('workspace', report['workspace']['parent'], ['BoredEngineer', 'boredengineering'])
+        add('workspace', report['workspace']['parent'],
+            [report['workspace']['requested_name']] if 'requested_name' in report['workspace']
+            else ['BoredEngineer', 'boredengineering'])
     if not report['isaacsim'] or any(s['version'] is None for s in report['isaacsim']):
         add('isaacsim', report['context']['home'] + '/IsaacSim', ['VERSION'])
     unresolved_refs = set()
@@ -214,7 +223,9 @@ def followups(report):
     for path in sorted({e['path'] for e in report['environments']} | {r['path'] for r in report['repositories']}):
         add('environment-descriptors', path, ['pyproject.toml', 'uv.lock', 'environment.yml'])
     for env in report['environments']:
-        add('editable-metadata', env['path'], ['direct_url.json', '*.pth'])
+        evidence = report['details'].get('editable', {}).get('environments', {}).get(env['path'])
+        if evidence is None or evidence['status'] == 'unknown':
+            add('editable-metadata', env['path'], ['direct_url.json', '*.pth'])
     return dict(sorted(result.items())[:128])
 
 
@@ -227,7 +238,9 @@ def validate_details(report):
     Status and APT Package/Architecture/Auto-Installed. Null facts remain unknown.
     """
     d = report['details']
-    shape(d, {'version', 'repositories', 'isaacsim', 'environments', 'system_packages', 'links', 'followups', 'package_groups'})
+    require(type(d) is dict)
+    shape(d, {'version', 'repositories', 'isaacsim', 'environments', 'system_packages', 'links', 'followups', 'package_groups'} |
+          ({'editable'} if 'editable' in d else set()))
     require(type(d['version']) is int and d['version'] == 1)
     for section in ('repositories', 'isaacsim', 'environments'):
         shape(d[section], {r['path'] for r in report[section]})
@@ -283,7 +296,10 @@ def validate_details(report):
     for key, fact in report['machine'].items():
         require(fact['source'] in [root + '/' + p for p in sources[key]])
     require(type(d['links']) is dict and len(d['links']) <= 128)
-    selected_home = [home + '/Documents/GitHub', home + '/IsaacSim', home + '/.conda'] + seeds
+    workspace_scope = home + '/Documents/GitHub'
+    if 'requested_name' in report['workspace']:
+        workspace_scope += '/' + report['workspace']['requested_name']
+    selected_home = [workspace_scope, home + '/IsaacSim', home + '/.conda'] + seeds
     selected_system = [root + '/' + p for ps in sources.values() for p in ps]
     selected_system += [s['status_source'], s['manual_source']]
     for label, link in d['links'].items():
@@ -300,8 +316,57 @@ def validate_details(report):
             require(link['target'].isprintable() and not link['target'].startswith('//'))
             require(all(p not in ('', '.', '..') for p in link['target'].lstrip('/').split('/')))
             require(link['status'] == 'recorded')
+    if 'editable' in d:
+        validate_editable(report)
     require(d['followups'] == followups(report))
     require(d['package_groups'] == package_groups(report['packages']))
+
+
+def validate_editable(report):
+    """Bind source labels only. Local paths are unverified data, never grants."""
+    editable = report['details']['editable']
+    shape(editable, {'version', 'environments'})
+    require(type(editable['version']) is int and editable['version'] == 1)
+    shape(editable['environments'], {e['path'] for e in report['environments']})
+    count = 0
+    for env in report['environments']:
+        base = env['path']
+        evidence = editable['environments'][base]
+        shape(evidence, {'status', 'records'})
+        require(evidence['status'] in ('observed', 'unknown'))
+        array(evidence['records'], 128)
+        count += len(evidence['records'])
+        require(count <= 128)
+        if env['manager'] == 'unknown':
+            require(evidence == {'status': 'unknown', 'records': []})
+        for record in evidence['records']:
+            shape(record, {'source', 'kind', 'line', 'editable', 'local_path', 'status'})
+            path(record['source'])
+            require(record['source'].startswith(base + '/'))
+            relative = record['source'][len(base)+1:]
+            require(record['kind'] in ('direct-url', 'pth'))
+            if record['kind'] == 'direct-url':
+                require(re.fullmatch(r'lib/python[0-9]+\.[0-9]+/site-packages/[^/.][^/]*\.dist-info/direct_url\.json', relative) is not None)
+                require(record['line'] is None)
+                require(record['editable'] is None or type(record['editable']) is bool)
+                require(record['status'] in ('local', 'nonlocal', 'redacted', 'unknown'))
+            else:
+                require(re.fullmatch(r'lib/python[0-9]+\.[0-9]+/site-packages/[^/.][^/]*\.pth', relative) is not None)
+                require(record['editable'] is None)
+                require((type(record['line']) is int and 1 <= record['line'] <= 65536) or
+                        (record['line'] is None and record['status'] == 'unknown'))
+                require(record['status'] in ('local', 'nonlocal', 'redacted', 'unknown', 'executable'))
+            if record['status'] == 'local':
+                text(record['local_path'], r'[A-Za-z0-9_./ -]+', 4096)
+                require(not record['local_path'].startswith('//'))
+                require(all(p not in ('', '.', '..') for p in record['local_path'].lstrip('/').split('/')))
+                require(not record['local_path'].startswith(('import ', 'import\t')))
+                if record['kind'] == 'direct-url':
+                    path(record['local_path'])
+                    require(type(record['editable']) is bool)
+            else:
+                require(record['local_path'] is None and evidence['status'] == 'unknown')
+        unique(evidence['records'], lambda r: (r['source'], r['line']))
 
 
 def baseline(report, report_path, discovery, previous=None):

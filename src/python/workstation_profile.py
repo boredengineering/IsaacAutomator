@@ -82,7 +82,10 @@ def _source(value, path, mode):
             except ValueError as error:
                 raise ProfileError(f'{path}.url: {error}') from None
         if 'version' in value:
-            _text(value['version'], r'[0-9]+\.[0-9]+\.[0-9]+', path + '.version')
+            _nonsecret(value['version'], r'[0-9]+\.[0-9]+\.[0-9]+'
+                       r'(?:-[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*)?'
+                       r'(?:\+[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*)?',
+                       path + '.version', maximum=64)
         if 'sha256' in value:
             _text(value['sha256'], r'[0-9a-f]{64}', path + '.sha256', nullable=True)
     else:

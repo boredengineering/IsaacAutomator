@@ -1,0 +1,92 @@
+{
+  "passed": true,
+  "security_concerns": [],
+  "logic_errors": [],
+  "closed_findings": [
+    {
+      "id": "CONDA-CAP-BOUNDARY",
+      "status": "closed",
+      "evidence": "Reviewed collector lines 177-248: positive st_size equals consumed count only after identical before/after/current device, inode, mode, link-count, size, mtime and ctime signatures. No extra read beyond granted bytes; nofollow, regular-file and single-link checks remain. Zero st_size cannot take completeness shortcut; header handling remains separate. Independently executed cap-1/cap/cap+1 probe accepts first two and rejects last. Scoped tests also pass exact remaining global budget, read-count assertions, zero-size virtual-record and unstable-file regressions."
+    },
+    {
+      "id": "CONDA-PYTHON-PRIORITY",
+      "status": "closed",
+      "evidence": "Reviewed collector lines 567-576: metadata-only ordering ranks python.json first, dotted numeric version/build Python filenames next, unrelated python-prefixed packages last. Both repository priority regressions pass. Independent 80000-byte-budget probe retains Python 3.12.1 rather than python-dateutil."
+    },
+    {
+      "id": "CONDA-LEGACY-REPORT-GRAMMAR",
+      "status": "closed",
+      "evidence": "Reviewed importer lines 62-71 and manager dispatch: original alphanumeric-leading grammar including + and : is retained, with narrow underscore-leading alternative for Conda only and never system packages. Executed legacy no-details report import/review regressions across Conda/venv/unknown, plus underscore scope and invalid punctuation tests."
+    },
+    {
+      "id": "EMPTY-EDITABLE-TRUNCATION-TERMINATION",
+      "status": "closed",
+      "evidence": "Reviewed complete _finish normalization/truncation region: editable candidate requires removable records; every iteration strictly reduces serialized byte size or collapses issues/links and renormalizes; failure to progress raises fixed ValueError. Executed regression with 350 long limit issues for both empty editable mapping and retained empty-record environment, under independent two-second SIGALRM; both terminate, retain report-size-limit, remain bounded and validate."
+    },
+    {
+      "id": "OPTIONAL-CONTAINER-VALIDATION-ORDER",
+      "status": "closed",
+      "evidence": "Reviewed workspace/details mapping guards before optional-key membership and parent path validation before requested-name concatenation. Executed null/scalar/list/empty-mapping and invalid-parent regressions expecting fixed InventoryError, plus three malformed CLI report cases refusing without output. No raw TypeError remains in these reviewed cases."
+    }
+  ],
+  "suggestions": [],
+  "reviewed_file_hashes": {
+    "isaac-installer/tools/collect_host_metadata.py": "737d1da3625f2c4d136d0fed4e79408f9f7cbd57960038f8a33202473041c88d",
+    "isaac-installer/lib/core/host_inventory.py": "96683f8ee0d87757fee13972e324f16332afe825fe1070a1d4019c71b62c1616",
+    "src/tests/installer_host_collector.test.py": "d7ac63fa462ef4b9c82e82ff006356d450e6e5e8e7f3731343aa3faa9d4363d0",
+    "src/tests/installer_host_inventory.test.py": "15554c7693da787250de393405de949591700ff76bf672d4a837a863fa43cadd",
+    "collect-host-metadata": "aa1b5bd167682e32bad59881cba6f283829f561f800f1063d0e3b805ab837075",
+    "isaac-installer/tools/collect_repository_metadata.py": "c3e60161f00c5e4107ccb728a76e69d4efcbc36563ad0b86a8e120baa61a703c"
+  },
+  "snapshot_verification": {
+    "stable": true,
+    "fixer_stable_sha256_matches": true,
+    "before_after_review_hashes_equal": true,
+    "acceptance_receipt": "/tmp/isaac-gap-synthetic-hn62_k69/confined/receipts/receipt.json",
+    "acceptance_hash_manifest": "/tmp/isaac-gap-synthetic-hn62_k69/confined/receipts/wrapper-source-sha256.json",
+    "all_three_actual_copied_sources_match_manifest_and_final_tree": true,
+    "acceptance_passed": true,
+    "acceptance_qualification": "Read existing synthetic acceptance receipt and independently hashed its three actual wrapper-checkout source copies versus manifest and final tree. Did not rerun acceptance or installation. Receipt preserves exact 6.0.1-rc.7+release.42383.32955d8d.gl and correctly records Ansible final-only unsupported exit 2."
+  },
+  "execution": {
+    "bounded_tests": {
+      "command": "/usr/bin/python3 -I -S -B .agents/references/isaac-installer/verification/step2/run_bounded_tests.py",
+      "root": "/tmp/isaac-step1-dgop0jcj",
+      "exit_code": 0,
+      "tests": 77,
+      "inventory_tests": 26,
+      "collector_tests": 51,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "kernel_controls_passed": true
+    },
+    "independent_probes": {
+      "command": "/usr/bin/python3 -I -B /tmp/isaac-gap-first-probes.py",
+      "script_and_retained_confinement_read_before_execution": true,
+      "root": "/tmp/isaac-first-probes-y7649m6x",
+      "exit_code": 0,
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "uid": 65534,
+      "snapshot_stable": true
+    },
+    "git_diff_check": "passed; no diagnostics",
+    "added_line_security_refresh": "No os.system, shell=True, eval/exec, pickle, requests, urllib.request or socket.socket matches in four changed fix files; reviewed changed production regions introduce no source execution, network operations or host-path grants.",
+    "parent_core_tests": "Parent-provided 268 core tests / 2 existing skips at /tmp/isaac-step1-0gh0aj0o; not independently rerun in this focused closure."
+  },
+  "boundaries": {
+    "production_source_edits": false,
+    "host_inventory_collection": false,
+    "existing_private_reports_read": false,
+    "installation_actions": false,
+    "scope": "Independent closure of five confirmed findings and nearby fix logic only; not unrelated design or whole-plan completeness review.",
+    "created": [
+      "/tmp/isaac-gap-closure-review.json",
+      "/tmp/isaac-step1-dgop0jcj (confined synthetic test artifacts)",
+      "/tmp/isaac-first-probes-y7649m6x (confined synthetic probe artifacts)"
+    ]
+  },
+  "summary": "PASS: all five findings independently closed against stable final source and executed tests; 77 scoped tests and 7 independent probes pass, acceptance copied-source hashes match final tree, and no new security concerns or logic errors were found in the closure scope."
+}

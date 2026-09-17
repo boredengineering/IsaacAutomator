@@ -1,0 +1,118 @@
+{
+  "passed_for_offline_handoff": true,
+  "missing_offline_work": [],
+  "remaining_user_gates": [
+    "User reviews expanded --workspace-name BoredEngineer --include-editable software scan scope, then runs fresh host-software-03.json collection as an ordinary user on the physical workstation, not inside Docker/devcontainer; preserve prior reports.",
+    "Validate and compare actual new evidence and coverage; unresolved facts remain unknown and reports are not automatically unioned.",
+    "Present readable observed facts, proposed choices, unresolved questions and requested decisions; user reviews workspace, repositories, environments and exact Sim source intent.",
+    "Only after those decisions produce private shared YAML, validate and exercise offline consumers, explicitly reporting the prerelease Ansible blocker and other unsupported mappings. No install or paid-cloud permission follows."
+  ],
+  "requirements": [
+    {
+      "requirement": "Exact intended BoredEngineer workspace; no silent lowercase inclusion",
+      "status": "implemented",
+      "evidence": "collect_host_metadata.py:980-1067 validates the explicit exact child; collect_repository_metadata.py forwards workspace_name in both plan and collect; importer retains requested_name and restricts workspace followups. collector test_explicit_workspace_scope_is_exact_and_retained_in_both_clis and acceptance runner:209-226 cover exclusion. Default discovery still considers aliases, deliberately; documented report-03 command explicitly selects BoredEngineer."
+    },
+    {
+      "requirement": "Full Isaac Sim version through observed evidence and desired-profile consumers",
+      "status": "implemented",
+      "evidence": "Exact 6.0.1-rc.7+release.42383.32955d8d.gl is retained in supplied synthetic receipt and YAML/render assertions. workstation_profile.py:85-89 permits bounded combined suffixes; workstation_profile.test.py:test_sim_prerelease_and_build_survive_profile_roundtrip tests positive roundtrips and malformed inputs. This review inspected tests but did not independently establish RED-before-GREEN chronology."
+    },
+    {
+      "requirement": "Conda large JSON/Python priority and bounded metadata headers",
+      "status": "implemented",
+      "evidence": "Collector and tests cover Python-record priority, larger bounded JSON, underscore-prefixed Conda names, rejected incomplete JSON, LF/CRLF metadata, duplicate/folded Name/Version, stable EOF and truncated headers. Documentation accurately retains global time/byte/entry constraints; not an unlimited inventory guarantee."
+    },
+    {
+      "requirement": "Opt-in editable metadata for both Conda and venv",
+      "status": "implemented",
+      "evidence": "_editable operates on either discovered manager; tests test_editable_direct_urls_are_opt_in_local_evidence_for_both_managers and test_pth_records_are_bounded_unresolved_text_not_code_or_target_reads explicitly construct both managers. CLI plan/collect and wrapper transport tested. Synthetic full pipeline includes venv editable evidence; Conda editable coverage is unit-level, not part of that acceptance fixture."
+    },
+    {
+      "requirement": "Preserve unknowns and new evidence without manufacturing intent",
+      "status": "implemented",
+      "evidence": "host_inventory.py:383-388 preserves the complete validated report as an observation with unknown status when incomplete. validate_editable requires unresolved/nonlocal/executable records to remain unknown. propose_fields creates unaccepted fields and evidence-linked notes, not an editable installer recipe. Acceptance runner:243-248 asserts exact details preservation; reimport/review retains source version; changed evidence still requires review. Existing repository dirty state remains unknown; recorded local paths are unverified labels."
+    },
+    {
+      "requirement": "Wrapper -> import -> review -> reimport -> YAML -> local/Ansible render and profile-only dry-run",
+      "status": "implemented_and_fresh_synthetic_acceptance_verified",
+      "evidence": "/tmp/isaac-gap-synthetic-hn62_k69/confined/receipts/receipt.json: all 10 recorded steps meet expected exits; all 8 declared artifacts exist. Three wrapper copied-source hashes match both actual copied files and current repository. Actual renderer artifacts preserve the complete version; local render supported with no blockers; Ansible render intentionally unsupported at components.sim.source.version, exit 2; profile-only dry-run exit 2, execution_authorized false. No Ansible deployment or check-mode execution."
+    },
+    {
+      "requirement": "Explicit unsupported Ansible mapping; never round prerelease to final",
+      "status": "implemented_and_documented",
+      "evidence": "host-discovery.md:128-139 and host-discovery-continuation.md:56-68 explicitly document final-only 6.0.1 mapping, exact prerelease retention, reviewed source/version decisions, and no installation/check-mode claim. Current profile_adapters.py:204-205 matches this limitation."
+    },
+    {
+      "requirement": "No installation, runtime probe, paid cloud, or host access implied",
+      "status": "satisfied_for_reviewed_evidence",
+      "evidence": "Refreshed synthetic receipt records unchanged confine boundary, UID 65534, denied read/write/network controls, absent execution marker and unchanged source canaries. Both test-run controls logs independently contain UID 65534 and r/w/network controls. Actual render and dry-run outputs say execution_authorized false and evidence_scope profile-only. This bounded review performed only reads/hash calculations and wrote its verdict; no real host/private report access or deployment."
+    },
+    {
+      "requirement": "Fresh host report, readable actual proposal, user review, private shared YAML",
+      "status": "legitimate_user_gate_pending",
+      "evidence": "Plan rows 49-50 explicitly remain pending and prohibit synthetic completion claims. No actual private report was read for this review. Existing importer/proposal/review/export paths support the offline handoff; real observations and desired choices cannot be substituted with synthetic decisions."
+    },
+    {
+      "requirement": "Final scoped/core evidence matches reported outcomes and relevant source hashes",
+      "status": "verified",
+      "evidence": "Both results.json sets reconciled programmatically to individual unittest log summaries: 77 scoped tests, zero skips; 268 core tests, two root-specific skips; zero failures/errors. All six unique receipt/fix source hashes match actual tree. Four fix hashes include production collector/importer and their tests. Core receipts contain no full-tree hash manifest; do not interpret this as cryptographic certification of every repository file. Separate final code-closure review remains independently owned and was not repeated."
+    }
+  ],
+  "evidence": {
+    "hash_checks": {
+      "collect-host-metadata": {
+        "expected": "aa1b5bd167682e32bad59881cba6f283829f561f800f1063d0e3b805ab837075",
+        "actual": "aa1b5bd167682e32bad59881cba6f283829f561f800f1063d0e3b805ab837075"
+      },
+      "isaac-installer/tools/collect_host_metadata.py": {
+        "expected": "737d1da3625f2c4d136d0fed4e79408f9f7cbd57960038f8a33202473041c88d",
+        "actual": "737d1da3625f2c4d136d0fed4e79408f9f7cbd57960038f8a33202473041c88d"
+      },
+      "isaac-installer/tools/collect_repository_metadata.py": {
+        "expected": "c3e60161f00c5e4107ccb728a76e69d4efcbc36563ad0b86a8e120baa61a703c",
+        "actual": "c3e60161f00c5e4107ccb728a76e69d4efcbc36563ad0b86a8e120baa61a703c"
+      },
+      "isaac-installer/lib/core/host_inventory.py": {
+        "expected": "96683f8ee0d87757fee13972e324f16332afe825fe1070a1d4019c71b62c1616",
+        "actual": "96683f8ee0d87757fee13972e324f16332afe825fe1070a1d4019c71b62c1616"
+      },
+      "src/tests/installer_host_collector.test.py": {
+        "expected": "d7ac63fa462ef4b9c82e82ff006356d450e6e5e8e7f3731343aa3faa9d4363d0",
+        "actual": "d7ac63fa462ef4b9c82e82ff006356d450e6e5e8e7f3731343aa3faa9d4363d0"
+      },
+      "src/tests/installer_host_inventory.test.py": {
+        "expected": "15554c7693da787250de393405de949591700ff76bf672d4a837a863fa43cadd",
+        "actual": "15554c7693da787250de393405de949591700ff76bf672d4a837a863fa43cadd"
+      }
+    },
+    "tests": [
+      {
+        "results": "/tmp/isaac-step1-b_w_5ba5/results.json",
+        "tests": 77,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "suite_logs_checked": true
+      },
+      {
+        "results": "/tmp/isaac-step1-0gh0aj0o/results.json",
+        "tests": 268,
+        "skipped": 2,
+        "failures": 0,
+        "errors": 0,
+        "suite_logs_checked": true
+      }
+    ],
+    "acceptance_receipt": "/tmp/isaac-gap-synthetic-hn62_k69/confined/receipts/receipt.json",
+    "acceptance_steps_checked": 10,
+    "no_private_host_reports_read": true,
+    "test_rerun_by_this_reviewer": false,
+    "separate_final_code_closure_review": "Parallel parent-owned gate; this completeness verdict does not supersede it."
+  },
+  "suggestions": [
+    "Update finished offline plan statuses after integrating the independently owned final code-closure verdict; leave real host evidence and actual readable proposal/reviewed YAML pending. Cosmetic current In progress/Pending statuses are not an omitted feature.",
+    "Describe verification as 77 scoped tests plus 268 core tests including two skips, and a synthetic cross-consumer rehearsal with expected Ansible prerelease refusal; not successful deployment or check-mode execution."
+  ],
+  "summary": "PASS for bounded offline whole-plan completeness: no omitted approved offline feature identified. Exact BoredEngineer scope, full Sim version, bounded Conda/header handling, opt-in editable evidence for both managers, importer/review/YAML and renderer transport are implemented. Previously stale acceptance is refreshed and wrapper hashes match the actual tree; scoped/core results match logs. Explicit Ansible prerelease rejection is the documented consumer limitation, not missing approved implementation. Fresh physical-host report-03, comparison, actual readable proposal, user decisions and private shared YAML remain genuinely pending. No real host collection, installation or cloud approval is implied."
+}

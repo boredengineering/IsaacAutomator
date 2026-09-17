@@ -1,0 +1,217 @@
+{
+  "actions": [
+    {
+      "category": "workspace",
+      "desired": {},
+      "effects": [
+        "create new directory; never chown existing parents"
+      ],
+      "execution_supported": true,
+      "id": "workspace.root",
+      "operation": "mkdir",
+      "policy": {
+        "high_risk": false,
+        "ownership": "new-only"
+      },
+      "preconditions": {},
+      "reason": "bounded evidence required",
+      "status": "unknown",
+      "target": "/tmp/isaac-host-demo-c7mjvq43/host-home/Documents/GitHub",
+      "unsupported_reason": null
+    },
+    {
+      "category": "workspace",
+      "desired": {},
+      "effects": [
+        "create new directory; never chown existing parents"
+      ],
+      "execution_supported": true,
+      "id": "workspace.group",
+      "operation": "mkdir",
+      "policy": {
+        "high_risk": false,
+        "ownership": "new-only"
+      },
+      "preconditions": {},
+      "reason": "bounded evidence required",
+      "status": "unknown",
+      "target": "/tmp/isaac-host-demo-c7mjvq43/host-home/Documents/GitHub/BoredEngineer",
+      "unsupported_reason": null
+    },
+    {
+      "category": "repository",
+      "desired": {
+        "enabled": false
+      },
+      "effects": [
+        "repository checkout requires pinned revision, explicit new destination and isolated source adapter; network/build/submodules/LFS gated"
+      ],
+      "execution_supported": false,
+      "id": "component.arena",
+      "operation": "repository_checkout",
+      "policy": {
+        "high_risk": false,
+        "ownership": "no-adoption"
+      },
+      "preconditions": {},
+      "reason": "explicitly disabled",
+      "status": "excluded",
+      "target": "/tmp/isaac-host-demo-c7mjvq43/host-home/Documents/GitHub/BoredEngineer/IsaacLab-Arena",
+      "unsupported_reason": "repository checkout requires pinned revision, explicit new destination and isolated source adapter; network/build/submodules/LFS gated"
+    },
+    {
+      "category": "repository",
+      "desired": {
+        "enabled": false
+      },
+      "effects": [
+        "repository checkout requires pinned revision, explicit new destination and isolated source adapter; network/build/submodules/LFS gated"
+      ],
+      "execution_supported": false,
+      "id": "component.gr00t",
+      "operation": "repository_checkout",
+      "policy": {
+        "high_risk": false,
+        "ownership": "no-adoption"
+      },
+      "preconditions": {},
+      "reason": "explicitly disabled",
+      "status": "excluded",
+      "target": "/tmp/isaac-host-demo-c7mjvq43/host-home/Documents/GitHub/BoredEngineer/Isaac-GR00T",
+      "unsupported_reason": "repository checkout requires pinned revision, explicit new destination and isolated source adapter; network/build/submodules/LFS gated"
+    },
+    {
+      "category": "repository",
+      "desired": {
+        "mode": "git",
+        "ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "repository": "https://github.com/example/IsaacLab.git",
+        "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "effects": [
+        "repository checkout requires pinned revision, explicit new destination and isolated source adapter; network/build/submodules/LFS gated"
+      ],
+      "execution_supported": false,
+      "id": "component.lab",
+      "operation": "repository_checkout",
+      "policy": {
+        "high_risk": false,
+        "ownership": "no-adoption"
+      },
+      "preconditions": {},
+      "reason": "repository checkout requires pinned revision, explicit new destination and isolated source adapter; network/build/submodules/LFS gated",
+      "status": "unknown",
+      "target": "/tmp/isaac-host-demo-c7mjvq43/host-home/Documents/GitHub/BoredEngineer/IsaacLab",
+      "unsupported_reason": "repository checkout requires pinned revision, explicit new destination and isolated source adapter; network/build/submodules/LFS gated"
+    },
+    {
+      "category": "repository",
+      "desired": {
+        "enabled": false
+      },
+      "effects": [
+        "repository checkout requires pinned revision, explicit new destination and isolated source adapter; network/build/submodules/LFS gated"
+      ],
+      "execution_supported": false,
+      "id": "component.lerobot",
+      "operation": "repository_checkout",
+      "policy": {
+        "high_risk": false,
+        "ownership": "no-adoption"
+      },
+      "preconditions": {},
+      "reason": "explicitly disabled",
+      "status": "excluded",
+      "target": "/tmp/isaac-host-demo-c7mjvq43/host-home/Documents/GitHub/BoredEngineer/lerobot",
+      "unsupported_reason": "repository checkout requires pinned revision, explicit new destination and isolated source adapter; network/build/submodules/LFS gated"
+    },
+    {
+      "category": "artifact",
+      "desired": {
+        "mode": "standalone",
+        "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "url": "https://example.org/synthetic-only.zip",
+        "version": "6.0.1"
+      },
+      "effects": [
+        "download/verify artifact, extract into selected new prefix, separately review EULA and runtime setup"
+      ],
+      "execution_supported": false,
+      "id": "component.sim",
+      "operation": "artifact_install",
+      "policy": {
+        "high_risk": false,
+        "ownership": "no-adoption"
+      },
+      "preconditions": {},
+      "reason": "artifact integrity/extraction, EULA and runtime verification require a dedicated qualified adapter",
+      "status": "unknown",
+      "target": "/tmp/isaac-host-demo-c7mjvq43/host-home/IsaacSim",
+      "unsupported_reason": "artifact integrity/extraction, EULA and runtime verification require a dedicated qualified adapter"
+    },
+    {
+      "category": "environment",
+      "desired": {
+        "environment": "kit",
+        "manager": "bundled"
+      },
+      "effects": [
+        "bundled environment provisioning requires a qualified new-prefix adapter; existing environment mutation prohibited"
+      ],
+      "execution_supported": false,
+      "id": "runtime.kit",
+      "operation": "environment_create",
+      "policy": {
+        "high_risk": false,
+        "ownership": "no-adoption"
+      },
+      "preconditions": {},
+      "reason": "consumer runtime prefix depends on separately supplied installation evidence; no environment-name guess is a filesystem path",
+      "status": "unknown",
+      "target": "unresolved-runtime-prefix:bundled:kit",
+      "unsupported_reason": "bundled environment provisioning requires a qualified new-prefix adapter; existing environment mutation prohibited"
+    },
+    {
+      "category": "environment",
+      "desired": {
+        "environment": "isaaclab",
+        "manager": "conda",
+        "python": "3.12"
+      },
+      "effects": [
+        "conda environment provisioning requires a qualified new-prefix adapter; existing environment mutation prohibited"
+      ],
+      "execution_supported": false,
+      "id": "runtime.lab",
+      "operation": "environment_create",
+      "policy": {
+        "high_risk": false,
+        "ownership": "no-adoption"
+      },
+      "preconditions": {},
+      "reason": "consumer runtime prefix depends on separately supplied installation evidence; no environment-name guess is a filesystem path",
+      "status": "unknown",
+      "target": "unresolved-runtime-prefix:conda:isaaclab",
+      "unsupported_reason": "conda environment provisioning requires a qualified new-prefix adapter; existing environment mutation prohibited"
+    }
+  ],
+  "coverage": {
+    "components": "planned",
+    "defaults": "metadata",
+    "draft": "metadata",
+    "kind": "metadata",
+    "name": "metadata",
+    "runtimes": "planned",
+    "schema_version": "metadata",
+    "target": "metadata",
+    "workspace": "planned"
+  },
+  "digest": "3599b9432eb815bed5a7f4c10801f711a4bbdecc040a2037c52c9131c0ab452f",
+  "draft": false,
+  "evidence_scope": "profile-only",
+  "execution_authorized": false,
+  "kind": "installer-action-plan",
+  "profile_digest": "6e392e0332dfd860a0b00dfde40bb227213d9a636f6a4c8f27f8130460956df3",
+  "target_home": "/tmp/isaac-host-demo-c7mjvq43/host-home",
+  "version": 1
+}

@@ -1,0 +1,23 @@
+STEP1_RESULT {"suite": "workstation_profile_extensions", "tests": 17, "skipped": 0, "failures": 0, "errors": 0, "passed": true}
+test_admitted_long_paths_urls_and_purpose_remain_lossless (step1_workstation_profile_extensions.ExtensionsTests) ... ok
+test_archive_url_override_invalidates_inherited_checksum (step1_workstation_profile_extensions.ExtensionsTests) ... ok
+test_custom_declarations_reject_hooks_secrets_and_forged_support (step1_workstation_profile_extensions.ExtensionsTests) ... ok
+test_environment_and_note_declarations_are_typed_nonexecutable (step1_workstation_profile_extensions.ExtensionsTests) ... ok
+test_explicit_sim_git_is_lossless_without_converting_standalone_defaults (step1_workstation_profile_extensions.ExtensionsTests) ... ok
+test_explicit_sim_source_mode_switch_replaces_union_without_stale_pins (step1_workstation_profile_extensions.ExtensionsTests) ... ok
+test_explicit_standalone_archive_url_roundtrips_exactly_and_never_is_invented (step1_workstation_profile_extensions.ExtensionsTests) ... ok
+test_incomplete_draft_dependency_errors_are_reported_not_hidden_by_defaults (step1_workstation_profile_extensions.ExtensionsTests) ... ok
+test_overrides_cannot_remove_draft_or_relabel_inherited_defaults (step1_workstation_profile_extensions.ExtensionsTests) ... ok
+test_pure_resolution_matches_file_resolution_with_preloaded_presets (step1_workstation_profile_extensions.ExtensionsTests) ... ok
+test_pure_text_parser_never_opens_presets (step1_workstation_profile_extensions.ExtensionsTests) ... ok
+test_repository_change_cannot_reuse_uppercase_immutable_ref (step1_workstation_profile_extensions.ExtensionsTests) ... ok
+test_repository_declarations_cannot_claim_clean_or_leak_credentials (step1_workstation_profile_extensions.ExtensionsTests) ... ok
+test_sparse_drafts_resolve_without_preset_or_robotics_defaults (step1_workstation_profile_extensions.ExtensionsTests) ... ok
+test_uppercase_commit_reference_has_canonical_content_identity (step1_workstation_profile_extensions.ExtensionsTests) ... ok
+test_uppercase_immutable_ref_cannot_hide_conflicting_revision (step1_workstation_profile_extensions.ExtensionsTests) ... ok
+test_workspace_and_draft_controls_are_strict_nonsecret_data (step1_workstation_profile_extensions.ExtensionsTests) ... ok
+
+----------------------------------------------------------------------
+Ran 17 tests in 0.142s
+
+OK

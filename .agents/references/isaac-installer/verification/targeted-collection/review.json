@@ -1,0 +1,19 @@
+{
+  "verdict": "PASS",
+  "findings": [],
+  "sha256": {
+    "isaac-installer/tools/collect_host_metadata.py": "4e191d104cbdfdf1d39c1dd35e0a83e9e979971c6813f950ba9588d00043cfd2",
+    "isaac-installer/tools/collect_repository_metadata.py": "51e7b3ce7264268ea55c9cb2f62d0e2d2ad73e687b1bdbe261e4fe23fb2a5c05",
+    "src/tests/installer_host_collector.test.py": "5604910fca862b0d8c3c7f6796cbea32e85415c705a2890734150f12420e89a8",
+    "src/tests/installer_host_inventory.test.py": "685fd79ee8c548ac0d3545a0ef0c870a721de71e0d6ce8e266bb988fd65134d8",
+    "isaac-installer/docs/host-discovery.md": "c7673fa16f670960f4e022c1dd90dfa7ed78d2f5fa7633d781657d0266e1671e"
+  },
+  "review_scope": "Independent source review of the current five-file HEAD-to-working-tree diff and relevant collector/host_inventory.py consumer context, including late early-timeout omission fix. No concrete correctness or security issues identified within approved bounded no-follow offline collection scope.",
+  "verification": [
+    "All four Python files parsed successfully with ast.parse; no bytecode written.",
+    "git diff HEAD --check passed for all five files.",
+    "Late fix reviewed: software omission is recorded before watchdog entry; new regression test checks omission and time-limit together.",
+    "All five hashes refreshed after final source review. Tests reviewed as source, not rerun."
+  ],
+  "constraints": "No repository edits, collection scans, private config/inventory or credential reads, network, install/sync/cloud actions, or physical-host access."
+}

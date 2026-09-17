@@ -1,0 +1,17 @@
+STEP1_RESULT {"suite": "workstation_profile", "tests": 11, "skipped": 0, "failures": 0, "errors": 0, "passed": true}
+test_bounded_regular_file_input_and_precise_runtime_versions (step1_workstation_profile.WorkstationProfileTests) ... ok
+test_disabled_dependencies_and_runtime_contamination_fail_closed (step1_workstation_profile.WorkstationProfileTests) ... ok
+test_execution_mode_is_explicit_and_container_intent_is_rejected (step1_workstation_profile.WorkstationProfileTests) ... ok
+test_gr00t_preserves_repo_local_uv_runtime_intent (step1_workstation_profile.WorkstationProfileTests) ... ok
+test_load_desired_document_without_side_effects (step1_workstation_profile.WorkstationProfileTests) ... ok
+test_manifest_reports_honest_refs_and_path_independent_digest (step1_workstation_profile.WorkstationProfileTests) ... ok
+test_named_presets_resolve_with_explicit_false_precedence (step1_workstation_profile.WorkstationProfileTests) ... ok
+test_ref_changes_invalidate_inherited_pins (step1_workstation_profile.WorkstationProfileTests) ... ok
+test_repository_changes_cannot_reuse_inherited_immutable_refs (step1_workstation_profile.WorkstationProfileTests) ... ok
+test_software_values_are_typed_nonsecret_and_nonexecutable (step1_workstation_profile.WorkstationProfileTests) ... ok
+test_strict_loader_rejects_ambiguous_or_observed_input (step1_workstation_profile.WorkstationProfileTests) ... ok
+
+----------------------------------------------------------------------
+Ran 11 tests in 1.198s
+
+OK

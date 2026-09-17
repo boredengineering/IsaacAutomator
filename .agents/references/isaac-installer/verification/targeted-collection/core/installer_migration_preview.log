@@ -1,0 +1,18 @@
+STEP1_RESULT {"suite": "installer_migration_preview", "tests": 12, "skipped": 0, "failures": 0, "errors": 0, "passed": true}
+test_auto_and_org_use_shared_case_evidence_not_invented_owner_paths (step1_installer_migration_preview.MigrationPreviewTests) ... ok
+test_case_only_rename_and_supplied_collisions_remain_visible (step1_installer_migration_preview.MigrationPreviewTests) ... ok
+test_empty_preview_is_explicitly_read_only_not_migration_apply (step1_installer_migration_preview.MigrationPreviewTests) ... ok
+test_malformed_inputs_refuse_instead_of_claiming_empty_success (step1_installer_migration_preview.MigrationPreviewTests) ... ok
+test_malformed_nested_evidence_and_repository_records_refuse (step1_installer_migration_preview.MigrationPreviewTests) ... ok
+test_missing_shared_resolver_never_silently_drops_repositories (step1_installer_migration_preview.MigrationPreviewTests) ... ok
+test_nonempty_flat_to_named_compares_actual_destinations_without_reads (step1_installer_migration_preview.MigrationPreviewTests) ... ok
+test_only_caller_evidence_can_report_dirty_existing_or_review_required (step1_installer_migration_preview.MigrationPreviewTests) ... ok
+test_per_repository_overrides_are_independent_of_roots_and_report_same_path (step1_installer_migration_preview.MigrationPreviewTests) ... ok
+test_same_destination_does_not_hide_supplied_file_or_symlink_conflicts (step1_installer_migration_preview.MigrationPreviewTests) ... ok
+test_two_repositories_cannot_share_exact_or_casefold_destination (step1_installer_migration_preview.MigrationPreviewTests) ... ok
+test_workspace_name_does_not_rewrite_independent_roots_or_input_profiles (step1_installer_migration_preview.MigrationPreviewTests) ... ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 0.040s
+
+OK

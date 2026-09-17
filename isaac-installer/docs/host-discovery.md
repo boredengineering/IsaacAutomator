@@ -29,16 +29,114 @@ explicit post-collection output is allowed even when the repository is inside
 observation trees. New private directories use mode 0700 and reports mode 0600.
 An existing `configs/private` must be owned by you, have no group/other access,
 and not be a symlink; the wrapper does not change existing permissions. Existing
-reports and symlinks are never overwritten. Move an existing report yourself
-before another run, or use the portable collector with a new external filename.
+reports and symlinks are never overwritten. Use a new `--report-name` for a
+follow-up without moving the original, or a new portable output filename.
 A failed/interrupted write can leave a partial report; only the success message
 confirms completion. No installs, automatic import/review, or profile approvals
 are performed. No `sudo` or stdout/stderr file redirection.
 
-The wrapper accepts the same `--home`, `--system-root`, and `--max-*` scope/limit
-options described below, but the output filename is fixed. To choose another
-output location, use the standalone script below. Keep reports private and out
+The wrapper accepts the same `--home`, `--system-root`, `--scope`,
+`--workspace-name`, `--include-editable`, and `--max-*`
+options described below. `--report-name` selects a new basename within
+`configs/private`: an alphanumeric initial character followed by up to 95
+alphanumeric, underscore or hyphen characters, then `.json`. Paths and hidden
+names are refused. To choose another output directory, use the standalone script
+below. Keep reports private and out
 of commits or uploads, even though they live inside the checkout.
+
+## Targeted follow-up after incomplete collection
+
+If APT/dpkg consumes the shared entry budget before Python environments are read,
+use `--scope software`. This collects the same bounded workspace/Git, IsaacSim
+VERSION and Conda/venv metadata, but reads **no machine or system-package records**.
+Omitted system data is marked `system-scope-not-collected`, not an empty/healthy
+system. The default `--scope all` retains the original collection categories and
+ordering. Budgets remain global: a large workspace or environment can still
+exhaust software-only collection. No automatic retries or budget increases occur.
+
+From the repository in an ordinary-user **host terminal**, review then collect:
+
+```sh
+./collect-host-metadata --plan --scope software --report-name host-software-02.json
+./collect-host-metadata --collect --scope software --report-name host-software-02.json
+```
+
+The new private report is `configs/private/host-software-02.json`; the original
+`host-inventory.json` remains untouched. If the new name already exists, select
+another name. Plan still performs no scan or writes. Do not use sudo/redirection.
+
+Multiple BoredEngineer/case/legacy-alias candidates now yield separate repository
+observations rather than suppressing all repositories. Workspace selection stays
+unknown, with `ambiguous-workspace` coverage. No folder is renamed, merged or
+chosen as desired intent. Repositories are detected through their fixed `.git`
+metadata directory before enumerating payload entries, avoiding unnecessary
+budget use on assets/source files inside recognized repositories.
+
+Import a software-only report separately for review. The importer does **not**
+union inventory snapshots: `--previous-report` carries review continuity, not
+missing machine/package facts from an older scan. Keep both original reports as
+evidence and compare scopes before deciding what a future profile should contain.
+
+### Follow-up for a known workspace and metadata-format gaps
+
+When the intended spelling is known, `--workspace-name BoredEngineer` selects
+that **exact** child of `~/Documents/GitHub`. The collector does not enumerate
+other workspace candidates in this mode. A missing or symlinked selected child
+remains a gap; there is no fallback to the lowercase `boredengineering` alias.
+The report retains the requested name so exclusion is not confused with absence.
+This scopes repository discovery; the usual `~/IsaacSim` and known Conda seeds
+remain included. It does not rename, merge, migrate, or delete another tree.
+
+For the next fresh software report, review the expanded metadata scope first:
+
+```sh
+./collect-host-metadata --plan --scope software --workspace-name BoredEngineer --include-editable --report-name host-software-03.json
+./collect-host-metadata --collect --scope software --workspace-name BoredEngineer --include-editable --report-name host-software-03.json
+```
+
+Run on the host as the ordinary user, without sudo or redirection. Preserve both
+earlier reports. If `host-software-03.json` already exists, choose a fresh name.
+
+Metadata handling addresses specific gaps without running installed software:
+
+- **Isaac Sim VERSION:** accepts a combined prerelease and build suffix, including
+  `6.0.1-rc.7+release.42383.32955d8d.gl`, and preserves it in full. This is not a
+  final-release assertion, verified archive source, or runtime-health check.
+- **Conda:** prioritizes Python package records within each environment and
+  allows bounded JSON metadata up to 1 MiB per file. The global byte/time/entry
+  limits still apply. JSON is not parsed from an incomplete prefix. Valid
+  underscore-prefixed Conda package names are supported.
+- **dist-info METADATA:** reads the bounded header (up to 64 KiB), stopping at the
+  blank separator rather than requiring the full long description to fit. A
+  missing/truncated or ambiguous Name/Version header remains unresolved.
+- **Editable metadata:** `--include-editable` explicitly opts into bounded
+  `direct_url.json` and `.pth` text reads. Local source labels are evidence only;
+  executable `.pth` indirection stays unresolved. No import line is executed,
+  no source path is followed, and no URL is fetched. Remote/unsafe values are
+  not exported as source locations. This does not authorize installing any
+  editable package. A recorded path is an unverified metadata label, not proof
+  that the path exists or that a running Python process imports from it.
+  Without the flag, these files remain excluded.
+
+Unrecognized VERSION text remains unknown and rejected raw text is not retained.
+Symlink/hardlink safeguards remain in place. GPU/driver capabilities, unsupported
+package formats, and unresolved editable indirection remain explicit gaps—not
+permission to follow links, run probes, or repair the workstation. Check coverage
+after every collection; a success message means the report was written, not that
+all discovery gaps were closed.
+
+### Version preservation is not consumer support
+
+The shared desired-profile validator also retains combined prerelease/build
+versions through review and YAML export. Local rendering preserves that version;
+this does not verify archive availability, compatibility, or successful install.
+The Ansible standalone role currently requires **exactly final `6.0.1`**. For
+`6.0.1-rc.7+release.42383.32955d8d.gl`, its renderer retains the full version but
+returns `render_supported: false`, exit code 2, and a blocker at
+`components.sim.source.version`. Do not replace the observed prerelease with a
+final-release label or bypass that role assertion to make a preview pass.
+Source archive URL/checksum and any change to the desired installed version
+remain separate reviewed decisions.
 
 ## 1. Review the scope on the host
 
@@ -92,7 +190,8 @@ Container markers are best-effort facts; missing markers do not prove bare metal
 
 1. **Workspace first:** bounded names in `~/Documents/GitHub`, starting with
    BoredEngineer/case variants and the known legacy `boredengineering` alias.
-   Multiple candidates remain ambiguous. Exact names and discovered repository
+   Multiple candidates remain ambiguous by default. `--workspace-name` instead
+   limits discovery to one exact child. Exact names and discovered repository
    paths are retained; nothing is renamed or created in that workspace.
 2. **Repositories:** selected Git HEAD/config/ref metadata. No Git commands,
    hooks, checkout/status/fetch, object reads or config includes are executed.
@@ -114,8 +213,9 @@ Container markers are best-effort facts; missing markers do not prove bare metal
    maintainer script, log, shell history or package import is used.
 6. **Environment metadata:** bounded known Conda seeds plus workspace/repository
    `.venv` metadata. Conda records and dist-info name/version data are read without
-   activating an environment. Editable/source tooling not safely understood is
-   reported as unsupported rather than followed or imported.
+   activating an environment. Editable evidence requires `--include-editable`;
+   source tooling not safely understood remains unresolved rather than followed
+   or imported.
 
 This is not every installed program: Snap/Flatpak, container contents, arbitrary
 prefixes, live GPU compatibility and unsupported editable/source metadata remain

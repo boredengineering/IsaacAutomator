@@ -10,7 +10,7 @@ import json
 import math
 import os
 import re
-from urllib.parse import urlsplit
+from urllib.parse import unquote, urlsplit
 import signal
 import stat
 import threading
@@ -174,7 +174,13 @@ class _Reader:
             self.issue('unsafe-or-unreadable-directory', path)
             return False
 
-    def read(self, path, cap=65536, optional=False):
+    def read(self, path, cap=65536, optional=False, metadata_header=False):
+        # Only RFC-style METADATA headers admit a prefix. JSON always requires
+        # the entire stable file; never parse an arbitrary truncated JSON prefix.
+        if metadata_header:
+            if os.path.basename(path) != 'METADATA':
+                raise ValueError('header reads require METADATA')
+            cap = 65536
         if not self.entry(path):
             return None
         remaining = self.limits['max_bytes'] - self.bytes
@@ -191,32 +197,53 @@ class _Reader:
                         self.issue('unsafe-file', path)
                         return None
                     budget = min(cap, remaining)
-                    if before.st_size > budget:
+                    if not metadata_header and before.st_size > budget:
                         self.issue('byte-limit' if before.st_size > remaining else 'file-size-limit', path)
                         return None
                     chunks = []
                     count = 0
+                    header_done = False
+                    line = bytearray()
                     while count < budget:
                         if not self.ready(path):
                             return None
-                        chunk = os.read(fd, min(8192, budget-count))
+                        # Bytewise headers stop exactly at the delimiter, even
+                        # for CRLF, without reading private description bodies.
+                        chunk = os.read(fd, 1 if metadata_header else min(8192, budget-count))
                         count += len(chunk)
                         self.bytes += len(chunk)
                         if not chunk:
+                            # Actual EOF below the cap is a complete header-only
+                            # record; hitting a budget is never equivalent to EOF.
+                            if metadata_header:
+                                header_done = True
                             break
                         chunks.append(chunk)
+                        if metadata_header:
+                            line.extend(chunk)
+                            if chunk == b'\n':
+                                if line in (b'\n', b'\r\n'):
+                                    header_done = True
+                                    break
+                                line.clear()
                     after = os.fstat(fd)
                     current = os.stat(os.path.basename(path), dir_fd=parent, follow_symlinks=False)
                     signature = lambda s: (s.st_dev, s.st_ino, s.st_mode, s.st_nlink, s.st_size, s.st_mtime_ns, s.st_ctime_ns)
                     if signature(before) != signature(after) or signature(after) != signature(current):
                         self.issue('unstable-file', path)
                         return None
-                    # Virtual proc records report st_size=0; reaching the cap is
-                    # conservatively incomplete, never a successful prefix parse.
-                    if count == budget:
+                    # After unchanged signatures, a positive ordinary-file size
+                    # proves the whole record fits without an extra budget byte.
+                    # Virtual proc st_size=0 cannot prove this; header reads still
+                    # require their delimiter or an actual EOF below the budget.
+                    full_file = not metadata_header and 0 < before.st_size == count
+                    if count == budget and not header_done and not full_file:
                         self.issue('byte-limit' if budget == remaining else 'file-size-limit', path)
                         return None
                     if not self.ready(path):
+                        return None
+                    if metadata_header and not header_done:
+                        self.issue('malformed-metadata', path)
                         return None
                     return b''.join(chunks).decode('utf-8', errors='strict')
                 finally:
@@ -325,18 +352,20 @@ def _workspace_repositories(reader, path, depth=0):
     if depth > reader.limits['max_depth']:
         reader.issue('depth-limit', path)
         return []
-    names = reader.directories(path)
-    if '.git' in names:
+    # Probe the fixed metadata directory before enumerating repository payloads.
+    # Large asset/source trees must not spend the budget needed to read HEAD.
+    git = os.path.join(path, '.git')
+    if reader.directory_exists(git):
         if reader.repositories >= 128:
             reader.issue('repository-limit', path)
             return []
         reader.repositories += 1
         return [_repository(reader, path)]
-    git = os.path.join(path, '.git')
     if reader.read(git, optional=True) is not None:
         reader.issue('unsupported-worktree', git)
         return []
     result = []
+    names = reader.directories(path)
     for name in names:
         if name.startswith('.') or name.casefold() in _EXCLUDED:
             continue
@@ -499,8 +528,9 @@ def _packages(reader, root):
 _CONDA_SEEDS = ('miniconda3', 'anaconda3', 'miniforge3', 'mambaforge')
 
 
-def _package_pair(name, version):
-    if (_safe_label(name, 128) and re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]{0,127}', name)
+def _package_pair(name, version, conda=False):
+    pattern = r'[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}' if conda else r'[A-Za-z0-9][A-Za-z0-9_.-]{0,127}'
+    if (_safe_label(name, 128) and re.fullmatch(pattern, name)
             and _safe_label(version, 128) and re.fullmatch(r'[0-9][A-Za-z0-9.!+_~-]{0,127}', version)):
         return {'name':name, 'version':version}
     return None
@@ -534,16 +564,21 @@ def _environment(reader, path):
     if reader.limits['max_depth'] < 1:
         reader.issue('depth-limit', meta)
     else:
-        for filename in reader.directories(meta, files=True):
+        # Exact Python metadata first, then version/build filenames, not every
+        # python-prefixed package (for example python-dateutil or python-2fa).
+        filenames = reader.directories(meta, files=True)
+        filenames.sort(key=lambda n: (n != 'python.json',
+            re.fullmatch(r'python-[0-9]+(?:\.[0-9]+)+(?:-[A-Za-z0-9_.-]+)?\.json', n) is None, n))
+        for filename in filenames:
             if not filename.endswith('.json') or filename.startswith('.'):
                 continue
             source = os.path.join(meta, filename)
-            text = reader.read(source)
+            text = reader.read(source, cap=1048576)
             if text is None:
                 continue
             try:
                 value = json.loads(text)
-                pair = _package_pair(value.get('name'), value.get('version'))
+                pair = _package_pair(value.get('name'), value.get('version'), conda=True)
                 if pair:
                     packages.append(pair)
                     sources.setdefault(pair['name'], source)
@@ -599,22 +634,36 @@ def _venv(reader, path, name):
                 if not filename.endswith('.dist-info') or filename.startswith('.'):
                     continue
                 source = os.path.join(site, filename, 'METADATA')
-                text = reader.read(source)
+                text = reader.read(source, metadata_header=True)
                 if text is None:
                     continue
                 fields = {}
-                for line in text.split('\n\n', 1)[0].splitlines():
-                    if ':' in line:
-                        key, value = line.split(':', 1)
-                        if key in ('Name', 'Version'):
-                            fields[key] = None if key in fields else value.strip()
-                pair = _package_pair(fields.get('Name'), fields.get('Version'))
+                previous = None
+                valid = True
+                for line in text.splitlines():
+                    if not line:
+                        break
+                    if line.startswith((' ', '\t')):
+                        if previous in ('name', 'version'):
+                            valid = False
+                        continue
+                    if ':' not in line:
+                        valid = False
+                        continue
+                    key, value = line.split(':', 1)
+                    previous = key.lower()
+                    if previous in ('name', 'version'):
+                        if previous in fields:
+                            valid = False
+                        fields[previous] = value.strip()
+                pair = _package_pair(fields.get('name'), fields.get('version')) if valid else None
                 if pair:
                     packages.append(pair)
                     sources.setdefault(pair['name'], source)
                 else:
                     reader.issue('malformed-metadata', source)
-    reader.issue('unsupported-editable-metadata', path)
+    if 'editable' not in reader.details:
+        reader.issue('unsupported-editable-metadata', path)
     packages = _unique_packages(reader, path, packages)
     reader.details['environments'][path] = {'python': python_source,
         'packages': {p['name']: sources[p['name']] for p in packages}}
@@ -651,6 +700,141 @@ def _environments(reader, home, report):
     return result
 
 
+def _local_evidence_path(value, absolute=True):
+    """Sanitize lexical labels only. Never resolve, stat or follow this value."""
+    if not _safe_label(value, 4096) or re.fullmatch(r'[A-Za-z0-9_./ -]+', value) is None:
+        return None
+    if value.startswith('//') or (absolute and not value.startswith('/')):
+        return None
+    if any(p in ('', '.', '..') for p in value.lstrip('/').split('/')):
+        return None
+    return value
+
+
+def _unique_json_pairs(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError('duplicate JSON key')
+        result[key] = value
+    return result
+
+
+def _direct_url_record(source, text):
+    record = {'source': source, 'kind': 'direct-url', 'line': None,
+              'editable': None, 'local_path': None, 'status': 'unknown'}
+    if text is None:
+        return record
+    try:
+        value = json.loads(text, object_pairs_hook=_unique_json_pairs)
+        flag = value.get('dir_info', {}).get('editable')
+        raw = value.get('url')
+        if type(flag) is not bool or not isinstance(raw, str):
+            return record
+        record['editable'] = flag
+        # Parse only after rejecting control characters; urlsplit strips some.
+        if not raw.isprintable():
+            record['status'] = 'redacted'
+            return record
+        url = urlsplit(raw)
+        if url.scheme != 'file' or url.netloc not in ('', 'localhost'):
+            record['status'] = 'nonlocal'
+        elif url.query or url.fragment:
+            record['status'] = 'redacted'
+        else:
+            record['local_path'] = _local_evidence_path(unquote(url.path, errors='strict'))
+            record['status'] = 'local' if record['local_path'] is not None else 'redacted'
+    except (ValueError, AttributeError, RecursionError, UnicodeError):
+        pass
+    return record
+
+
+def _pth_record(source, line, value):
+    record = {'source': source, 'kind': 'pth', 'line': line,
+              'editable': None, 'local_path': None, 'status': 'unknown'}
+    if value is None:
+        return record
+    if value.startswith(('import ', 'import\t')):
+        record['status'] = 'executable'
+    elif '://' in value:
+        record['status'] = 'nonlocal'
+    else:
+        record['local_path'] = _local_evidence_path(value, absolute=False)
+        record['status'] = 'local' if record['local_path'] is not None else 'redacted'
+    return record
+
+
+def _editable(reader, env):
+    """Read selected source records in either manager, not source targets."""
+    base = env['path']
+    evidence = {'status': 'unknown', 'records': []}
+    reader.details['editable']['environments'][base] = evidence
+    initial = set(reader.issue_keys)
+    def append(record):
+        records = reader.details['editable']['environments'].values()
+        if sum(len(e['records']) for e in records) >= 128:
+            reader.issue('editable-limit', base)
+            return False
+        evidence['records'].append(record)
+        if record['status'] != 'local':
+            reader.issue('unresolved-editable-metadata', record['source'])
+        return True
+    lib = os.path.join(base, 'lib')
+    if env['manager'] == 'unknown' or reader.limits['max_depth'] < 4:
+        reader.issue('editable-metadata-unavailable', base)
+        return
+    if not reader.directory_exists(lib):
+        reader.issue('editable-metadata-unavailable', base)
+        return
+    sites = 0
+    for version in reader.directories(lib):
+        if not re.fullmatch(r'python[0-9]+\.[0-9]+', version):
+            continue
+        site = os.path.join(lib, version, 'site-packages')
+        if not reader.directory_exists(site):
+            continue
+        sites += 1
+        for filename in reader.directories(site):
+            if not filename.endswith('.dist-info') or filename.startswith('.'):
+                continue
+            source = os.path.join(site, filename, 'direct_url.json')
+            before = set(reader.issue_keys)
+            text = reader.read(source, optional=True)
+            # Missing optional direct_url is not evidence of an editable install.
+            if text is None and before == reader.issue_keys:
+                continue
+            if not append(_direct_url_record(source, text)):
+                return
+        for filename in reader.directories(site, files=True):
+            if not filename.endswith('.pth') or filename.startswith('.'):
+                continue
+            source = os.path.join(site, filename)
+            text = reader.read(source)
+            if text is None:
+                if not append(_pth_record(source, None, None)):
+                    return
+                continue
+            for number, line in enumerate(text.splitlines(), 1):
+                if not reader.entry(source):
+                    return
+                value = line.strip()
+                if not value or value.startswith('#'):
+                    continue
+                if not append(_pth_record(source, number, value)):
+                    return
+    if not sites:
+        reader.issue('editable-metadata-unavailable', base)
+    # Earlier venv/package discovery may already have reported the same unsafe
+    # site ancestor. Deduplicated issues still invalidate this scan's coverage.
+    blocked = any(p == lib or p.startswith(lib + '/') or
+                  (lib.startswith(p.rstrip('/') + '/') and code in
+                   ('symlink-skipped', 'unsafe-or-unreadable-directory', 'unsupported-path-label',
+                    'entry-limit', 'byte-limit', 'time-limit', 'depth-limit'))
+                  for code, p in reader.issue_keys)
+    if sites and not blocked and initial == reader.issue_keys and reader.ready(base):
+        evidence['status'] = 'observed'
+
+
 def _package_groups(packages):
     """Deterministic heuristic review hints, not native consumer/install intent.
 
@@ -682,7 +866,9 @@ def _followups(report):
         result[key] = {'kind': kind, 'path': path, 'target': target,
             'records': records, 'action': 'request-explicit-scope'}
     if report['workspace']['selected'] is None:
-        add('workspace', report['workspace']['parent'], ['BoredEngineer', 'boredengineering'])
+        add('workspace', report['workspace']['parent'],
+            [report['workspace']['requested_name']] if 'requested_name' in report['workspace']
+            else ['BoredEngineer', 'boredengineering'])
     if not report['isaacsim'] or any(s['version'] is None for s in report['isaacsim']):
         add('isaacsim', report['context']['home'] + '/IsaacSim', ['VERSION'])
     unresolved_refs = set()
@@ -703,7 +889,9 @@ def _followups(report):
     for path in sorted({e['path'] for e in report['environments']} | {r['path'] for r in report['repositories']}):
         add('environment-descriptors', path, ['pyproject.toml', 'uv.lock', 'environment.yml'])
     for env in report['environments']:
-        add('editable-metadata', env['path'], ['direct_url.json', '*.pth'])
+        evidence = report['details'].get('editable', {}).get('environments', {}).get(env['path'])
+        if evidence is None or evidence['status'] == 'unknown':
+            add('editable-metadata', env['path'], ['direct_url.json', '*.pth'])
     return dict(sorted(result.items()))
 
 
@@ -747,6 +935,10 @@ def _finish(report, reader):
             gap('environment-scope-truncated')
         report['environments'] = retained_envs
         d['environments'] = {e['path']: d['environments'][e['path']] for e in retained_envs}
+        if 'editable' in d:
+            editable = d['editable']['environments']
+            d['editable']['environments'] = {e['path']: editable.get(e['path'],
+                {'status': 'unknown', 'records': []}) for e in retained_envs}
         statuses = d['system_packages']['status']
         report['packages'] = [p for p in report['packages'] if p['name'] + ':' + p['architecture'] in statuses]
         d['system_packages']['status'] = {p['name'] + ':' + p['architecture']: statuses[p['name'] + ':' + p['architecture']] for p in report['packages']}
@@ -764,24 +956,44 @@ def _finish(report, reader):
         d['followups'] = dict(list(proposals.items())[:128])
         d['package_groups'] = _package_groups(report['packages'])
     normalize()
-    while len(json.dumps(report, allow_nan=False).encode('utf-8')) > 1024 * 1024:
+    size = len(json.dumps(report, allow_nan=False).encode('utf-8'))
+    while size > 1024 * 1024:
         gap('report-size-limit')
         # Halve the largest variable section. Fixed context/scalars are bounded;
         # limit markers are retained even when ordinary issues must be removed.
         ordinary = [i for i in issues if not i['code'].endswith('-limit')]
         choices = [(len(json.dumps(report[k])), k) for k in ('packages', 'environments', 'repositories')]
         choices.append((len(json.dumps(ordinary)), 'issues'))
+        if 'editable' in d and any(e['records'] for e in d['editable']['environments'].values()):
+            choices.append((len(json.dumps(d['editable'])), 'editable'))
         _, section = max(choices)
-        if section == 'issues' and ordinary:
+        if section == 'editable':
+            for evidence in d['editable']['environments'].values():
+                del evidence['records'][len(evidence['records'])//2:]
+                evidence['status'] = 'unknown'
+        elif section == 'issues' and ordinary:
             keep = ordinary[:len(ordinary)//2]
             issues[:] = [i for i in issues if i['code'].endswith('-limit')] + keep
         elif report.get(section):
             del report[section][len(report[section])//2:]
-        else:
-            # Many long limit-path labels can themselves exhaust the budget.
+        normalize()
+        reduced_size = len(json.dumps(report, allow_nan=False).encode('utf-8'))
+        if reduced_size >= size:
+            # Long limit labels or regenerated details can defeat truncation.
+            # Require progress even though finalization runs after the watchdog.
             issues[:] = [{'code': 'report-size-limit', 'path': reader.home}]
             d['links'] = {}
-        normalize()
+            normalize()
+            reduced_size = len(json.dumps(report, allow_nan=False).encode('utf-8'))
+            if reduced_size >= size:
+                raise ValueError('Unable to bound host inventory report.')
+        size = reduced_size
+
+
+def _validate_workspace_name(name):
+    if name is not None and (not _safe_label(name, 128) or
+            re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]{0,127}', name) is None):
+        raise ValueError('safe exact workspace child required')
 
 
 def _validate_limits(limits):
@@ -794,8 +1006,13 @@ def _validate_limits(limits):
 
 
 def collect(home: str, system_root: str, *, max_entries=4096, max_bytes=8388608,
-            max_seconds=10.0, max_depth=4):
+            max_seconds=10.0, max_depth=4, scope='all', workspace_name=None, include_editable=False):
     home, system_root = _absolute(home), _absolute(system_root)
+    if scope not in ('all', 'software'):
+        raise ValueError('unsupported collection scope')
+    _validate_workspace_name(workspace_name)
+    if type(include_editable) is not bool:
+        raise ValueError('boolean editable opt-in required')
     limits = dict(max_entries=max_entries, max_bytes=max_bytes,
                   max_seconds=max_seconds, max_depth=max_depth)
     _validate_limits(limits)
@@ -813,11 +1030,21 @@ def collect(home: str, system_root: str, *, max_entries=4096, max_bytes=8388608,
             'system_packages': {'status_source': os.path.join(system_root, 'var/lib/dpkg/status'),
                 'manual_source': os.path.join(system_root, 'var/lib/apt/extended_states'), 'status': {}}},
     }
+    if workspace_name is not None:
+        report['workspace']['requested_name'] = workspace_name
+    if include_editable:
+        report['details']['editable'] = {'version': 1, 'environments': {}}
     reader = _Reader(report)
+    if scope == 'software':
+        reader.issue('system-scope-not-collected', system_root)
     with reader.watchdog(home) as active:
         if active:
-            candidates = [os.path.join(parent, name) for name in reader.directories(parent)
-                          if name.casefold() in ('boredengineer', 'boredengineering')]
+            if workspace_name is not None:
+                candidate = os.path.join(parent, workspace_name)
+                candidates = [candidate] if reader.directory_exists(candidate) else []
+            else:
+                candidates = [os.path.join(parent, name) for name in reader.directories(parent)
+                              if name.casefold() in ('boredengineer', 'boredengineering')]
             if len(candidates) > 128:
                 reader.issue('workspace-limit', parent)
                 candidates = candidates[:128]
@@ -827,14 +1054,17 @@ def collect(home: str, system_root: str, *, max_entries=4096, max_bytes=8388608,
                                          for item in report['coverage']['issues'])
             if len(candidates) == 1 and not enumeration_incomplete:
                 report['workspace']['selected'] = candidates[0]
-                report['repositories'] = _workspace_repositories(reader, candidates[0])
             else:
                 reader.issue('ambiguous-workspace' if candidates else 'missing-workspace', parent)
+            # Observing candidates does not choose the desired workspace. Keep
+            # ambiguous roots separate, with one shared collection budget.
+            for candidate in candidates:
+                report['repositories'].extend(_workspace_repositories(reader, candidate))
             sim = os.path.join(home, 'IsaacSim')
             if reader.directory_exists(sim):
                 source = os.path.join(sim, 'VERSION')
                 text = reader.read(source)
-                version = text.strip() if text and re.fullmatch(r'[0-9]+(?:\.[0-9]+){1,3}(?:[-+][A-Za-z0-9_.-]{1,64})?', text.strip()) else None
+                version = text.strip() if text and re.fullmatch(r'[0-9]+(?:\.[0-9]+){1,3}(?:-[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*)?(?:\+[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*)?', text.strip()) else None
                 if version is not None and (len(version) > 64 or not _safe_label(version)):
                     version = None
                 if text is not None and version is None:
@@ -843,9 +1073,13 @@ def collect(home: str, system_root: str, *, max_entries=4096, max_bytes=8388608,
                 reader.details['isaacsim'][sim] = {'version': source}
             else:
                 reader.issue('missing-isaacsim', sim)
-            report['machine'] = _machine(reader, system_root)
-            report['packages'] = _packages(reader, system_root)
+            if scope == 'all':
+                report['machine'] = _machine(reader, system_root)
+                report['packages'] = _packages(reader, system_root)
             report['environments'] = _environments(reader, home, report)
+            if include_editable:
+                for env in report['environments']:
+                    _editable(reader, env)
             reader.issue('unsupported-software-inventory', home)
     _finish(report, reader)
     return report
@@ -873,6 +1107,10 @@ def main(argv=None):
     mode.add_argument('--collect', action='store_true')
     parser.add_argument('--home', default=os.path.expanduser('~'))
     parser.add_argument('--system-root', default='/')
+    parser.add_argument('--scope', choices=('all', 'software'), default='all',
+                        help='software skips machine and system-package reads')
+    parser.add_argument('--workspace-name', help='scan only this exact workspace child; siblings are unobserved')
+    parser.add_argument('--include-editable', action='store_true', help='read local editable source evidence; never follow targets')
     parser.add_argument('--output', required=True)
     parser.add_argument('--max-entries', type=int, default=4096)
     parser.add_argument('--max-bytes', type=int, default=8388608)
@@ -884,13 +1122,14 @@ def main(argv=None):
         limits = {'max_entries':args.max_entries, 'max_bytes':args.max_bytes,
                   'max_seconds':args.max_seconds, 'max_depth':args.max_depth}
         _validate_limits(limits)
+        _validate_workspace_name(args.workspace_name)
         if not args.collect:
             plan = {'schema_version':1, 'kind':'host-inventory-plan',
                     'execution_authorized':False, 'home':home, 'system_root':root,
                     'identity':'fixture' if root != '/' else 'user-supplied-host',
                     'output':output, 'seeds':[os.path.join(home,'Documents','GitHub','BoredEngineer'),
                         os.path.join(home,'IsaacSim')] + [os.path.join(home,s) for s in _CONDA_SEEDS] + [os.path.join(home,'.conda','envs')],
-                    'limits':limits,
+                    'limits':limits, 'scope':args.scope,
                     'fields':['repository HEAD/config/ref', 'IsaacSim VERSION', 'fixed machine records',
                               'dpkg/APT records', 'conda-meta', 'pyvenv.cfg/dist-info'],
                     'system_records':[os.path.join(root, relative) for relative in (
@@ -906,6 +1145,22 @@ def main(argv=None):
                         'Git commands', 'package-manager commands', 'network', 'worktree targets',
                         'direct_url.json', '*.pth', 'Conda history', 'launchers', 'settings changes'],
                     'effects':'Plan reads no target roots; explicit collection reads metadata and creates one private report; access times may change.'}
+            if args.workspace_name is not None:
+                plan['workspace_names'] = [args.workspace_name]
+                plan['seeds'][0] = os.path.join(home, 'Documents', 'GitHub', args.workspace_name)
+                plan['workspace_scope'] = 'exact-child; siblings unobserved'
+            plan['include_editable'] = args.include_editable
+            if args.include_editable:
+                plan['excluded'] = [p for p in plan['excluded'] if p not in ('direct_url.json', '*.pth')]
+                plan['excluded'].extend(['editable targets', 'executable .pth code'])
+                plan['home_metadata'].extend(['lib/python*/site-packages/*.dist-info/direct_url.json',
+                    'lib/python*/site-packages/*.pth (text evidence only)'])
+                plan['editable_limits'] = {'max_records': 128, 'max_file_bytes': 65536,
+                    'shared_entry_byte_time_budget': True}
+            if args.scope == 'software':
+                plan['system_records'] = []
+                plan['fields'] = ['repository HEAD/config/ref', 'IsaacSim VERSION',
+                                  'conda-meta', 'pyvenv.cfg/dist-info']
             print(json.dumps(plan, sort_keys=True, allow_nan=False))
             return 0
         excluded = [os.path.join(home, item) for item in ('Documents/GitHub', 'IsaacSim', '.conda', *_CONDA_SEEDS)]
@@ -917,7 +1172,8 @@ def main(argv=None):
             fd = os.open(os.path.basename(output), flags, 0o600, dir_fd=parent)
             with os.fdopen(fd, 'w', encoding='utf-8') as stream:
                 os.fchmod(stream.fileno(), 0o600)
-                report = collect(home, root, **limits)
+                report = collect(home, root, scope=args.scope, workspace_name=args.workspace_name,
+                                 include_editable=args.include_editable, **limits)
                 json.dump(report, stream, sort_keys=True, allow_nan=False)
                 stream.write('\n')
         print('Private host inventory written; coverage gaps remain evidence, not authority.')

@@ -1,0 +1,45 @@
+SYNTHETIC_CLI {"argv": ["/usr/bin/python3", "-I", "-B", "/workspaces/IsaacAutomator/isaac-installer/tools/collect_host_metadata.py", "--collect", "--home", "/tmp/isaac-step1-kmd9fs9w/installer_host_collector/host-fixture-pgnko97y/home", "--system-root", "/tmp/isaac-step1-kmd9fs9w/installer_host_collector/host-fixture-pgnko97y/system", "--output", "/tmp/isaac-step1-kmd9fs9w/installer_host_collector/host-fixture-pgnko97y/report.json"], "exit_code": 0, "schema_version": 1, "identity": "fixture", "mode": "0600"}
+SYNTHETIC_PLAN {"argv": ["/usr/bin/python3", "-I", "-B", "/workspaces/IsaacAutomator/isaac-installer/tools/collect_host_metadata.py", "--plan", "--home", "/tmp/isaac-step1-kmd9fs9w/installer_host_collector/host-fixture-hpkqxxyh/home", "--system-root", "/tmp/isaac-step1-kmd9fs9w/installer_host_collector/host-fixture-hpkqxxyh/system", "--output", "/tmp/isaac-step1-kmd9fs9w/installer_host_collector/host-fixture-hpkqxxyh/not-created.json"], "exit_code": 0, "kind": "host-inventory-plan", "report_created": false}
+STEP1_RESULT {"suite": "installer_host_collector", "tests": 37, "skipped": 0, "failures": 0, "errors": 0, "passed": true}
+test_ambiguous_workspaces_collect_evidence_without_selecting_intent (step1_installer_host_collector.HostCollectorTests) ... ok
+test_case_preserving_workspace_selection (step1_installer_host_collector.HostCollectorTests) ... ok
+test_cli_collect_creates_private_exclusive_report (step1_installer_host_collector.HostCollectorTests) ... ok
+test_cli_default_plan_has_no_target_reads_or_report_write (step1_installer_host_collector.HostCollectorTests) ... ok
+test_cli_diagnostics_refuse_regular_redirects_before_help (step1_installer_host_collector.HostCollectorTests) ... ok
+test_cli_refuses_observed_output_trees_and_symlinks (step1_installer_host_collector.HostCollectorTests) ... ok
+test_conda_selected_metadata_does_not_import_or_expose_urls (step1_installer_host_collector.HostCollectorTests) ... ok
+test_conflicting_environment_packages_remain_unknown (step1_installer_host_collector.HostCollectorTests) ... ok
+test_cpu_models_have_import_compatible_bound (step1_installer_host_collector.HostCollectorTests) ... ok
+test_deadline_interrupts_a_stalled_selected_read (step1_installer_host_collector.HostCollectorTests) ... ok
+test_dpkg_inventory_preserves_multiarch_and_manual_unknowns (step1_installer_host_collector.HostCollectorTests) ... ok
+test_empty_fixture_contract (step1_installer_host_collector.HostCollectorTests) ... ok
+test_external_git_worktree_is_explicitly_unsupported (step1_installer_host_collector.HostCollectorTests) ... ok
+test_git_default_section_does_not_fabricate_origin (step1_installer_host_collector.HostCollectorTests) ... ok
+test_incomplete_workspace_enumeration_never_selects_a_candidate (step1_installer_host_collector.HostCollectorTests) ... ok
+test_invalid_limits_fail_before_output_creation (step1_installer_host_collector.HostCollectorTests) ... ok
+test_known_legacy_shadow_workspace_stays_ambiguous (step1_installer_host_collector.HostCollectorTests) ... ok
+test_limits_use_positive_import_compatible_caps (step1_installer_host_collector.HostCollectorTests) ... ok
+test_machine_facts_use_only_explicit_fixture_records (step1_installer_host_collector.HostCollectorTests) ... ok
+test_os_release_symlink_uses_only_fixed_usr_lib_fallback (step1_installer_host_collector.HostCollectorTests) ... ok
+test_plan_discloses_fixed_metadata_scope (step1_installer_host_collector.HostCollectorTests) ... ok
+test_repository_metadata_not_directory_name_identifies_component (step1_installer_host_collector.HostCollectorTests) ... ok
+test_repository_payload_entries_do_not_exhaust_metadata_budget (step1_installer_host_collector.HostCollectorTests) ... ok
+test_repository_wrapper_default_plan_does_not_read_selected_metadata (step1_installer_host_collector.HostCollectorTests) ... ok
+test_repository_wrapper_plan_then_collect_private_report (step1_installer_host_collector.HostCollectorTests) ... ok
+test_repository_wrapper_preserves_existing_report_and_rejects_links (step1_installer_host_collector.HostCollectorTests) ... ok
+test_repository_wrapper_rejects_invalid_limits_and_public_private_directory (step1_installer_host_collector.HostCollectorTests) ... ok
+test_repository_wrapper_targeted_followup_preserves_original (step1_installer_host_collector.HostCollectorTests) ... ok
+test_sim_version_is_metadata_only (step1_installer_host_collector.HostCollectorTests) ... ok
+test_software_scope_cli_reserves_budget_for_environments (step1_installer_host_collector.HostCollectorTests) ... ok
+test_software_scope_omission_survives_early_timeout (step1_installer_host_collector.HostCollectorTests) ... ok
+test_source_credentials_and_noncanonical_refs_remain_importable_gaps (step1_installer_host_collector.HostCollectorTests) ... ok
+test_source_scalar_limits_produce_unknowns_not_invalid_reports (step1_installer_host_collector.HostCollectorTests) ... ok
+test_total_byte_and_depth_budgets_cover_all_inputs (step1_installer_host_collector.HostCollectorTests) ... ok
+test_unsafe_files_and_ancestors_are_never_read (step1_installer_host_collector.HostCollectorTests) ... ok
+test_unstable_selected_file_is_rejected (step1_installer_host_collector.HostCollectorTests) ... ok
+test_workspace_venv_dist_info_without_python_execution (step1_installer_host_collector.HostCollectorTests) ... ok
+
+----------------------------------------------------------------------
+Ran 37 tests in 1.612s
+
+OK
