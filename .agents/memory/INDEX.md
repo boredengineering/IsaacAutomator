@@ -4,6 +4,7 @@ Master index of session memory checkpoints for Isaac Automator.
 
 | Date / Time (UTC) | Short UUID | Topic | Summary | Log File |
 | :--- | :--- | :--- | :--- | :--- |
+| 2026-09-19 07:52 | `c896c397` | Collector scope correction and closeout | Small relevant evidence, not broad inventory or discovery orchestration; source-backed rationale, old scan/YAML-integration next steps superseded; code/evidence preserved, no replacement approved | [`20260919_075248_c896c397.md`](./sessions/20260919_075248_c896c397.md) |
 | 2026-09-17 06:12 | `e01393e1` | BoredEngineer collector gaps and offline handoff | Exact scope, full Sim version, bounded Conda/headers and opt-in editable metadata; 343 passed, two skips; independent reviews pass; real host report/proposal pending | [`20260917_061218_e01393e1.md`](./sessions/20260917_061218_e01393e1.md) |
 | 2026-09-16 04:55 | `8a7a617c` | Targeted collector coverage follow-up | Ambiguous candidate observation, software-only scope, metadata-first Git discovery and fresh private report naming; 324 passed, two skips; real host follow-up pending | [`20260916_045559_8a7a617c.md`](./sessions/20260916_045559_8a7a617c.md) |
 | 2026-09-15 17:28 | `15cc029b` | Host discovery collector and portable profile import | Step-2 offline implementation complete; 314 passed, two skips; actual ten-command synthetic pipeline; independent code and requirements closure; no real host collection | [`20260915_172847_15cc029b.md`](./sessions/20260915_172847_15cc029b.md) |

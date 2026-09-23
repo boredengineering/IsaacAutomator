@@ -1,5 +1,100 @@
 # Host discovery continuation plan
 
+## Decision — 2026-09-19: stop the broad collector direction
+
+**Status: closed as a development direction, not completed as host acceptance.**
+The user clarified that the intended input was a **small amount of relevant
+information**, not a system inventory or an agent orchestrating repeated searches
+to find everything installed. We are moving on from expanding this collector.
+This decision supersedes the next-scan instructions and pending collection gates
+below. They are retained as history, not a current task queue or permission.
+
+### Reflection and source-backed findings
+
+Research for this decision was a read-only review of the current source, plans,
+documentation and previous conversation. No host scan, private-report reread,
+runtime probe or external benchmark was performed. Source line references below
+describe the code inspected on this date; historical results are labeled as such.
+
+1. **We confused bounded execution with a small information need.**
+   `isaac-installer/tools/collect_host_metadata.py:1008-1084,1110-1146`
+   defaults to `scope='all'` and combines workspace/Git, Sim, machine, system
+   package and environment metadata. Byte/entry/time limits constrain work but
+   do not establish which facts are necessary for the user's next decision.
+   The implementation is not literally an unrestricted scan of the whole system;
+   its category breadth is nevertheless larger than the clarified task warrants.
+2. **The narrower flags did not make collection question-specific.**
+   `collect_host_metadata.py:1076-1082,1160-1163` omits machine/system-package
+   reads in software mode, but still collects environment metadata.
+   `isaac-installer/docs/host-discovery.md:82-88` explicitly says workspace
+   selection retains the usual Sim and Conda seeds. Selecting a folder is not
+   equivalent to selecting a small set of needed facts.
+3. **Coverage became the objective instead of usefulness.**
+   The earlier stopping point below records 1,756 package records and no collected
+   repositories/environments. The documented shared-budget problem
+   (`isaac-installer/docs/host-discovery.md:47-55`) led to software-only reruns;
+   later work added metadata formats and editable relationships. Those fixes can
+   be technically valid while the repeated gap-closing loop is the wrong product
+   direction. Missing optional facts need not become another discovery task.
+4. **More observations still did not answer what belongs in the profile.**
+   `isaac-installer/lib/core/host_inventory.py:396-475` keeps proposals unapproved,
+   uses heuristic package groups and proposes at most the first 32 packages per
+   environment with unknown purpose/source. These safeguards correctly avoid
+   inventing intent; they also show why inventory volume cannot substitute for
+   relevance, user choices or runtime compatibility evidence.
+5. **The agent's process drifted toward orchestration.**
+   The code does not autonomously execute its proposed follow-ups: they are
+   explicit scope-review notes (`host_inventory.py:431-435`). The problem was our
+   workflow of turning gaps into more collection, fixes, scans and review work.
+   Replacing the collector with an autonomous discovery agent would repeat that
+   mistake; no such replacement is selected or authorized.
+6. **The last suggested YAML integration addressed the wrong level.**
+   Reading workspace settings from a partial profile could remove duplicate CLI
+   input, but would not itself reduce what the collector tries to learn. The
+   previous session's recommendation to implement it before another scan is
+   withdrawn as the immediate next step, not promoted into a new implementation
+   plan. Earlier approvals and offline tests remain historical facts; this is a
+   course correction, not a claim that all earlier work was unauthorized.
+
+### Why move on, and what remains useful
+
+The marginal work was improving inventory coverage rather than delivering a
+small, understandable answer. Broader evidence also increases review burden and
+the amount of private metadata retained. More tests or additional readers cannot
+resolve that mismatch. We therefore stop investing in broader collector coverage
+instead of treating sunk implementation effort as a reason to continue.
+
+Preserve the source, regression tests, private reports and historical verification.
+Retain the useful principles: exact evidence, explicit unknowns, read-only scope,
+host/container separation, and observation distinct from desired intent and
+execution authority. Nothing is deleted, disabled or represented as deployed.
+The recorded 343 passing tests and two skips qualify the previous offline scope;
+they neither establish product fit nor finish real-host/profile acceptance.
+
+### Disposition and resumption boundary
+
+| Item | Current disposition |
+|---|---|
+| Existing collector and tests | Preserved; no implementation change in this closeout |
+| Fresh report-03 / further coverage reruns | No longer a requested next action under this plan |
+| Profile-driven collector integration | Not pursued as the next step; does not solve overscope |
+| Readable proposal and reviewed real YAML | Not completed; broader goal retained without an inventory-completeness prerequisite |
+| Replacement scanner or agent orchestrator | Not approved or designed here |
+| Installation, migration, sync, settings or cloud work | Not authorized by this decision |
+
+If collection is reconsidered later, first name one concrete user question and
+the few facts needed to answer it. Any proposal should state its exact read scope,
+small output and stopping condition; unknowns should remain unknown rather than
+triggering automatic search expansion. This is a lesson and reconsideration
+criterion, **not a new approved implementation plan**. No successor task has been
+chosen; the immediate action is to save this decision and the session checkpoint.
+
+## Historical plan and evidence — superseded for continuation
+
+The remaining sections preserve the earlier intent, approvals, implementation
+receipts and unfulfilled deliverables. Their future-tense instructions and
+"Pending" gates are historical and do not override the decision above.
+
 ## Goal
 Turn observations of the existing workstation into a reviewed shared YAML profile, without installing, repairing, moving repositories, or deploying cloud resources.
 

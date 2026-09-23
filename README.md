@@ -96,7 +96,11 @@ sudo ./bin/isaac-installer install --profile full
 ./isaac-installer/bin/isaac-installer gui
 ```
 
-Detailed specification and architecture: [`.agents/references/plans/isaac9s-gui-plan.md`](file:///workspaces/IsaacAutomator/.agents/references/plans/isaac9s-gui-plan.md).
+Usage, keyboard shortcuts, current limitations, and developer reference:
+[`src/tui/README.md`](src/tui/README.md). This maintained guide is also the source
+material for future published Isaac9s documentation.
+
+Historical specification and architecture: [`.agents/references/plans/isaac9s-gui-plan.md`](file:///workspaces/IsaacAutomator/.agents/references/plans/isaac9s-gui-plan.md).
 
 ---
 

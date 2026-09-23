@@ -1,5 +1,14 @@
 # Main workflow action plan
 
+> **2026-09-19 scope correction:** The user has stopped the broad host-collector
+> direction. Step 2 and its scan/coverage follow-ups below are historical, not
+> active execution instructions. The intent was a small amount of task-relevant
+> evidence, not comprehensive inventory or agent-orchestrated system discovery.
+> See [the closeout decision](../plans/host-discovery-continuation.md#decision--2026-09-19-stop-the-broad-collector-direction)
+> for source-backed rationale and disposition. Existing code/evidence is preserved;
+> real profile acceptance is not declared complete. No replacement is approved,
+> and this closeout does not authorize execution of other steps in this plan.
+
 **Goal:** Safely discover the existing native workstation setup, use evidence and review to produce useful shared desired YAML, align local installer and Ansible consumers, preserve repositories, and qualify selected local–cloud synchronization.
 
 **Architecture:** Keep observations, proposed intent, approved desired configuration, action previews, and actual execution separate. Reuse the implemented observer, profile schema, adapters and SSH/IAP transfer machinery; do not build another framework. Containers and image building are complementary, not prerequisites for this workflow.
@@ -50,6 +59,10 @@ within this synthetic/non-mutating scope. No actual
 workstation data was collected; no whole-plan or native-apply completion implied.
 
 ## 2. Build algorithmic host discovery, starting with the basics
+
+**Historical / no longer the active direction as of 2026-09-19.** The following
+records the earlier approved scope and offline evidence, not a request to resume
+collection. The latest user correction and linked closeout take precedence.
 
 **User correction:** The devcontainer's restricted host access is intentional.
 Do not ask the user to manually enumerate every installation path or open host
@@ -240,4 +253,4 @@ Deliver in this order:
 
 A container checker, Packer build, GPU demo, managed-apply fixture or large test total is not a substitute for these deliverables. Optional container/development consistency work remains separate and does not move the native installation into containers. Whole-plan completion must still reconcile the original requirements, including unfinished apply/adoption capabilities; completion of this core sequence is not permission to relabel those done.
 
-**Immediate next action:** Implement and fixture-test the small algorithmic host collector/import path in step 2, starting with BoredEngineer and IsaacSim, then system-package/machine metadata. Do not expand devcontainer access or start real host observation automatically. Fix sync protection in its own bounded slice without delaying unrelated observation/review work.
+**Immediate next action (2026-09-19):** Close out the broad collector direction and save the session decision. Do not request another inventory scan, expand readers, or implement YAML-driven collection as a presumed fix. No successor implementation task has been chosen. Shared-profile and synchronization requirements remain unresolved where previously unresolved; this decision neither completes nor activates them.
