@@ -3,7 +3,7 @@
 Master index of session memory checkpoints for Isaac Automator.
 
 | Date / Time (UTC) | Short UUID | Topic | Summary | Log File |
-| :--- | :--- | :--- | :--- | :--- |
+| 2026-10-25 18:12 | `6b995c90` | Cloud Profile Reconciliation with Full Physical AI Ecosystem | Reconciled local full-ecosystem.yaml with cloud studio-enterprise.yaml; created configs/workstations/cloud-ecosystem.yaml (Sim 6.0.1 Standalone, Lab v3, Arena, GR00T, LeRobot, ZeroMQ port 5561, sm_120 Blackwell); enhanced deploy_command for zero-flag profile adoption; all tests pass | [`20261025_181253_6b995c90.md`](./sessions/20261025_181253_6b995c90.md) |
 | 2026-10-25 16:28 | `c3c7c450` | Shared workstation connection contract and perfected GCP IAP flow | Reconciled CLI and isaac9s around src/python/workstation_connection.py; fixed fatal novnc bug on empty public IP; accurate IAP fleet IP, dynamic security posture, Sunshine rejection on IAP, supervised tunnel execution; 56 tests pass across 5 suites | [`20261025_162809_c3c7c450.md`](./sessions/20261025_162809_c3c7c450.md) |
 | 2026-09-19 07:52 | `c896c397` | Collector scope correction and closeout | Small relevant evidence, not broad inventory or discovery orchestration; source-backed rationale, old scan/YAML-integration next steps superseded; code/evidence preserved, no replacement approved | [`20260919_075248_c896c397.md`](./sessions/20260919_075248_c896c397.md) |
 | 2026-09-17 06:12 | `e01393e1` | BoredEngineer collector gaps and offline handoff | Exact scope, full Sim version, bounded Conda/headers and opt-in editable metadata; 343 passed, two skips; independent reviews pass; real host report/proposal pending | [`20260917_061218_e01393e1.md`](./sessions/20260917_061218_e01393e1.md) |
