@@ -182,6 +182,32 @@ class Test_Isaac9sApp(unittest.IsolatedAsyncioTestCase):
             # 13. Clean Quit
             await pilot.press("q")
 
+    async def test_remote_desktop_modal_gcp_iap_flow(self):
+        vm_data = {
+            "name": "enterprise-rig",
+            "cloud": "GCP",
+            "ip": "IAP (Private)",
+            "iap_enabled": True,
+            "project": "cybernetic-renan",
+            "zone": "us-central1-b",
+            "instance_name": "enterprise-vm",
+            "security_posture": "Cloud IAP (Identity-Aware Proxy, Zero Public Ingress)"
+        }
+        modal = RemoteDesktopModal(workstation=vm_data)
+        novnc_ep = modal.get_protocol_endpoint("novnc")
+        self.assertTrue(novnc_ep.requires_tunnel)
+        self.assertEqual(novnc_ep.target_endpoint, "http://127.0.0.1:6080/vnc.html?resize=scale")
+        self.assertIn("start-iap-tunnel", " ".join(novnc_ep.tunnel_command))
+        self.assertIn("enterprise-vm", novnc_ep.tunnel_command)
+
+        nx_ep = modal.get_protocol_endpoint("nomachine")
+        self.assertTrue(nx_ep.requires_tunnel)
+        self.assertEqual(nx_ep.target_endpoint, "nx://127.0.0.1:4000")
+
+        sun_ep = modal.get_protocol_endpoint("sunshine")
+        self.assertFalse(sun_ep.supported)
+        self.assertIn("UDP", sun_ep.warning)
+
 
 if __name__ == "__main__":
     unittest.main()

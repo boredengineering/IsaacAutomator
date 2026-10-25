@@ -242,13 +242,38 @@ class Isaac9sApp(App):
     def on_modal_closed(self, result: str) -> None:
         selected_vm = self.workstations_pane.get_selected_workstation()
         name = selected_vm.get("name", "workstation")
+        iap = bool(selected_vm.get("iap_enabled", False))
         if result == "ssh":
             if name and name != "local-workstation":
-                self.log_message(f"[bold cyan]To connect via SSH, run in your shell:[/] [white]./ssh {name}[/]")
+                if iap:
+                    self.log_message(f"[bold cyan]To connect via Cloud IAP SSH tunnel, run in your shell:[/] [white]./ssh {name}[/]")
+                else:
+                    self.log_message(f"[bold cyan]To connect via SSH, run in your shell:[/] [white]./ssh {name}[/]")
             else:
                 self.log_message("[bold cyan]Local workstation shell already active in this terminal.[/]")
+        elif result == "novnc":
+            if iap and name != "local-workstation":
+                self.log_message(f"[bold cyan]Launching Cloud IAP TCP Tunnel for noVNC on '{name}'...[/]")
+                self.run_async_command(f"./novnc {name}")
+                webbrowser.open("http://127.0.0.1:6080/vnc.html?resize=scale")
+            else:
+                self.log_message(f"[bold cyan]Connected to '{name}' via protocol:[/] [green]{result}[/]")
+        elif result == "nomachine":
+            if iap:
+                inst = selected_vm.get("instance_name") or name
+                proj = selected_vm.get("project", "")
+                zone = selected_vm.get("zone", "")
+                self.log_message(f"[bold cyan]For NoMachine over IAP, run tunnel:[/] [white]gcloud compute start-iap-tunnel {inst} 4000 --local-host-port=127.0.0.1:4000 --project={proj} --zone={zone}[/]")
+                self.log_message("[bold cyan]Then connect NoMachine player to:[/] [green]nx://127.0.0.1:4000[/]")
+            else:
+                self.log_message(f"[bold cyan]Connected to '{name}' via protocol:[/] [green]{result}[/]")
+        elif result == "sunshine":
+            if iap:
+                self.log_message("[bold red]Sunshine + Moonlight streaming is unavailable via Cloud IAP (requires UDP). Use noVNC (2D) or NoMachine (3D).[/]")
+            else:
+                self.log_message(f"[bold cyan]Connected to '{name}' via protocol:[/] [green]{result}[/]")
         elif result:
-            self.log_message(f"[bold cyan]Connected to '{name}' via protocol:[/] [green]{result}[/]")
+            self.log_message(f"[bold cyan]Selected protocol for '{name}':[/] [green]{result}[/]")
 
     def action_run_probe(self) -> None:
         self.log_message("[bold cyan]Running hardware & subsystem probe...[/]")

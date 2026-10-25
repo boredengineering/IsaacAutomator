@@ -80,16 +80,6 @@ def main(
     deployment_name: str,
     local_port: int,
 ):
-    vm_ip = read_tf_output(deployment_name, f"{instance_role}_ip", verbose=debug)
-
-    if vm_ip in ["NA", ""]:
-        click.echo(
-            colorize_info(
-                f'* No {format_instance_role(instance_role)} VM found for "{deployment_name}" deployment.'
-            )
-        )
-        raise click.Abort()
-
     meta = read_meta(deployment_name, verbose=debug)
     params = meta.get('params', {})
     cloud = read_tf_output(deployment_name, 'cloud', verbose=debug)
@@ -100,9 +90,17 @@ def main(
     if iap == 'true':
         if cloud != 'gcp':
             raise click.ClickException('IAP tunnel requires an authoritative GCP deployment.')
+        vm_id = read_tf_output(deployment_name, f'{instance_role}_vm_id', verbose=debug)
+        if not vm_id or vm_id in ('NA', ''):
+            click.echo(
+                colorize_info(
+                    f'* No {format_instance_role(instance_role)} VM found for "{deployment_name}" deployment.'
+                )
+            )
+            raise click.Abort()
         try:
             instance = gcp_instance_name(
-                read_tf_output(deployment_name, f'{instance_role}_vm_id', verbose=debug),
+                vm_id,
                 project=params.get('project'), zone=params.get('zone'))
         except ValueError as exc:
             raise click.ClickException(str(exc)) from None
@@ -120,6 +118,15 @@ def main(
         if result.returncode:
             raise click.exceptions.Exit(result.returncode if result.returncode > 0 else 128 - result.returncode)
         return
+
+    vm_ip = read_tf_output(deployment_name, f"{instance_role}_ip", verbose=debug)
+    if vm_ip in ["NA", ""]:
+        click.echo(
+            colorize_info(
+                f'* No {format_instance_role(instance_role)} VM found for "{deployment_name}" deployment.'
+            )
+        )
+        raise click.Abort()
 
     try:
         address = ipaddress.ip_address(vm_ip)

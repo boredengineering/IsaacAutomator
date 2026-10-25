@@ -1,12 +1,19 @@
 """
 Remote Desktop Protocol Selector Modal for isaac9s
 """
+import shlex
 import webbrowser
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Horizontal, Vertical
 from textual.screen import ModalScreen
 from textual.widgets import Button, Label, RadioButton, RadioSet, Static
+
+from src.python.workstation_connection import (
+    ProtocolEndpoint,
+    WorkstationConnectionInfo,
+    resolve_workstation_connection,
+)
 
 
 class RemoteDesktopModal(ModalScreen):
@@ -29,33 +36,54 @@ class RemoteDesktopModal(ModalScreen):
             "cloud": "LOCAL",
         }
         self.selected_proto = "novnc"
+        self.conn_info = self._resolve_conn_info()
+
+    def _resolve_conn_info(self) -> WorkstationConnectionInfo:
+        name = self.workstation.get("name", "workstation")
+        if name and name != "local-workstation" and self.workstation.get("cloud") != "BARE-METAL":
+            try:
+                return resolve_workstation_connection(name)
+            except Exception:
+                pass
+
+        cloud = str(self.workstation.get("cloud", "LOCAL")).lower()
+        iap = bool(self.workstation.get("iap_enabled", False))
+        return WorkstationConnectionInfo(
+            name=name,
+            cloud=cloud,
+            instance_name=self.workstation.get("instance_name", ""),
+            public_ip=self.workstation.get("public_ip", self.workstation.get("ip", "")),
+            private_ip=self.workstation.get("private_ip", ""),
+            iap_enabled=iap,
+            oslogin_enabled=bool(self.workstation.get("oslogin_enabled", False)),
+            project=self.workstation.get("project", ""),
+            zone=self.workstation.get("zone", ""),
+            security_profile=self.workstation.get("profile", "simple").lower(),
+            security_posture_label=self.workstation.get("security_posture", ""),
+        )
 
     def get_endpoint_info(self, proto: str) -> tuple[str, str]:
-        ip = self.workstation.get("ip", "127.0.0.1")
-        valid_ip = ip and ip not in ("N/A", "None", "")
-        host = ip if valid_ip else "127.0.0.1"
+        ep = self.conn_info.get_protocol_endpoint(proto)
+        return ep.target_endpoint, ep.desc
 
-        if proto == "novnc":
-            url = f"http://{host}:6080/vnc.html?autoconnect=true&resize=remote"
-            desc = "Zero-install HTML5 browser client. Ideal for 2D UI, terminal, and file downloads."
-        elif proto == "nomachine":
-            url = f"nx://{host}:4000"
-            desc = "Hardware-accelerated H.264 stream. Recommended for live 60 FPS Isaac Sim 3D Viewport."
-        elif proto == "sunshine":
-            url = f"https://{host}:47990"
-            desc = "Ultra-low latency NVENC streaming (sub-15ms) for direct robot teleoperation."
-        else:
-            url = f"ssh://ubuntu@{host}:22"
-            desc = "Interactive direct shell without opening public SSH ports."
+    def get_protocol_endpoint(self, proto: str) -> ProtocolEndpoint:
+        return self.conn_info.get_protocol_endpoint(proto)
 
-        if not valid_ip:
-            url += " (Pending IP assignment)"
-
-        return url, desc
+    def format_endpoint_markup(self, ep: ProtocolEndpoint) -> str:
+        text = (
+            f"[bold white]Target Endpoint:[/] [cyan]{ep.target_endpoint}[/]\n"
+            f"[bold white]Protocol Note:[/]   {ep.desc}\n"
+            f"[bold white]Security Lock:[/]   [green]{ep.security_lock}[/]"
+        )
+        if ep.warning:
+            text += f"\n[bold red]Protocol Warning:[/] [yellow]{ep.warning}[/]"
+        elif ep.requires_tunnel:
+            text += f"\n[bold cyan]Tunnel Mode:[/]      [white]Cloud IAP TCP Forwarding required (Remote Port {ep.remote_port})[/]"
+        return text
 
     def compose(self) -> ComposeResult:
         name = self.workstation.get("name", "workstation")
-        url, desc = self.get_endpoint_info("novnc")
+        ep = self.get_protocol_endpoint("novnc")
 
         with Vertical(id="dialog"):
             yield Label(f"Connect to Workstation: [bold cyan]{name}[/]", id="dialog-title")
@@ -71,9 +99,7 @@ class RemoteDesktopModal(ModalScreen):
                 yield RadioButton("4. Secure SSH Shell Tunnel (Port 22 / IAP / SSM) - Terminal Access", id="rb-ssh")
 
             yield Static(
-                f"[bold white]Target Endpoint:[/] [cyan]{url}[/]\n"
-                f"[bold white]Protocol Note:[/]   {desc}\n"
-                f"[bold white]Security Lock:[/]   [green]Strict /32 Caller IP Filter[/] (Simple Mode Active)",
+                self.format_endpoint_markup(ep),
                 id="target-endpoint",
                 classes="box-panel",
             )
@@ -85,13 +111,9 @@ class RemoteDesktopModal(ModalScreen):
 
     def update_proto(self, proto: str) -> None:
         self.selected_proto = proto
-        url, desc = self.get_endpoint_info(proto)
+        ep = self.get_protocol_endpoint(proto)
         endpoint_widget = self.query_one("#target-endpoint", Static)
-        endpoint_widget.update(
-            f"[bold white]Target Endpoint:[/] [cyan]{url}[/]\n"
-            f"[bold white]Protocol Note:[/]   {desc}\n"
-            f"[bold white]Security Lock:[/]   [green]Strict /32 Caller IP Filter[/]"
-        )
+        endpoint_widget.update(self.format_endpoint_markup(ep))
 
     def on_radio_set_changed(self, event: RadioSet.Changed) -> None:
         mapping = {
@@ -107,18 +129,24 @@ class RemoteDesktopModal(ModalScreen):
         if event.button.id == "btn-close":
             self.dismiss(None)
         elif event.button.id == "btn-launch":
-            ip = self.workstation.get("ip", "127.0.0.1")
-            url, _ = self.get_endpoint_info(self.selected_proto)
-            if self.selected_proto in ("novnc", "sunshine"):
-                webbrowser.open(url)
+            ep = self.get_protocol_endpoint(self.selected_proto)
+            if not ep.supported and ep.warning:
+                self.notify(ep.warning, title="Protocol Incompatible", severity="error")
+                return
+            if self.selected_proto in ("novnc", "sunshine") and not ep.requires_tunnel:
+                webbrowser.open(ep.target_endpoint)
             self.dismiss(self.selected_proto)
         elif event.button.id == "btn-copy":
-            url, _ = self.get_endpoint_info(self.selected_proto)
+            ep = self.get_protocol_endpoint(self.selected_proto)
+            if ep.requires_tunnel and ep.tunnel_command:
+                copy_val = shlex.join(ep.tunnel_command)
+            else:
+                copy_val = ep.target_endpoint
             try:
-                self.app.copy_to_clipboard(url)
-                self.notify(f"Copied endpoint: {url}")
+                self.app.copy_to_clipboard(copy_val)
+                self.notify(f"Copied: {copy_val}")
             except Exception:
-                self.notify(f"Endpoint: {url}")
+                self.notify(f"Endpoint: {copy_val}")
             self.dismiss(self.selected_proto)
 
     def action_dismiss_modal(self) -> None:

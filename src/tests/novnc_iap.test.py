@@ -38,6 +38,16 @@ class NoVNCTests(unittest.TestCase):
         self.assertEqual(run.call_args.args[0], ['gcloud', 'compute', 'start-iap-tunnel', 'fixture-vm', '6080',
                          '--local-host-port=127.0.0.1:6080', '--project=fixture-project', '--zone=us-central1-a', '--quiet'])
 
+    def test_iap_succeeds_when_public_ip_is_empty_or_na(self):
+        for empty_val in ('', 'NA'):
+            command = self.load()
+            self.outputs['isaac_workstation_ip'] = empty_val
+            with mock.patch('subprocess.run', return_value=subprocess.CompletedProcess([], 0)) as run:
+                result = CliRunner().invoke(command.main, ['fixture'])
+            self.assertEqual(result.exit_code, 0, (result.output, result.exception))
+            self.assertIn('http://127.0.0.1:6080/', result.output)
+            run.assert_called_once()
+
     def test_missing_or_wrong_scope_never_opens_tunnel(self):
         for value in ('', 'projects/other-project/zones/us-central1-a/instances/fixture-vm'):
             command = self.load()

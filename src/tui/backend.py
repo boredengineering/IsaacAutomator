@@ -290,6 +290,13 @@ class WorkstationBackend:
                 profile = "simple"
                 attachment = "legacy-local"
                 backend_kind = "local"
+                iap_enabled = False
+                oslogin_enabled = False
+                project = ""
+                zone = ""
+                vm_id = ""
+                instance_name = ""
+                private_ip = ""
 
                 if os.path.lexists(meta_file):
                     try:
@@ -299,15 +306,35 @@ class WorkstationBackend:
                             backend_kind = "unknown"
                             status = "LEGACY REMOTE UNVERIFIED / VM UNKNOWN"
                         params = meta.get("params", {})
+                        command_str = meta.get("command", "")
                         cloud = params.get("cloud") or meta.get("config", {}).get("cloud") or cloud
+                        if cloud == "UNKNOWN":
+                            if "project" in params or "deploy-gcp" in command_str:
+                                cloud = "gcp"
+                            elif "aws_access_key_id" in params or "deploy-aws" in command_str:
+                                cloud = "aws"
+                            elif "azure_subscription_id" in params or "deploy-azure" in command_str:
+                                cloud = "azure"
+                            elif "deploy-alicloud" in command_str:
+                                cloud = "alicloud"
+                        if "aws_access_key_id" in params:
+                            cloud = "aws"
+
+                        raw_iap = params.get("enable_iap_only", params.get("iap", False))
+                        if str(raw_iap).lower() == "true":
+                            iap_enabled = True
+                        raw_oslogin = params.get("enable_oslogin", params.get("oslogin", False))
+                        if str(raw_oslogin).lower() == "true":
+                            oslogin_enabled = True
+                        project = str(params.get("project", ""))
+                        zone = str(params.get("zone", ""))
+
                         gpu = (
                             params.get("isaac_workstation_instance_type")
                             or params.get("instance_type")
                             or params.get("isaac_workstation_gpu_type", gpu)
                         )
                         profile = params.get("security_profile") or params.get("profile", "simple")
-                        if "aws_access_key_id" in params:
-                            cloud = "AWS"
                     except Exception:
                         attachment = "unreadable"
                         backend_kind = "unknown"
@@ -322,25 +349,65 @@ class WorkstationBackend:
                             if entry.get("sensitive") is not True and isinstance(entry.get("value"), str):
                                 ip = entry["value"] or ip
                                 break
+                        priv_entry = outputs.get("isaac_workstation_private_ip", {})
+                        if priv_entry.get("sensitive") is not True and isinstance(priv_entry.get("value"), str):
+                            private_ip = priv_entry["value"]
+                        vm_id_entry = outputs.get("isaac_workstation_vm_id", {})
+                        if vm_id_entry.get("sensitive") is not True and isinstance(vm_id_entry.get("value"), str):
+                            vm_id = vm_id_entry["value"]
+                        iap_entry = outputs.get("iap_enabled", {})
+                        if iap_entry.get("sensitive") is not True and isinstance(iap_entry.get("value"), (bool, str)):
+                            if str(iap_entry["value"]).lower() == "true":
+                                iap_enabled = True
+                        oslogin_entry = outputs.get("oslogin_enabled", {})
+                        if oslogin_entry.get("sensitive") is not True and isinstance(oslogin_entry.get("value"), (bool, str)):
+                            if str(oslogin_entry["value"]).lower() == "true":
+                                oslogin_enabled = True
                         cloud_entry = outputs.get("cloud", {})
                         if cloud_entry.get("sensitive") is not True and cloud_entry.get("value") in ("aws", "gcp", "azure", "alicloud"):
                             cloud = cloud_entry["value"]
-                        status = "LOCAL STATE PRESENT / VM UNKNOWN"
-                        backend_access = "local-file-only"
+                        if attachment == "legacy-local":
+                            status = "LOCAL STATE PRESENT / VM UNKNOWN"
+                            backend_access = "local-file-only"
                     except Exception:
                         pass
+
+                if str(cloud).lower() == "gcp" and vm_id:
+                    match = re.search(r"(?:^|/)projects/([^/]+)/zones/([^/]+)/instances/([^/]+)$", vm_id)
+                    if match:
+                        parsed_proj, parsed_zone, parsed_inst = match.groups()
+                        project = project or parsed_proj
+                        zone = zone or parsed_zone
+                        instance_name = parsed_inst
+                    else:
+                        instance_name = vm_id
+
+                if iap_enabled and str(cloud).lower() == "gcp":
+                    display_ip = f"IAP ({private_ip})" if private_ip and private_ip not in ("NA", "") else "IAP (Private)"
+                    security_posture = "Cloud IAP (Identity-Aware Proxy, Zero Public Ingress)"
+                else:
+                    display_ip = ip
+                    security_posture = f"{str(profile).capitalize()} Mode"
 
                 deployments.append({
                     "name": name,
                     "cloud": str(cloud).upper(),
                     "status": status,
                     "gpu": str(gpu),
-                    "ip": str(ip),
+                    "ip": display_ip,
                     "profile": str(profile).capitalize(),
                     "path": str(item),
                     "backend": backend_kind,
                     "backend_access": backend_access,
                     "attachment": attachment,
+                    "iap_enabled": iap_enabled,
+                    "oslogin_enabled": oslogin_enabled,
+                    "project": project,
+                    "zone": zone,
+                    "vm_id": vm_id,
+                    "instance_name": instance_name,
+                    "private_ip": private_ip,
+                    "security_posture": security_posture,
                 })
 
         return deployments
