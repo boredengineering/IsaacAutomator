@@ -69,12 +69,36 @@ def load_backend_config(path):
 
 def normalize_profile_backend(data):
     """Normalize only explicit profile intent; legacy inspection stays possible."""
-    if 'terraform_state' not in data:
+    if 'terraform_state' not in data and 'storage' not in data:
         return {}
+    if 'storage' in data:
+        storage = data['storage']
+        if not isinstance(storage, dict):
+            raise BackendSelectionError("storage must be a mapping")
+        bucket = storage.get('bucket')
+        backend = storage.get('backend', 'gcs' if data.get('cloud') == 'gcp' else ('s3' if data.get('cloud') == 'aws' else 'local'))
+        if not bucket or bucket in ('', 'local', None) or backend == 'local':
+            return {'terraform_state': {'schema_version': 1, 'backend': 'local', 'namespace': 'default', 'workspace': 'default', 'locking': {'mode': 'native', 'timeout_seconds': 120}, 'authentication': {'mode': 'ambient'}}}
+        cloud = data.get('cloud') or {'local': 'aws', 'gcs': 'gcp', 's3': 'aws', 'azurerm': 'azure'}.get(backend, 'gcp')
+        prefix = storage.get('prefix', 'isaacautomator/v2')
+        namespace = storage.get('namespace', 'studio')
+        if bucket == 'auto':
+            return {'terraform_state': {'schema_version': 1, 'backend': backend, 'namespace': namespace, 'destination': {'bucket': 'auto', 'prefix': prefix}}}
+        dest = {'bucket': bucket, 'prefix': prefix}
+        if cloud == 'gcp' and (storage.get('project') or data.get('project')):
+            dest['project'] = storage.get('project') or data.get('project')
+        return {'terraform_state': {'schema_version': 1, 'backend': backend, 'namespace': namespace, 'destination': dest}}
+
     block = data['terraform_state']
     if not isinstance(block, dict):
         raise BackendSelectionError("terraform_state must be a mapping")
     backend = block.get('backend', 'local')
+    dest = block.get('destination')
+    bucket = dest.get('bucket') if isinstance(dest, dict) else None
+    if backend != 'local' and (not bucket or bucket in ('', 'local', None)):
+        return {'terraform_state': {'schema_version': 1, 'backend': 'local', 'namespace': 'default', 'workspace': 'default', 'locking': {'mode': 'native', 'timeout_seconds': 120}, 'authentication': {'mode': 'ambient'}}}
+    if isinstance(dest, dict) and dest.get('bucket') == 'auto':
+        return {'terraform_state': dict(block)}
     inferred = {'local': 'aws', 'gcs': 'gcp', 's3': 'aws', 'azurerm': 'azure'}
     cloud = data.get('cloud') or (inferred.get(backend) if isinstance(backend, str) else None)
     try:
@@ -115,12 +139,50 @@ def select_backend(params, profile, cloud, ctx=None):
             data = {'backend': backend}
     else:
         data = profile.get('terraform_state')
-        storage = profile.get('raw', {}).get('security', {}).get('storage', {})
-        legacy = profile.get('state_bucket') or storage.get('state_bucket') or storage.get('state_backend') not in (None, '', 'local')
-        if legacy:
-            if data is not None:
-                raise BackendSelectionError("Conflicting legacy and explicit profile backend choices")
-            raise BackendSelectionError("Legacy remote state is not implemented safely; GCP-only compatibility requires verified attachment/migration support")
+        raw = profile.get('raw', {})
+        if data is None and 'storage' in raw:
+            storage = raw['storage']
+            bucket = storage.get('bucket')
+            backend_type = storage.get('backend', 'gcs' if cloud == 'gcp' else 's3')
+            if not bucket or bucket in ('', 'local', None) or backend_type == 'local':
+                data = {'backend': 'local'}
+            elif bucket == 'auto':
+                data = {'backend': backend_type, 'namespace': storage.get('namespace', 'studio'),
+                        'destination': {'bucket': 'auto', 'prefix': storage.get('prefix', 'isaacautomator/v2')}}
+            else:
+                dest = {'bucket': bucket, 'prefix': storage.get('prefix', 'isaacautomator/v2')}
+                if cloud == 'gcp' and (storage.get('project') or raw.get('project')):
+                    dest['project'] = storage.get('project') or raw.get('project')
+                data = {'backend': backend_type, 'namespace': storage.get('namespace', 'studio'),
+                        'destination': dest}
+        elif data is None:
+            storage = raw.get('security', {}).get('storage', {})
+            legacy = profile.get('state_bucket') or storage.get('state_bucket') or storage.get('state_backend') not in (None, '', 'local')
+            if legacy:
+                raise BackendSelectionError("Legacy remote state is not implemented safely; GCP-only compatibility requires verified attachment/migration support")
+            data = {'backend': 'local'}
+
+        # Resolve auto proposals and missing project scopes
+        if isinstance(data, dict) and isinstance(data.get('destination'), dict):
+            dest = dict(data['destination'])
+            if dest.get('bucket') == 'auto':
+                from src.python.backend_context import resolve_ambient_owner_scope
+                owner_scope = params.get('project') or raw.get('project') or dest.get('project')
+                if not owner_scope:
+                    owner_scope = resolve_ambient_owner_scope(cloud)
+                if not owner_scope:
+                    raise BackendSelectionError("Cannot resolve cloud project or owner scope for auto-bootstrap")
+                from src.python.backend_proposal import propose_backend
+                region = params.get('region') if cloud == 'aws' else None
+                proposed = propose_backend(cloud=cloud, namespace=data.get('namespace', 'studio'),
+                                           owner_scope=owner_scope, region=region)
+                data = proposed
+            elif cloud == 'gcp' and 'project' not in dest:
+                from src.python.backend_context import resolve_ambient_owner_scope
+                proj = params.get('project') or raw.get('project') or resolve_ambient_owner_scope('gcp')
+                if proj:
+                    dest['project'] = proj
+                data['destination'] = dest
     try:
         return BackendSpec.from_dict(data, cloud=cloud)
     except ValueError:

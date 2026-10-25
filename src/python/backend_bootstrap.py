@@ -295,3 +295,86 @@ class BootstrapSession:
             raise ValueError('Backend creation requires separate explicit acknowledgement')
         self._assert_absent()
         return self.runner.apply(plan, acknowledge_mutation=True)
+
+
+def check_storage_exists(spec, *, transport=None):
+    """Return True if storage destination already exists and is accessible, False if not found."""
+    if spec.backend == "local":
+        return True
+    d = spec.to_dict()["destination"]
+    read_fn = transport or _cli_read
+    if spec.cloud == "aws":
+        cmds = [["aws", "s3api", "get-bucket-location", "--bucket", d["bucket"], "--expected-bucket-owner", d["owner_account_id"], "--region", d["region"], "--output", "json", "--no-cli-pager"]]
+    elif spec.cloud == "gcp":
+        cmds = [["gcloud", "storage", "buckets", "describe", "gs://" + d["bucket"], "--raw", "--project=" + d["project"], "--format=json", "--quiet"]]
+    else:
+        suffix = ["--subscription", d["subscription_id"], "--output", "json", "--only-show-errors"]
+        cmds = [
+            ["az", "storage", "account", "show", "--resource-group", d["resource_group_name"], "--name", d["storage_account_name"], *suffix],
+            ["az", "group", "show", "--name", d["resource_group_name"], *suffix],
+        ]
+
+    for cmd in cmds:
+        try:
+            read_fn(cmd)
+        except InspectionError as err:
+            if err.status == "not-found":
+                return False
+            raise ValueError(f"Cannot inspect backend storage ({err.status}); check credentials and permissions") from None
+    return True
+
+
+def ensure_backend_storage(
+    spec,
+    *,
+    region: str | None = None,
+    controller_principal: str | None = None,
+    bootstrap_state_root=None,
+    auto_bootstrap: bool = True,
+    dry_run: bool = False,
+    runner_factory=None,
+    transport=None,
+    echo=None,
+):
+    """Ensure remote backend storage exists; auto-bootstraps if missing and permitted."""
+    if spec.backend == "local":
+        return spec
+
+    log = echo or (lambda msg: None)
+    exists = check_storage_exists(spec, transport=transport)
+    if exists:
+        log(f"* Verified remote state storage destination: {spec.backend} ({spec.cloud})")
+        return spec
+
+    if dry_run:
+        d = spec.to_dict()["destination"]
+        target_name = d.get("bucket") or d.get("storage_account_name")
+        log(f"* [DRY-RUN] Remote state storage destination not found ({target_name}). Would auto-bootstrap on deployment.")
+        return spec
+
+    if not auto_bootstrap:
+        raise ValueError("Remote state storage does not exist and auto-bootstrap is disabled.")
+
+    from src.python.backend_context import resolve_cloud_context
+    d = spec.to_dict()["destination"]
+    scope = d.get("owner_account_id") or d.get("project") or d.get("subscription_id")
+    ctx = resolve_cloud_context(spec.cloud, explicit_scope=scope, explicit_region=region, explicit_principal=controller_principal)
+
+    admin_root = Path(bootstrap_state_root) if bootstrap_state_root else (Path.home() / ".isaac_automator" / "admin")
+    admin_root.mkdir(parents=True, exist_ok=True)
+
+    log(f"* Remote state destination not found. Auto-bootstrapping hardened storage in {spec.cloud} ({ctx.region})...")
+    with BootstrapSession(
+        spec,
+        bootstrap_state_root=admin_root,
+        region=ctx.region,
+        controller_principal=ctx.controller_principal,
+        acknowledge_reads=True,
+        runner_factory=runner_factory,
+        transport=transport,
+    ) as session:
+        plan = session.plan()
+        session.apply(plan, acknowledge_creation=True)
+
+    log(f"* Remote state storage provisioned successfully: {d.get('bucket') or d.get('storage_account_name')}")
+    return spec

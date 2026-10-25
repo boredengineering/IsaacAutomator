@@ -303,6 +303,9 @@ class Deployer:
             self.params["enable_oslogin"] = spec.get("enable_oslogin", False)
         if "enable_secrets" not in self.params:
             self.params["enable_secrets"] = spec.get("enable_secrets", False)
+        if self.params.get('project') is None and spec.get('raw', {}).get('project'):
+            self.params['project'] = spec['raw']['project']
+            self.input_params['project'] = spec['raw']['project']
         backend_profile = dict(spec)
         if 'terraform_state' in self.params:
             backend_profile['terraform_state'] = self.params['terraform_state']
@@ -1010,6 +1013,25 @@ class Deployer:
                     'Contains secrets; retain securely before reboot or temporary-directory cleanup. '
                     'Do not retry or delete until recovery is reviewed.'
                 ), err=True)
+
+    def ensure_backend_storage(self):
+        """Ensure remote state bucket exists; auto-bootstrap if missing."""
+        if self.params.get('state_backend') == 'gcs' and self.params.get('auto_bootstrap', True):
+            from src.python.terraform_backend import BackendSpec
+            from src.python.backend_bootstrap import ensure_backend_storage
+            spec = BackendSpec.from_dict(self.params.get('terraform_state'), cloud='gcp')
+            admin_root = Path(self.config.get('admin_state_dir') or (Path.home() / '.isaac_automator' / 'admin'))
+            try:
+                ensure_backend_storage(
+                    spec,
+                    region=self.params.get('region'),
+                    bootstrap_state_root=admin_root,
+                    auto_bootstrap=True,
+                    dry_run=bool(self.params.get('dry_run')),
+                    echo=click.echo if not self.params.get('quiet') else None,
+                )
+            except Exception as exc:
+                raise click.ClickException(f"Failed to ensure backend storage: {exc}") from None
 
     def initialize_terraform(self, cwd: str):
         """Preflight only; actual init is deferred to each isolated operation.

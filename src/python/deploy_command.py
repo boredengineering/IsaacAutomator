@@ -731,6 +731,8 @@ class DeployCommand(click.core.Command):
                          help="Explicit state backend choice. GCS execution is supported for GCP; S3/Azure execution remains unavailable. Omitted defaults never override a profile."),
             click.Option(("--backend-config",), type=str,
                          help="Path to a strict nonsecret backend YAML/JSON configuration. GCS deployment also requires an explicit --project."),
+            click.Option(("--auto-bootstrap/--no-auto-bootstrap",), default=True, show_default=True,
+                         help="Automatically provision remote state storage bucket if missing."),
         ])
 
         self.params.insert(

@@ -378,10 +378,25 @@ class GCPDeployer(Deployer):
             # login into gcp
             gcp_login(verbose=self.params["debug"])
 
+            # Ensure remote state backend storage exists if configured
+            self.ensure_backend_storage()
+
             if self.params.get("dry_run", False):
                 click.echo(colorize_info("\n" + "=" * 70))
                 click.echo(colorize_info("* [DRY-RUN] Validating Terraform and Ansible configuration..."))
                 click.echo(colorize_info("=" * 70 + "\n"))
+                if self.params.get("state_backend") == "gcs":
+                    from src.python.backend_bootstrap import check_storage_exists
+                    from src.python.terraform_backend import BackendSpec
+                    spec = BackendSpec.from_dict(self.params.get("terraform_state"), cloud="gcp")
+                    if not check_storage_exists(spec):
+                        click.echo(colorize_info("* [DRY-RUN] Remote state storage destination not yet provisioned; skipping live Terraform plan."))
+                        self.validate_ansible()
+                        click.echo(colorize_info("\n" + "=" * 70))
+                        click.echo(colorize_info("* [DRY-RUN] SUCCESS: Remote state configuration and Ansible syntax checks passed!"))
+                        click.echo(colorize_info("* No apply was performed. Storage bucket will be auto-bootstrapped on deploy."))
+                        click.echo(colorize_info("=" * 70 + "\n"))
+                        return
                 self.initialize_terraform(cwd=f"{config['terraform_dir']}/gcp")
                 self.plan_terraform(cwd=f"{config['terraform_dir']}/gcp")
                 self.validate_ansible()
