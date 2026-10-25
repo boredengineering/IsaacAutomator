@@ -75,7 +75,7 @@ def load_backend_record(deployment_name, *, state_root):
             if not all(_legacy_metadata_is_local(meta.get(section, {})) for section in ('params', 'input_params')):
                 raise ValueError()
             return None
-        spec = BackendSpec.from_dict(params['terraform_state'], cloud=params['cloud'])
+        spec = BackendSpec.from_dict(params['terraform_state'], cloud=params.get('cloud') or 'gcp')
         name = params['deployment_name']
         scope = params['project']
         identity = spec.identity(scope, name)

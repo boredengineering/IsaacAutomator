@@ -91,7 +91,7 @@ class TestCloudReconciliation(unittest.TestCase):
         
         report = deployer.software_profile_report()
         self.assertTrue(report['render_supported'])
-        self.assertEqual(deployer.params['software_profile']['name'], 'cloud-ecosystem')
+        self.assertEqual(deployer.params['software_profile']['name'], 'boredengineering-dev')
         self.assertEqual(report['artifact']['profile_lab_architecture'], 'sm_120')
 
     def test_example_workstation_profile_renders(self):
@@ -116,10 +116,10 @@ class TestCloudReconciliation(unittest.TestCase):
         self.assertEqual(art['isaaclab_arena_git_repo'], 'https://github.com/boredengineering/IsaacLab-Arena.git')
         self.assertEqual(art['isaaclab_arena_git_checkpoint'], 'dev/0.3.0-prerelease')
         self.assertEqual(art['isaaclab_git_repo'], 'https://github.com/boredengineering/IsaacLab.git')
-        self.assertEqual(art['isaaclab_git_checkpoint'], 'dev/0.3.0-prerelease')
+        self.assertEqual(art['isaaclab_git_checkpoint'], 'dev/arena_v0.3.0-compat')
         self.assertEqual(art['gr00t_git_repo'], 'https://github.com/boredengineering/Isaac-GR00T.git')
         self.assertEqual(art['gr00t_git_checkpoint'], '51d4c89f72fda44cbf77285c6a8114b52676b8a1')
-        self.assertEqual(art['lerobot_git_repo'], 'https://github.com/boredengineering/lerobot.git')
+        self.assertEqual(art['lerobot_git_repo'], 'https://github.com/huggingface/lerobot.git')
         self.assertEqual(art['lerobot_git_checkpoint'], 'v0.4.3')
         self.assertEqual(art['profile_lab_architecture'], 'sm_120')
         self.assertEqual(art['profile_gr00t_serving']['serving']['port'], 5561)

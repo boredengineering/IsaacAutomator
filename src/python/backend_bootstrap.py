@@ -31,7 +31,7 @@ def _resource_absent(argv, diagnostic):
         ('aws', 's3api', 'get-bucket-location'):
             r'^An error occurred \(NoSuchBucket\) when calling the GetBucketLocation operation:',
         ('gcloud', 'storage', 'buckets', 'describe'):
-            r'^ERROR: \(gcloud\.storage\.buckets\.describe\) HTTPError 404: The specified bucket does not exist\.',
+            r'^ERROR: \(gcloud\.storage\.buckets\.describe\) (?:HTTPError 404: The specified bucket does not exist\.|.*not found: 404\.)',
         ('az', 'storage', 'account', 'show'):
             r'^ERROR: \((?:ResourceNotFound|ResourceGroupNotFound)\) ',
         ('az', 'group', 'show'):

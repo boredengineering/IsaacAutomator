@@ -8,6 +8,14 @@ profile_name: "studio-enterprise"
 description: "Studio Enterprise profile co-located with Omniverse Nucleus & high-speed shared USD storage in an isolated private VPC/VNet"
 cloud: "gcp"
 
+# Top-Level Native Storage Configuration
+# Configures automated, hardened remote state in Google Cloud Storage
+storage:
+  backend: "gcs"
+  bucket: "auto"               # Automatically plans, preflights, and provisions isaac-state-<hash>
+  prefix: "isaacautomator/v2"
+  namespace: "studio"
+
 security:
   tier: "enterprise"
   network:
@@ -15,11 +23,6 @@ security:
     cloud_nat: true              # Managed NAT Gateway for private outbound OS/Python updates ($32.40/mo)
     ingress_cidrs: []            # No direct public ingress; all traffic through perimeter ALB or private tunnel
     subnet_cidr: "10.10.4.0/24"  # Dedicated private workstation subnet inside the 5-tier studio network
-  storage:
-    state_backend: "local"         # Hardened state backend (Local active; remote execution remains planned)
-    state_bucket: ""               # Auto-provisioned: isaacautomator-state-<project>-<region>
-    state_locking: false          # Distributed object locking to prevent concurrent deployment collisions
-    soft_delete_days: 7          # Disaster recovery retention window
   cryptography:
     encryption_type: "kms_cmek"  # Customer-Managed Encryption Keys with 90-day automatic rotation
     kms_keyring_name: "auto"     # Dedicated Cloud KMS / Key Vault / AWS KMS key ring
@@ -35,10 +38,7 @@ security:
 workstation:
   gpu_model: "g4-standard-48"    # High-performance workstation compute (48 vCPU, 1x NVIDIA RTX PRO 6000 48GB VRAM)
   gpu_count: 1
-  software_profile: "configs/workstations/cloud-ecosystem.yaml" # Reconciled physical AI stack (Sim 6.0.1, Lab v3, Arena, GR00T, LeRobot)
-  demos:
-    - "franka-manipulation"      # Franka robotic arm manipulation demo
-    - "quadruped-locomotion"     # ANYmal quadruped locomotion demo
+  software_profile: "configs/workstations/boredengineering-dev.yaml" # BoredEngineering personal fork stack tracking dev/0.3.0-prerelease
   remote_desktop: "nomachine,novnc" # Hardware-accelerated 3D viewport streaming (NoMachine) + 2D web desktop (noVNC) over IAP tunnel
 
 # Studio Architecture Integration Parameters

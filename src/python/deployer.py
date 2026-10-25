@@ -58,6 +58,8 @@ class Deployer:
         self.cloud = self.cloud or params.get("cloud")
         self.tf_outputs = {}
         self.params = params
+        if self.cloud and 'cloud' not in self.params:
+            self.params['cloud'] = self.cloud
         self.config = config
         self.existing_behavior = None
         # Validate software mapping before any state-directory creation.

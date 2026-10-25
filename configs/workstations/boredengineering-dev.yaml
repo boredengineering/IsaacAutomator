@@ -46,7 +46,7 @@ components:
     source:
       mode: git
       repository: https://github.com/boredengineering/IsaacLab.git
-      ref: dev/0.3.0-prerelease
+      ref: dev/arena_v0.3.0-compat
       revision: null
 
   arena:
@@ -75,7 +75,7 @@ components:
     runtime: lerobot
     source:
       mode: git
-      repository: https://github.com/boredengineering/lerobot.git
+      repository: https://github.com/huggingface/lerobot.git
       ref: v0.4.3
       revision: null
 
@@ -153,7 +153,7 @@ repositories:
     git_dir: ~/Documents/GitHub/BoredEngineer/IsaacLab/.git
     common_dir: ~/Documents/GitHub/BoredEngineer/IsaacLab/.git
     head:
-      ref: dev/0.3.0-prerelease
+      ref: dev/arena_v0.3.0-compat
       commit: null
     remotes:
       - name: origin
