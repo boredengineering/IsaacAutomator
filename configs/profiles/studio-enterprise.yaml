@@ -16,9 +16,9 @@ security:
     ingress_cidrs: []            # No direct public ingress; all traffic through perimeter ALB or private tunnel
     subnet_cidr: "10.10.4.0/24"  # Dedicated private workstation subnet inside the 5-tier studio network
   storage:
-    state_backend: "gcs"         # Hardened remote state backend (GCS / S3 / Azure Blob)
-    state_bucket: "auto"         # Auto-provisioned: isaacautomator-state-<project>-<region>
-    state_locking: true          # Distributed object locking to prevent concurrent deployment collisions
+    state_backend: "local"         # Hardened state backend (Local active; remote execution remains planned)
+    state_bucket: ""               # Auto-provisioned: isaacautomator-state-<project>-<region>
+    state_locking: false          # Distributed object locking to prevent concurrent deployment collisions
     soft_delete_days: 7          # Disaster recovery retention window
   cryptography:
     encryption_type: "kms_cmek"  # Customer-Managed Encryption Keys with 90-day automatic rotation
@@ -27,7 +27,7 @@ security:
     scheduling: "flex_start"     # GCP Dynamic Workload Scheduler (Flex-start): queued GPU provisioning with 7-day runtime
     max_run_duration_days: 7
     shielded_vm: true            # Hardware security: Secure Boot, vTPM, and Integrity Monitoring ($0.00/mo)
-    os_login: true               # Central IAM identity (Google OS Login / Microsoft Entra ID / AWS SSO) with 2FA
+    os_login: false              # Direct key-based IAP tunnel without corporate 2FA lockouts
     service_account_type: "dedicated" # Principle of Least Privilege: dedicated IAM service account per node
   secrets:
     engine: "secret_manager"     # Centralized cloud secrets manager for registry tokens and credentials
@@ -35,10 +35,11 @@ security:
 workstation:
   gpu_model: "g4-standard-48"    # High-performance workstation compute (48 vCPU, 1x NVIDIA RTX PRO 6000 48GB VRAM)
   gpu_count: 1
+  software_profile: "configs/workstations/cloud-ecosystem.yaml" # Reconciled physical AI stack (Sim 6.0.1, Lab v3, Arena, GR00T, LeRobot)
   demos:
     - "franka-manipulation"      # Franka robotic arm manipulation demo
     - "quadruped-locomotion"     # ANYmal quadruped locomotion demo
-  remote_desktop: "dcv,nomachine" # Hardware-accelerated 3D viewport streaming (dual DCV & NoMachine over private network)
+  remote_desktop: "nomachine,novnc" # Hardware-accelerated 3D viewport streaming (NoMachine) + 2D web desktop (noVNC) over IAP tunnel
 
 # Studio Architecture Integration Parameters
 # Bridges workstation compute with co-located Nucleus and shared USD asset storage tiers

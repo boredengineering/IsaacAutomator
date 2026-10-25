@@ -71,6 +71,33 @@ class DeployCommand(click.core.Command):
         if not ctx.resilient_parsing and '--help' not in args:
             opts, _, _ = self.make_parser(ctx).parse_args(args=list(args))
             source = opts.get('software_profile')
+            profile_arg = opts.get('profile') or opts.get('security_profile')
+            profile_spec = None
+            if profile_arg:
+                from src.python.config import load_profile_spec
+                try:
+                    profile_spec = load_profile_spec(str(profile_arg), repo_root=config.get('app_dir'))
+                except Exception:
+                    profile_spec = None
+
+            if profile_spec and profile_spec.get('raw'):
+                raw = profile_spec['raw']
+                ws = raw.get('workstation', {})
+                args = list(args)
+                if source is None:
+                    source = raw.get('software_profile') or ws.get('software_profile')
+                    if source is not None:
+                        args.extend(['--software-profile', str(source)])
+                if ('instance_type' not in opts and 'isaac_workstation_instance_type' not in opts
+                        and ws.get('gpu_model')):
+                    args.extend(['--instance-type', ws['gpu_model']])
+                if 'isaac_workstation_gpu_count' not in opts and ws.get('gpu_count') is not None:
+                    args.extend(['--isaac-workstation-gpu-count', str(ws['gpu_count'])])
+                if 'remote_desktop' not in opts and ws.get('remote_desktop'):
+                    args.extend(['--remote-desktop', str(ws['remote_desktop'])])
+                if 'ingress_cidrs' not in opts and raw.get('security', {}).get('network', {}).get('iap_only'):
+                    args.extend(['--ingress-cidrs', '0.0.0.0/0'])
+
             if source is not None:
                 from src.python.workstation_profile import resolve_profile
                 from src.python.profile_adapters import render_profile
@@ -78,7 +105,7 @@ class DeployCommand(click.core.Command):
                              | {'isaaclab_private_git'})
                 if conflicts.intersection(opts):
                     raise click.UsageError('Software profile source selection cannot combine with component/ref/repository flags.')
-                if opts.get('from_image') or str(opts.get('demos', 'no')).lower() not in ('', 'no', 'none'):
+                if opts.get('from_image') or (opts.get('demos') is not None and str(opts.get('demos')).lower() not in ('', 'no', 'none')):
                     raise click.UsageError('Software profiles cannot combine with image or demo overrides.')
                 try:
                     document = resolve_profile(source)['profile']
