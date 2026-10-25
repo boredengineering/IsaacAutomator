@@ -18,6 +18,7 @@ import re
 
 COMMIT = '51d4c89f72fda44cbf77285c6a8114b52676b8a1'
 REPOSITORY = 'https://github.com/NVIDIA/Isaac-GR00T.git'
+SUPPORTED_REPOSITORIES = {REPOSITORY, 'https://github.com/boredengineering/Isaac-GR00T.git'}
 
 
 def source_supported(source):
@@ -25,7 +26,7 @@ def source_supported(source):
     return (isinstance(source, dict)
             and not set(source) - {'mode', 'repository', 'ref', 'revision'}
             and source.get('mode') == 'git'
-            and source.get('repository') == REPOSITORY
+            and source.get('repository') in SUPPORTED_REPOSITORIES
             and source.get('revision') in (None, COMMIT)
             and (source.get('revision') or source.get('ref')) == COMMIT)
 

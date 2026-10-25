@@ -94,6 +94,41 @@ class TestCloudReconciliation(unittest.TestCase):
         self.assertEqual(deployer.params['software_profile']['name'], 'cloud-ecosystem')
         self.assertEqual(report['artifact']['profile_lab_architecture'], 'sm_120')
 
+    def test_example_workstation_profile_renders(self):
+        example_path = self.root / "configs" / "workstations" / "example-workstation.yaml"
+        self.assertTrue(example_path.exists())
+        profile = resolve_profile(example_path)
+        report = render_profile(profile, 'ansible', '/home/ubuntu')
+        self.assertTrue(report['render_supported'])
+        self.assertEqual(report['blockers'], [])
+        self.assertEqual(report['artifact']['workspace_dir'], '/home/ubuntu/Documents/GitHub/Robotics')
+
+    def test_boredengineering_dev_profile_renders(self):
+        bored_path = self.root / "configs" / "workstations" / "boredengineering-dev.yaml"
+        self.assertTrue(bored_path.exists())
+        profile = resolve_profile(bored_path)
+        
+        ansible_report = render_profile(profile, 'ansible', '/home/ubuntu')
+        self.assertTrue(ansible_report['render_supported'])
+        self.assertEqual(ansible_report['blockers'], [])
+        art = ansible_report['artifact']
+        self.assertEqual(art['workspace_dir'], '/home/ubuntu/Documents/GitHub/BoredEngineer')
+        self.assertEqual(art['isaaclab_arena_git_repo'], 'https://github.com/boredengineering/IsaacLab-Arena.git')
+        self.assertEqual(art['isaaclab_arena_git_checkpoint'], 'dev/0.3.0-prerelease')
+        self.assertEqual(art['isaaclab_git_repo'], 'https://github.com/boredengineering/IsaacLab.git')
+        self.assertEqual(art['isaaclab_git_checkpoint'], 'dev/0.3.0-prerelease')
+        self.assertEqual(art['gr00t_git_repo'], 'https://github.com/boredengineering/Isaac-GR00T.git')
+        self.assertEqual(art['gr00t_git_checkpoint'], '51d4c89f72fda44cbf77285c6a8114b52676b8a1')
+        self.assertEqual(art['lerobot_git_repo'], 'https://github.com/boredengineering/lerobot.git')
+        self.assertEqual(art['lerobot_git_checkpoint'], 'v0.4.3')
+        self.assertEqual(art['profile_lab_architecture'], 'sm_120')
+        self.assertEqual(art['profile_gr00t_serving']['serving']['port'], 5561)
+
+        local_report = render_profile(profile, 'local', '/home/ubuntu')
+        self.assertTrue(local_report['render_supported'])
+        self.assertEqual(local_report['blockers'], [])
+        self.assertEqual(local_report['artifact']['workspace']['name'], 'BoredEngineer')
+
 
 if __name__ == '__main__':
     unittest.main()

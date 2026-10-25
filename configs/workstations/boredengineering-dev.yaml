@@ -1,0 +1,186 @@
+# ==============================================================================
+# Isaac Automator - BoredEngineering Robotics Stack Profile (boredengineering-dev.yaml)
+# ==============================================================================
+# Reconciles local host development setup with cloud deployment targets.
+# Configures personal forks under 'boredengineering' as origin remotes,
+# with canonical upstream repositories under 'isaac-sim' and 'NVIDIA'.
+# Targets the active https://github.com/boredengineering/IsaacLab-Arena/tree/dev/0.3.0-prerelease
+# evaluation stack with Isaac Sim 6.0.1 Standalone, Isaac Lab, and Isaac-GR00T.
+# Validated for both 'ansible' (cloud deployment) and 'local' (host execution).
+# ==============================================================================
+
+schema_version: v1alpha1
+kind: workstation-profile
+name: boredengineering-dev
+target: offline
+extends: default
+
+# ------------------------------------------------------------------------------
+# 1. Workspace Configuration
+# ------------------------------------------------------------------------------
+# Matches local host folder structure ~/Documents/GitHub/BoredEngineer/<repo>
+workspace:
+  root: ~/Documents/GitHub
+  layout: named
+  name: BoredEngineer
+  default_owner: BoredEngineer
+
+# ------------------------------------------------------------------------------
+# 2. Components Specification (Fork Origin + Upstream Tracking)
+# ------------------------------------------------------------------------------
+components:
+  sim:
+    enabled: true
+    execution: native
+    runtime: kit
+    source:
+      mode: standalone
+      version: "6.0.1"
+      url: https://downloads.isaacsim.nvidia.com/isaac-sim-standalone-6.0.1-linux-x86_64.zip
+      sha256: 613e30d9727baa5615e087148ce67c90d9e5ffa376f7cbb4f01580baeb1c8d13
+
+  lab:
+    enabled: true
+    execution: native
+    runtime: lab
+    source:
+      mode: git
+      repository: https://github.com/boredengineering/IsaacLab.git
+      ref: dev/0.3.0-prerelease
+      revision: null
+
+  arena:
+    enabled: true
+    execution: native
+    runtime: lab
+    source:
+      mode: git
+      repository: https://github.com/boredengineering/IsaacLab-Arena.git
+      ref: dev/0.3.0-prerelease
+      revision: null
+
+  gr00t:
+    enabled: true
+    execution: native
+    runtime: gr00t
+    source:
+      mode: git
+      repository: https://github.com/boredengineering/Isaac-GR00T.git
+      ref: 51d4c89f72fda44cbf77285c6a8114b52676b8a1
+      revision: 51d4c89f72fda44cbf77285c6a8114b52676b8a1
+
+  lerobot:
+    enabled: true
+    execution: native
+    runtime: lerobot
+    source:
+      mode: git
+      repository: https://github.com/boredengineering/lerobot.git
+      ref: v0.4.3
+      revision: null
+
+# ------------------------------------------------------------------------------
+# 3. Hardware-Accelerated Runtime Configuration
+# ------------------------------------------------------------------------------
+# Target compute: NVIDIA RTX PRO 6000 Blackwell (sm_120) with CUDA 12.8
+runtimes:
+  kit:
+    manager: bundled
+    environment: kit
+  lab:
+    manager: conda
+    environment: isaaclab
+    python: "3.12"
+    torch: "2.10.0+cu128"
+    cuda_runtime: "12.8"
+    architecture: sm_120
+  gr00t:
+    manager: uv
+    environment: gr00t
+  lerobot:
+    manager: conda
+    environment: lerobot
+
+# ------------------------------------------------------------------------------
+# 4. ZeroMQ Physical AI Foundation Model Serving
+# ------------------------------------------------------------------------------
+# Loopback ZeroMQ inference server on port 5561 with NEW_EMBODIMENT
+serving:
+  enabled: true
+  bind: 127.0.0.1
+  port: 5561
+  embodiment: NEW_EMBODIMENT
+  model:
+    repository: nvidia/GR00T-N1.7-3B
+    ref: main
+    revision: null
+
+# ------------------------------------------------------------------------------
+# 5. Git Remote & Submodule Topology Declarations
+# ------------------------------------------------------------------------------
+# Documents the dual-remote configuration:
+# - origin: https://github.com/boredengineering/<repo>.git (read/write personal fork)
+# - upstream: https://github.com/isaac-sim/<repo>.git (canonical reference)
+repositories:
+  - id: arena-fork-tracking
+    component: arena
+    root: ~/Documents/GitHub/BoredEngineer/IsaacLab-Arena
+    git_dir: ~/Documents/GitHub/BoredEngineer/IsaacLab-Arena/.git
+    common_dir: ~/Documents/GitHub/BoredEngineer/IsaacLab-Arena/.git
+    head:
+      ref: dev/0.3.0-prerelease
+      commit: null
+    remotes:
+      - name: origin
+        url: https://github.com/boredengineering/IsaacLab-Arena.git
+      - name: upstream
+        url: https://github.com/isaac-sim/IsaacLab-Arena.git
+    submodules:
+      - name: IsaacLab
+        path: IsaacLab
+        url: https://github.com/boredengineering/IsaacLab.git
+      - name: Isaac-GR00T
+        path: Isaac-GR00T
+        url: https://github.com/boredengineering/Isaac-GR00T.git
+    dirty: unknown
+    pin_provenance: selected-head-only
+    required: false
+    support: unsupported
+
+  - id: lab-fork-tracking
+    component: lab
+    root: ~/Documents/GitHub/BoredEngineer/IsaacLab
+    git_dir: ~/Documents/GitHub/BoredEngineer/IsaacLab/.git
+    common_dir: ~/Documents/GitHub/BoredEngineer/IsaacLab/.git
+    head:
+      ref: dev/0.3.0-prerelease
+      commit: null
+    remotes:
+      - name: origin
+        url: https://github.com/boredengineering/IsaacLab.git
+      - name: upstream
+        url: https://github.com/isaac-sim/IsaacLab.git
+    submodules: []
+    dirty: unknown
+    pin_provenance: selected-head-only
+    required: false
+    support: unsupported
+
+  - id: gr00t-fork-tracking
+    component: gr00t
+    root: ~/Documents/GitHub/BoredEngineer/Isaac-GR00T
+    git_dir: ~/Documents/GitHub/BoredEngineer/Isaac-GR00T/.git
+    common_dir: ~/Documents/GitHub/BoredEngineer/Isaac-GR00T/.git
+    head:
+      ref: 51d4c89f72fda44cbf77285c6a8114b52676b8a1
+      commit: 51d4c89f72fda44cbf77285c6a8114b52676b8a1
+    remotes:
+      - name: origin
+        url: https://github.com/boredengineering/Isaac-GR00T.git
+      - name: upstream
+        url: https://github.com/NVIDIA/Isaac-GR00T.git
+    submodules: []
+    dirty: unknown
+    pin_provenance: selected-head-only
+    required: false
+    support: unsupported

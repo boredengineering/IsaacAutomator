@@ -1,0 +1,141 @@
+# ==============================================================================
+# Isaac Automator - Comprehensive Workstation Profile Example (example-workstation.yaml)
+# ==============================================================================
+# Demonstrates the complete declarative workstation profile schema (v1alpha1)
+# showing all available options, runtimes, components, serving, and workspace layout.
+# Validated for both 'ansible' (cloud deployment) and 'local' (bare-metal) adapters.
+# ==============================================================================
+
+schema_version: v1alpha1
+kind: workstation-profile
+name: example-workstation
+target: offline
+extends: default
+
+# ------------------------------------------------------------------------------
+# 1. Workspace Configuration
+# ------------------------------------------------------------------------------
+# Defines where repositories and project files reside on the target machine.
+# - root: base directory (~/ or absolute path)
+# - layout: "named" (root/<name>/<repo>) or "flat" (root/<repo>)
+# - name: folder name under root (required if layout is "named")
+# - default_owner: namespace used when disambiguating multi-user repositories
+workspace:
+  root: ~/Documents/GitHub
+  layout: named
+  name: Robotics
+  default_owner: Robotics
+
+# ------------------------------------------------------------------------------
+# 2. Components Specification
+# ------------------------------------------------------------------------------
+# Declares the 5 core Physical AI & Robotics software components:
+# - sim: Isaac Sim (Standalone Kit or Git build)
+# - lab: Isaac Lab (modular robotics learning framework)
+# - arena: IsaacLab-Arena (multi-agent benchmark & evaluation suite)
+# - gr00t: NVIDIA Isaac-GR00T (physical AI foundation model inference)
+# - lerobot: Hugging Face LeRobot (imitation learning & teleoperation)
+components:
+  sim:
+    enabled: true
+    execution: native
+    runtime: kit
+    source:
+      mode: standalone                   # "standalone" (recommended) or "git" (source build)
+      version: "6.0.1"
+      url: https://downloads.isaacsim.nvidia.com/isaac-sim-standalone-6.0.1-linux-x86_64.zip
+      sha256: 613e30d9727baa5615e087148ce67c90d9e5ffa376f7cbb4f01580baeb1c8d13
+
+  lab:
+    enabled: true
+    execution: native
+    runtime: lab
+    source:
+      mode: git
+      repository: https://github.com/isaac-sim/IsaacLab.git
+      ref: v3.0.0-beta2                  # Tag, branch, or commit SHA
+      revision: null                     # Optional 40-character commit hex
+
+  arena:
+    enabled: true
+    execution: native
+    runtime: lab                         # Shares the Isaac Lab runtime environment
+    source:
+      mode: git
+      repository: https://github.com/isaac-sim/IsaacLab-Arena.git
+      ref: release/0.3.0-prerelease
+      revision: null
+
+  gr00t:
+    enabled: true
+    execution: native
+    runtime: gr00t                       # Isolated uv project environment
+    source:
+      mode: git
+      repository: https://github.com/NVIDIA/Isaac-GR00T.git
+      ref: 51d4c89f72fda44cbf77285c6a8114b52676b8a1
+      revision: 51d4c89f72fda44cbf77285c6a8114b52676b8a1
+
+  lerobot:
+    enabled: true
+    execution: native
+    runtime: lerobot                     # Dedicated isolated Conda environment
+    source:
+      mode: git
+      repository: https://github.com/huggingface/lerobot.git
+      ref: v0.4.3
+      revision: null
+
+# ------------------------------------------------------------------------------
+# 3. Isolated Runtime Environments
+# ------------------------------------------------------------------------------
+# Explicit dependency pins and hardware acceleration configuration:
+# - kit: bundled Python 3.10 with Isaac Sim
+# - lab: Conda 'isaaclab' Python 3.12 with PyTorch 2.10.0+cu128 on sm_120
+# - gr00t: uv-managed environment in repository-local .venv
+# - lerobot: Conda 'lerobot' environment
+runtimes:
+  kit:
+    manager: bundled
+    environment: kit
+  lab:
+    manager: conda
+    environment: isaaclab
+    python: "3.12"
+    torch: "2.10.0+cu128"
+    torchvision: null
+    cuda_runtime: "12.8"
+    architecture: sm_120
+  gr00t:
+    manager: uv
+    environment: gr00t
+  lerobot:
+    manager: conda
+    environment: lerobot
+
+# ------------------------------------------------------------------------------
+# 4. ZeroMQ Loopback Model Serving
+# ------------------------------------------------------------------------------
+# Configures the local GR00T VLA foundation model inference server:
+# - bind: strictly 127.0.0.1 (fail-closed security, never exposed publicly)
+# - port: 5561 (ZeroMQ request/reply port)
+# - embodiment: embodiment tag (e.g. NEW_EMBODIMENT)
+# - model: Hugging Face model repository and branch/revision
+serving:
+  enabled: true
+  bind: 127.0.0.1
+  port: 5561
+  embodiment: NEW_EMBODIMENT
+  model:
+    repository: nvidia/GR00T-N1.7-3B
+    ref: main
+    revision: null
+
+# ------------------------------------------------------------------------------
+# 5. Informational Notes & Audit Trail
+# ------------------------------------------------------------------------------
+notes:
+  - id: example-profile-documentation
+    text: Comprehensive reference workstation specification exercising all schema options
+    required: false
+    support: unsupported
