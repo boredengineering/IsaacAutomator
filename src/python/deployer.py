@@ -58,6 +58,7 @@ class Deployer:
         self.cloud = self.cloud or params.get("cloud")
         self.tf_outputs = {}
         self.params = params
+        self.input_params = params.copy()
         if self.cloud and 'cloud' not in self.params:
             self.params['cloud'] = self.cloud
         self.config = config
@@ -305,6 +306,8 @@ class Deployer:
             self.params["enable_oslogin"] = spec.get("enable_oslogin", False)
         if "enable_secrets" not in self.params:
             self.params["enable_secrets"] = spec.get("enable_secrets", False)
+        if "enable_secure_boot" not in self.params:
+            self.params["enable_secure_boot"] = spec.get("enable_secure_boot", False)
         if self.params.get('project') is None and spec.get('raw', {}).get('project'):
             self.params['project'] = spec['raw']['project']
             self.input_params['project'] = spec['raw']['project']
@@ -566,7 +569,9 @@ class Deployer:
             r = self.read_meta()
             self.require_backend(r["params"])
             registry = self.validate_registry_params(r["params"])
-            self.params = r["params"]
+            restored = dict(r.get("input_params", {}))
+            restored.update(r.get("params", {}))
+            self.params = restored
             self.params.update(registry)
             self._persistence_ready = True
 
@@ -830,7 +835,14 @@ class Deployer:
                     self.params.get('container_registry', {}).get('enabled')):
                 raise ValueError('Software native intent cannot combine with registry image overrides.')
             user = self.params.get('ssh_user') or self.config['default_ssh_user']
-            report = render_profile(self.params['software_profile'], 'ansible', '/home/' + user)
+            source = getattr(self, 'input_params', {}).get('software_profile') or self.params.get('software_profile')
+            if isinstance(source, str):
+                from src.python.workstation_profile import resolve_profile
+                profile_input = resolve_profile(source)['profile']
+                self.params['software_profile'] = profile_input
+            else:
+                profile_input = self.params['software_profile']
+            report = render_profile(profile_input, 'ansible', '/home/' + user)
             if not report['render_supported']:
                 raise ValueError('Software profile has required unmapped fields; inspect software-profile render coverage.')
             return report
@@ -867,6 +879,15 @@ class Deployer:
             )
 
         # default resilience parameters
+        ansible_vars.setdefault("ssh_port", self.params.get("ssh_port", 22))
+        ansible_vars.setdefault("vnc_password", self.params.get("vnc_password", ""))
+        ansible_vars.setdefault("system_user_password", self.params.get("system_user_password", ""))
+        ansible_vars.setdefault("isaaclab", self.params.get("isaaclab", "no"))
+        ansible_vars.setdefault("isaacsim", self.params.get("isaacsim", "no"))
+        ansible_vars.setdefault("isaaclab_arena", self.params.get("isaaclab_arena", "no"))
+        ansible_vars.setdefault("isaaclab_private_git", self.params.get("isaaclab_private_git", ""))
+        ansible_vars.setdefault("demos", self.params.get("demos", "no"))
+        ansible_vars.setdefault("remote_desktop", self.params.get("remote_desktop", "standard"))
         ansible_vars.setdefault("gcs_backup_bucket", self.params.get("backup_bucket", "") or "")
         ansible_vars.setdefault("gcs_auto_restore", self.params.get("auto_restore", False))
 
@@ -1073,8 +1094,9 @@ class Deployer:
                     raise TerraformRunnerError('GCS apply completed but metadata publication is uncertain; recovery evidence retained') from None
             outputs = runner.output()
         values = {key: copy.deepcopy(item['value']) for key, item in outputs.items()}
+        required_ip_key = 'isaac_workstation_private_ip' if values.get('iap_enabled') else 'isaac_workstation_ip'
         if any(not isinstance(values.get(key), str) or not values[key].strip()
-               for key in ('ssh_key', 'isaac_workstation_ip', 'cloud')):
+               for key in ('ssh_key', required_ip_key, 'cloud')):
             raise click.ClickException('Required Terraform workstation output is absent or invalid; downstream writes refused.')
         if values['cloud'] != (self.cloud or Path(cwd).name):
             raise click.ClickException('Terraform cloud output does not match the deployment; downstream writes refused.')
@@ -1091,6 +1113,8 @@ class Deployer:
             return values.get('isaac_workstation_ip')
         for output, parameter in (('iap_enabled', 'enable_iap_only'), ('oslogin_enabled', 'enable_oslogin')):
             value = values.get(output, False)
+            if isinstance(value, str) and value.lower() in ('true', 'false'):
+                value = value.lower() == 'true'
             if type(value) is not bool or value != bool(self.params.get(parameter, False)):
                 raise click.ClickException('Terraform SSH security output disagrees with the selected deployment.')
         if values.get('iap_enabled') or values.get('oslogin_enabled'):
@@ -1275,9 +1299,9 @@ class Deployer:
         """
 
         dn = self.params["deployment_name"]
-        ip = self.tf_output("isaac_workstation_ip")
+        ip = self._connection_ip(self.tf_outputs) if self.tf_outputs else self.tf_output("isaac_workstation_ip")
         user = self.config["default_ssh_user"]
-        banner = f"* Isaac Workstation is deployed at {ip} *"
+        banner = f"* Isaac Workstation is deployed at {ip} (via IAP) *" if self.params.get("enable_iap_only") else f"* Isaac Workstation is deployed at {ip} *"
         vnc_pw = self.params.get("vnc_password", "")
         sys_pw = self.params.get("system_user_password", "")
 

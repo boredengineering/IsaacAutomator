@@ -31,8 +31,14 @@
   shell: |
     {{ miniconda_install_dir }}/bin/conda config --set auto_activate_base false
     {{ miniconda_install_dir }}/bin/conda config --add channels conda-forge
+    {{ miniconda_install_dir }}/bin/conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main || true
+    {{ miniconda_install_dir }}/bin/conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r || true
+    {{ miniconda_install_dir }}/bin/conda tos accept --all || true
+  environment:
+    CONDA_PLUGINS_AUTO_ACCEPT_TOS: "yes"
   become_user: "{{ ansible_user }}"
   changed_when: false
+  failed_when: false
 
 - name: Check if named conda environment exists
   shell: "{{ miniconda_install_dir }}/bin/conda env list | grep -E '^({{ conda_env_name }})\\s'"
@@ -43,6 +49,8 @@
 
 - name: Create named conda environment
   shell: "{{ miniconda_install_dir }}/bin/conda create -y -n {{ conda_env_name }} python={{ conda_python_version }}"
+  environment:
+    CONDA_PLUGINS_AUTO_ACCEPT_TOS: "yes"
   become_user: "{{ ansible_user }}"
   when: conda_env_check.rc != 0
 

@@ -191,7 +191,7 @@ def _download(url, sha256, output, *, max_bytes):
                 if expected_size is not None and count != expected_size:
                     raise ArtifactError('Truncated artifact body')
                 if digest.hexdigest() != sha256:
-                    raise ArtifactError('Archive checksum mismatch')
+                    raise ArtifactError(f'Archive checksum mismatch: got {digest.hexdigest()}, expected {sha256}')
                 os.link(temporary, target)  # atomic publication, EEXIST never replaces
             return
         finally:

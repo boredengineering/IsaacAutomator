@@ -54,6 +54,7 @@ module "isaac_workstation" {
   enable_iap_only              = var.enable_iap_only
   enable_oslogin               = var.enable_oslogin
   security_profile             = var.security_profile
+  enable_secure_boot           = var.enable_secure_boot
   enable_artifact_registry     = var.enable_artifact_registry
   artifact_registry_project    = var.artifact_registry_project
   artifact_registry_location   = var.artifact_registry_location

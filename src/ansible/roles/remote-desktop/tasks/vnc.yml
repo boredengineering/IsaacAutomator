@@ -56,9 +56,9 @@
 - name: Ensure permissions on VNC password file
   file:
     path: /etc/x11vnc/x11vnc.pass
-    mode: "0644"
-    owner: root
-    group: root
+    mode: "0600"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
 
 - name: Start x11vnc
   systemd:
@@ -66,6 +66,3 @@
     daemon_reload: yes
     enabled: yes
     state: restarted
-  tags:
-    - never
-    - cleanup

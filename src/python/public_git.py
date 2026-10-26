@@ -121,7 +121,7 @@ def prove_public_commit(repository, revision):
     return revision
 
 
-def checkout_public_source(repository, ref, destination):
+def checkout_public_source(repository, ref, destination, *, allow_submodules=False):
     """Fresh-only target Git boundary, never adoption/update/force/discard.
 
     An existing destination (including a mismatched origin or symlink) is refused
@@ -163,7 +163,7 @@ def checkout_public_source(repository, ref, destination):
                 entry = re.fullmatch(r'(100644|100755|120000|160000) (blob|commit) [0-9a-f]{40}\t(.+)', line)
                 if not entry:
                     raise PublicGitError('Anonymous target Git tree is malformed or over budget.')
-                if entry[1] == '160000' or entry[3] == '.gitmodules':
+                if not allow_submodules and (entry[1] == '160000' or entry[3] == '.gitmodules'):
                     raise PublicGitError('Profile target submodules are not implemented; checkout refused.')
             run(*base, 'checkout', '--detach', selected)
             if run(*base, 'rev-parse', '--verify', 'HEAD') != selected:
@@ -181,9 +181,10 @@ def main(argv=None):
     parser.add_argument('repository')
     parser.add_argument('ref')
     parser.add_argument('destination')
+    parser.add_argument('--allow-submodules', action='store_true', default=False)
     args = parser.parse_args(argv)
     try:
-        checkout_public_source(args.repository, args.ref, args.destination)
+        checkout_public_source(args.repository, args.ref, args.destination, allow_submodules=args.allow_submodules)
     except PublicGitError as exc:
         print(str(exc), file=sys.stderr)
         return 2

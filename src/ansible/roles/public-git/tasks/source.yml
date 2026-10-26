@@ -5,50 +5,42 @@
     follow: false
   register: public_git_destination_stat
 
-- name: Refuse existing profile Git destination before source mutations
+- name: Refuse existing profile Git destination symlinks
   ansible.builtin.assert:
     that:
-      - not public_git_destination_stat.stat.exists
       - not (public_git_destination_stat.stat.islnk | default(false))
     fail_msg: >-
-      Existing destination/origin is not adopted. Profile source updates, including
-      origin mismatch, force/discard and managed-repository qualification, are blocked.
+      Existing destination symlink is not adopted. Profile source updates are blocked.
 
-- name: Prepare public Git helper directory
-  ansible.builtin.file:
-    path: /usr/local/lib/isaac-automator
-    state: directory
-    owner: root
-    group: root
-    mode: '0755'
+- name: Prepare and fetch profile public source
+  when: not public_git_destination_stat.stat.exists
+  block:
+    - name: Prepare public Git helper directory
+      ansible.builtin.file:
+        path: /usr/local/lib/isaac-automator
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
 
-- name: Install fixed public Git source helper
-  ansible.builtin.copy:
-    src: "{{ playbook_dir }}/../python/public_git.py"
-    dest: /usr/local/lib/isaac-automator/public_git.py
-    owner: root
-    group: root
-    mode: '0644'
+    - name: Install fixed public Git source helper
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/../python/public_git.py"
+        dest: /usr/local/lib/isaac-automator/public_git.py
+        owner: root
+        group: root
+        mode: '0644'
 
-- name: Prepare fresh profile source parent
-  ansible.builtin.file:
-    path: "{{ public_git_destination | dirname }}"
-    state: directory
-    owner: "{{ ansible_user }}"
-    group: "{{ ansible_user }}"
-    mode: '0755'
+    - name: Prepare fresh profile source parent
+      ansible.builtin.file:
+        path: "{{ public_git_destination | dirname }}"
+        state: directory
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: '0755'
 
-- name: Fetch and check out the exact profile public source
-  ansible.builtin.command:
-    argv:
-      - /usr/bin/env
-      - -i
-      - /usr/bin/python3
-      - -I
-      - /usr/local/lib/isaac-automator/public_git.py
-      - checkout
-      - "{{ public_git_repository }}"
-      - "{{ public_git_ref }}"
-      - "{{ public_git_destination }}"
-  become_user: "{{ ansible_user }}"
-  register: profile_public_git_checkout
+    - name: Fetch and check out the exact profile public source
+      ansible.builtin.command:
+        argv: "{{ ['/usr/bin/env', '-i', '/usr/bin/python3', '-I', '/usr/local/lib/isaac-automator/public_git.py', 'checkout', public_git_repository, public_git_ref, public_git_destination] + (['--allow-submodules'] if (public_git_allow_submodules | default(true) | bool) else []) }}"
+      become_user: "{{ ansible_user }}"
+      register: profile_public_git_checkout

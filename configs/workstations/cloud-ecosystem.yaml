@@ -20,7 +20,7 @@ components:
       mode: standalone
       version: '6.0.1'
       url: 'https://downloads.isaacsim.nvidia.com/isaac-sim-standalone-6.0.1-linux-x86_64.zip'
-      sha256: '613e30d9727baa5615e087148ce67c90d9e5ffa376f7cbb4f01580baeb1c8d13'
+      sha256: '348013c4d3ac398d40162566d0edfe4f3837a0eb5efa358ec87065f81aa68dd7'
   lab:
     enabled: true
     execution: native

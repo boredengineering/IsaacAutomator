@@ -39,6 +39,11 @@ variable "boot_disk_type" {
   type = string
 }
 
+variable "enable_secure_boot" {
+  type    = bool
+  default = false
+}
+
 variable "os_username" {
   type = string
 }

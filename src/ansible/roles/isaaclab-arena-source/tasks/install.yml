@@ -20,6 +20,7 @@
     public_git_repository: "{{ isaaclab_arena_git_repo }}"
     public_git_ref: "{{ isaaclab_arena_git_checkpoint }}"
     public_git_destination: "{{ isaaclab_arena_dir }}"
+    public_git_allow_submodules: true
   when: public_git_profile | default(false) | bool
 
 - name: Select explicit Lab pin pipeline

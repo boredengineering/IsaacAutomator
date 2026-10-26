@@ -328,6 +328,9 @@ class GCPDeployer(Deployer):
             )
             self.input_params["project"] = self.params["project"]
 
+        # login into gcp
+        gcp_login(verbose=self.params["debug"])
+
         if self.existing_behavior != "run_ansible":
             # create tfvars file, deal with existing deployment
             instance_type = self.params["isaac_workstation_instance_type"]
@@ -365,6 +368,7 @@ class GCPDeployer(Deployer):
                     "isaac_workstation_gpu_count": gpu_count,
                     "isaac_workstation_gpu_type": gpu_type,
                     "boot_disk_type": boot_disk_type,
+                    "enable_secure_boot": self.params.get("enable_secure_boot", False),
                     "use_flex_start": self.params.get("flex_start", False),
                     "use_spot": use_spot,
                     **({
@@ -374,9 +378,6 @@ class GCPDeployer(Deployer):
                 }
             )
 
-
-            # login into gcp
-            gcp_login(verbose=self.params["debug"])
 
             # Ensure remote state backend storage exists if configured
             self.ensure_backend_storage()

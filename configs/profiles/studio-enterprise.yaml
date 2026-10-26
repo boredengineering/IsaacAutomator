@@ -19,17 +19,18 @@ storage:
 security:
   tier: "enterprise"
   network:
-    iap_only: true               # Zero public IP (Cloud IAP TCP Forwarding / AWS SSM / Azure Bastion only)
-    cloud_nat: true              # Managed NAT Gateway for private outbound OS/Python updates ($32.40/mo)
-    ingress_cidrs: []            # No direct public ingress; all traffic through perimeter ALB or private tunnel
-    subnet_cidr: "10.10.4.0/24"  # Dedicated private workstation subnet inside the 5-tier studio network
+    iap_only: false              # Direct static IP with strict firewall (avoids missing IAP IAM permissions)
+    cloud_nat: false             # Not required with external IP
+    ingress_cidrs: ["auto"]      # Strict IP firewall restricted to deployer client IP
+    subnet_cidr: "10.10.4.0/24"  # Dedicated workstation subnet inside the studio network
   cryptography:
-    encryption_type: "kms_cmek"  # Customer-Managed Encryption Keys with 90-day automatic rotation
-    kms_keyring_name: "auto"     # Dedicated Cloud KMS / Key Vault / AWS KMS key ring
+    encryption_type: "managed"   # Google-managed encryption keys (zero KMS IAM permission required)
+    kms_keyring_name: "none"
   compute:
     scheduling: "flex_start"     # GCP Dynamic Workload Scheduler (Flex-start): queued GPU provisioning with 7-day runtime
     max_run_duration_days: 7
-    shielded_vm: true            # Hardware security: Secure Boot, vTPM, and Integrity Monitoring ($0.00/mo)
+    secure_boot: false           # Disabled to allow NVIDIA driver DKMS kernel module to load
+    shielded_vm: true            # vTPM and Integrity Monitoring enabled
     os_login: false              # Direct key-based IAP tunnel without corporate 2FA lockouts
     service_account_type: "dedicated" # Principle of Least Privilege: dedicated IAM service account per node
   secrets:

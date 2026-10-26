@@ -89,6 +89,17 @@
   async: 1800
   poll: 15
 
+- name: Materialize Git LFS objects for Isaac-GR00T
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/git
+      - lfs
+      - pull
+    chdir: "{{ gr00t_dir }}"
+  become_user: "{{ ansible_user }}"
+  changed_when: false
+  when: profile_gr00t_isolated | default(false) | bool
+
 # uv is a tool provisioned by the earlier conda role, not GR00T's interpreter.
 # Its project environment must never resolve to the Lab environment.
 - name: Sync isolated profile GR00T environment

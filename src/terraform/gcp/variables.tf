@@ -56,6 +56,11 @@ variable "boot_disk_type" {
   }
 }
 
+variable "enable_secure_boot" {
+  type    = bool
+  default = false
+}
+
 variable "os_username" {
   type    = string
   default = "ubuntu"
