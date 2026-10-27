@@ -48,7 +48,7 @@ The full procedures are in `.agents/skills/isaac-automator/`; this is the orient
   viewport (Omniverse Kit renders via a Vulkan surface VNC does not capture). Use **NoMachine** for live 3D,
   or capture rendered output headlessly with the app's own recorder. Details in
   `.agents/skills/isaac-automator/connect-workstation/SKILL.md` and `.agents/skills/isaac-automator/troubleshoot/SKILL.md`.
-- **Explicit Push Permission Required:** **NEVER** execute `git push` (or `git push --force`) to remote repositories unless the user explicitly requests a push in their prompt (e.g. "push to github", "git push"). Local edits and local commits (`git commit`) are permitted, but remote pushes must strictly wait for explicit user instruction.
+- **Explicit Permission Required for Git Commits & Pushes:** **NEVER** execute `git commit` (including amending or creating commits) or `git push` unless the user explicitly requests or confirms it in their prompt. The agent must NEVER commit on behalf of the user automatically and must ALWAYS ask for explicit user permission first. Local uncommitted edits in the working tree are standard.
 - **Explicit Permission Required for VS Code / Environment Settings:** **NEVER** modify or overwrite VS Code settings (such as `.vscode/settings.json`, `/root/.vscode-server/data/Machine/settings.json`, User settings, or terminal display/GPU configurations) without explicit user permission in the prompt.
 
 ## Evidence graph for infrastructure reasoning

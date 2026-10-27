@@ -183,3 +183,12 @@ components:
 
 ### Phase 4: Dynamic State Ledger & Probing
 - In `state-ledger`, iterate over `profile_components` to dynamically query HEAD commits and output the receipt JSON without any hardcoded keys.
+
+---
+
+## 6. Formal Implementation Proposal
+
+A comprehensive, phased engineering proposal detailing the target schema (`v1alpha2`), invariant-based validation engine, universal `workspace-component` Ansible role, dynamic state ledger, and backward-compatibility migration path has been authored:
+
+👉 **See Formal Plan:** [Dynamic Component Manifest Engine Plan](file:///workspaces/IsaacAutomator/.agents/references/plans/dynamic-component-manifest-engine-plan.md)
+
