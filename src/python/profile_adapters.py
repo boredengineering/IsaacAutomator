@@ -10,6 +10,7 @@ import re
 from src.python.workstation_profile import ProfileError, _validate, _dependencies
 
 
+# TODO: Replace static component name/directory mappings with dynamic manifest-driven resolution.
 LEGACY_NAMES = {'lab': 'isaaclab', 'arena': 'arena', 'gr00t': 'gr00t', 'lerobot': 'lerobot'}
 REPO_DIRS = {'lab': 'IsaacLab', 'arena': 'IsaacLab-Arena', 'gr00t': 'Isaac-GR00T', 'lerobot': 'lerobot'}
 
@@ -172,6 +173,12 @@ def render_profile(profile_or_resolved, adapter, target_home):
     if adapter == 'ansible':
         artifact = {'public_git_profile': True, 'install_gr00t': False, 'install_lerobot': False,
                     'gr00t_service_enabled': False, 'profile_isaacsim_archive_enabled': False}
+        # TODO: Refactor hardcoded component-to-consumer mappings for future extensibility.
+        # Currently, the supported components ('sim', 'lab', 'arena', 'gr00t', 'lerobot') and their
+        # corresponding Ansible consumer variables and directory structures are explicitly enumerated.
+        # In a future iteration, this adapter should dynamically discover and iterate over arbitrary
+        # components declared in the workstation profile YAML (e.g., 'robolab', custom benchmark suites,
+        # or user-defined robotics packages), resolving git sources, runtimes, and paths generically.
         for name, consumer in (('sim', 'isaacsim'), ('lab', 'isaaclab'), ('arena', 'isaaclab_arena'),
                                ('gr00t', 'gr00t'), ('lerobot', 'lerobot')):
             component = components.get(name, {})
