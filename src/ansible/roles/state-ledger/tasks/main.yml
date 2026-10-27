@@ -65,6 +65,18 @@
   register: gr00t_commit
   changed_when: false
 
+- name: Probe RoboLab directory and commit
+  shell: |
+    ROBOLAB_DIR=$(find "/home/{{ ansible_user }}/Documents/GitHub" "/home/{{ ansible_user }}" -maxdepth 3 -name "RoboLab" -type d 2>/dev/null | head -n 1 || echo "")
+    if [ -n "$ROBOLAB_DIR" ] && [ -d "$ROBOLAB_DIR/.git" ]; then
+      cd "$ROBOLAB_DIR"
+      git rev-parse HEAD
+    else
+      echo "none"
+    fi
+  register: robolab_commit
+  changed_when: false
+
 - name: Generate Isaac Workstation State Ledger JSON
   copy:
     content: |
@@ -95,6 +107,10 @@
           "gr00t": {
             "installed": {{ (gr00t_commit.stdout | trim != 'none') | bool | to_json }},
             "commit": "{{ gr00t_commit.stdout | trim }}"
+          },
+          "robolab": {
+            "installed": {{ (robolab_commit.stdout | trim != 'none') | bool | to_json }},
+            "commit": "{{ robolab_commit.stdout | trim }}"
           }
         },
         "runtime": {

@@ -36,5 +36,6 @@ dependencies:
   - { role: neo4j, tags: ['__neo4j'] }
   - { role: gr00t, tags: ['__gr00t'] }
   - { role: lerobot, tags: ['__lerobot'] }
+  - { role: robolab, tags: ['__robolab'] }
   - { role: demos, tags: ['__demos'] }
   - { role: state-ledger, tags: ['__state_ledger', '__verify'] }

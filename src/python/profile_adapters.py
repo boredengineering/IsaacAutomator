@@ -11,8 +11,8 @@ from src.python.workstation_profile import ProfileError, _validate, _dependencie
 
 
 # TODO: Replace static component name/directory mappings with dynamic manifest-driven resolution.
-LEGACY_NAMES = {'lab': 'isaaclab', 'arena': 'arena', 'gr00t': 'gr00t', 'lerobot': 'lerobot'}
-REPO_DIRS = {'lab': 'IsaacLab', 'arena': 'IsaacLab-Arena', 'gr00t': 'Isaac-GR00T', 'lerobot': 'lerobot'}
+LEGACY_NAMES = {'lab': 'isaaclab', 'arena': 'arena', 'gr00t': 'gr00t', 'lerobot': 'lerobot', 'robolab': 'robolab'}
+REPO_DIRS = {'lab': 'IsaacLab', 'arena': 'IsaacLab-Arena', 'gr00t': 'Isaac-GR00T', 'lerobot': 'lerobot', 'robolab': 'RoboLab'}
 
 
 def _leaves(value, prefix=''):
@@ -171,7 +171,7 @@ def render_profile(profile_or_resolved, adapter, target_home):
         subtree('serving', 'not_selected', 'Serving disabled')
         mark('serving.enabled', consumer='No serving activation by adapter')
     if adapter == 'ansible':
-        artifact = {'public_git_profile': True, 'install_gr00t': False, 'install_lerobot': False,
+        artifact = {'public_git_profile': True, 'install_gr00t': False, 'install_lerobot': False, 'install_robolab': False,
                     'gr00t_service_enabled': False, 'profile_isaacsim_archive_enabled': False}
         # TODO: Refactor hardcoded component-to-consumer mappings for future extensibility.
         # Currently, the supported components ('sim', 'lab', 'arena', 'gr00t', 'lerobot') and their
@@ -180,7 +180,7 @@ def render_profile(profile_or_resolved, adapter, target_home):
         # components declared in the workstation profile YAML (e.g., 'robolab', custom benchmark suites,
         # or user-defined robotics packages), resolving git sources, runtimes, and paths generically.
         for name, consumer in (('sim', 'isaacsim'), ('lab', 'isaaclab'), ('arena', 'isaaclab_arena'),
-                               ('gr00t', 'gr00t'), ('lerobot', 'lerobot')):
+                               ('gr00t', 'gr00t'), ('lerobot', 'lerobot'), ('robolab', 'robolab')):
             component = components.get(name, {})
             source = component.get('source', {})
             path = f'components.{name}'
@@ -215,7 +215,7 @@ def render_profile(profile_or_resolved, adapter, target_home):
                          reason='Explicit archive checksum required; no checksum is fabricated or fetched')
                 else:
                     subtree(path + '.source', 'unsupported', 'No matching Ansible source consumer')
-                if name in ('gr00t', 'lerobot'):
+                if name in ('gr00t', 'lerobot', 'robolab'):
                     artifact['install_' + consumer] = True
                     if name == 'gr00t':
                         artifact['profile_gr00t_isolated'] = True
@@ -224,7 +224,7 @@ def render_profile(profile_or_resolved, adapter, target_home):
                         mark('runtimes.gr00t.manager', consumer='gr00t role uv sync into repository .venv')
                         # The public label identifies the project-local uv environment.
                         # Other identities and non-null wheel pins remain unsupported.
-                    else:
+                    elif name == 'lerobot':
                         artifact['profile_lerobot_isolated'] = True
                         mark('components.lerobot.runtime', consumer='profile_lerobot_isolated')
                         mark('runtimes.lerobot.manager', consumer='lerobot role isolated conda environment')
@@ -234,9 +234,11 @@ def render_profile(profile_or_resolved, adapter, target_home):
                                 runtime_consumer = 'profile_lerobot_' + key
                                 artifact[runtime_consumer] = value
                                 mark('runtimes.lerobot.' + key, consumer=runtime_consumer)
+                    elif name == 'robolab':
+                        mark('components.robolab.runtime', consumer='robolab role in isaaclab environment')
             artifact[consumer + '_git_checkpoint'] = checkpoint
             mark(path + '.enabled', consumer=('profile_isaacsim_archive_enabled' if name == 'sim' and source.get('mode') == 'standalone'
-                 else 'install_' + consumer if name in ('gr00t', 'lerobot') else consumer + '_git_checkpoint'))
+                 else 'install_' + consumer if name in ('gr00t', 'lerobot', 'robolab') else consumer + '_git_checkpoint'))
             if name in ('sim', 'lab', 'arena'):
                 deploy_params[consumer] = checkpoint
         if 'lab' in selected_runtimes:

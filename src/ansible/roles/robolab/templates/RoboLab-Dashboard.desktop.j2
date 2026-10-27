@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=RoboLab Dashboard
+Comment=Launch RoboLab simulation benchmark dashboard
+Exec=gnome-terminal -- /bin/bash -c "cd {{ robolab_dir }} && /usr/local/bin/isaaclab-env python -m dashboard.cli; exec bash"
+Icon=utilities-terminal
+Terminal=false
+Categories=Development;Science;Robotics;

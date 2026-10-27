@@ -29,12 +29,12 @@ class ProfileError(ValueError):
 
 
 PRESETS = ('default', 'full', 'minimal')
-COMPONENTS = ('sim', 'lab', 'arena', 'gr00t', 'lerobot')
+COMPONENTS = ('sim', 'lab', 'arena', 'gr00t', 'lerobot', 'robolab')
 RUNTIMES = ('kit', 'lab', 'gr00t', 'lerobot')
 RUNTIME_MANAGERS = {'kit': 'bundled', 'lab': 'conda', 'gr00t': 'uv', 'lerobot': 'conda'}
 PROFILE_DIR = Path(__file__).resolve().parents[2] / 'configs' / 'workstations'
-COMPONENT_RUNTIME = {'sim': 'kit', 'lab': 'lab', 'arena': 'lab', 'gr00t': 'gr00t', 'lerobot': 'lerobot'}
-DEPENDENCIES = {'sim': [], 'lab': ['sim'], 'arena': ['lab'], 'gr00t': [], 'lerobot': []}
+COMPONENT_RUNTIME = {'sim': 'kit', 'lab': 'lab', 'arena': 'lab', 'gr00t': 'gr00t', 'lerobot': 'lerobot', 'robolab': 'lab'}
+DEPENDENCIES = {'sim': [], 'lab': ['sim'], 'arena': ['lab'], 'gr00t': [], 'lerobot': [], 'robolab': ['lab']}
 
 
 class _StrictLoader(yaml.SafeLoader):
@@ -205,7 +205,7 @@ def _repositories(items):
     repository_ids = set()
     for item in items:
         _declarations([item], fields | ({'component'} if type(item) is dict and 'component' in item else set()), 'repositories')
-        if item.get('component') not in (None, 'lab', 'arena', 'gr00t', 'lerobot'):
+        if item.get('component') not in (None, 'lab', 'arena', 'gr00t', 'lerobot', 'robolab'):
             raise ProfileError('repositories.component: unsupported association')
         if item['id'] in repository_ids:
             raise ProfileError('repositories: duplicate identity')

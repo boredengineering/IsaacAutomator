@@ -79,6 +79,16 @@ components:
       ref: v0.4.3
       revision: null
 
+  robolab:
+    enabled: true
+    execution: native
+    runtime: lab
+    source:
+      mode: git
+      repository: https://github.com/boredengineering/RoboLab.git
+      ref: main
+      revision: null
+
 # ------------------------------------------------------------------------------
 # 3. Hardware-Accelerated Runtime Configuration
 # ------------------------------------------------------------------------------
@@ -179,6 +189,25 @@ repositories:
         url: https://github.com/boredengineering/Isaac-GR00T.git
       - name: upstream
         url: https://github.com/NVIDIA/Isaac-GR00T.git
+    submodules: []
+    dirty: unknown
+    pin_provenance: selected-head-only
+    required: false
+    support: unsupported
+
+  - id: robolab-fork-tracking
+    component: robolab
+    root: ~/Documents/GitHub/BoredEngineer/RoboLab
+    git_dir: ~/Documents/GitHub/BoredEngineer/RoboLab/.git
+    common_dir: ~/Documents/GitHub/BoredEngineer/RoboLab/.git
+    head:
+      ref: main
+      commit: null
+    remotes:
+      - name: origin
+        url: https://github.com/boredengineering/RoboLab.git
+      - name: upstream
+        url: https://github.com/NVlabs/RoboLab.git
     submodules: []
     dirty: unknown
     pin_provenance: selected-head-only
