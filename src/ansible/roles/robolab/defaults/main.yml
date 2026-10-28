@@ -18,8 +18,8 @@
 # Enable/disable RoboLab benchmark framework installation
 install_robolab: false
 
-robolab_org: boredengineering
+robolab_org: BoredEngineer
 robolab_dir: "/home/{{ ansible_user }}/Documents/GitHub/{{ robolab_org }}/RoboLab"
 robolab_git_repo: "https://github.com/{{ robolab_org }}/RoboLab.git"
 robolab_upstream_repo: "https://github.com/NVlabs/RoboLab.git"
-robolab_git_checkpoint: main
+robolab_git_checkpoint: "no"

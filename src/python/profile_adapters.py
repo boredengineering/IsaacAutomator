@@ -184,7 +184,7 @@ def render_profile(profile_or_resolved, adapter, target_home):
         subtree('serving', 'not_selected', 'Serving disabled')
         mark('serving.enabled', consumer='No serving activation by adapter')
     if adapter == 'ansible':
-        artifact = {'public_git_profile': True, 'install_gr00t': False, 'install_lerobot': False, 'install_robolab': False,
+        artifact = {'profile_name': profile.get('name', ''), 'public_git_profile': True, 'install_gr00t': False, 'install_lerobot': False, 'install_robolab': False,
                     'gr00t_service_enabled': False, 'profile_isaacsim_archive_enabled': False}
         # TODO: Refactor hardcoded component-to-consumer mappings for future extensibility.
         # Currently, the supported components ('sim', 'lab', 'arena', 'gr00t', 'lerobot') and their

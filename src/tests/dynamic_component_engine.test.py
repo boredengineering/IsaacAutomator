@@ -298,6 +298,108 @@ components:
             self.assertIn('profile_components_json=', inventory_text)
             self.assertIn('RoboLab', inventory_text)
 
+    def test_ensure_workstation_running_auto_starts_stopped_vm(self):
+        """Verify ensure_workstation_running detects TERMINATED VM and automatically starts it."""
+        params = {
+            'deployment_name': 'test-dep',
+            'cloud': 'gcp',
+            'in_china': 'no',
+            'project': 'test-project',
+            'zone': 'us-central1-a',
+            'debug': False,
+        }
+        test_conf = copy.deepcopy(config)
+        deployer = Deployer(params, test_conf)
+
+        with mock.patch.object(deployer, 'tf_output', return_value='projects/test-project/zones/us-central1-a/instances/test-vm'), \
+             mock.patch('src.python.gcp.gcp_get_instance_status', side_effect=['TERMINATED', 'RUNNING']) as mock_status, \
+             mock.patch('src.python.gcp.gcp_start_instance') as mock_start, \
+             mock.patch('time.sleep', return_value=None):
+            deployer.ensure_workstation_running()
+
+            self.assertEqual(mock_status.call_count, 2)
+            mock_start.assert_called_once_with('test-vm', zone='us-central1-a', project='test-project', verbose=False)
+
+    def test_ensure_workstation_running_noop_when_already_running(self):
+        """Verify ensure_workstation_running does nothing if VM is already RUNNING."""
+        params = {
+            'deployment_name': 'test-dep',
+            'cloud': 'gcp',
+            'in_china': 'no',
+            'project': 'test-project',
+            'zone': 'us-central1-a',
+            'debug': False,
+        }
+        test_conf = copy.deepcopy(config)
+        deployer = Deployer(params, test_conf)
+
+        with mock.patch.object(deployer, 'tf_output', return_value='projects/test-project/zones/us-central1-a/instances/test-vm'), \
+             mock.patch('src.python.gcp.gcp_get_instance_status', return_value='RUNNING') as mock_status, \
+             mock.patch('src.python.gcp.gcp_start_instance') as mock_start:
+            deployer.ensure_workstation_running()
+
+            mock_status.assert_called_once()
+            mock_start.assert_not_called()
+
+    def test_ensure_workstation_running_skips_on_dry_run(self):
+        """Verify ensure_workstation_running never queries or starts VM during dry-run."""
+        params = {
+            'deployment_name': 'test-dep',
+            'cloud': 'gcp',
+            'in_china': 'no',
+            'project': 'test-project',
+            'zone': 'us-central1-a',
+            'dry_run': True,
+            'debug': False,
+        }
+        test_conf = copy.deepcopy(config)
+        deployer = Deployer(params, test_conf)
+
+        with mock.patch.object(deployer, 'tf_output') as mock_tf, \
+             mock.patch('src.python.gcp.gcp_start_instance') as mock_start:
+            deployer.ensure_workstation_running()
+            mock_tf.assert_not_called()
+            mock_start.assert_not_called()
+
+    def test_create_ansible_inventory_includes_profile_provenance(self):
+        """Verify create_ansible_inventory outputs header and vars identifying active profiles."""
+        profile_path = Path(__file__).resolve().parents[2] / 'configs' / 'workstations' / 'boredengineering-dev.yaml'
+        soft_profile = resolve_profile(profile_path)['profile']
+        params = {
+            'deployment_name': 'studio-test',
+            'cloud': 'gcp',
+            'in_china': 'no',
+            'project': 'test-project',
+            'security_profile': 'configs/profiles/studio-enterprise.yaml',
+            'profile': 'configs/profiles/studio-enterprise.yaml',
+            'software_profile': soft_profile,
+            'debug': False,
+        }
+        test_conf = copy.deepcopy(config)
+        deployer = Deployer(params, test_conf)
+        deployer.input_params = {'software_profile': 'configs/workstations/boredengineering-dev.yaml'}
+
+        def fake_tf_output(key):
+            outputs = {
+                'isaac_workstation_ip': '34.67.145.166',
+                'isaac_workstation_ssh_key': 'fake-key',
+                'vnc_password': 'dummy',
+                'system_user_password': 'dummy',
+            }
+            return outputs.get(key, '')
+
+        with mock.patch.object(deployer, 'tf_output', side_effect=fake_tf_output):
+            inv_text = deployer.create_ansible_inventory(write=False)
+
+        self.assertIn('# Security Profile: enterprise (configs/profiles/studio-enterprise.yaml)', inv_text)
+        self.assertIn('# Software Profile: boredengineering-dev (configs/workstations/boredengineering-dev.yaml)', inv_text)
+        self.assertIn('profile_name="boredengineering-dev"', inv_text)
+        self.assertIn('security_profile_name="enterprise"', inv_text)
+        self.assertIn('security_profile_source="configs/profiles/studio-enterprise.yaml"', inv_text)
+        self.assertIn('software_profile_source="configs/workstations/boredengineering-dev.yaml"', inv_text)
+        self.assertIn('profile_components=', inv_text)
+        self.assertIn('"id": "robolab"', inv_text)
+
 
 if __name__ == '__main__':
     unittest.main()

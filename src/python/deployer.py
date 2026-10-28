@@ -564,6 +564,11 @@ class Deployer:
             self.existing_behavior == "repair"
             or self.existing_behavior == "run_ansible"
         ):
+            # preserve current CLI intent if provided
+            current_soft_profile = self.params.get('software_profile')
+            current_profile = self.params.get('profile')
+            current_sec_profile = self.params.get('security_profile')
+
             # restore params from meta file
             self._persistence_ready = False
             r = self.read_meta()
@@ -573,6 +578,21 @@ class Deployer:
             restored.update(r.get("params", {}))
             self.params = restored
             self.params.update(registry)
+
+            # Reapply explicit CLI profile intent, or re-resolve profile from disk if updated
+            if current_soft_profile is not None:
+                self.params['software_profile'] = current_soft_profile
+            elif getattr(self, 'input_params', {}).get('software_profile'):
+                soft_path = Path(self.input_params['software_profile'])
+                if soft_path.is_file():
+                    from src.python.workstation_profile import resolve_profile
+                    self.params['software_profile'] = resolve_profile(soft_path)['profile']
+
+            if current_profile:
+                self.params['profile'] = current_profile
+            if current_sec_profile:
+                self.params['security_profile'] = current_sec_profile
+
             self._persistence_ready = True
 
             click.echo(
@@ -954,13 +974,43 @@ class Deployer:
             if isinstance(v, bool):
                 ansible_vars[k] = ansible_booleans[v]
 
+        sec_profile_file = getattr(self, 'input_params', {}).get('profile') or self.params.get('profile', '')
+        sec_tier = self.params.get('security_profile', '')
+        if sec_profile_file and sec_tier and sec_tier != sec_profile_file:
+            sec_profile_display = f"{sec_tier} ({sec_profile_file})"
+        else:
+            sec_profile_display = sec_profile_file or sec_tier
+
+        soft_profile = getattr(self, 'input_params', {}).get('software_profile') or self.params.get('software_profile', '')
+        soft_profile_str = str(soft_profile) if not isinstance(soft_profile, dict) else soft_profile.get('name', '')
+        soft_profile_name = self.params.get('software_profile', {}).get('name', '') if isinstance(self.params.get('software_profile'), dict) else ''
+        if soft_profile_str and soft_profile_name and soft_profile_str != soft_profile_name:
+            soft_profile_display = f"{soft_profile_name} ({soft_profile_str})"
+        else:
+            soft_profile_display = soft_profile_str or soft_profile_name
+
         # Software variables are generated from the validated desired schema, not
         # user-supplied extra-vars. Child-group values override legacy defaults.
         software_variables = None
         if self.params.get('software_profile') is not None:
             software_variables = self.software_profile_report()['artifact']
+            if sec_tier:
+                software_variables['security_profile_name'] = str(sec_tier)
+            if sec_profile_file:
+                software_variables['security_profile_source'] = str(sec_profile_file)
+            if soft_profile_str:
+                software_variables['software_profile_source'] = str(soft_profile_str)
         template = Path(f"{self.config['ansible_dir']}/inventory.template").read_text()
-        res = template.format(**ansible_vars)
+        header = ""
+        if (sec_profile_display or soft_profile_display) and isinstance(template, str) and "[targets" in template:
+            header = (
+                "# ==============================================================================\n"
+                f"# Workstation Deployment: {deployment_name} (Cloud: {ansible_vars['cloud']})\n"
+                + (f"# Security Profile: {sec_profile_display}\n" if sec_profile_display else "")
+                + (f"# Software Profile: {soft_profile_display}\n" if soft_profile_display else "")
+                + "# ==============================================================================\n\n"
+            )
+        res = header + template.format(**ansible_vars)
         if software_variables is not None:
             res += '\n[isaac_workstation:vars]\n' + ''.join(
                 key + '=' + json.dumps(value, sort_keys=True) + '\n'
@@ -1243,7 +1293,76 @@ class Deployer:
             verbose=debug,
         )
 
+    def ensure_workstation_running(self):
+        """
+        Verify that the target workstation instance is in running state before running Ansible.
+        If the instance exists and is stopped/terminated, automatically boot it up to provide
+        a frictionless experience for users updating their configuration.
+        """
+        if self.params.get("dry_run", False):
+            return
+
+        cloud = self.cloud or self.params.get("cloud")
+        try:
+            vm_id = self.tf_output("isaac_workstation_vm_id")
+        except Exception:
+            vm_id = None
+        if not vm_id:
+            return
+
+        debug = self.params.get("debug", False)
+        if cloud == "gcp":
+            from src.python.gcp import (
+                gcp_instance_name,
+                gcp_get_instance_status,
+                gcp_start_instance,
+            )
+            import time
+            project = self.params.get("project")
+            zone = self.params.get("zone")
+            if not project or not zone:
+                return
+            try:
+                name = gcp_instance_name(vm_id, project=project, zone=zone)
+                status = gcp_get_instance_status(name, zone=zone, project=project, verbose=debug)
+                if status in ("TERMINATED", "STOPPED"):
+                    click.echo(colorize_info(
+                        f"\n* [Auto-Resume] Detected stopped workstation VM '{name}' ({status}).\n"
+                        f"* Starting instance automatically so updates can be applied..."
+                    ))
+                    gcp_start_instance(name, zone=zone, project=project, verbose=debug)
+                    while True:
+                        status = gcp_get_instance_status(name, zone=zone, project=project, verbose=debug)
+                        if status == "RUNNING":
+                            click.echo(colorize_info(f"* Workstation VM is now RUNNING.\n"))
+                            break
+                        time.sleep(2)
+            except Exception as e:
+                if debug:
+                    click.echo(colorize_error(f"* Could not verify/start GCP instance state: {e}"))
+        elif cloud == "aws":
+            from src.python.aws import aws_get_instance_status, aws_start_instance
+            import time
+            try:
+                status = aws_get_instance_status(vm_id, verbose=debug)
+                if status in ("stopped", "stopping"):
+                    click.echo(colorize_info(
+                        f"\n* [Auto-Resume] Detected stopped workstation VM '{vm_id}' ({status}).\n"
+                        f"* Starting instance automatically so updates can be applied..."
+                    ))
+                    aws_start_instance(vm_id, verbose=debug)
+                    while True:
+                        status = aws_get_instance_status(vm_id, verbose=debug)
+                        if status == "running":
+                            click.echo(colorize_info(f"* Workstation VM is now running.\n"))
+                            break
+                        time.sleep(2)
+            except Exception as e:
+                if debug:
+                    click.echo(colorize_error(f"* Could not verify/start AWS instance state: {e}"))
+
     def run_all_ansible(self):
+        self.ensure_workstation_running()
         # run ansible for isaac
         click.echo(colorize_info("* Running Ansible for Isaac Workstation..."))
         self.run_ansible(

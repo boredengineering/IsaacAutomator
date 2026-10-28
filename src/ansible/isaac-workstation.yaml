@@ -35,6 +35,16 @@
       in_china: False
       instance_role: isaac-workstation
       prompt_ansi_color: "1;92" # lime green
+  pre_tasks:
+      - name: Display Active Profile Provenance
+        ansible.builtin.debug:
+          msg:
+            - "=========================================================="
+            - "Workstation Deployment: {{ deployment_name | default('unknown') }}"
+            - "Security Profile: {{ security_profile_name | default('none/cli-flags') }}"
+            - "Software Profile: {{ profile_name | default('default') }} ({{ software_profile_source | default('builtin') }})"
+            - "=========================================================="
+        tags: [always]
   roles:
       - isaac-workstation
   handlers:

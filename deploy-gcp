@@ -413,6 +413,9 @@ class GCPDeployer(Deployer):
             self.initialize_terraform(cwd=f"{config['terraform_dir']}/gcp")
             self.run_terraform(cwd=f"{config['terraform_dir']}/gcp")
 
+        # ensure workstation VM is running before configuring
+        self.ensure_workstation_running()
+
         # create ansible inventory file
         self.create_ansible_inventory()
 
