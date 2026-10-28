@@ -337,8 +337,8 @@ A single, parameterized, idempotent role replaces the sprawling single-tool role
 Rather than calling unconstrained `git clone`, the role invokes `roles/public-git/tasks/source.yml` (and `/usr/local/lib/isaac-automator/public_git.py`) to guarantee HTTPS-only protocol, clean environments without hook execution, and exact ref verification.
 
 #### 2. Task Layout (`roles/workspace-component/tasks/`)
-- `main.yml`: Iterates over `profile_components`.
-- `git.yml`: Executes secure checkout and dual-remote configuration.
+- `main.yml`: Iterates over `profile_components` with tag propagation and loop labeling.
+- `git.yml`: Executes secure checkout via `public-git` and dual-remote configuration.
 - `install.yml`: Executes environment binding and installation based on declared runtime manager.
 - `desktop.yml`: Generates desktop shortcut if declared.
 
@@ -347,10 +347,18 @@ Rather than calling unconstrained `git clone`, the role invokes `roles/public-gi
 ---
 - name: Process workspace components
   ansible.builtin.include_tasks: component.yml
+  apply:
+    tags:
+      - __workspace_components
+      - __components
   loop: "{{ profile_components | default([]) }}"
   loop_control:
     loop_var: current_component
+    label: "{{ current_component.id }}"
   when: current_component.type | default('git') == 'git'
+  tags:
+    - __workspace_components
+    - __components
 ```
 
 ```yaml
@@ -364,6 +372,11 @@ Rather than calling unconstrained `git clone`, the role invokes `roles/public-gi
     group: "{{ ansible_user }}"
     mode: '0755'
 
+- name: "Check if repository already exists for {{ current_component.id }}"
+  ansible.builtin.stat:
+    path: "{{ current_component.dest }}/.git"
+  register: component_git_stat
+
 - name: "Securely check out {{ current_component.id }} via public-git"
   ansible.builtin.include_tasks: "{{ playbook_dir }}/roles/public-git/tasks/source.yml"
   vars:
@@ -371,6 +384,7 @@ Rather than calling unconstrained `git clone`, the role invokes `roles/public-gi
     public_git_ref: "{{ current_component.ref }}"
     public_git_destination: "{{ current_component.dest }}"
     public_git_allow_submodules: true
+  when: not component_git_stat.stat.exists
 
 - name: "Configure upstream tracking remote for {{ current_component.id }}"
   community.general.git_config:
@@ -435,8 +449,9 @@ Rather than calling unconstrained `git clone`, the role invokes `roles/public-gi
 
     - name: "Trust desktop launcher via gio"
       ansible.builtin.command:
-        cmd: gio set "/home/{{ ansible_user }}/Desktop/{{ current_component.desktop_shortcut.name | regex_replace('[^a-zA-Z0-9_-]', '-') }}.desktop" metadata::trusted true
+        cmd: "gio set \"/home/{{ ansible_user }}/Desktop/{{ current_component.desktop_shortcut.name | regex_replace('[^a-zA-Z0-9_-]', '-') }}.desktop\" metadata::trusted true"
       become_user: "{{ ansible_user }}"
+      changed_when: false
       ignore_errors: true
 ```
 
@@ -604,3 +619,21 @@ gantt
      - Coverage compiler pass (`render_supported: True`).
 3. **Audit Ledger Verification**:
    - The verified `/etc/isaac_workstation/state_ledger.json` receipt dynamically includes all declared components with their verified Git commit hashes.
+
+---
+
+## 8. Ansible Standards & Best Practices Conformance
+
+The architecture and role implementations strictly conform to official Ansible standards, the **Zen of Ansible**, and `ansible-lint` rules:
+
+| Category | Official Ansible Best Practice | Conformance in this Architecture |
+| :--- | :--- | :--- |
+| **Zen of Ansible: Declarative vs Imperative** | *"Declarative is better than imperative -- most of the time. Magic conquers the manual."* | Eliminates procedural, manual role proliferation. Users declare components as pure data manifests; the universal engine handles provisioning deterministically. |
+| **Loop Control & Namespace Safety** | Always define `loop_var` and clean `label` when looping over tasks to prevent variable shadowing and log spam. | `tasks/main.yml` sets `loop_var: current_component` and `label: "{{ current_component.id }}"`, preventing `item` collisions and keeping terminal output concise. |
+| **Tag Propagation with `apply:`** | Dynamic inclusions (`include_tasks`) do not automatically inherit outer tags at parse time; use `apply: tags: [...]`. | `main.yml` uses `apply: tags: ['__workspace_components', '__components']`, guaranteeing that CLI runs with `--tags` or `--skip-tags` correctly filter dynamic component tasks. |
+| **FQCN (Fully Qualified Collection Names)** | Always use FQCN instead of short legacy module names. | Every module call uses explicit FQCN: `ansible.builtin.include_tasks`, `ansible.builtin.file`, `ansible.builtin.stat`, `ansible.builtin.command`, `ansible.builtin.shell`, `ansible.builtin.copy`, `community.general.git_config`. |
+| **Module Selection (`command` vs `shell`)** | Prefer `ansible.builtin.command` over `shell` unless pipes (`\|`), redirection, or shell builtins are required. | Probe tasks (`git rev-parse HEAD`), shortcut trusts (`gio set`), and stats use `ansible.builtin.command`. `ansible.builtin.shell` is strictly reserved for pip install logging pipelines (`tee`). |
+| **Idempotency & Change Tracking** | Read-only inspection tasks must not report state modifications; write tasks must guard against redundant execution. | Probe tasks enforce `changed_when: false`. Git tasks check `stat.exists` before invoking `public-git`. Install tasks skip re-running if working tree is clean. |
+| **Syntax & Jinja Conventions** | No Jinja curly braces `{{ }}` inside `when:` clauses. Standard YAML booleans (`true`/`false`). | All conditionals adhere to `when: current_component.runtime == 'lab'` (never `when: "{{ ... }}"`). |
+| **Security & Credential Masking** | Never leak credentials or tokens in task outputs (`no-log-password`). | Checkouts run via isolated, credential-free `public_git.py` with `GIT_TERMINAL_PROMPT=0` and sanitized environment variables. |
+
