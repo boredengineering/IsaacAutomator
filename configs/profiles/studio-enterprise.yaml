@@ -40,7 +40,7 @@ workstation:
   gpu_model: "g4-standard-48"    # High-performance workstation compute (48 vCPU, 1x NVIDIA RTX PRO 6000 48GB VRAM)
   gpu_count: 1
   software_profile: "configs/workstations/boredengineering-dev.yaml" # BoredEngineering personal fork stack tracking dev/0.3.0-prerelease
-  remote_desktop: "nomachine,novnc" # Hardware-accelerated 3D viewport streaming (NoMachine) + 2D web desktop (noVNC) over IAP tunnel
+  remote_desktop: "nomachine,novnc,kasmvnc" # Hardware-accelerated 3D viewport (NoMachine) + WebRTC browser (KasmVNC) + noVNC fallback
 
 # Studio Architecture Integration Parameters
 # Bridges workstation compute with co-located Nucleus and shared USD asset storage tiers

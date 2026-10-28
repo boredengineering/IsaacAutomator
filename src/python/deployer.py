@@ -568,6 +568,7 @@ class Deployer:
             current_soft_profile = self.params.get('software_profile')
             current_profile = self.params.get('profile')
             current_sec_profile = self.params.get('security_profile')
+            current_remote_desktop = self.params.get('remote_desktop')
 
             # restore params from meta file
             self._persistence_ready = False
@@ -590,8 +591,21 @@ class Deployer:
 
             if current_profile:
                 self.params['profile'] = current_profile
+                from src.python.config import load_profile_spec
+                try:
+                    pspec = load_profile_spec(str(current_profile), repo_root=self.config.get('app_dir'))
+                    prof_rd = pspec.get('raw', {}).get('workstation', {}).get('remote_desktop')
+                    if prof_rd:
+                        current_remote_desktop = prof_rd
+                except Exception:
+                    pass
+
             if current_sec_profile:
                 self.params['security_profile'] = current_sec_profile
+
+            if current_remote_desktop is not None:
+                self.params['remote_desktop'] = current_remote_desktop
+                self.resolve_remote_desktop()
 
             self._persistence_ready = True
 

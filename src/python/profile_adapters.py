@@ -121,6 +121,8 @@ def render_profile(profile_or_resolved, adapter, target_home):
             mark(path + '.upstream', 'mapped', consumer='workspace-component')
         if 'install_dir' in component:
             mark(path + '.install_dir', 'mapped', consumer='workspace-component')
+        if 'branches' in component:
+            subtree(path + '.branches', 'mapped', consumer='workspace-component')
         if name == 'sim':
             if source.get('mode') == 'standalone':
                 out.update(version=source.get('version'), source_type='standalone', install_dir=home + '/IsaacSim')
@@ -275,6 +277,18 @@ def render_profile(profile_or_resolved, adapter, target_home):
                 mark(path + '.enabled', consumer='workspace-component')
                 mark(path + '.runtime', consumer='workspace-component')
                 mark(path + '.execution', consumer='workspace-component')
+                if 'upstream' in component:
+                    mark(path + '.upstream', consumer='workspace-component')
+                if 'install_dir' in component:
+                    mark(path + '.install_dir', consumer='workspace-component')
+                if 'install' in component:
+                    mark(path + '.install', consumer='workspace-component')
+                if 'desktop_shortcut' in component:
+                    mark(path + '.desktop_shortcut', consumer='workspace-component')
+                if 'dependencies' in component:
+                    mark(path + '.dependencies', consumer='workspace-component')
+                if 'branches' in component:
+                    mark(path + '.branches', consumer='workspace-component')
             else:
                 subtree(path, 'not_selected', 'Component disabled')
                 mark(path + '.enabled', consumer='workspace-component')
@@ -335,10 +349,17 @@ def render_profile(profile_or_resolved, adapter, target_home):
             if cname not in selected:
                 continue
             c_source = cval.get('source', {})
+            repo_raw = c_source.get('repository', '')
+            repo_clean = repo_raw[:-4] if repo_raw.endswith('.git') else repo_raw
+            repo_slug = REPO_DIRS.get(cname) or (
+                repo_clean.rsplit('/', 1)[-1]
+                if repo_clean
+                else (cname.capitalize() if not cname[0].isupper() else cname)
+            )
             c_dest = (
                 _target_path(cval['install_dir'], home)
                 if cval.get('install_dir')
-                else f"{ws_base}/{REPO_DIRS.get(cname, cname.capitalize() if not cname[0].isupper() else cname)}"
+                else f"{ws_base}/{repo_slug}"
             )
             comp_entry = {
                 'id': cname,
@@ -347,6 +368,7 @@ def render_profile(profile_or_resolved, adapter, target_home):
                 'dest': c_dest,
                 'repository': c_source.get('repository'),
                 'ref': c_source.get('revision') or c_source.get('ref', ''),
+                'branches': cval.get('branches', []),
                 'upstream': cval.get('upstream', ''),
                 'install_method': cval.get('install', {}).get('method', 'editable'),
                 'install_command': cval.get('install', {}).get('command', ''),

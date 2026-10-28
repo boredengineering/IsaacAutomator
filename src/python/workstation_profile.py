@@ -289,7 +289,7 @@ def _validate(data, overlay=False):
         for name, value in data['components'].items():
             if type(name) is not str or not re.fullmatch(r'[a-z0-9][a-z0-9_-]{0,63}', name):
                 raise ProfileError(f'components: expected mapping with supported keys only')
-            _keys(value, {'enabled', 'runtime', 'source', 'execution', 'install', 'desktop_shortcut', 'dependencies', 'upstream', 'install_dir'}, f'components.{name}')
+            _keys(value, {'enabled', 'runtime', 'source', 'execution', 'install', 'desktop_shortcut', 'dependencies', 'upstream', 'install_dir', 'branches'}, f'components.{name}')
             if 'execution' in value and value['execution'] != 'native':
                 raise ProfileError(f'components.{name}.execution: only native intent supported')
             if 'enabled' in value and type(value['enabled']) is not bool:
@@ -303,6 +303,9 @@ def _validate(data, overlay=False):
             if 'dependencies' in value:
                 if type(value['dependencies']) is not list or any(type(d) is not str for d in value['dependencies']):
                     raise ProfileError(f'components.{name}.dependencies: expected list of string component names')
+            if 'branches' in value:
+                if type(value['branches']) is not list or any(not isinstance(b, str) or not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._/-]*', b) for b in value['branches']):
+                    raise ProfileError(f'components.{name}.branches: expected list of valid branch names')
             if 'install' in value:
                 _keys(value['install'], {'method', 'command'}, f'components.{name}.install')
             if 'desktop_shortcut' in value:

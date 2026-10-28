@@ -1,7 +1,7 @@
 [Unit]
 Description=KasmVNC WebRTC Remote Desktop Service
-After=network.target graphical.target
-Wants=graphical.target
+After=network.target
+Wants=network.target
 
 [Service]
 Type=forking

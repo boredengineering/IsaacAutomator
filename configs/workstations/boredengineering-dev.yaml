@@ -89,6 +89,35 @@ components:
       ref: main
       revision: null
 
+  colibri:
+    enabled: true
+    execution: native
+    runtime: lab
+    source:
+      mode: git
+      repository: https://github.com/boredengineering/colibri.git
+      ref: renan-dev
+      revision: null
+    branches:
+      - main
+      - renan-dev
+    upstream: https://github.com/JustVugg/colibri.git
+
+  isaacautomator:
+    enabled: true
+    execution: native
+    runtime: lab
+    install:
+      method: none
+    source:
+      mode: git
+      repository: https://github.com/boredengineering/IsaacAutomator.git
+      ref: devcontainer
+      revision: null
+    branches:
+      - devcontainer
+    upstream: https://github.com/isaac-sim/IsaacAutomator.git
+
 # ------------------------------------------------------------------------------
 # 3. Hardware-Accelerated Runtime Configuration
 # ------------------------------------------------------------------------------
@@ -208,6 +237,44 @@ repositories:
         url: https://github.com/boredengineering/RoboLab.git
       - name: upstream
         url: https://github.com/NVlabs/RoboLab.git
+    submodules: []
+    dirty: unknown
+    pin_provenance: selected-head-only
+    required: false
+    support: unsupported
+
+  - id: colibri-fork-tracking
+    component: colibri
+    root: ~/Documents/GitHub/BoredEngineer/colibri
+    git_dir: ~/Documents/GitHub/BoredEngineer/colibri/.git
+    common_dir: ~/Documents/GitHub/BoredEngineer/colibri/.git
+    head:
+      ref: renan-dev
+      commit: null
+    remotes:
+      - name: origin
+        url: https://github.com/boredengineering/colibri.git
+      - name: upstream
+        url: https://github.com/JustVugg/colibri.git
+    submodules: []
+    dirty: unknown
+    pin_provenance: selected-head-only
+    required: false
+    support: unsupported
+
+  - id: automator-fork-tracking
+    component: isaacautomator
+    root: ~/Documents/GitHub/BoredEngineer/IsaacAutomator
+    git_dir: ~/Documents/GitHub/BoredEngineer/IsaacAutomator/.git
+    common_dir: ~/Documents/GitHub/BoredEngineer/IsaacAutomator/.git
+    head:
+      ref: devcontainer
+      commit: null
+    remotes:
+      - name: origin
+        url: https://github.com/boredengineering/IsaacAutomator.git
+      - name: upstream
+        url: https://github.com/isaac-sim/IsaacAutomator.git
     submodules: []
     dirty: unknown
     pin_provenance: selected-head-only

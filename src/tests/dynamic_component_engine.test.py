@@ -269,6 +269,15 @@ components:
         self.assertEqual(robolab_entries[0]['dest'], '/home/ubuntu/Documents/GitHub/BoredEngineer/RoboLab')
         self.assertEqual(robolab_entries[0]['repository'], 'https://github.com/boredengineering/RoboLab.git')
 
+        # Check colibri is in profile_components with branches and upstream:
+        colibri_entries = [c for c in components if c['id'] == 'colibri']
+        self.assertEqual(len(colibri_entries), 1)
+        self.assertEqual(colibri_entries[0]['dest'], '/home/ubuntu/Documents/GitHub/BoredEngineer/colibri')
+        self.assertEqual(colibri_entries[0]['repository'], 'https://github.com/boredengineering/colibri.git')
+        self.assertEqual(colibri_entries[0]['ref'], 'renan-dev')
+        self.assertEqual(colibri_entries[0]['branches'], ['main', 'renan-dev'])
+        self.assertEqual(colibri_entries[0]['upstream'], 'https://github.com/JustVugg/colibri.git')
+
     def test_deployer_serializes_profile_components_to_inventory(self):
         """Verify Deployer writes profile_components and profile_components_json into inventory."""
         profile_path = Path(__file__).resolve().parents[2] / 'configs' / 'workstations' / 'boredengineering-dev.yaml'

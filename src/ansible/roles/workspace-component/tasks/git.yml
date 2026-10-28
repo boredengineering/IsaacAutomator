@@ -46,6 +46,13 @@
   become_user: "{{ ansible_user }}"
   when: (not component_git_stat.stat.exists) and not (public_git_profile | default(false) | bool)
 
+- name: "Mark {{ current_component.id }} repository as safe directory in git config"
+  community.general.git_config:
+    name: safe.directory
+    value: "{{ current_component.dest }}"
+    scope: global
+  become_user: "{{ ansible_user }}"
+
 - name: "Configure upstream tracking remote for {{ current_component.id }}"
   community.general.git_config:
     name: remote.upstream.url
@@ -56,13 +63,22 @@
   when: >
     current_component.upstream is defined and
     (current_component.upstream | length > 0) and
-    (current_component.upstream != current_component.repository) and
-    not (public_git_profile | default(false) | bool)
+    (current_component.upstream != current_component.repository)
 
-- name: "Mark {{ current_component.id }} repository as safe directory in git config"
-  community.general.git_config:
-    name: safe.directory
-    value: "{{ current_component.dest }}"
-    scope: global
+- name: "Fetch origin branches and configure tracking branches for {{ current_component.id }}"
+  ansible.builtin.shell: |
+    set -e
+    git -C "{{ current_component.dest }}" fetch origin '+refs/heads/*:refs/remotes/origin/*' || true
+    {% set target_branches = ([current_component.ref, 'main', 'renan-dev'] + (current_component.branches | default([]))) | unique | reject('in', ['', 'none', 'no']) %}
+    {% for branch in target_branches %}
+    if git -C "{{ current_component.dest }}" rev-parse --verify "refs/remotes/origin/{{ branch }}" >/dev/null 2>&1; then
+      if ! git -C "{{ current_component.dest }}" rev-parse --verify "refs/heads/{{ branch }}" >/dev/null 2>&1; then
+        git -C "{{ current_component.dest }}" branch --track "{{ branch }}" "origin/{{ branch }}" || true
+      fi
+    fi
+    {% endfor %}
+    if [ -n "{{ current_component.ref }}" ] && git -C "{{ current_component.dest }}" rev-parse --verify "refs/heads/{{ current_component.ref }}" >/dev/null 2>&1; then
+      git -C "{{ current_component.dest }}" checkout "{{ current_component.ref }}" || true
+    fi
   become_user: "{{ ansible_user }}"
-  when: component_git_stat.stat.exists or not (public_git_profile | default(false) | bool)
+  ignore_errors: true
