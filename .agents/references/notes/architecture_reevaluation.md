@@ -18,7 +18,7 @@ This document catalogs every hardcoded value, analyzes the systemic consequences
 
 ## 2. Exhaustive Audit of Hardcoded Configurations
 
-### Layer 1: Closed-World Schema Validation ([`src/python/workstation_profile.py`](file:///workspaces/IsaacAutomator/src/python/workstation_profile.py))
+### Layer 1: Closed-World Schema Validation ([`src/python/workstation_profile.py`](../../../src/python/workstation_profile.py))
 
 | Location | Hardcoded Value | Architectural Flaw & Consequence |
 | :--- | :--- | :--- |
@@ -32,7 +32,7 @@ This document catalogs every hardcoded value, analyzes the systemic consequences
 
 ---
 
-### Layer 2: Profile Adapter & Inventory Translation ([`src/python/profile_adapters.py`](file:///workspaces/IsaacAutomator/src/python/profile_adapters.py))
+### Layer 2: Profile Adapter & Inventory Translation ([`src/python/profile_adapters.py`](../../../src/python/profile_adapters.py))
 
 | Location | Hardcoded Value | Architectural Flaw & Consequence |
 | :--- | :--- | :--- |
@@ -46,7 +46,7 @@ This document catalogs every hardcoded value, analyzes the systemic consequences
 
 ---
 
-### Layer 3: Ansible Monolithic Role Chain ([`src/ansible/roles/isaac-workstation/meta/main.yml`](file:///workspaces/IsaacAutomator/src/ansible/roles/isaac-workstation/meta/main.yml))
+### Layer 3: Ansible Monolithic Role Chain ([`src/ansible/roles/isaac-workstation/meta/main.yml`](../../../src/ansible/roles/isaac-workstation/meta/main.yml))
 
 | Location | Hardcoded Value | Architectural Flaw & Consequence |
 | :--- | :--- | :--- |
@@ -55,7 +55,7 @@ This document catalogs every hardcoded value, analyzes the systemic consequences
 
 ---
 
-### Layer 4: State Ledger & Verification Hardcoding ([`src/ansible/roles/state-ledger/tasks/main.yml`](file:///workspaces/IsaacAutomator/src/ansible/roles/state-ledger/tasks/main.yml))
+### Layer 4: State Ledger & Verification Hardcoding ([`src/ansible/roles/state-ledger/tasks/main.yml`](../../../src/ansible/roles/state-ledger/tasks/main.yml))
 
 | Location | Hardcoded Value | Architectural Flaw & Consequence |
 | :--- | :--- | :--- |
@@ -64,7 +64,7 @@ This document catalogs every hardcoded value, analyzes the systemic consequences
 
 ---
 
-### Layer 5: Inventory & Deployment Boundary ([`src/ansible/inventory.template`](file:///workspaces/IsaacAutomator/src/ansible/inventory.template) & [`src/python/deployer.py`](file:///workspaces/IsaacAutomator/src/python/deployer.py))
+### Layer 5: Inventory & Deployment Boundary ([`src/ansible/inventory.template`](../../../src/ansible/inventory.template) & [`src/python/deployer.py`](../../../src/python/deployer.py))
 
 | Location | Hardcoded Value | Architectural Flaw & Consequence |
 | :--- | :--- | :--- |
@@ -190,5 +190,5 @@ components:
 
 A comprehensive, phased engineering proposal detailing the target schema (`v1alpha2`), invariant-based validation engine, universal `workspace-component` Ansible role, dynamic state ledger, and backward-compatibility migration path has been authored:
 
-👉 **See Formal Plan:** [Dynamic Component Manifest Engine Plan](file:///workspaces/IsaacAutomator/.agents/references/plans/dynamic-component-manifest-engine-plan.md)
+👉 **See Formal Plan:** [Dynamic Component Manifest Engine Plan](../plans/dynamic-component-manifest-engine-plan.md)
 
