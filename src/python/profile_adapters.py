@@ -4,6 +4,7 @@ Every input leaf is accounted for. An unsupported non-null selected field blocks
 complete consumer export; disabled and optional declarations remain visible.
 """
 from copy import deepcopy
+import json
 from pathlib import PurePosixPath
 import re
 
@@ -72,10 +73,10 @@ def render_profile(profile_or_resolved, adapter, target_home):
             if reason:
                 coverage[path]['reason'] = reason
 
-    def subtree(path, status, reason=None, required=True):
+    def subtree(path, status, reason=None, required=True, consumer=None):
         for field in coverage:
             if field == path or field.startswith(path + '.'):
-                mark(field, status, reason=reason, required=required)
+                mark(field, status, consumer=consumer, reason=reason, required=required)
 
     for field in ('schema_version', 'kind', 'name', 'target', 'extends', 'defaults', 'draft'):
         mark(field, 'metadata', reason='Rendering metadata, not deployment authorization')
@@ -100,9 +101,9 @@ def render_profile(profile_or_resolved, adapter, target_home):
             out = {'enabled': enabled}
             artifact['simulation']['isaacsim'] = out
         else:
-            destination = 'repositories.' + LEGACY_NAMES[name]
+            destination = 'repositories.' + LEGACY_NAMES.get(name, name)
             out = {'enabled': enabled}
-            artifact['repositories'][LEGACY_NAMES[name]] = out
+            artifact['repositories'][LEGACY_NAMES.get(name, name)] = out
         mark(path + '.enabled', consumer=destination + '.enabled')
         if not enabled:
             subtree(path, 'not_selected', 'Component disabled')
@@ -110,6 +111,16 @@ def render_profile(profile_or_resolved, adapter, target_home):
             continue
         mark(path + '.execution', consumer='native installer modules')
         mark(path + '.runtime', consumer='component-specific environment binding')
+        if 'install' in component:
+            subtree(path + '.install', 'mapped', consumer='workspace-component')
+        if 'desktop_shortcut' in component:
+            subtree(path + '.desktop_shortcut', 'mapped', consumer='workspace-component')
+        if 'dependencies' in component:
+            subtree(path + '.dependencies', 'mapped', consumer='workspace-component')
+        if 'upstream' in component:
+            mark(path + '.upstream', 'mapped', consumer='workspace-component')
+        if 'install_dir' in component:
+            mark(path + '.install_dir', 'mapped', consumer='workspace-component')
         if name == 'sim':
             if source.get('mode') == 'standalone':
                 out.update(version=source.get('version'), source_type='standalone', install_dir=home + '/IsaacSim')
@@ -144,10 +155,12 @@ def render_profile(profile_or_resolved, adapter, target_home):
             subtree(path, 'not_selected', 'Runtime not selected')
             continue
         mark(path + '.manager', consumer='fixed native environment manager')
-        expected_environment = {'kit': 'kit', 'lab': 'isaaclab', 'gr00t': 'gr00t', 'lerobot': 'lerobot'}[name]
-        if runtime.get('environment') == expected_environment:
+        expected_environment = {'kit': 'kit', 'lab': 'isaaclab', 'gr00t': 'gr00t', 'lerobot': 'lerobot'}.get(name)
+        if expected_environment and runtime.get('environment') == expected_environment:
             mark(path + '.environment', consumer='fixed native environment identity',
                  reason='GR00T label identifies repository-local .venv' if name == 'gr00t' else None)
+        elif not expected_environment:
+            mark(path + '.environment', consumer='custom environment identity')
         if adapter == 'local' and name == 'lab':
             # Actual config.sh -> install_python_env -> install_profile_lab_runtime
             # consumes these scalars; no helper defaults replace explicit pins.
@@ -180,7 +193,7 @@ def render_profile(profile_or_resolved, adapter, target_home):
         # components declared in the workstation profile YAML (e.g., 'robolab', custom benchmark suites,
         # or user-defined robotics packages), resolving git sources, runtimes, and paths generically.
         for name, consumer in (('sim', 'isaacsim'), ('lab', 'isaaclab'), ('arena', 'isaaclab_arena'),
-                               ('gr00t', 'gr00t'), ('lerobot', 'lerobot'), ('robolab', 'robolab')):
+                               ('gr00t', 'gr00t'), ('lerobot', 'lerobot')):
             component = components.get(name, {})
             source = component.get('source', {})
             path = f'components.{name}'
@@ -215,7 +228,7 @@ def render_profile(profile_or_resolved, adapter, target_home):
                          reason='Explicit archive checksum required; no checksum is fabricated or fetched')
                 else:
                     subtree(path + '.source', 'unsupported', 'No matching Ansible source consumer')
-                if name in ('gr00t', 'lerobot', 'robolab'):
+                if name in ('gr00t', 'lerobot'):
                     artifact['install_' + consumer] = True
                     if name == 'gr00t':
                         artifact['profile_gr00t_isolated'] = True
@@ -234,13 +247,37 @@ def render_profile(profile_or_resolved, adapter, target_home):
                                 runtime_consumer = 'profile_lerobot_' + key
                                 artifact[runtime_consumer] = value
                                 mark('runtimes.lerobot.' + key, consumer=runtime_consumer)
-                    elif name == 'robolab':
-                        mark('components.robolab.runtime', consumer='robolab role in isaaclab environment')
             artifact[consumer + '_git_checkpoint'] = checkpoint
             mark(path + '.enabled', consumer=('profile_isaacsim_archive_enabled' if name == 'sim' and source.get('mode') == 'standalone'
-                 else 'install_' + consumer if name in ('gr00t', 'lerobot', 'robolab') else consumer + '_git_checkpoint'))
+                 else 'install_' + consumer if name in ('gr00t', 'lerobot') else consumer + '_git_checkpoint'))
             if name in ('sim', 'lab', 'arena'):
                 deploy_params[consumer] = checkpoint
+
+        # Dynamic open-world components mapping for Ansible:
+        for name, component in components.items():
+            if name in ('sim', 'lab', 'arena', 'gr00t', 'lerobot'):
+                continue
+            path = f'components.{name}'
+            if name in selected:
+                source = component.get('source', {})
+                if source.get('mode') == 'git':
+                    checkpoint = source.get('revision') or source.get('ref', '')
+                    for field in ('mode', 'repository', 'ref', 'revision'):
+                        mark(path + '.source.' + field,
+                             'superseded' if field == 'ref' and source.get('revision') else
+                             'unspecified' if field == 'revision' and not source.get('revision') else 'mapped',
+                             consumer='workspace-component')
+                    if str(checkpoint).lower() == 'no':
+                        mark(path + '.source.ref', 'unsupported',
+                             reason='Ansible disabled sentinel cannot select an enabled component Git ref')
+                else:
+                    subtree(path + '.source', 'unsupported', 'No matching Ansible source consumer')
+                mark(path + '.enabled', consumer='workspace-component')
+                mark(path + '.runtime', consumer='workspace-component')
+                mark(path + '.execution', consumer='workspace-component')
+            else:
+                subtree(path, 'not_selected', 'Component disabled')
+                mark(path + '.enabled', consumer='workspace-component')
         if 'lab' in selected_runtimes:
             for key, consumer in (('environment', 'conda_env_name'), ('python', 'conda_python_version')):
                 value = runtimes.get('lab', {}).get(key)
@@ -283,6 +320,45 @@ def render_profile(profile_or_resolved, adapter, target_home):
                      reason='Legacy owner-dependent resolution retained, not named-layout equivalence')
         else:
             subtree('workspace', 'unsupported', 'Explicit complete named/flat workspace required for Ansible translation')
+    # Build open-world profile components manifest for Ansible
+    if adapter == 'ansible':
+        ws = profile.get('workspace', {})
+        ws_root = _target_path(ws.get('root', '~/Documents/GitHub'), home) if ws else home + '/Documents/GitHub'
+        ws_layout = ws.get('layout') if ws else 'flat'
+        ws_name = ws.get('name') if ws else ''
+        ws_base = ws_root + ('/' + ws_name if ws_layout == 'named' and ws_name else '')
+
+        dynamic_components = []
+        for cname, cval in components.items():
+            if cname in ('sim', 'lab', 'arena', 'gr00t', 'lerobot'):
+                continue
+            if cname not in selected:
+                continue
+            c_source = cval.get('source', {})
+            c_dest = (
+                _target_path(cval['install_dir'], home)
+                if cval.get('install_dir')
+                else f"{ws_base}/{REPO_DIRS.get(cname, cname.capitalize() if not cname[0].isupper() else cname)}"
+            )
+            comp_entry = {
+                'id': cname,
+                'type': c_source.get('mode', 'git'),
+                'runtime': cval.get('runtime', 'lab'),
+                'dest': c_dest,
+                'repository': c_source.get('repository'),
+                'ref': c_source.get('revision') or c_source.get('ref', ''),
+                'upstream': cval.get('upstream', ''),
+                'install_method': cval.get('install', {}).get('method', 'editable'),
+                'install_command': cval.get('install', {}).get('command', ''),
+                'desktop_shortcut': cval.get('desktop_shortcut'),
+                'dependencies': cval.get('dependencies', []),
+            }
+            dynamic_components.append(comp_entry)
+
+        from src.python.workstation_profile import ComponentDAGResolver
+        ordered_components = ComponentDAGResolver.resolve_order(dynamic_components)
+        artifact['profile_components'] = ordered_components
+        artifact['profile_components_json'] = json.dumps(ordered_components, sort_keys=True)
     # SERVING: optional consumer of one explicitly selected immutable API only.
     # No source/ref or preset is substituted, and mapping does not activate it.
     if profile.get('serving', {}).get('enabled'):

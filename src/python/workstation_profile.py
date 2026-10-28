@@ -205,7 +205,7 @@ def _repositories(items):
     repository_ids = set()
     for item in items:
         _declarations([item], fields | ({'component'} if type(item) is dict and 'component' in item else set()), 'repositories')
-        if item.get('component') not in (None, 'lab', 'arena', 'gr00t', 'lerobot', 'robolab'):
+        if item.get('component') is not None and not re.fullmatch(r'[a-z0-9][a-z0-9_-]{0,63}', str(item.get('component'))):
             raise ProfileError('repositories.component: unsupported association')
         if item['id'] in repository_ids:
             raise ProfileError('repositories: duplicate identity')
@@ -284,15 +284,33 @@ def _validate(data, overlay=False):
     if 'repositories' in data:
         _repositories(data['repositories'])
     if 'components' in data:
-        _keys(data['components'], COMPONENTS, 'components')
+        if type(data['components']) is not dict:
+            raise ProfileError('components: expected mapping with supported keys only')
         for name, value in data['components'].items():
-            _keys(value, {'enabled', 'runtime', 'source', 'execution'}, f'components.{name}')
+            if type(name) is not str or not re.fullmatch(r'[a-z0-9][a-z0-9_-]{0,63}', name):
+                raise ProfileError(f'components: expected mapping with supported keys only')
+            _keys(value, {'enabled', 'runtime', 'source', 'execution', 'install', 'desktop_shortcut', 'dependencies', 'upstream', 'install_dir'}, f'components.{name}')
             if 'execution' in value and value['execution'] != 'native':
                 raise ProfileError(f'components.{name}.execution: only native intent supported')
             if 'enabled' in value and type(value['enabled']) is not bool:
                 raise ProfileError(f'components.{name}.enabled must be boolean')
-            if 'runtime' in value and value['runtime'] != COMPONENT_RUNTIME[name]:
-                raise ProfileError(f'components.{name}.runtime: unsupported runtime binding')
+            if 'runtime' in value:
+                expected_runtime = COMPONENT_RUNTIME.get(name)
+                if expected_runtime is not None and value['runtime'] != expected_runtime:
+                    raise ProfileError(f'components.{name}.runtime: unsupported runtime binding')
+                elif expected_runtime is None and value['runtime'] not in RUNTIMES and value['runtime'] not in data.get('runtimes', {}):
+                    raise ProfileError(f'components.{name}.runtime: unsupported runtime binding')
+            if 'dependencies' in value:
+                if type(value['dependencies']) is not list or any(type(d) is not str for d in value['dependencies']):
+                    raise ProfileError(f'components.{name}.dependencies: expected list of string component names')
+            if 'install' in value:
+                _keys(value['install'], {'method', 'command'}, f'components.{name}.install')
+            if 'desktop_shortcut' in value:
+                _keys(value['desktop_shortcut'], {'name', 'exec', 'icon'}, f'components.{name}.desktop_shortcut')
+            if 'upstream' in value:
+                _url_text(value['upstream'], f'components.{name}.upstream')
+            if 'install_dir' in value:
+                _path_text(value['install_dir'], f'components.{name}.install_dir')
             if 'source' in value:
                 source = value['source']
                 git_source = type(source) is dict and (source.get('mode') == 'git' or
@@ -406,6 +424,40 @@ def _merge(target, overlay, provenance, label, prefix=''):
             provenance[path] = label
 
 
+class ComponentDAGResolver:
+    """Sorts components into strict dependency order using Kahn's topological sort."""
+
+    @staticmethod
+    def resolve_order(components: list[dict]) -> list[dict]:
+        comp_map = {c['id']: c for c in components}
+        in_degree = {c['id']: 0 for c in components}
+        graph = {c['id']: [] for c in components}
+
+        for c in components:
+            deps = c.get('dependencies', [])
+            for dep in deps:
+                if dep in comp_map:
+                    graph[dep].append(c['id'])
+                    in_degree[c['id']] += 1
+
+        queue = [cid for cid, deg in in_degree.items() if deg == 0]
+        sorted_ids = []
+
+        while queue:
+            curr = queue.pop(0)
+            sorted_ids.append(curr)
+            for neighbor in graph[curr]:
+                in_degree[neighbor] -= 1
+                if in_degree[neighbor] == 0:
+                    queue.append(neighbor)
+
+        if len(sorted_ids) != len(components):
+            cycle_nodes = [cid for cid, deg in in_degree.items() if deg > 0]
+            raise ProfileError(f'Circular dependency detected between components: {cycle_nodes}')
+
+        return [comp_map[cid] for cid in sorted_ids]
+
+
 def _dependencies(profile):
     components = profile.get('components', {})
     for name, dependencies in DEPENDENCIES.items():
@@ -413,6 +465,11 @@ def _dependencies(profile):
             for dependency in dependencies:
                 if not components.get(dependency, {}).get('enabled'):
                     raise ProfileError(f'components.{name} requires enabled {dependency}')
+    for name, comp in components.items():
+        if comp.get('enabled') and 'dependencies' in comp:
+            for dep in comp['dependencies']:
+                if not components.get(dep, {}).get('enabled'):
+                    raise ProfileError(f'components.{name} requires enabled {dep}')
     if profile.get('serving', {}).get('enabled') and not components.get('gr00t', {}).get('enabled'):
         raise ProfileError('serving requires enabled gr00t')
     environments = [runtime['environment'] for runtime in profile.get('runtimes', {}).values() if 'environment' in runtime]

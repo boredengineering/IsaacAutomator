@@ -835,13 +835,21 @@ class Deployer:
                     self.params.get('container_registry', {}).get('enabled')):
                 raise ValueError('Software native intent cannot combine with registry image overrides.')
             user = self.params.get('ssh_user') or self.config['default_ssh_user']
-            source = getattr(self, 'input_params', {}).get('software_profile') or self.params.get('software_profile')
-            if isinstance(source, str):
+            source = self.params.get('software_profile')
+            if isinstance(source, dict):
+                profile_input = source
+            elif isinstance(source, str):
                 from src.python.workstation_profile import resolve_profile
                 profile_input = resolve_profile(source)['profile']
                 self.params['software_profile'] = profile_input
             else:
-                profile_input = self.params['software_profile']
+                raw_input = getattr(self, 'input_params', {}).get('software_profile')
+                if isinstance(raw_input, str):
+                    from src.python.workstation_profile import resolve_profile
+                    profile_input = resolve_profile(raw_input)['profile']
+                    self.params['software_profile'] = profile_input
+                else:
+                    profile_input = self.params.get('software_profile')
             report = render_profile(profile_input, 'ansible', '/home/' + user)
             if not report['render_supported']:
                 raise ValueError('Software profile has required unmapped fields; inspect software-profile render coverage.')

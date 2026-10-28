@@ -77,6 +77,38 @@
   register: robolab_commit
   changed_when: false
 
+- name: Probe dynamic components in workspace
+  ansible.builtin.shell: |
+    if [ -d "{{ item.dest }}/.git" ]; then
+      cd "{{ item.dest }}"
+      git rev-parse HEAD
+    else
+      echo "none"
+    fi
+  register: dynamic_component_git_probes
+  loop: "{{ profile_components | default([]) }}"
+  loop_control:
+    label: "{{ item.id }}"
+  when: (item.type | default('git')) == 'git'
+  changed_when: false
+  failed_when: false
+
+- name: Assemble dynamic component ledger dictionary
+  ansible.builtin.set_fact:
+    dynamic_components_map: >-
+      {{
+        dynamic_components_map | default({}) | combine({
+          item.item.id: {
+            "installed": (item.stdout | trim != 'none'),
+            "commit": (item.stdout | trim),
+            "dest": item.item.dest,
+            "runtime": item.item.runtime | default('lab')
+          }
+        })
+      }}
+  loop: "{{ dynamic_component_git_probes.results | default([]) }}"
+  when: item.skipped is not defined and item.stdout is defined
+
 - name: Generate Isaac Workstation State Ledger JSON
   copy:
     content: |
@@ -89,30 +121,32 @@
           "nvidia_driver": "{{ nvidia_probe.stdout | trim }}",
           "cuda_version": "{{ cuda_probe.stdout | trim }}"
         },
-        "components": {
-          "isaacsim": {
-            "installed": {{ isaacsim_stat.stat.exists | default(false) | bool | to_json }},
-            "version": "6.0.1",
-            "path": "/home/{{ ansible_user }}/IsaacSim"
-          },
-          "isaaclab": {
-            "installed": {{ (isaaclab_commit.stdout | trim != 'none') | bool | to_json }},
-            "framework_version": "v3",
-            "commit": "{{ isaaclab_commit.stdout | trim }}"
-          },
-          "isaaclab_arena": {
-            "installed": {{ (arena_commit.stdout | trim != 'none') | bool | to_json }},
-            "commit": "{{ arena_commit.stdout | trim }}"
-          },
-          "gr00t": {
-            "installed": {{ (gr00t_commit.stdout | trim != 'none') | bool | to_json }},
-            "commit": "{{ gr00t_commit.stdout | trim }}"
-          },
-          "robolab": {
-            "installed": {{ (robolab_commit.stdout | trim != 'none') | bool | to_json }},
-            "commit": "{{ robolab_commit.stdout | trim }}"
-          }
-        },
+        "components": {{
+          {
+            "isaacsim": {
+              "installed": (isaacsim_stat.stat.exists | default(false) | bool),
+              "version": "6.0.1",
+              "path": "/home/" ~ ansible_user ~ "/IsaacSim"
+            },
+            "isaaclab": {
+              "installed": (isaaclab_commit.stdout | trim != 'none'),
+              "framework_version": "v3",
+              "commit": (isaaclab_commit.stdout | trim)
+            },
+            "isaaclab_arena": {
+              "installed": (arena_commit.stdout | trim != 'none'),
+              "commit": (arena_commit.stdout | trim)
+            },
+            "gr00t": {
+              "installed": (gr00t_commit.stdout | trim != 'none'),
+              "commit": (gr00t_commit.stdout | trim)
+            },
+            "robolab": {
+              "installed": (robolab_commit.stdout | trim != 'none'),
+              "commit": (robolab_commit.stdout | trim)
+            }
+          } | combine(dynamic_components_map | default({})) | to_nice_json
+        }},
         "runtime": {
           "conda_shim": "/usr/local/bin/isaaclab-env",
           "state_engine": "native-ansible-convergence"
@@ -122,6 +156,7 @@
     owner: "{{ ansible_user }}"
     group: "{{ ansible_user }}"
     mode: "0644"
+
 
 - name: Ensure .isaac-installer directory exists for backward compatibility
   file:

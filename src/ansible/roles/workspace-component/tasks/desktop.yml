@@ -1,0 +1,46 @@
+# region copyright
+# Copyright 2023-2026 NVIDIA Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# endregion
+
+---
+- name: "Check if Desktop directory exists for {{ ansible_user }}"
+  ansible.builtin.stat:
+    path: "/home/{{ ansible_user }}/Desktop"
+  register: component_desktop_dir_stat
+
+- name: "Deploy Desktop shortcut for {{ current_component.id }}"
+  when: component_desktop_dir_stat.stat.exists
+  block:
+    - name: "Render .desktop launcher file for {{ current_component.id }}"
+      ansible.builtin.copy:
+        dest: "/home/{{ ansible_user }}/Desktop/{{ current_component.desktop_shortcut.name | regex_replace('[^a-zA-Z0-9_-]', '-') }}.desktop"
+        content: |
+          [Desktop Entry]
+          Type=Application
+          Name={{ current_component.desktop_shortcut.name }}
+          Exec=gnome-terminal -- /bin/bash -c "cd {{ current_component.dest }} && {{ current_component.desktop_shortcut.exec }}; exec bash"
+          Icon={{ current_component.desktop_shortcut.icon | default('utilities-terminal') }}
+          Terminal=true
+          Categories=Development;Engineering;
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: "0755"
+
+    - name: "Trust desktop launcher via gio for {{ current_component.id }}"
+      ansible.builtin.command:
+        cmd: "gio set \"/home/{{ ansible_user }}/Desktop/{{ current_component.desktop_shortcut.name | regex_replace('[^a-zA-Z0-9_-]', '-') }}.desktop\" metadata::trusted true"
+      become_user: "{{ ansible_user }}"
+      changed_when: false
+      ignore_errors: true

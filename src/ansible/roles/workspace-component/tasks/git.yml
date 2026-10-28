@@ -1,0 +1,68 @@
+# region copyright
+# Copyright 2023-2026 NVIDIA Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# endregion
+
+---
+- name: "Create destination parent directory for {{ current_component.id }}"
+  ansible.builtin.file:
+    path: "{{ current_component.dest | dirname }}"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0755"
+
+- name: "Check if repository already exists for {{ current_component.id }}"
+  ansible.builtin.stat:
+    path: "{{ current_component.dest }}/.git"
+  register: component_git_stat
+
+- name: "Securely check out {{ current_component.id }} via public-git"
+  ansible.builtin.include_tasks: "{{ playbook_dir }}/roles/public-git/tasks/source.yml"
+  vars:
+    public_git_repository: "{{ current_component.repository }}"
+    public_git_ref: "{{ current_component.ref }}"
+    public_git_destination: "{{ current_component.dest }}"
+    public_git_allow_submodules: "{{ current_component.submodules | default(true) | bool }}"
+  when: (not component_git_stat.stat.exists) and (public_git_profile | default(false) | bool)
+
+- name: "Clone {{ current_component.id }} via git module fallback"
+  ansible.builtin.git:
+    repo: "{{ current_component.repository }}"
+    dest: "{{ current_component.dest }}"
+    version: "{{ current_component.ref }}"
+    force: true
+  become_user: "{{ ansible_user }}"
+  when: (not component_git_stat.stat.exists) and not (public_git_profile | default(false) | bool)
+
+- name: "Configure upstream tracking remote for {{ current_component.id }}"
+  community.general.git_config:
+    name: remote.upstream.url
+    value: "{{ current_component.upstream }}"
+    repo: "{{ current_component.dest }}"
+    scope: local
+  become_user: "{{ ansible_user }}"
+  when: >
+    current_component.upstream is defined and
+    (current_component.upstream | length > 0) and
+    (current_component.upstream != current_component.repository) and
+    not (public_git_profile | default(false) | bool)
+
+- name: "Mark {{ current_component.id }} repository as safe directory in git config"
+  community.general.git_config:
+    name: safe.directory
+    value: "{{ current_component.dest }}"
+    scope: global
+  become_user: "{{ ansible_user }}"
+  when: component_git_stat.stat.exists or not (public_git_profile | default(false) | bool)

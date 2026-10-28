@@ -37,5 +37,6 @@ dependencies:
   - { role: gr00t, tags: ['__gr00t'] }
   - { role: lerobot, tags: ['__lerobot'] }
   - { role: robolab, tags: ['__robolab'] }
+  - { role: workspace-component, tags: ['__workspace_components', '__components'] }
   - { role: demos, tags: ['__demos'] }
   - { role: state-ledger, tags: ['__state_ledger', '__verify'] }
