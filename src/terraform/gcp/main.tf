@@ -59,7 +59,13 @@ module "isaac_workstation" {
   artifact_registry_project    = var.artifact_registry_project
   artifact_registry_location   = var.artifact_registry_location
   artifact_registry_repository = var.artifact_registry_repository
+  boot_disk_size_gb            = var.boot_disk_size_gb
+  enable_models_disk           = var.enable_models_disk
+  models_disk_size_gb          = var.models_disk_size_gb
+  models_disk_type             = var.models_disk_type
+  models_gcs_bucket            = var.models_gcs_bucket
   kms_compute_disk_key_link    = var.enable_cmek && length(google_kms_crypto_key.compute_disk_key) > 0 ? google_kms_crypto_key.compute_disk_key[0].id : ""
   depends_on                   = [google_project_service.compute_engine, google_project_service.artifact_registry]
 }
+
 

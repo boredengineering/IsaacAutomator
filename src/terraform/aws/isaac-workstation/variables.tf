@@ -75,3 +75,22 @@ variable "security_profile" {
   type        = string
   default     = "simple"
 }
+
+variable "boot_disk_size_gb" {
+  description = "Boot disk size in GB for OS, Docker, and Isaac software stack"
+  type        = number
+  default     = 300
+}
+
+variable "enable_models_disk" {
+  description = "Attach a dedicated secondary EBS gp3 volume for AI/Robotics model weights (/mnt/models_fast)"
+  type        = bool
+  default     = false
+}
+
+variable "models_disk_size_gb" {
+  description = "Size in GB of the dedicated secondary models EBS volume (/mnt/models_fast)"
+  type        = number
+  default     = 500
+}
+

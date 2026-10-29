@@ -1,7 +1,7 @@
 # Declarative Model Profiles & High-Speed Provisioning Plan
 
-**Status:** Implementation In Progress (Phases 1–3 Complete; Phases 4–5 Planned)  
-**Target Subsystems:** Model Configuration Layer (`configs/models/`), Model Profile Parser (`src/python/model_profile.py`), Standalone Downloader (`download-models`), and isaac9s Cockpit (`src/tui/screens/models.py`)  
+**Status:** Implemented & Live-Verified (Phases 1–4 Complete; Phase 5 Optional Host Cache Extension)  
+**Target Subsystems:** Model Configuration Layer (`configs/models/`), Model Profile Parser (`src/python/model_profile.py`), Standalone Downloader (`download-models`), Multi-Disk Terraform (`src/terraform/gcp/`, `src/terraform/aws/`), Ansible `model-storage` Role (`src/ansible/roles/model-storage/`), and isaac9s Cockpit (`src/tui/screens/models.py`)  
 **Target Environments:** Bare-Metal Robotics Workstations, Cloud Workstations (GCP, AWS, Azure), High-Speed NVMe Storage Arrays
 
 ---
@@ -107,22 +107,29 @@ To achieve the best balance of cost efficiency, cold-start latency, and runtime 
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│ 1. PRIMARY MASTER ARCHIVE (Cloud Object Storage - Durability Tier)          │
-│    • Private GCS Bucket: gs://<project>-models/glm-5.3-flash/               │
-│    • Cost: ~$3.64 / month for 182 GB (~$0.02/GB-month)                      │
-│    • Invariant: Survives VM destruction, available to any node or fleet     │
+│ 1. PERMANENT GLOBAL MASTER ARCHIVE (Cloud Object Storage - Durability Tier) │
+│    • Multi-Cloud Object Storage:                                            │
+│      - GCP:   gs://isaac-models-<hash>/models/<model_name>/                 │
+│      - AWS:   s3://isaac-models-<hash>/models/<model_name>/                 │
+│      - Azure: az://isaac-models-<hash>/models/<model_name>/                 │
+│    • Global / Multi-Zone Reach: Accessible from ANY zone or region          │
+│      (unlike persistent disks which are strictly locked to a single zone)   │
+│    • Cost: ~$0.02/GB-month (~$20/mo for the entire 1,038 GB 17-model zoo)   │
+│    • Lifecycle: Auto-bootstrapped once; NEVER deleted when VMs are destroyed│
 └──────────────────────────────────────┬──────────────────────────────────────┘
                                        │
-                                       │ Fast GCP internal network pull
-                                       │ (~2.5 mins @ 10-16 Gbps)
+                                       │ On-demand disk creation & hydration
+                                       │ over internal cloud backbone
+                                       │ (~10-16 Gbps = 1.2-2.0 GB/s)
                                        ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│ 2. CLOUD VM PERSISTENT DISK (Attached Secondary Volume - Daily Working Tier)│
-│    • Dedicated secondary Persistent Disk mounted at /models                 │
-│    • Sizing: Calculated dynamically based on project scope & models catalog │
-│      (e.g. 500 GB for Flash, 1-2 TB for multi-model suites)                 │
-│    • Daily Lifecycle: Preserved across ./stop and ./start                   │
-│    • Startup: 0-second cold-start delay for daily engineering sessions      │
+│ 2. ON-DEMAND ZONAL BLOCK DISK (Attached Secondary Volume - Working Tier)    │
+│    • Created & attached on demand in the VM's active zone (/mnt/models_fast)│
+│      - GCP: hyperdisk-balanced / pd-ssd | AWS: gp3 | Azure: Premium SSD v2  │
+│    • Dynamic Sizing: Sized for either the full zoo (1,300 GB) or only the   │
+│      selected subset of models needed for the current experiment session    │
+│    • Lifecycle: Preserved across daily ./stop & ./start for 0-sec boot;     │
+│      deleted on ./destroy (or --detach-disk) so idle disk cost drops to $0  │
 └──────────────────────────────────────┬──────────────────────────────────────┘
                                        │
                                        │ Memory warmup / Page cache pin
@@ -130,18 +137,23 @@ To achieve the best balance of cost efficiency, cold-start latency, and runtime 
                                        ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │ 3. RUNTIME MEMORY TIER (Host System RAM - Dynamic Streaming Tier)           │
-│    • Host RAM pool (/dev/shm or tmpfs) on g4-standard-48 (192 GB DDR5 RAM) │
+│    • Host RAM pool (/dev/shm or Page Cache) on g4-standard-48 (192 GB DDR5) │
 │    • Verified Bandwidth: 28.5 GB/s streaming into GPU VRAM over PCIe 5.0    │
 │    • Performance: Zero disk I/O bottlenecks; 30-60+ tokens/sec decode       │
 │    • Execution: NVIDIA RTX PRO 6000 Blackwell (96 GB VRAM, sm_120)          │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-#### Sizing and Dynamic Scope Calculation
-The secondary persistent disk must not be statically fixed; its capacity must be calculated dynamically based on:
-1. **Model Catalog Sum:** Total uncompressed checkpoint footprint declared across active model profiles (e.g., 182 GB for `colibri-flash` + 40 GB for `gr00t-foundation` = 222 GB + 25% safety margin = 300–500 GB PD).
-2. **Multi-Model Concurrency:** When experimenting with multiple model variants (e.g. full 744B MoE + 321B Flash + LeRobot policies), the storage tier scales up to 1 TB or 2 TB attached storage.
-3. **RAM Pool Allocation:** For models fitting within the instance RAM budget (like GLM-5.3-Flash at 182 GB on a 192 GB instance), the runtime loader pins weights directly into host memory via `vmtouch` or Linux page cache readahead, eliminating disk throughput caps during inference.
+#### Why Object Storage (GCS / S3 / Azure Blob) Is Permanent and Disks Are On-Demand
+1. **Disks Are Zonal; Object Storage Is Global/Multi-Regional:**
+   - A GCP `hyperdisk-balanced` volume or AWS EBS `gp3` volume is physically locked to a **single availability zone** (e.g., `us-central1-b`). When using `flex_start` or Spot GPUs (`g4-standard-48`), GPU capacity tomorrow may only be available in `us-central1-a` or `us-east4-b`. A zonal disk in `us-central1-b` **cannot** be attached to an instance in another zone.
+   - By keeping the permanent master copy of [`complete-model-zoo.yaml`](../../../configs/models/complete-model-zoo.yaml) in **Cloud Object Storage (`gs://`, `s3://`, `az://`)**, any workstation launched in **any zone** can create a fresh local disk in that zone and hydrate the weights at **10–16 Gbps** in minutes.
+2. **Cost Optimization ($20/mo Permanent Archive vs. $130/mo Zonal Disk):**
+   - Storing all 17 models (1,038 GB) permanently in GCS/S3/Azure Blob costs **~$20/month**.
+   - Keeping a 1,300 GB `hyperdisk-balanced` volume allocated 24/7 costs **~$104–$130/month** even when the VM is off.
+   - With the Hybrid Strategy, you only provision and pay for the secondary block disk **while an experiment campaign is active** (and you can optionally size it for just the 1–3 models you are running that day instead of all 17). When you `./destroy` the workstation or detach the disk, block storage cost drops to **$0/month** while your models remain 100% preserved in Object Storage.
+3. **Seed Once, Hydrate Anywhere:**
+   - The first time a model in [`complete-model-zoo.yaml`](../../../configs/models/complete-model-zoo.yaml) is downloaded from Hugging Face (`hf_transfer`)—or uploaded from the local bare-metal host—it is automatically synced into `gs://isaac-models-<hash>/models/<name>/` (or `s3://` / `az://`). Every subsequent workstation or newly attached disk pulls directly from the cloud bucket at internal backbone speed without touching external Hugging Face mirrors.
 
 ---
 
@@ -526,8 +538,33 @@ Currently, [`src/terraform/gcp/ovkit/main.tf`](../../../src/terraform/gcp/ovkit/
    }
    ```
 
-4. **Tier 1 Master GCS Archive Bucket & IAM Binding:**
-   Ensure the workstation's Service Account (`google_service_account.workstation_sa`) has `roles/storage.objectAdmin` on the models archive bucket so internal 10–16 Gbps transfers work natively without static keys.
+4. **Tier 1 Permanent Master Archive Bucket (`isaac-models-<hash>`), Cloud Console Labels, & Self-Documenting `00-BUCKET-README.md`:**
+   - **Deterministic Bucket Proposal (`models_bucket: "auto"`):**
+     Computed via SHA-256 of `(cloud, namespace, owner_scope)` as `isaac-models-<20-char-hash>` (e.g., `gs://isaac-models-c3527cbb69c601fa1dd9` for project `cybernetic-renan`). Object versioning is **disabled** on `isaac-models-<hash>` so replacing a 400 GB model never leaves 400 GB of billable noncurrent versions behind.
+   - **Cloud Console Labels / Tags (Visible in the Main Buckets Table):**
+     Both [`src/terraform/bootstrap/gcp/main.tf`](../../../src/terraform/bootstrap/gcp/main.tf) (`isaac-state-<hash>`) and the models bucket bootstrap attach structured labels/tags so any operator browsing the Cloud Console immediately identifies the bucket's purpose without clicking into it:
+     ```hcl
+     # On isaac-state-<hash>:
+     labels = {
+       managed_by  = "isaac-automator"
+       purpose     = "terraform-remote-state"
+       namespace   = var.namespace
+       description = "do-not-delete-active-cloud-infrastructure-state"
+     }
+
+     # On isaac-models-<hash>:
+     labels = {
+       managed_by  = "isaac-automator"
+       purpose     = "ai-models-master-archive"
+       namespace   = var.namespace
+       profile     = "complete-model-zoo"
+       description = "permanent-storage-for-isaac-gr00t-openpi-vllm-colibri-weights"
+     }
+     ```
+   - **Self-Documenting `00-BUCKET-README.md` at the Bucket Root:**
+     Because cloud labels do not allow spaces or multi-line prose, the bootstrap/sync engine automatically writes `00-BUCKET-README.md` (sorted to the very top of the bucket's object listing) with custom object metadata (`x-goog-meta-comment` / `x-amz-meta-comment`) explaining the bucket's purpose, owning profile (`studio-enterprise` / `complete-model-zoo`), and staged model inventory.
+   - **Workstation IAM Binding:**
+     Ensure the workstation's Service Account (`google_service_account.workstation_sa`) has `roles/storage.objectAdmin` on `isaac-models-<hash>` so internal 10–16 Gbps transfers work natively without static keys.
 
 #### B. AWS Module ([`src/terraform/aws/isaac-workstation/main.tf`](../../../src/terraform/aws/isaac-workstation/main.tf))
 1. Update `root_block_device.volume_size` from hardcoded `"256"` to `var.boot_disk_size_gb` (default `300`).
@@ -631,13 +668,13 @@ For workstations that were deployed prior to enabling `models_disk` (such as the
 - [x] Create reference profile [`configs/models/example-model.yaml`](../../../configs/models/example-model.yaml).
 - [x] Create Master Model Zoo profile [`configs/models/complete-model-zoo.yaml`](../../../configs/models/complete-model-zoo.yaml) (all 17 models across Roles 1, 2, and 3).
 - [x] Implement [`src/python/model_profile.py`](../../../src/python/model_profile.py) parser, resolver, and plan generator.
-- [x] Implement unit tests in [`src/tests/model_profile.test.py`](../../../src/tests/model_profile.test.py) (6/6 passing).
+- [x] Implement unit tests in [`src/tests/model_profile.test.py`](../../../src/tests/model_profile.test.py) (9/9 passing).
 
 ### Phase 2: Standalone CLI Downloader (DONE)
 - [x] Implement [`./download-models`](../../../download-models) wrapper.
 - [x] Add non-invasive pre-flight storage check via SSH (`df -BG`).
-- [x] Support `--dry-run`, `--force`, and `--debug` flags.
-- [x] Verified live dry-run against `studio-workstation` (`--profile complete-model-zoo --dry-run`).
+- [x] Support `--dry-run`, `--force`, `--models <subset>`, `--models-bucket <auto|name>`, `--attach-disk`, `--detach-disk`, `--warmup-ram`, and `--debug` flags.
+- [x] Verified live dry-run and live execution against `studio-workstation` (`--profile complete-model-zoo`).
 
 ### Phase 3: isaac9s Cockpit Integration (DONE)
 - [x] Create `ModelsPane` in [`src/tui/screens/models.py`](../../../src/tui/screens/models.py).
@@ -646,24 +683,25 @@ For workstations that were deployed prior to enabling `models_disk` (such as the
 - [x] Wire `[d] Download` and `[v] Dry-Run Plan` buttons directly into background execution and the live logs pane.
 - [x] Add command palette support (`:models`, `:model`, `7`).
 
-### Phase 4: Multi-Disk Terraform & Programmatic Path Contract (PLANNED)
-- [ ] **Step 4.1 — Programmatic Path Resolution & Dynamic Disk Calculator (`src/python/model_profile.py`):**
-  - Implement `calculate_models_disk_spec()` summing active model profile footprints + 25% safety buffer (rounded to 100 GB increments, min 500 GB).
-  - Implement dual-view materialization (`HF_HUB_CACHE` snapshot download + zero-copy symlink bridge to `/models/<canonical_subpath>`) and `/etc/isaac-models.env` generator from `export_env`.
-- [ ] **Step 4.2 — Terraform Multi-Disk Provisioning (`src/terraform/gcp/` & `src/terraform/aws/`):**
-  - Parameterize Disk 1 (`boot_disk_size_gb = 300`) for OS & software.
-  - Add Disk 2 (`google_compute_disk.models_disk` / `ebs_block_device`) attached with deterministic `device_name = "models-fast"` (`/dev/disk/by-id/google-models-fast`).
-- [ ] **Step 4.3 — Ansible `model-storage` Role (`src/ansible/roles/model-storage/`):**
-  - Format Disk 2 as `ext4` (`-m 0 -L models_fast`), mount at `/mnt/models_fast` (`noatime,nofail`), and establish the 3-Layer Path Projection Contract (`/models`, `~/models`, `/datasets`, `~/datasets`, `~/.cache/huggingface`, `~/.cache/isaac-gr00t`, `~/.cache/openpi` + `/etc/isaac-models.env`) before `roles/system/tasks/directories.yml` runs.
-  - Implement 3-tier waterfall sync: Local Disk check $\rightarrow$ Fast GCS pull (`gcloud storage rsync -m`) $\rightarrow$ Hugging Face `hf_transfer` + GCS archive seeding.
-  - Install `vmtouch`, tune `sysctl` (`vm.swappiness=1`), and register `isaac-model-warmup.service` to pin weights into the 192 GB Host RAM pool on start.
-- [ ] **Step 4.4 — Live Hot-Attach in `./download-models`:**
-  - Add `--attach-disk` flag to dynamically create, attach, format, and mount Disk 2 on already-running instances like `studio-workstation` without downtime.
+### Phase 4: Multi-Disk Terraform, Permanent Cloud Archive & Programmatic Path Contract (DONE)
+- [x] **Step 4.1 — Programmatic Path Resolution, Bucket Proposal & Dynamic Disk Calculator (`src/python/model_profile.py`):**
+  - Implemented `propose_models_bucket()`, `build_bucket_labels()`, `generate_bucket_readme()`, and `ensure_bucket_self_documented()` (`gs://isaac-models-<20-char-hash>` + `00-BUCKET-README.md`).
+  - Implemented `calculate_models_disk_spec()` summing active model footprints + 25% safety buffer (rounded up to 100 GB increments).
+  - Implemented `/etc/isaac-models.env` and `/etc/profile.d/isaac-models.sh` generator (`generate_models_env_content()`).
+- [x] **Step 4.2 — Terraform Multi-Disk Provisioning (`src/terraform/gcp/` & `src/terraform/aws/`):**
+  - Parameterized Disk 1 (`boot_disk_size_gb = 300`) for OS & software.
+  - Added Disk 2 (`google_compute_disk.models_disk` / `ebs_block_device`) attached with deterministic `device_name = "models-fast"` (`/dev/disk/by-id/google-models-fast`).
+  - Added `google_storage_bucket_iam_member.models_cache` (`roles/storage.objectAdmin` for `workstation_sa`).
+- [x] **Step 4.3 — Ansible `model-storage` Role (`src/ansible/roles/model-storage/`):**
+  - Formats Disk 2 as `ext4` (`-m 0 -L models_fast`), mounts at `/mnt/models_fast` (`noatime,nofail`), and establishes the 3-Layer Path Projection Contract (`/models`, `~/models`, `~/.cache/huggingface`, `~/.cache/isaac-gr00t`, `~/.cache/openpi` + `/etc/isaac-models.env`) before `roles/system/tasks/directories.yml` runs.
+  - Implements 3-tier waterfall sync: Local Disk check $\rightarrow$ Fast GCS pull (`gcloud storage rsync -r`) $\rightarrow$ Hugging Face `hf_transfer` + GCS archive seeding.
+  - Installs `vmtouch`, tunes `sysctl` (`vm.swappiness=1`, `vm.vfs_cache_pressure=50`), and deploys `isaac-model-warmup.service` to pin weights into the 192 GB Host RAM pool on start.
+- [x] **Step 4.4 — Live Hot-Attach & Hot-Detach in `./download-models`:**
+  - Added `--attach-disk` and `--detach-disk` flags to dynamically create, attach, format, mount, or tear down Disk 2 on running instances like `studio-workstation` without downtime.
 
-### Phase 5: Local Cache Direct Sync (PLANNED)
-- [ ] If weights already exist on host (`/home/tarfy/.cache/huggingface/hub/` or `/mnt/models_fast/`):
-  - Support `./transfer-data` / `rsync` direct pipeline to stream pre-downloaded shards directly from the bare-metal host to the cloud VM or GCS archive bucket.
-  - Skip re-downloading 180+ GB over public Hugging Face mirrors when local cached blobs are available.
+### Phase 5: Local Cache Direct Sync (OPTIONAL EXTENSION)
+- [ ] If weights already exist on a local bare-metal host (`/mnt/models_fast/`):
+  - Support `./upload` / `gcloud storage rsync` direct pipeline to stream pre-downloaded shards directly from a local bare-metal host to `gs://isaac-models-<hash>/models/`.
 
 ---
 
@@ -671,9 +709,10 @@ For workstations that were deployed prior to enabling `models_disk` (such as the
 
 | Test Suite | Command | Scope |
 | :--- | :--- | :--- |
-| **Model Profile Unit Tests** | `python3 src/tests/model_profile.test.py` | Schema parsing, path expansions, dynamic disk sizing calculator, and plan generation. |
-| **Terraform Multi-Disk Validation** | `terraform -chdir=src/terraform/gcp test` | Offline HCL validation for 300 GB boot disk + attached `models_disk` on G4/G2 shapes. |
-| **Ansible Role Syntax Check** | `ansible-playbook src/ansible/isaac-workstation.yaml --syntax-check` | Verifies `model-storage` role tasks, mounts, and systemd templates. |
-| **CLI Dry-Run Verification** | `./download-models studio-workstation --profile colibri-flash --dry-run` | Live SSH connection, remote `df` disk query, command generation. |
+| **Model Profile Unit Tests** | `python3 src/tests/model_profile.test.py -v` | Schema parsing, path expansions, deterministic bucket hashing, dynamic disk sizing calculator, and 3-tier waterfall plan generation (9/9 passing). |
+| **Remote State & Bootstrap Tests** | `python3 src/tests/automated_remote_tfstate.test.py -v` | Deterministic `bucket: "auto"` resolution, zero-network local gate, and bootstrap safety (15/15 passing). |
+| **Ansible Role Syntax Check** | `ansible-playbook src/ansible/isaac-workstation.yaml --syntax-check` | Verifies `model-storage` role tasks, mounts, sysctl, and systemd templates. |
+| **CLI Dry-Run Verification** | `./download-models studio-workstation --profile complete-model-zoo --models cosmos-reason2-2b --attach-disk --dry-run` | Live SSH connection, remote `df` disk query, GCS bucket check, and 3-tier waterfall command generation. |
 | **TUI Cockpit Integration** | `.venv-isaac9s/bin/python -c "from src.tui.app import Isaac9sApp; Isaac9sApp()"` | Textual UI mount, tab switching, and button dispatch verification. |
+
 

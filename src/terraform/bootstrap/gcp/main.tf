@@ -27,6 +27,14 @@ resource "google_storage_bucket" "state_bucket" {
   force_destroy               = false
   uniform_bucket_level_access = true
   public_access_prevention    = "enforced"
+
+  labels = {
+    managed_by  = "isaac-automator"
+    purpose     = "terraform-remote-state"
+    namespace   = var.namespace
+    description = "isaac-automator-terraform-remote-state-and-locks"
+  }
+
   lifecycle {
     prevent_destroy = true
   }

@@ -1,0 +1,9 @@
+---
+# Default configuration for the model-storage Ansible role
+enable_models_disk: false
+models_disk_device: "/dev/disk/by-id/google-models-fast"
+models_disk_mount_point: "/mnt/models_fast"
+models_gcs_bucket: ""
+model_profile_name: ""
+models_warmup_ram: false
+models_warmup_max_gb: 60

@@ -1,0 +1,143 @@
+---
+# ==============================================================================
+# Model Storage & 3-Layer Path Projection Role
+# 1. Formats & mounts optional secondary block disk (/mnt/models_fast)
+# 2. Creates canonical symlinks (/models, ~/models, ~/.cache/huggingface, etc.)
+#    BEFORE roles/system/tasks/directories.yml creates subdirectories
+# 3. Writes /etc/isaac-models.env and /etc/profile.d/isaac-models.sh
+# 4. Installs vmtouch for Host RAM pool warmup (28.5 GB/s page-cache lock)
+# ==============================================================================
+
+- name: Check if dedicated secondary models disk block device is attached
+  ansible.builtin.stat:
+    path: "{{ models_disk_device }}"
+  register: models_disk_stat
+
+- name: Format dedicated models disk with ext4 (0% reserved blocks) when attached
+  community.general.filesystem:
+    fstype: ext4
+    dev: "{{ models_disk_device }}"
+    opts: "-m 0 -L models_fast"
+  when: models_disk_stat.stat.exists
+
+- name: Mount dedicated models disk at {{ models_disk_mount_point }}
+  ansible.posix.mount:
+    path: "{{ models_disk_mount_point }}"
+    src: "{{ models_disk_device }}"
+    fstype: ext4
+    opts: "defaults,noatime,nodiratime,nofail"
+    state: mounted
+  when: models_disk_stat.stat.exists
+
+- name: Ensure physical model storage directories exist on {{ models_disk_mount_point }}
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0755"
+  loop:
+    - "{{ models_disk_mount_point }}"
+    - "{{ models_disk_mount_point }}/models"
+    - "{{ models_disk_mount_point }}/models/openpi"
+    - "{{ models_disk_mount_point }}/models/gr00t"
+    - "{{ models_disk_mount_point }}/models/cosmos"
+    - "{{ models_disk_mount_point }}/models/qwen"
+    - "{{ models_disk_mount_point }}/models/deepseek"
+    - "{{ models_disk_mount_point }}/models/geometry"
+    - "{{ models_disk_mount_point }}/hf_cache"
+    - "{{ models_disk_mount_point }}/hf_cache/hub"
+    - "/home/{{ ansible_user }}/.cache"
+  when: models_disk_stat.stat.exists or (enable_models_disk | bool) or (model_profile_name | default('') | length > 0)
+
+- name: Migrate existing non-symlink /home/{{ ansible_user }}/models or ~/.cache/huggingface before linking
+  ansible.builtin.shell: |
+    set -e
+    for pair in \
+      "/models:{{ models_disk_mount_point }}/models" \
+      "/home/{{ ansible_user }}/models:{{ models_disk_mount_point }}/models" \
+      "/home/{{ ansible_user }}/.cache/huggingface:{{ models_disk_mount_point }}/hf_cache" \
+      "/home/{{ ansible_user }}/.cache/isaac-gr00t:{{ models_disk_mount_point }}/hf_cache" \
+      "/home/{{ ansible_user }}/.cache/openpi:{{ models_disk_mount_point }}/models/openpi"
+    do
+      target="${pair%%:*}"
+      dest="${pair#*:}"
+      if [ -d "$target" ] && [ ! -L "$target" ]; then
+        cp -rn "$target/." "$dest/" 2>/dev/null || true
+        rm -rf "$target"
+      fi
+      ln -sfn "$dest" "$target"
+      chown -h "{{ ansible_user }}:{{ ansible_user }}" "$target" || true
+    done
+    if [ ! -e "/mnt/nvme1" ]; then
+      ln -sfn "{{ models_disk_mount_point }}" "/mnt/nvme1"
+    fi
+  args:
+    executable: /bin/bash
+  when: models_disk_stat.stat.exists or (enable_models_disk | bool) or (model_profile_name | default('') | length > 0)
+
+- name: Write programmatic model path projection contract (/etc/isaac-models.env and /etc/profile.d/isaac-models.sh)
+  ansible.builtin.copy:
+    dest: "{{ item }}"
+    mode: "0644"
+    content: |
+      # ==============================================================================
+      # Isaac Automator - Programmatic Model Storage & Path Projection Contract
+      # ==============================================================================
+      export ISAAC_MODELS_ROOT="/models"
+      export ISAAC_MODELS_MOUNT="{{ models_disk_mount_point }}"
+      export ISAAC_MODELS_BUCKET="{{ models_gcs_bucket | default('') }}"
+      export HF_HOME="/home/{{ ansible_user }}/.cache/huggingface"
+      export HF_HUB_CACHE="{{ models_disk_mount_point }}/hf_cache/hub"
+      export HF_HUB_ENABLE_HF_TRANSFER="1"
+      export GR00T_CACHE_DIR="/home/{{ ansible_user }}/.cache/isaac-gr00t"
+      export OPENPI_DATA_HOME="/home/{{ ansible_user }}/.cache/openpi"
+  loop:
+    - /etc/isaac-models.env
+    - /etc/profile.d/isaac-models.sh
+  when: models_disk_stat.stat.exists or (enable_models_disk | bool) or (model_profile_name | default('') | length > 0)
+
+- name: Install vmtouch for Host RAM pool model warmup (28.5 GB/s page-cache lock)
+  ansible.builtin.apt:
+    name: vmtouch
+    state: present
+    update_cache: false
+  failed_when: false
+  when: models_disk_stat.stat.exists or (enable_models_disk | bool) or (model_profile_name | default('') | length > 0)
+
+- name: Configure kernel VM page-cache retention (/etc/sysctl.d/99-isaac-model-cache.conf)
+  ansible.builtin.copy:
+    dest: /etc/sysctl.d/99-isaac-model-cache.conf
+    mode: "0644"
+    content: |
+      # Retain model safetensors shards in the 192 GB DDR5 Host RAM Page Cache
+      vm.swappiness = 1
+      vm.vfs_cache_pressure = 50
+  when: models_disk_stat.stat.exists or (enable_models_disk | bool) or (model_profile_name | default('') | length > 0)
+
+- name: Apply kernel VM page-cache sysctl parameters
+  ansible.builtin.command: sysctl --system
+  changed_when: false
+  failed_when: false
+  when: models_disk_stat.stat.exists or (enable_models_disk | bool) or (model_profile_name | default('') | length > 0)
+
+- name: Deploy systemd unit for automatic Host RAM model warmup (isaac-model-warmup.service)
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/isaac-model-warmup.service
+    mode: "0644"
+    content: |
+      [Unit]
+      Description=Isaac Automator - Warm Active Model Weights into Host RAM Page Cache
+      After=network.target local-fs.target
+
+      [Service]
+      Type=oneshot
+      User={{ ansible_user }}
+      EnvironmentFile=-/etc/isaac-models.env
+      ExecStart=/bin/bash -c 'if command -v vmtouch >/dev/null 2>&1 && [ -d /models ]; then find -L /models -maxdepth 3 -name "*.safetensors" -size -60G -exec vmtouch -t -q {} + || true; fi'
+      RemainAfterExit=yes
+
+      [Install]
+      WantedBy=multi-user.target
+  when: models_disk_stat.stat.exists or (enable_models_disk | bool) or (model_profile_name | default('') | length > 0)
+

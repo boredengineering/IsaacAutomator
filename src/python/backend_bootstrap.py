@@ -377,4 +377,20 @@ def ensure_backend_storage(
         session.apply(plan, acknowledge_creation=True)
 
     log(f"* Remote state storage provisioned successfully: {d.get('bucket') or d.get('storage_account_name')}")
+    if spec.cloud == "gcp" and d.get("bucket") and d.get("project") and transport is None and runner_factory is None:
+        try:
+            from src.python.model_profile import ensure_bucket_self_documented
+            ensure_bucket_self_documented(
+                bucket_name=d["bucket"],
+                project=d["project"],
+                region=ctx.region,
+                purpose="terraform-remote-state",
+                namespace=spec.namespace,
+                profile="studio-enterprise",
+                create_if_missing=False,
+                dry_run=dry_run,
+            )
+        except Exception:
+            pass
     return spec
+

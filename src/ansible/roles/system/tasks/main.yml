@@ -124,6 +124,15 @@
 - import_tasks: docker.yml
   tags: __system_docker
 
+# dedicated model storage & 3-layer path projection symlinks (before directories.yml)
+- name: Configure dedicated model storage and 3-layer path projection
+  include_role:
+    name: model-storage
+  tags:
+    - __system_directories
+    - __model_storage
+
 # host directories & storage hierarchy
 - import_tasks: directories.yml
   tags: __system_directories
+

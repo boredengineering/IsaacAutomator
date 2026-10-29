@@ -24,3 +24,9 @@ variable "kms_key_name" {
   default     = ""
   description = "Existing CMEK only. Verify storage service-agent KMS permissions separately."
 }
+variable "namespace" {
+  type        = string
+  default     = "studio"
+  description = "Logical namespace label for Cloud Console identification."
+}
+

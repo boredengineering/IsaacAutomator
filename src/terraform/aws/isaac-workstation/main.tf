@@ -57,12 +57,30 @@ resource "aws_instance" "instance" {
 
   root_block_device {
     volume_type           = "gp3"
-    volume_size           = "256" # GB
+    volume_size           = var.boot_disk_size_gb
     delete_on_termination = true
 
     tags = {
       Name       = "${var.prefix}.root_ebs"
       Deployment = "${var.deployment_name}"
+    }
+  }
+
+  dynamic "ebs_block_device" {
+    for_each = var.enable_models_disk ? [1] : []
+    content {
+      device_name           = "/dev/sdf"
+      volume_type           = "gp3"
+      volume_size           = var.models_disk_size_gb
+      iops                  = 16000
+      throughput            = 1000
+      delete_on_termination = true
+
+      tags = {
+        Name       = "${var.prefix}.models_ebs"
+        Deployment = "${var.deployment_name}"
+        Purpose    = "on-demand-zonal-models-fast-disk"
+      }
     }
   }
 

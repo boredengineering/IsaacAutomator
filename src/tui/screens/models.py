@@ -81,11 +81,14 @@ class ModelsPane(Vertical):
         try:
             resolved = resolve_model_profile(profile_name)
             plan = generate_download_plan(resolved)
+            disk_spec = plan.get("disk_spec", {})
 
             lines = [
                 f"[bold cyan]Profile:[/] [white]{resolved['model_profile_name']}[/]",
                 f"[bold cyan]Description:[/] {resolved['description']}",
-                f"[bold cyan]Recommended Free Disk:[/] [yellow]{resolved['total_min_disk_gb']} GB[/]",
+                f"[bold cyan]Raw Model Weights:[/] [yellow]{resolved['total_min_disk_gb']} GB[/] "
+                f"(Recommended Zonal Disk: [bold green]{disk_spec.get('recommended_disk_gb', 0)} GB[/] with 1.25x buffer)",
+                "[bold cyan]Master Cloud Archive:[/] [green]models_bucket: auto[/] -> [white]gs://isaac-models-<20-char-hash>[/]",
             ]
 
             if resolved.get("storage"):
@@ -108,7 +111,7 @@ class ModelsPane(Vertical):
 
             lines.append("\n[bold white underline]Generated Command Preview:[/]")
             for item in plan.get("download_commands", []):
-                lines.append(f"  [dim]$ {item['command']}[/]")
+                lines.append(f"  [dim]$ {item.get('hf_command', item['command'])}[/]")
 
             detail_view.update("\n".join(lines))
         except ModelProfileError as err:

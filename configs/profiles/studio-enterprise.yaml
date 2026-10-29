@@ -9,10 +9,11 @@ description: "Studio Enterprise profile co-located with Omniverse Nucleus & high
 cloud: "gcp"
 
 # Top-Level Native Storage Configuration
-# Configures automated, hardened remote state in Google Cloud Storage
+# Configures automated, hardened remote state and permanent global AI model archive in Google Cloud Storage
 storage:
   backend: "gcs"
   bucket: "auto"               # Automatically plans, preflights, and provisions isaac-state-<hash>
+  models_bucket: "auto"        # Permanent global AI model archive bucket isaac-models-<hash> (survives ./destroy)
   prefix: "isaacautomator/v2"
   namespace: "studio"
 
@@ -37,9 +38,18 @@ security:
     engine: "secret_manager"     # Centralized cloud secrets manager for registry tokens and credentials
 
 workstation:
-  gpu_model: "g4-standard-48"    # High-performance workstation compute (48 vCPU, 1x NVIDIA RTX PRO 6000 48GB VRAM)
+  gpu_model: "g4-standard-48"    # High-performance workstation compute (48 vCPU, 1x NVIDIA RTX PRO 6000 96GB GDDR7, 192GB Host RAM)
   gpu_count: 1
+  boot_disk_size_gb: 300         # OS, Docker, Conda, and Isaac Sim/Lab/Arena software stack
   software_profile: "configs/workstations/boredengineering-dev.yaml" # BoredEngineering personal fork stack tracking dev/0.3.0-prerelease
+  model_profile: "configs/models/complete-model-zoo.yaml"            # 17-model catalog (Spec LLMs + Visual/3D Critics + GR00T/OpenPI)
+  models_disk:
+    enabled: false               # Attach on-demand via --enable-models-disk or ./download-models <name> --attach-disk
+    size_gb: "auto"              # Auto-calculated from model_profile (1800 GB for full zoo, or 100-500 GB for --models subset)
+    type: "hyperdisk-balanced"
+    mount_point: "/mnt/models_fast"
+    hydrate_from_bucket: true    # Pull from gs://isaac-models-<hash>/models/ at 10-16 Gbps before falling back to HF Hub
+    warmup_ram: true             # Lock active model shards into 192GB Host RAM page cache (28.5 GB/s via vmtouch)
   remote_desktop: "nomachine,novnc,kasmvnc" # Hardware-accelerated 3D viewport (NoMachine) + WebRTC browser (KasmVNC) + noVNC fallback
 
 # Studio Architecture Integration Parameters

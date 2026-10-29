@@ -50,3 +50,19 @@ variable "ami_id" {
   default = ""
   type    = string
 }
+
+variable "boot_disk_size_gb" {
+  default = 300
+  type    = number
+}
+
+variable "enable_models_disk" {
+  default = false
+  type    = bool
+}
+
+variable "models_disk_size_gb" {
+  default = 500
+  type    = number
+}
+

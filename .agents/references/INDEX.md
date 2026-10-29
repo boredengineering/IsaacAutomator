@@ -48,4 +48,6 @@ Catalog of high-level project specifications, architecture documents, and goal d
 | [`../memory/sessions/20260909_033041_8c8e9952.md`](../memory/sessions/20260909_033041_8c8e9952.md) | Optional distribution checkpoint: 195 workspace tests and 61 mocked plans; no live deployment/publication | Reviewed implementation |
 | [`plans/isaac-installer-host-compat.md`](./plans/isaac-installer-host-compat.md) | Host/cloud stack parity, composable profiles, and remaining orchestration gaps | Active Plan |
 | [`plans/declarative-model-profiles-plan.md`](./plans/declarative-model-profiles-plan.md) | Declarative model provisioning (`configs/models/`), Experiment 05 Master Model Zoo, and 3-tier hybrid storage architecture | Active Plan |
+| [`notes/architectural_limitations.md`](./notes/architectural_limitations.md) | Single-Node Deployment Coupling & Multi-Instance Cluster Constraints Audit across 5 Architectural Layers | Active Architectural Note |
+| [`notes/architecture_reevaluation.md`](./notes/architecture_reevaluation.md) | Hardcoded Profile Configurations, Closed-World Enum Audits & Dynamic Extensibility Flaws | Active Architectural Note |
 

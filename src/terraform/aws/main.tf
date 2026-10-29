@@ -54,6 +54,9 @@ module "isaac_workstation" {
   ecr_account_id       = var.ecr_account_id
   ecr_region           = var.ecr_region
   ecr_repository       = var.ecr_repository
+  boot_disk_size_gb    = var.boot_disk_size_gb
+  enable_models_disk   = var.enable_models_disk
+  models_disk_size_gb  = var.models_disk_size_gb
 
   vpc = {
     id         = module.vpc.vpc.id

@@ -1,6 +1,6 @@
 locals {
   boot_image     = "ubuntu-2204-jammy-v20251023"
-  boot_disk_size = 255
+  boot_disk_size = var.boot_disk_size_gb
   os_username    = var.os_username
 }
 
@@ -16,10 +16,34 @@ data "google_compute_image" "prebuilt" {
 # Dedicated Workstation Service Account (Principle of Least Privilege)
 # Only provisioned when security_profile is enterprise or when dedicated SA is required
 resource "google_service_account" "workstation_sa" {
-  count        = var.security_profile == "enterprise" || var.enable_artifact_registry ? 1 : 0
+  count        = var.security_profile == "enterprise" || var.enable_artifact_registry || var.models_gcs_bucket != "" ? 1 : 0
   account_id   = "${substr(replace(var.prefix, "_", "-"), 0, 26)}-sa"
   display_name = "Isaac Workstation Instance Service Account"
   project      = var.project != "" ? var.project : null
+}
+
+# Grant Workstation Service Account access to the Permanent Global Models Bucket (when configured)
+resource "google_storage_bucket_iam_member" "models_cache" {
+  count  = var.models_gcs_bucket != "" && length(google_service_account.workstation_sa) > 0 ? 1 : 0
+  bucket = var.models_gcs_bucket
+  role   = "roles/storage.objectAdmin"
+  member = "serviceAccount:${google_service_account.workstation_sa[0].email}"
+}
+
+# Optional On-Demand Zonal Secondary Block Disk for AI & Robotics Model Weights (/mnt/models_fast)
+resource "google_compute_disk" "models_disk" {
+  count   = var.enable_models_disk ? 1 : 0
+  name    = "${var.prefix}-models"
+  type    = var.models_disk_type
+  size    = var.models_disk_size_gb
+  project = var.project != "" ? var.project : null
+
+  labels = {
+    deployment  = var.deployment_name
+    managed_by  = "isaac-automator"
+    purpose     = "on-demand-zonal-models-fast-disk"
+    mount_point = "mnt-models-fast"
+  }
 }
 
 resource "google_compute_instance" "default" {
@@ -98,6 +122,15 @@ resource "google_compute_instance" "default" {
     }
   }
 
+  dynamic "attached_disk" {
+    for_each = var.enable_models_disk ? [1] : []
+    content {
+      source      = google_compute_disk.models_disk[0].self_link
+      device_name = "models-fast"
+      mode        = "READ_WRITE"
+    }
+  }
+
   shielded_instance_config {
     enable_secure_boot          = var.enable_secure_boot
     enable_vtpm                 = true
@@ -117,6 +150,7 @@ resource "google_compute_instance" "default" {
 
   labels = {
     deployment = var.deployment_name
+    managed_by = "isaac-automator"
   }
 
   guest_accelerator {
@@ -148,3 +182,4 @@ resource "google_compute_instance" "default" {
     ]
   }
 }
+

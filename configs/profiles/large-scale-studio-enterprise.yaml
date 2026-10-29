@@ -1,0 +1,108 @@
+# ==============================================================================
+# Isaac Automator - Large-Scale Studio Enterprise Profile (large-scale-studio-enterprise.yaml)
+# ==============================================================================
+# Unified profile engineered for large-scale robotics simulations and frontier
+# physical AI foundation model hosting across Google Cloud (G4 machine family):
+#
+#   1. Model Host (Default: g4-standard-384):
+#      - 8x NVIDIA RTX PRO 6000 GPUs (8x 96 GB = 768 GB GDDR7 VRAM)
+#      - 384 vCPUs, 1,440 GB (1.44 TB) Host DDR5 RAM
+#      - Hosts the full GLM-5.3-Flash (321B Multimodal MoE, 62 shards, 190 GB)
+#        in VRAM with Tensor Parallelism (TP=8) on Port 8000.
+#      - 1,500 GB Hyperdisk Balanced model volume mounted at /mnt/models_fast
+#      - Active weight warmup into 1.44 TB Host RAM page cache via vmtouch
+#
+#   2. Simulation Runner (Override: g4-standard-48):
+#      - 1x NVIDIA RTX PRO 6000 GPU (96 GB GDDR7 VRAM), 48 vCPUs, 192 GB RAM
+#      - Runs Isaac Sim 6.0.1 Standalone, Isaac Lab v3, and IsaacLab-Arena
+#        benchmarks with Colibri Factor Graph Engine and Isaac-GR00T policies.
+#      - Queries the GLM-5.3-Flash host over internal VPC at zero network cost.
+#
+# Both nodes share:
+#   - Software Profile: configs/workstations/boredengineering-dev.yaml
+#   - Model Profile: configs/models/complete-model-zoo.yaml
+#   - Subnet CIDR: 10.10.4.0/24 (Zero-cost, sub-millisecond internal VPC fabric)
+#   - GCP Dynamic Workload Scheduler (Flex-start) 7-day non-preemptible runtime
+# ==============================================================================
+schema_version: "v1alpha1"
+profile_name: "large-scale-studio-enterprise"
+description: "Large-Scale Studio Enterprise profile for high-throughput robotics runs & full GLM-5.3-Flash MoE model hosting (g4-standard-384 / g4-standard-48)"
+cloud: "gcp"
+
+# Top-Level Native Storage Configuration
+storage:
+  backend: "gcs"
+  bucket: "auto"               # Automatically plans, preflights, and provisions isaac-state-<hash>
+  models_bucket: "auto"        # Permanent global AI model archive bucket isaac-models-<hash>
+  prefix: "isaacautomator/v2"
+  namespace: "large-scale-studio"
+
+security:
+  tier: "enterprise"
+  network:
+    iap_only: false              # Direct external IP with strict firewall (avoids missing IAP IAM permissions)
+    cloud_nat: false             # Not required with external IP
+    ingress_cidrs: ["auto"]      # Auto-locks firewall to deployer client IP (/32)
+    subnet_cidr: "10.10.4.0/24"  # Dedicated workstation subnet inside the studio network
+  cryptography:
+    encryption_type: "managed"   # Google-managed encryption keys (zero KMS IAM permission required)
+    kms_keyring_name: "none"
+  compute:
+    scheduling: "flex_start"     # GCP Dynamic Workload Scheduler (Flex-start): queued GPU provisioning with 7-day runtime
+    max_run_duration_days: 7
+    secure_boot: false           # Disabled to allow NVIDIA driver DKMS kernel module to load
+    shielded_vm: true            # vTPM and Integrity Monitoring enabled
+    os_login: false              # Direct key-based IAP tunnel without corporate 2FA lockouts
+    service_account_type: "dedicated" # Principle of Least Privilege: dedicated IAM service account per node
+  secrets:
+    engine: "secret_manager"     # Centralized cloud secrets manager for registry tokens and credentials
+
+# Workstation Compute & Storage Configuration
+# Defaults to the flagship 8x GPU host shape; use --instance-type g4-standard-48 for the simulation runner.
+workstation:
+  gpu_model: "g4-standard-384"   # Flagship 8x GPU compute (384 vCPU, 8x NVIDIA RTX PRO 6000 768GB VRAM, 1.44TB RAM)
+  gpu_count: 8
+  boot_disk_size_gb: 500         # System, CUDA 13.x, Docker, Conda, Isaac Sim/Lab/Arena environments
+  software_profile: "configs/workstations/boredengineering-dev.yaml" # BoredEngineering fork stack tracking dev/0.3.0-prerelease
+  model_profile: "configs/models/complete-model-zoo.yaml"            # 17-model physical AI foundation catalog
+  models_disk:
+    enabled: true                # Dedicated high-throughput models volume mounted at /mnt/models_fast
+    size_gb: 1500                # 1.5 TB Hyperdisk Balanced for GLM-5.3-Flash (190 GB), GLM-5.3 (440 GB), and full zoo
+    type: "hyperdisk-balanced"
+    mount_point: "/mnt/models_fast"
+    hydrate_from_bucket: true    # Hydrates from gs://isaac-models-<hash>/models/ at 16 Gbps with HF Hub fallback
+    warmup_ram: true             # Locks GLM-5.3-Flash weights into Host RAM page cache via vmtouch
+  remote_desktop: "nomachine,novnc,kasmvnc" # Hardware-accelerated 3D viewport (NoMachine) + WebRTC (KasmVNC) + noVNC
+
+# Studio Architecture Integration Parameters
+studio_integration:
+  co_locate_nucleus: true
+  nucleus_host: "nucleus.studio.internal"       # Private DNS / IP of Nucleus Core & LFT cluster (Port 443/3100)
+  shared_storage:
+    provider: "filestore"                       # "filestore" (GCP), "efs" (AWS), or "netapp" (Azure)
+    mount_target: "10.10.5.2:/nucleus_assets"   # Internal storage subnet NFS export
+    mount_point: "/mnt/nucleus"                 # Local mount point for zero-latency USD asset streaming
+    nfs_version: "nfs4"                         # Sub-millisecond direct NFS mount
+  spot_resilience:
+    enabled: true                               # Spot/preemptible node with 30s preemption watchdog
+    continuous_sync_interval: "10m"             # Periodic checkpoint sync to GCS/S3 bucket
+
+# Multi-Node Cluster Topology Blueprint
+cluster_topology:
+  shared_subnet: "10.10.4.0/24"
+  shared_software_profile: "configs/workstations/boredengineering-dev.yaml"
+  shared_model_profile: "configs/models/complete-model-zoo.yaml"
+  nodes:
+    host_384:
+      description: "Flagship 8x GPU Model Host (GLM-5.3-Flash 321B MoE in VRAM)"
+      instance_type: "g4-standard-384"
+      gpu_count: 8
+      deploy_command: "./deploy-gcp --deployment-name scale-host-384 --profile large-scale-studio-enterprise --existing replace"
+      hydrate_command: "./download-models scale-host-384 --profile complete-model-zoo --models glm-5.3-flash --warmup-ram"
+      serving_port: 8000
+    runner_48:
+      description: "Simulation Runner (Isaac Sim 6.0.1 + IsaacLab-Arena RL Evaluation)"
+      instance_type: "g4-standard-48"
+      gpu_count: 1
+      deploy_command: "./deploy-gcp --deployment-name scale-runner-48 --profile large-scale-studio-enterprise --instance-type g4-standard-48 --isaac-workstation-gpu-count 1 --existing replace"
+      upstream_endpoint: "http://scale-host-384.internal:8000/v1"

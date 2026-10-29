@@ -145,8 +145,6 @@ models:
     repo_type: model
     revision: main
     destination: /mnt/models_fast/models/glm-5.3-flash
-    symlinks:
-      - /models/glm-5.3-flash
     allow_patterns:
       - "*.safetensors"
       - "*.json"
@@ -154,16 +152,14 @@ models:
       - "tokenizer*"
     ignore_patterns:
       - "*.bin"
-    min_disk_free_gb: 190
+    min_disk_free_gb: 310
 
   - name: glm-5.3
-    description: "744B MoE Flagship (42B active INT4 gs64, 141 shards, ~419 GB) — Frontier World Knowledge Ceiling (Colibri Engine)"
+    description: "744B MoE Flagship (141 shards, ~704 GB on HF Hub) — Frontier World Knowledge Ceiling (Colibri Engine)"
     repo_id: zai-org/GLM-5.3
     repo_type: model
     revision: main
     destination: /mnt/models_fast/models/glm-5.3
-    symlinks:
-      - /models/glm-5.3
     allow_patterns:
       - "*.safetensors"
       - "*.json"
@@ -172,7 +168,7 @@ models:
       - "tokenizer*"
     ignore_patterns:
       - "*.bin"
-    min_disk_free_gb: 440
+    min_disk_free_gb: 710
 
   # ===========================================================================
   # 2. Visual Critics, World Models & Geometric Oracles (Port 8001 / 8002)
@@ -184,7 +180,6 @@ models:
     revision: main
     destination: /mnt/models_fast/models/cosmos/Cosmos-Reason2-2B
     symlinks:
-      - /models/cosmos/Cosmos-Reason2-2B
       - /models/Cosmos-Reason2-2B
     allow_patterns:
       - "*.safetensors"
@@ -255,8 +250,7 @@ models:
     revision: main
     destination: /mnt/models_fast/models/gr00t/GR00T-N1.7-3B
     symlinks:
-      - /models/gr00t/GR00T-N1.7-3B
-      - ~/models/gr00t/GR00T-N1.7-3B
+      - /models/GR00T-N1.7-3B
     allow_patterns:
       - "*.safetensors"
       - "*.json"
@@ -267,12 +261,12 @@ models:
 
   - name: openpi-pi05-droid-jointpos
     description: "Policy beta: OpenPI pi0.5 Autoregressive/Flow Hybrid Diffusion (50 Hz jointpos, openpi-server Port 8008)"
-    repo_id: physical-intelligence/pi05_droid_jointpos
+    provider: gcs
+    repo_id: gs://openpi-assets/checkpoints/pi05_droid_jointpos
     repo_type: model
     revision: main
     destination: /mnt/models_fast/models/openpi/pi05_droid_jointpos
     symlinks:
-      - /models/openpi/pi05_droid_jointpos
       - ~/.cache/openpi/openpi-assets/checkpoints/pi05_droid_jointpos
     min_disk_free_gb: 20
 
@@ -283,8 +277,7 @@ models:
     revision: main
     destination: /mnt/models_fast/models/gr00t/GR00T-N1.6-DROID
     symlinks:
-      - /models/gr00t/GR00T-N1.6-DROID
-      - ~/models/gr00t/GR00T-N1.6-DROID
+      - /models/GR00T-N1.6-DROID
     allow_patterns:
       - "*.safetensors"
       - "*.json"

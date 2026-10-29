@@ -41,6 +41,7 @@ Isaac Automator categorizes infrastructure setups into three standardized securi
 | **Team** | [`team-studio.yaml`](team-studio.yaml) | *Depends on selected services* | Ephemeral public IP, firewall auto-locked to caller or team CIDRs | Built-in preset defaults local; legacy remote YAML execution is blocked | Cloud default encryption, Google Secret Manager | Small teams, shared projects, CI/CD runners |
 | **Enterprise** | [`enterprise-zero-trust.yaml`](enterprise-zero-trust.yaml) | **~$35 - $180+ / mo** | Zero Public IP (Cloud IAP TCP Tunnel only), Managed Cloud NAT Gateway | Built-in preset defaults local; legacy remote YAML execution is blocked | Regional KMS CMEK auto-rotation, Secret Manager, OS Login 2FA | Enterprise compliance, regulated industries, corporate perimeters |
 | **Studio Enterprise** | [`studio-enterprise.yaml`](studio-enterprise.yaml) | **~$35 - $180+ / mo** | Zero Public IP (Cloud IAP / SSM / Bastion), Managed Cloud NAT | Local only for execution; remote remains planned | Regional KMS CMEK auto-rotation, Secret Manager, OS Login 2FA | Production robotics studios co-located with Omniverse Nucleus & high-speed shared USD storage |
+| **Large-Scale Studio** | [`large-scale-studio-enterprise.yaml`](large-scale-studio-enterprise.yaml) | *Usage-based (Flex-start)* | Private subnet peering / /32 ingress | GCS (`auto`) | Cloud-native managed | Dual-node cluster: `g4-standard-48` (Simulation) + `g4-standard-384` (GLM-5.3-Flash 8x GPU MoE host) |
 | **Custom** | [`custom-developer.yaml`](custom-developer.yaml) | *Granular / Variable* | Selectable (IAP or Public /32 lock, Cloud NAT toggle) | Local execution; opt-in remote schema validation only | Selectable (`google_managed` or `kms_cmek`) | Hybrid setups balancing security, remote state, and cost |
 
 ---
@@ -177,6 +178,47 @@ To connect the deployed workstation to the studio's shared Filestore / EFS asset
 # Inside the workstation via SSH or IAP:
 sudo mkdir -p /mnt/nucleus
 sudo mount -t nfs 10.10.5.2:/nucleus_assets /mnt/nucleus
+```
+
+---
+
+### 4.4 Large-Scale Studio Enterprise Topology (`large-scale-studio-enterprise.yaml`)
+
+For frontier robotics workloads requiring both high-fidelity physics simulation and heavy cognitive foundation model inference, [`large-scale-studio-enterprise.yaml`](large-scale-studio-enterprise.yaml) provides a unified profile capable of provisioning either node in a dual-instance cluster:
+
+1. **Simulation Runner (`g4-standard-48`)**:
+   - **Hardware**: 1x NVIDIA RTX PRO 6000 (96 GB GDDR7 VRAM, 48 vCPU, 192 GB Host RAM).
+   - **Workload**: Isaac Sim 6.0.1 Standalone Kit, Isaac Lab v3, IsaacLab-Arena RL benchmark suite, Colibri factor graph engine, and local foundation policy server (Isaac-GR00T port 5556 / OpenPI port 8008).
+2. **Flagship Model Host (`g4-standard-384`)**:
+   - **Hardware**: 8x NVIDIA RTX PRO 6000 (8x 96 GB = **768 GB VRAM**, 384 vCPU, **1.44 TB Host RAM**).
+   - **Workload**: Hosts the full **GLM-5.3-Flash** (321B Multimodal MoE, 62 shards, 190 GB) in VRAM across Tensor Parallelism (`TP=8`) with zero-offload latency on Port 8000, plus high-concurrency visual critics & geometric oracles.
+3. **Interconnect & Shared Profiles**:
+   - Both nodes share `configs/workstations/boredengineering-dev.yaml` and `configs/models/complete-model-zoo.yaml`.
+   - Co-located in the same VPC subnet (`10.10.4.0/24`) so the simulation runner queries GLM-5.3-Flash over internal private IP with sub-millisecond latency and $0.00 network egress cost.
+
+#### Deploying the Dual-Node Setup
+
+```bash
+# 1. Deploy the 8x GPU Flagship Host (Hosts GLM-5.3-Flash)
+./deploy-gcp \
+  --deployment-name scale-host-384 \
+  --project my-gcp-project \
+  --zone us-central1-b \
+  --profile large-scale-studio-enterprise \
+  --existing replace
+
+# 2. Deploy the 1x GPU Simulation Runner (Isaac Sim + Arena Benchmarks)
+./deploy-gcp \
+  --deployment-name scale-runner-48 \
+  --project my-gcp-project \
+  --zone us-central1-b \
+  --profile large-scale-studio-enterprise \
+  --instance-type g4-standard-48 \
+  --isaac-workstation-gpu-count 1 \
+  --existing replace
+
+# 3. Download / Hydrate GLM-5.3-Flash on the 8x GPU Host
+./download-models scale-host-384 --profile complete-model-zoo --models glm-5.3-flash --warmup-ram
 ```
 
 ---

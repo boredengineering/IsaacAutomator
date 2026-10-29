@@ -161,3 +161,34 @@ variable "security_profile" {
   default     = "simple"
 }
 
+variable "boot_disk_size_gb" {
+  description = "Boot disk size in GB for OS, Docker, and Isaac software stack"
+  type        = number
+  default     = 300
+}
+
+variable "enable_models_disk" {
+  description = "Attach a dedicated secondary zonal persistent disk for AI/Robotics model weights (/mnt/models_fast)"
+  type        = bool
+  default     = false
+}
+
+variable "models_disk_size_gb" {
+  description = "Size in GB of the dedicated secondary models disk (/mnt/models_fast)"
+  type        = number
+  default     = 500
+}
+
+variable "models_disk_type" {
+  description = "Disk type for the secondary models disk (hyperdisk-balanced or pd-ssd)"
+  type        = string
+  default     = "hyperdisk-balanced"
+}
+
+variable "models_gcs_bucket" {
+  description = "Optional permanent GCS bucket name (e.g., isaac-models-<hash>) for hydrating and archiving model weights"
+  type        = string
+  default     = ""
+}
+
+
