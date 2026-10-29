@@ -29,7 +29,7 @@ Binary location: `isaac-installer/bin/isaac-installer` (or `/usr/local/bin/isaac
 Before running installations, probe the hardware and conflict matrix:
 
 ```bash
-cd /workspaces/IsaacAutomator/isaac-installer
+cd isaac-installer
 
 # 1. Probe CPU, RAM, NVMe SSDs, LVM, NVIDIA Blackwell/Ada GPUs, and Display:
 ./bin/isaac-installer doctor

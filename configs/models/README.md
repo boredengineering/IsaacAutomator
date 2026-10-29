@@ -50,9 +50,12 @@ models:
 
 ## Available Presets
 
+- `experiment-05-zoo.yaml`: Complete Experiment 05 Master Model Zoo (all 17 models across Roles 1, 2, and 3; ~1,038 GB).
+- `exp05-spec-llms.yaml`: Exp 05 Role 1 — Cognitive Specification Synthesizers (Qwen2.5/Qwen3/QwQ/DeepSeek-R1 on Port 8000 `arena-vllm-spec` + GLM-5.3/Flash on Colibrì; ~891 GB).
+- `exp05-visual-critics.yaml`: Exp 05 Role 2 — Visual Critics, World Models & Geometric Oracles (`Cosmos-Reason2-2B`, `Qwen2.5-VL-7B-Instruct`, `Qwen3-VL-32B-Thinking`, `DA3METRIC-LARGE`, `moge-2-vitl` on Ports 8001/8002; ~97 GB).
+- `gr00t-foundation.yaml`: Exp 05 Role 3 — Closed-Loop Foundation Robotics Policies (`GR00T-N1.7-3B`, `GR00T-N1.6-DROID`, `Cosmos-Reason2-2B` VLM backbone, and OpenPI `pi05_droid_jointpos` on Ports 5556/8008; ~58 GB).
 - `colibri-flash.yaml`: GLM-5.3-Flash 321B MoE multimodal weights (~182 GB) for Colibri runtime.
-- `colibri-streaming.yaml`: Full multi-shard layout for dual-NVMe bare-metal hosts or cloud high-throughput storage.
-- `gr00t-foundation.yaml`: Isaac-GR00T physical AI foundation model weights.
+- `colibri-streaming.yaml`: Full multi-shard layout (`GLM-5.3-Flash` + `GLM-5.3`) for dual-NVMe bare-metal hosts or cloud high-throughput storage (~630 GB).
 - `example-model.yaml`: Minimal reference template.
 
 ## CLI Usage

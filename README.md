@@ -100,13 +100,13 @@ Usage, keyboard shortcuts, current limitations, and developer reference:
 [`src/tui/README.md`](src/tui/README.md). This maintained guide is also the source
 material for future published Isaac9s documentation.
 
-Historical specification and architecture: [`.agents/references/plans/isaac9s-gui-plan.md`](file:///workspaces/IsaacAutomator/.agents/references/plans/isaac9s-gui-plan.md).
+Historical specification and architecture: [`.agents/references/plans/isaac9s-gui-plan.md`](.agents/references/plans/isaac9s-gui-plan.md).
 
 ---
 
 ## Bare-Metal Physical Workstations (`isaac-installer`)
 
-Located at [`isaac-installer/`](file:///workspaces/IsaacAutomator/isaac-installer/), **`isaac-installer`** is a zero-infrastructure, modular bash/CLI provisioner for physical Ubuntu 22.04 LTS workstations and on-premise GPU clusters.
+Located at [`isaac-installer/`](isaac-installer/), **`isaac-installer`** is a zero-infrastructure, modular bash/CLI provisioner for physical Ubuntu 22.04 LTS workstations and on-premise GPU clusters.
 
 - **Declarative YAML Profiles:** `default-profile.yaml` (clean daily driver), `minimal-headless.yaml` (CI/RL training nodes), and `full-ecosystem.yaml` (LeRobot, Arena, GR00T, VR gloves, SpaceMouse).
 - **Smart Git Discovery & Dual-Remote Fork Topology:** Discovers local codebases and configures `origin` (personal fork) + `upstream` (official NVIDIA/HF) automatically.
@@ -120,7 +120,7 @@ cd isaac-installer
 sudo ./bin/isaac-installer install # provision clean robotics workstation
 ```
 
-Full documentation: [`isaac-installer/README.md`](file:///workspaces/IsaacAutomator/isaac-installer/README.md).
+Full documentation: [`isaac-installer/README.md`](isaac-installer/README.md).
 
 ---
 

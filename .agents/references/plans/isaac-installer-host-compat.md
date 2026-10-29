@@ -417,7 +417,7 @@ flowchart TD
 ## 6. Next Steps & Review Checkpoints
 
 1. **Review and Tailor**:
-   * Review this completed plan at [`.agents/references/plans/isaac-installer-host-compat.md`](file:///workspaces/IsaacAutomator/.agents/references/plans/isaac-installer-host-compat.md).
+   * Review this completed plan at [`.agents/references/plans/isaac-installer-host-compat.md`](isaac-installer-host-compat.md).
    * Specify any modifications to port numbers (e.g. 5561 vs 5556), custom embodiment paths, or repo casing rules.
 2. **Execution Readiness**:
    * Once aligned, we will proceed to implement the updates in small, testable chunks:

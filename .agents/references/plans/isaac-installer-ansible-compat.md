@@ -10,10 +10,10 @@
 
 ## 1. Executive Summary & Strategic Rationale (The Cloud Advantage)
 
-While [`isaac-installer`](file:///workspaces/IsaacAutomator/isaac-installer) serves as a standalone bash provisioner for physical bare-metal machines, **Ansible provides structural advantages uniquely required for elastic public cloud deployment and multi-cloud image lifecycle management**:
+While [`isaac-installer`](../../../isaac-installer) serves as a standalone bash provisioner for physical bare-metal machines, **Ansible provides structural advantages uniquely required for elastic public cloud deployment and multi-cloud image lifecycle management**:
 
 1. **Pre-Baked Cloud Images (HashiCorp Packer Integration)**:
-   * Isaac Automator builds custom cloud images ([`./image-gcp`](file:///workspaces/IsaacAutomator/image-gcp), [`./image-aws`](file:///workspaces/IsaacAutomator/image-aws)) using HashiCorp Packer (`src/packer/`).
+   * Isaac Automator builds custom cloud images ([`./image-gcp`](../../../image-gcp), [`./image-aws`](../../../image-aws)) using HashiCorp Packer (`src/packer/`).
    * Ansible plays run natively inside Packer builds using tagged role execution (`tags: skip_in_image`, `tags: on_stop_start`).
    * By replicating all installer capabilities into native Ansible roles, the complete Conda runtime, Isaac Sim 6.0.1 binaries, Isaac Lab v3, Arena WBC solvers, and GR00T foundation model caches are pre-baked into golden images. This cuts workstation provisioning time from **45–60+ minutes to under 3 minutes**.
 2. **Agentless & Zero-Footprint Orchestration**:
@@ -21,7 +21,7 @@ While [`isaac-installer`](file:///workspaces/IsaacAutomator/isaac-installer) ser
 3. **Declarative Idempotency & State Invariants**:
    * Ansible's state declarations (`state: present`, `state: link`, `stat`, `lineinfile`, `template`) prevent script regressions, catch partial failure states, and guarantee convergent state across repeated executions.
 4. **Surgical Lifecycle Hooks & Lifecyle Tagging**:
-   * Fast boot updates ([`./start --quick`](file:///workspaces/IsaacAutomator/start) invoking `-t __autorun`).
+   * Fast boot updates ([`./start --quick`](../../../start) invoking `-t __autorun`).
    * Dynamic GPU bus ID remapping and persistent disk mounting (`-t on_stop_start`).
    * Component-isolated upgrades (`-t __arena`, `-t __gr00t`, `-t __neo4j`, `-t __verify`).
 5. **Native Cloud Secret & Parameter Templating**:
@@ -35,30 +35,30 @@ While [`isaac-installer`](file:///workspaces/IsaacAutomator/isaac-installer) ser
 
 ## 2. Capability Mapping: `isaac-installer` Modules to Native Ansible Roles
 
-The following table maps every subsystem from [`isaac-installer/`](file:///workspaces/IsaacAutomator/isaac-installer) to its corresponding native Ansible role in [`src/ansible/roles/`](file:///workspaces/IsaacAutomator/src/ansible/roles/):
+The following table maps every subsystem from [`isaac-installer/`](../../../isaac-installer) to its corresponding native Ansible role in [`src/ansible/roles/`](../../../src/ansible/roles/):
 
 | `isaac-installer` Subsystem | Source Module | Target Ansible Role | Native Ansible Replication Design & Features |
 | :--- | :--- | :--- | :--- |
-| **Hybrid Conda + UV Runtime** | `lib/modules/conda.sh` | [**`roles/conda`**](file:///workspaces/IsaacAutomator/src/ansible/roles/conda) | - Installs Miniconda3 into `/home/{{ ansible_user }}/miniconda3`.<br>- Declaratively provisions named `isaaclab` environment (Python 3.12).<br>- Installs `uv` for ultra-fast package resolution.<br>- Dynamically queries `nvidia-smi` compute capability; resolves `torch==2.10.0+cu128` on Blackwell (`sm_120`) vs `cu124` on Ada/Hopper.<br>- Deploys properly escaped `/usr/local/bin/isaaclab-env` CLI runner with candidate search fallback.<br>- Injects dynamic Vulkan ICD probing hook (`activate.d/vulkan_icd.sh`).<br>- Injects deactivation hook (`deactivate.d/cleanup_pythonpath.sh`) preventing Omniverse Kit CP312 PYTHONPATH leakage. |
-| **Sim Multi-Version Switcher** | `lib/modules/isaacsim.sh` | [**`roles/isaacsim-source`**](file:///workspaces/IsaacAutomator/src/ansible/roles/isaacsim-source) | - Organizes builds under `/opt/nvidia/isaac-sim/releases/{{ isaacsim_version }}` (default 6.0.1).<br>- Manages atomic symlink to `/home/{{ ansible_user }}/IsaacSim`.<br>- Deploys sanitized `setup_conda_env.sh` (stripping Kit stdlib from `PYTHONPATH`).<br>- Deploys 7-line `isaacsim_standalone.pth` to Conda site-packages.<br>- Pins active GPU to index 0 (`--/renderer/activeGpu=0`) for Vulkan cloud safety. |
-| **Isaac Lab & Dual Remotes** | `lib/modules/isaaclab.sh`<br>`lib/core/git_workspace.sh` | [**`roles/isaaclab-source`**](file:///workspaces/IsaacAutomator/src/ansible/roles/isaaclab-source) | - Clones Isaac Lab v3 (`v3.0.0-beta2`) into `~/Documents/GitHub/{{ isaaclab_org }}/IsaacLab`.<br>- Configures Dual-Remote Git Topology (`origin` = fork, `upstream` = official `isaac-sim/IsaacLab`).<br>- Injects pushRemote protection (`git config branch.main.pushRemote origin`).<br>- Installs into named Conda environment via `isaaclab-env` / `./isaaclab.sh --conda isaaclab`. |
-| **IsaacLab-Arena Benchmarks** | `lib/modules/isaaclab_arena.sh` | [**`roles/isaaclab-arena-source`**](file:///workspaces/IsaacAutomator/src/ansible/roles/isaaclab-arena-source) | - Clones `release/0.3.0-prerelease` (or `dev/arena_v0.3.0-compat`).<br>- Synchronizes nested submodules under clean detached HEAD / forked branches.<br>- Executes editable installs across 8 root packages (`isaaclab_arena`, `_gr00t`, `_g1`, etc.).<br>- Provisions Whole-Body Control (WBC) kinematics stack: `cmeel`, `pin-pink`, `libpinocchio`, `qpsolvers`, `daqp`, `osqp`, `mujoco`.<br>- Automated submodule disaster recovery. |
-| **Isaac-GR00T Foundation Stack** | `lib/modules/gr00t.sh` | [**`roles/gr00t`**](file:///workspaces/IsaacAutomator/src/ansible/roles/gr00t) | - Clones `Isaac-GR00T` (`dev/arena_v0.3.0-compat` on commit `7b8f37e`).<br>- Dual-mode serving: **Native host process on Port 5556** vs **Containerized daemon on Port 5561** (`isaac-gr00t-container.service.j2`).<br>- Injects `uv sync` lockfile downgrade guard (`--no-install-package torch --no-install-package torchvision`).<br>- Pre-caches model weights under `/home/{{ ansible_user }}/models/isaaclab_arena`. |
-| **Graph-RAG Knowledge Memory** | `lib/modules/neo4j.sh` | [**`roles/neo4j`**](file:///workspaces/IsaacAutomator/src/ansible/roles/neo4j) | - Deploys containerized Neo4j 5.26 Community (`neo4j:5.26-community`).<br>- Maps HTTP Browser on **Port 7475** (host 7474) and Bolt Protocol on **Port 7688** (host 7687).<br>- Mounts persistent volume `/home/{{ ansible_user }}/data/neo4j`.<br>- Deploys systemd user service `neo4j-arena.service.j2` with APOC plugins enabled. |
-| **LeRobot Teleoperation Stack** | `lib/modules/ecosystem.sh` | [**`roles/lerobot`**](file:///workspaces/IsaacAutomator/src/ansible/roles/lerobot) | - Clones Hugging Face LeRobot repository.<br>- Installs editable package with camera teleop calibration (`.[feetech,realsense]`).<br>- Adds desktop launcher for real-time visualization. |
-| **Unified Cloud Hubs & Auth** | `lib/modules/auth.sh` | [**`roles/auth`**](file:///workspaces/IsaacAutomator/src/ansible/roles/auth) | - Adds user to hardware groups (`dialout`, `plugdev`, `input`, `video`, `docker`).<br>- Configures `~/.gitconfig` user identity (`user.name`, `user.email`).<br>- Injects credentials for Hugging Face, NGC (`nvcr.io`), Weights & Biases, and GitHub CLI from Secret Manager or environment variables. |
-| **Hardware & Teleop Invariants** | `lib/modules/hardware_teleop.sh` | [**`roles/hardware-teleop`**](file:///workspaces/IsaacAutomator/src/ansible/roles/hardware-teleop) | - Installs `/etc/udev/rules.d/99-ftdi-latency.rules` setting 1ms latency timer across `DRIVER=="ftdi_sio"`, `KERNEL=="ttyUSB*"`, and `KERNEL=="ttyACM*"`.<br>- Deploys 3Dconnexion SpaceMouse daemon (`spacenavd`).<br>- Installs Intel RealSense SDK 2.0 (`librealsense2`). |
-| **State Ledger & Drift Healing** | `lib/core/state.sh`<br>`lib/core/audit.sh` | [**`roles/state-ledger`**](file:///workspaces/IsaacAutomator/src/ansible/roles/state-ledger) | - Generates `/home/{{ ansible_user }}/.isaac-state.json` recording driver, CUDA, active git refs, and udev rules.<br>- Implements verification tasks (`tags: __verify`) detecting drift.<br>- Deploys automated self-healing task executed on VM boot (`tags: __autorun`, `tags: on_stop_start`). |
-| **Storage & Dev Tools** | `lib/modules/dev_tools.sh`<br>`system_prereqs.sh` | [**`roles/system`**](file:///workspaces/IsaacAutomator/src/ansible/roles/system) | - Installs NVMe management tools (`nvme-cli`, `smartmontools`, `fio`, `iotop`).<br>- Installs VS Code, Chromium, Node.js LTS, and GitHub Desktop GUI.<br>- Installs Cloud CLIs (AWS, GCP, Azure, Alibaba) and `uv`.<br>- Pre-emptively scaffolds host directories (`tasks/directories.yml`) with user ownership. |
-| **Out-of-the-Box Demos** | `lib/modules/demos.sh` | [**`roles/demos`**](file:///workspaces/IsaacAutomator/src/ansible/roles/demos) | - Desktop shortcuts for Unitree G1 humanoid (single-thread Pinocchio WBC guard `--num_envs 1`), Unitree Go2 quadruped, Franka manipulation, Arena Benchmark Kit, and GR00T Policy Server.<br>- Harmonizes connection to Port 5556 (native) and Port 5561 (container). |
-| **GPU Drivers & Kernel** | `lib/modules/system.sh` | [**`roles/nvidia-driver`**](file:///workspaces/IsaacAutomator/src/ansible/roles/nvidia-driver) | - Installs NVIDIA Data Center / Production drivers (580/550) and CUDA Toolkit.<br>- Dynamic compute capability probe sets `cuda_wheel_flavor` (`cu128` vs `cu124`).<br>- Configures ECC toggling and safe reboot handlers. |
-| **Workstation Lifecycle** | `lib/core/` lifecycle | [**`roles/isaac-workstation`**](file:///workspaces/IsaacAutomator/src/ansible/roles/isaac-workstation) | - Orchestrates all 14 role dependencies in topological order.<br>- Deploys preemption watchdog, cloud backup timer, and autorun hooks. |
+| **Hybrid Conda + UV Runtime** | `lib/modules/conda.sh` | [**`roles/conda`**](../../../src/ansible/roles/conda) | - Installs Miniconda3 into `/home/{{ ansible_user }}/miniconda3`.<br>- Declaratively provisions named `isaaclab` environment (Python 3.12).<br>- Installs `uv` for ultra-fast package resolution.<br>- Dynamically queries `nvidia-smi` compute capability; resolves `torch==2.10.0+cu128` on Blackwell (`sm_120`) vs `cu124` on Ada/Hopper.<br>- Deploys properly escaped `/usr/local/bin/isaaclab-env` CLI runner with candidate search fallback.<br>- Injects dynamic Vulkan ICD probing hook (`activate.d/vulkan_icd.sh`).<br>- Injects deactivation hook (`deactivate.d/cleanup_pythonpath.sh`) preventing Omniverse Kit CP312 PYTHONPATH leakage. |
+| **Sim Multi-Version Switcher** | `lib/modules/isaacsim.sh` | [**`roles/isaacsim-source`**](../../../src/ansible/roles/isaacsim-source) | - Organizes builds under `/opt/nvidia/isaac-sim/releases/{{ isaacsim_version }}` (default 6.0.1).<br>- Manages atomic symlink to `/home/{{ ansible_user }}/IsaacSim`.<br>- Deploys sanitized `setup_conda_env.sh` (stripping Kit stdlib from `PYTHONPATH`).<br>- Deploys 7-line `isaacsim_standalone.pth` to Conda site-packages.<br>- Pins active GPU to index 0 (`--/renderer/activeGpu=0`) for Vulkan cloud safety. |
+| **Isaac Lab & Dual Remotes** | `lib/modules/isaaclab.sh`<br>`lib/core/git_workspace.sh` | [**`roles/isaaclab-source`**](../../../src/ansible/roles/isaaclab-source) | - Clones Isaac Lab v3 (`v3.0.0-beta2`) into `~/Documents/GitHub/{{ isaaclab_org }}/IsaacLab`.<br>- Configures Dual-Remote Git Topology (`origin` = fork, `upstream` = official `isaac-sim/IsaacLab`).<br>- Injects pushRemote protection (`git config branch.main.pushRemote origin`).<br>- Installs into named Conda environment via `isaaclab-env` / `./isaaclab.sh --conda isaaclab`. |
+| **IsaacLab-Arena Benchmarks** | `lib/modules/isaaclab_arena.sh` | [**`roles/isaaclab-arena-source`**](../../../src/ansible/roles/isaaclab-arena-source) | - Clones `release/0.3.0-prerelease` (or `dev/arena_v0.3.0-compat`).<br>- Synchronizes nested submodules under clean detached HEAD / forked branches.<br>- Executes editable installs across 8 root packages (`isaaclab_arena`, `_gr00t`, `_g1`, etc.).<br>- Provisions Whole-Body Control (WBC) kinematics stack: `cmeel`, `pin-pink`, `libpinocchio`, `qpsolvers`, `daqp`, `osqp`, `mujoco`.<br>- Automated submodule disaster recovery. |
+| **Isaac-GR00T Foundation Stack** | `lib/modules/gr00t.sh` | [**`roles/gr00t`**](../../../src/ansible/roles/gr00t) | - Clones `Isaac-GR00T` (`dev/arena_v0.3.0-compat` on commit `7b8f37e`).<br>- Dual-mode serving: **Native host process on Port 5556** vs **Containerized daemon on Port 5561** (`isaac-gr00t-container.service.j2`).<br>- Injects `uv sync` lockfile downgrade guard (`--no-install-package torch --no-install-package torchvision`).<br>- Pre-caches model weights under `/home/{{ ansible_user }}/models/isaaclab_arena`. |
+| **Graph-RAG Knowledge Memory** | `lib/modules/neo4j.sh` | [**`roles/neo4j`**](../../../src/ansible/roles/neo4j) | - Deploys containerized Neo4j 5.26 Community (`neo4j:5.26-community`).<br>- Maps HTTP Browser on **Port 7475** (host 7474) and Bolt Protocol on **Port 7688** (host 7687).<br>- Mounts persistent volume `/home/{{ ansible_user }}/data/neo4j`.<br>- Deploys systemd user service `neo4j-arena.service.j2` with APOC plugins enabled. |
+| **LeRobot Teleoperation Stack** | `lib/modules/ecosystem.sh` | [**`roles/lerobot`**](../../../src/ansible/roles/lerobot) | - Clones Hugging Face LeRobot repository.<br>- Installs editable package with camera teleop calibration (`.[feetech,realsense]`).<br>- Adds desktop launcher for real-time visualization. |
+| **Unified Cloud Hubs & Auth** | `lib/modules/auth.sh` | [**`roles/auth`**](../../../src/ansible/roles/auth) | - Adds user to hardware groups (`dialout`, `plugdev`, `input`, `video`, `docker`).<br>- Configures `~/.gitconfig` user identity (`user.name`, `user.email`).<br>- Injects credentials for Hugging Face, NGC (`nvcr.io`), Weights & Biases, and GitHub CLI from Secret Manager or environment variables. |
+| **Hardware & Teleop Invariants** | `lib/modules/hardware_teleop.sh` | [**`roles/hardware-teleop`**](../../../src/ansible/roles/hardware-teleop) | - Installs `/etc/udev/rules.d/99-ftdi-latency.rules` setting 1ms latency timer across `DRIVER=="ftdi_sio"`, `KERNEL=="ttyUSB*"`, and `KERNEL=="ttyACM*"`.<br>- Deploys 3Dconnexion SpaceMouse daemon (`spacenavd`).<br>- Installs Intel RealSense SDK 2.0 (`librealsense2`). |
+| **State Ledger & Drift Healing** | `lib/core/state.sh`<br>`lib/core/audit.sh` | [**`roles/state-ledger`**](../../../src/ansible/roles/state-ledger) | - Generates `/home/{{ ansible_user }}/.isaac-state.json` recording driver, CUDA, active git refs, and udev rules.<br>- Implements verification tasks (`tags: __verify`) detecting drift.<br>- Deploys automated self-healing task executed on VM boot (`tags: __autorun`, `tags: on_stop_start`). |
+| **Storage & Dev Tools** | `lib/modules/dev_tools.sh`<br>`system_prereqs.sh` | [**`roles/system`**](../../../src/ansible/roles/system) | - Installs NVMe management tools (`nvme-cli`, `smartmontools`, `fio`, `iotop`).<br>- Installs VS Code, Chromium, Node.js LTS, and GitHub Desktop GUI.<br>- Installs Cloud CLIs (AWS, GCP, Azure, Alibaba) and `uv`.<br>- Pre-emptively scaffolds host directories (`tasks/directories.yml`) with user ownership. |
+| **Out-of-the-Box Demos** | `lib/modules/demos.sh` | [**`roles/demos`**](../../../src/ansible/roles/demos) | - Desktop shortcuts for Unitree G1 humanoid (single-thread Pinocchio WBC guard `--num_envs 1`), Unitree Go2 quadruped, Franka manipulation, Arena Benchmark Kit, and GR00T Policy Server.<br>- Harmonizes connection to Port 5556 (native) and Port 5561 (container). |
+| **GPU Drivers & Kernel** | `lib/modules/system.sh` | [**`roles/nvidia-driver`**](../../../src/ansible/roles/nvidia-driver) | - Installs NVIDIA Data Center / Production drivers (580/550) and CUDA Toolkit.<br>- Dynamic compute capability probe sets `cuda_wheel_flavor` (`cu128` vs `cu124`).<br>- Configures ECC toggling and safe reboot handlers. |
+| **Workstation Lifecycle** | `lib/core/` lifecycle | [**`roles/isaac-workstation`**](../../../src/ansible/roles/isaac-workstation) | - Orchestrates all 14 role dependencies in topological order.<br>- Deploys preemption watchdog, cloud backup timer, and autorun hooks. |
 
 ---
 
 ## 3. Architecture of the Native Cloud Ansible Engine
 
-The 14 roles execute in 5 sequential stages, wired via [`roles/isaac-workstation/meta/main.yml`](file:///workspaces/IsaacAutomator/src/ansible/roles/isaac-workstation/meta/main.yml):
+The 14 roles execute in 5 sequential stages, wired via [`roles/isaac-workstation/meta/main.yml`](../../../src/ansible/roles/isaac-workstation/meta/main.yml):
 
 ```mermaid
 flowchart TB
@@ -106,7 +106,7 @@ flowchart TB
 ## 4. Detailed Specification of the Dedicated Roles
 
 ### 4.1 Role: `roles/conda` (Runtime Environment & Hardware-Adaptive PyTorch)
-* **Directory**: [`src/ansible/roles/conda/`](file:///workspaces/IsaacAutomator/src/ansible/roles/conda)
+* **Directory**: [`src/ansible/roles/conda/`](../../../src/ansible/roles/conda)
 * **Tasks (`tasks/main.yml`)**:
   1. Download and install Miniconda3 into `/home/{{ ansible_user }}/miniconda3`.
   2. Configure Conda channels and auto-accept Terms of Service (`CONDA_PLUGINS_AUTO_ACCEPT_TOS=true`).
@@ -131,7 +131,7 @@ flowchart TB
   8. Deploy deactivation hook `etc/conda/deactivate.d/cleanup_pythonpath.sh` ensuring Omniverse Kit's internal Python packages never pollute the host environment.
 
 ### 4.2 Role: `roles/auth` (Unified Cloud Hubs & Hardware Identity)
-* **Directory**: [`src/ansible/roles/auth/`](file:///workspaces/IsaacAutomator/src/ansible/roles/auth)
+* **Directory**: [`src/ansible/roles/auth/`](../../../src/ansible/roles/auth)
 * **Tasks (`tasks/main.yml`)**:
   1. Ensure user is a member of hardware groups: `dialout`, `plugdev`, `input`, `video`, `docker`.
   2. Configure `~/.gitconfig` with `git_user_name` and `git_user_email`.
@@ -141,7 +141,7 @@ flowchart TB
   6. If `github_token` is defined, configure GitHub CLI: `echo "{{ github_token }}" | gh auth login --with-token`.
 
 ### 4.3 Role: `roles/gr00t` (NVIDIA Isaac-GR00T Foundation Model Stack)
-* **Directory**: [`src/ansible/roles/gr00t/`](file:///workspaces/IsaacAutomator/src/ansible/roles/gr00t)
+* **Directory**: [`src/ansible/roles/gr00t/`](../../../src/ansible/roles/gr00t)
 * **Variables (`defaults/main.yml`)**:
   ```yaml
   install_gr00t: false
@@ -167,7 +167,7 @@ flowchart TB
   6. Deploy desktop shortcut `Isaac-GR00T-Server.desktop`.
 
 ### 4.4 Role: `roles/neo4j` (Graph-RAG 3D Scene Memory Orchestration)
-* **Directory**: [`src/ansible/roles/neo4j/`](file:///workspaces/IsaacAutomator/src/ansible/roles/neo4j)
+* **Directory**: [`src/ansible/roles/neo4j/`](../../../src/ansible/roles/neo4j)
 * **Variables (`defaults/main.yml`)**:
   ```yaml
   enable_neo4j: true
@@ -185,14 +185,14 @@ flowchart TB
   5. Verify connectivity on Bolt protocol port 7688 and HTTP browser port 7475.
 
 ### 4.5 Role: `roles/lerobot` (Hugging Face LeRobot Ecosystem)
-* **Directory**: [`src/ansible/roles/lerobot/`](file:///workspaces/IsaacAutomator/src/ansible/roles/lerobot)
+* **Directory**: [`src/ansible/roles/lerobot/`](../../../src/ansible/roles/lerobot)
 * **Tasks (`tasks/main.yml`)**:
   1. Clone `lerobot` into `~/Documents/GitHub/{{ lerobot_org | default('huggingface') }}/lerobot`.
   2. Install LeRobot in editable mode: `isaaclab-env pip install -e ".[feetech,realsense]"`.
   3. Deploy desktop launcher `LeRobot-Teleop.desktop`.
 
 ### 4.6 Role: `roles/hardware-teleop` (Robotics Teleop & Serial Invariants)
-* **Directory**: [`src/ansible/roles/hardware-teleop/`](file:///workspaces/IsaacAutomator/src/ansible/roles/hardware-teleop)
+* **Directory**: [`src/ansible/roles/hardware-teleop/`](../../../src/ansible/roles/hardware-teleop)
 * **Tasks (`tasks/main.yml`)**:
   1. Deploy `/etc/udev/rules.d/99-ftdi-latency.rules` setting 1ms latency timer across all serial interfaces:
      ```udev
@@ -205,7 +205,7 @@ flowchart TB
   4. Install Intel RealSense SDK packages (`librealsense2-utils`, `librealsense2-udev-rules`).
 
 ### 4.7 Role: `roles/state-ledger` (State Tracking & Startup Self-Healing)
-* **Directory**: [`src/ansible/roles/state-ledger/`](file:///workspaces/IsaacAutomator/src/ansible/roles/state-ledger)
+* **Directory**: [`src/ansible/roles/state-ledger/`](../../../src/ansible/roles/state-ledger)
 * **Tasks (`tasks/main.yml`)**:
   1. Gather software versions (NVIDIA driver, CUDA, Isaac Sim ref, Isaac Lab ref, Arena ref, GR00T ref, active Git branch `dev/0.3.0-prerelease`).
   2. Generate `/home/{{ ansible_user }}/.isaac-state.json` recording installed state ledger.
@@ -284,25 +284,25 @@ flowchart TB
 
 ## 6. Implementation Status Matrix
 
-All 14 native Ansible roles have been implemented, integrated into [`roles/isaac-workstation/meta/main.yml`](file:///workspaces/IsaacAutomator/src/ansible/roles/isaac-workstation/meta/main.yml), and verified:
+All 14 native Ansible roles have been implemented, integrated into [`roles/isaac-workstation/meta/main.yml`](../../../src/ansible/roles/isaac-workstation/meta/main.yml), and verified:
 
 | Stage | Role Name | Target Directory / Files | Status | Verification Mechanism |
 | :--- | :--- | :--- | :---: | :--- |
-| **Stage 1** | `roles/system` | [`src/ansible/roles/system/`](file:///workspaces/IsaacAutomator/src/ansible/roles/system)<br>`tasks/directories.yml` | **100% Complete** | Pre-creates host hierarchy; installs NVMe tools & Node.js LTS. Verified via `ansible-playbook --syntax-check`. |
-| **Stage 1** | `roles/auth` | [`src/ansible/roles/auth/`](file:///workspaces/IsaacAutomator/src/ansible/roles/auth) | **100% Complete** | Manages hardware groups (`docker`, `dialout`), Git identity, and cloud API tokens. |
-| **Stage 1** | `roles/nvidia-driver` | [`src/ansible/roles/nvidia-driver/`](file:///workspaces/IsaacAutomator/src/ansible/roles/nvidia-driver) | **100% Complete** | Driver 580/550 + CUDA; dynamically probes compute capability (`sm_120` vs `sm_89`). |
-| **Stage 1** | `roles/remote-desktop`| [`src/ansible/roles/remote-desktop/`](file:///workspaces/IsaacAutomator/src/ansible/roles/remote-desktop) | **100% Complete** | Configures Xorg dummy display, dynamic bus IDs, NoMachine, noVNC. |
-| **Stage 2** | `roles/conda` | [`src/ansible/roles/conda/`](file:///workspaces/IsaacAutomator/src/ansible/roles/conda)<br>`templates/isaaclab-env.j2` | **100% Complete** | Miniconda3, named `isaaclab` env, `cu128`/`cu124` dynamic PyTorch, escaped shim. |
-| **Stage 2** | `roles/hardware-teleop`| [`src/ansible/roles/hardware-teleop/`](file:///workspaces/IsaacAutomator/src/ansible/roles/hardware-teleop)<br>`files/99-ftdi-latency.rules` | **100% Complete** | 1ms latency timer across `ftdi_sio`, `ttyUSB*`, and `ttyACM*`. SpaceMouse + RealSense. |
-| **Stage 2** | `roles/isaacsim-source`| [`src/ansible/roles/isaacsim-source/`](file:///workspaces/IsaacAutomator/src/ansible/roles/isaacsim-source) | **100% Complete** | Isaac Sim 6.0.1 releases layout, sanitized `setup_conda_env.sh`, 7-line `.pth`. |
-| **Stage 3** | `roles/isaaclab-source`| [`src/ansible/roles/isaaclab-source/`](file:///workspaces/IsaacAutomator/src/ansible/roles/isaaclab-source) | **100% Complete** | Isaac Lab v3 (`v3.0.0-beta2`), Dual-Remote Git topology (`origin`/`upstream`). |
-| **Stage 3** | `roles/isaaclab-arena-source` | [`src/ansible/roles/isaaclab-arena-source/`](file:///workspaces/IsaacAutomator/src/ansible/roles/isaaclab-arena-source) | **100% Complete** | Arena 0.3.0-prerelease modular install + WBC solvers (`pin-pink`, `daqp`, `osqp`). |
-| **Stage 4** | `roles/neo4j` | [`src/ansible/roles/neo4j/`](file:///workspaces/IsaacAutomator/src/ansible/roles/neo4j)<br>`templates/neo4j-arena.service.j2` | **100% Complete** | Neo4j 5.26 containerized Graph-RAG on ports 7475/7688 with persistent host mount. |
-| **Stage 4** | `roles/gr00t` | [`src/ansible/roles/gr00t/`](file:///workspaces/IsaacAutomator/src/ansible/roles/gr00t)<br>`templates/isaac-gr00t-container.service.j2` | **100% Complete** | Dual-mode serving (Port 5556 native / Port 5561 container) + UV lockfile guard. |
-| **Stage 4** | `roles/lerobot` | [`src/ansible/roles/lerobot/`](file:///workspaces/IsaacAutomator/src/ansible/roles/lerobot) | **100% Complete** | LeRobot editable install, teleop camera calibration, desktop visualizer. |
-| **Stage 4** | `roles/demos` | [`src/ansible/roles/demos/`](file:///workspaces/IsaacAutomator/src/ansible/roles/demos)<br>`templates/arena-gr00t.sh.j2` | **100% Complete** | Desktop launchers, single-thread Pinocchio WBC guard (`--num_envs 1`), Port 5556. |
-| **Stage 5** | `roles/state-ledger` | [`src/ansible/roles/state-ledger/`](file:///workspaces/IsaacAutomator/src/ansible/roles/state-ledger) | **100% Complete** | Software state tracking, `.isaac-state.json`, boot-time drift reconciliation. |
-| **Stage 5** | `roles/isaac-workstation` | [`src/ansible/roles/isaac-workstation/`](file:///workspaces/IsaacAutomator/src/ansible/roles/isaac-workstation) | **100% Complete** | Master meta-role dependency coordinator, backup timers, preemption watchdog. |
+| **Stage 1** | `roles/system` | [`src/ansible/roles/system/`](../../../src/ansible/roles/system)<br>`tasks/directories.yml` | **100% Complete** | Pre-creates host hierarchy; installs NVMe tools & Node.js LTS. Verified via `ansible-playbook --syntax-check`. |
+| **Stage 1** | `roles/auth` | [`src/ansible/roles/auth/`](../../../src/ansible/roles/auth) | **100% Complete** | Manages hardware groups (`docker`, `dialout`), Git identity, and cloud API tokens. |
+| **Stage 1** | `roles/nvidia-driver` | [`src/ansible/roles/nvidia-driver/`](../../../src/ansible/roles/nvidia-driver) | **100% Complete** | Driver 580/550 + CUDA; dynamically probes compute capability (`sm_120` vs `sm_89`). |
+| **Stage 1** | `roles/remote-desktop`| [`src/ansible/roles/remote-desktop/`](../../../src/ansible/roles/remote-desktop) | **100% Complete** | Configures Xorg dummy display, dynamic bus IDs, NoMachine, noVNC. |
+| **Stage 2** | `roles/conda` | [`src/ansible/roles/conda/`](../../../src/ansible/roles/conda)<br>`templates/isaaclab-env.j2` | **100% Complete** | Miniconda3, named `isaaclab` env, `cu128`/`cu124` dynamic PyTorch, escaped shim. |
+| **Stage 2** | `roles/hardware-teleop`| [`src/ansible/roles/hardware-teleop/`](../../../src/ansible/roles/hardware-teleop)<br>`files/99-ftdi-latency.rules` | **100% Complete** | 1ms latency timer across `ftdi_sio`, `ttyUSB*`, and `ttyACM*`. SpaceMouse + RealSense. |
+| **Stage 2** | `roles/isaacsim-source`| [`src/ansible/roles/isaacsim-source/`](../../../src/ansible/roles/isaacsim-source) | **100% Complete** | Isaac Sim 6.0.1 releases layout, sanitized `setup_conda_env.sh`, 7-line `.pth`. |
+| **Stage 3** | `roles/isaaclab-source`| [`src/ansible/roles/isaaclab-source/`](../../../src/ansible/roles/isaaclab-source) | **100% Complete** | Isaac Lab v3 (`v3.0.0-beta2`), Dual-Remote Git topology (`origin`/`upstream`). |
+| **Stage 3** | `roles/isaaclab-arena-source` | [`src/ansible/roles/isaaclab-arena-source/`](../../../src/ansible/roles/isaaclab-arena-source) | **100% Complete** | Arena 0.3.0-prerelease modular install + WBC solvers (`pin-pink`, `daqp`, `osqp`). |
+| **Stage 4** | `roles/neo4j` | [`src/ansible/roles/neo4j/`](../../../src/ansible/roles/neo4j)<br>`templates/neo4j-arena.service.j2` | **100% Complete** | Neo4j 5.26 containerized Graph-RAG on ports 7475/7688 with persistent host mount. |
+| **Stage 4** | `roles/gr00t` | [`src/ansible/roles/gr00t/`](../../../src/ansible/roles/gr00t)<br>`templates/isaac-gr00t-container.service.j2` | **100% Complete** | Dual-mode serving (Port 5556 native / Port 5561 container) + UV lockfile guard. |
+| **Stage 4** | `roles/lerobot` | [`src/ansible/roles/lerobot/`](../../../src/ansible/roles/lerobot) | **100% Complete** | LeRobot editable install, teleop camera calibration, desktop visualizer. |
+| **Stage 4** | `roles/demos` | [`src/ansible/roles/demos/`](../../../src/ansible/roles/demos)<br>`templates/arena-gr00t.sh.j2` | **100% Complete** | Desktop launchers, single-thread Pinocchio WBC guard (`--num_envs 1`), Port 5556. |
+| **Stage 5** | `roles/state-ledger` | [`src/ansible/roles/state-ledger/`](../../../src/ansible/roles/state-ledger) | **100% Complete** | Software state tracking, `.isaac-state.json`, boot-time drift reconciliation. |
+| **Stage 5** | `roles/isaac-workstation` | [`src/ansible/roles/isaac-workstation/`](../../../src/ansible/roles/isaac-workstation) | **100% Complete** | Master meta-role dependency coordinator, backup timers, preemption watchdog. |
 
 ---
 
@@ -378,6 +378,6 @@ All 14 native Ansible roles have been implemented, integrated into [`roles/isaac
 ## 8. Next Operational Milestone
 
 With all 14 roles implemented, verified, and syntax-checked against the Ansible engine, the active operational roadmap proceeds directly to **Cloud Golden Image Baking on GCP**:
-1. Execute pre-flight dry run via [`./image-gcp --dry-run`](file:///workspaces/IsaacAutomator/image-gcp) in accordance with [`cloud-image-baking-plan.md`](file:///workspaces/IsaacAutomator/.agents/references/plans/cloud-image-baking-plan.md).
+1. Execute pre-flight dry run via [`./image-gcp --dry-run`](../../../image-gcp) in accordance with [`cloud-image-baking-plan.md`](cloud-image-baking-plan.md).
 2. Bake the golden image `isaac-workstation-601-l4` in project `cybernetic-renan` (utilizing the verified 16-GPU L4 regional quota in `us-central1`).
 3. Deploy an operational workstation in < 3 minutes via `./deploy-gcp --from-image`.

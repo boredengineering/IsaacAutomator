@@ -1,0 +1,91 @@
+# Experiment 05 — Role 2: Visual Critics, World Models & Geometric Oracles (Port 8001 / 8002 / GPU 0)
+# Evaluates step-0 rendered camera viewports, dynamic physics, and motion manifolds.
+# Note: V0 (Deterministic Physical AI Oracle) is pure Python + Pixar USD BBoxCache on CPU (0 GB weights).
+
+schema_version: v1
+model_profile_name: exp05-visual-critics
+description: "Exp 05 Role 2: Visual Critics, World Models & 3D Geometric Oracles (Port 8001 arena-vllm-visual & Port 8002 Depth/Normal)"
+
+defaults:
+  provider: huggingface
+  download_engine: hf_transfer
+  auth_env: HF_TOKEN
+
+storage:
+  physical_dir: /mnt/models_fast/models
+  logical_mounts:
+    - target: /models
+      link_to: /mnt/models_fast/models
+    - target: ~/models
+      link_to: /mnt/models_fast/models
+    - target: ~/.cache/huggingface
+      link_to: /mnt/models_fast/hf_cache
+
+models:
+  - name: cosmos-reason2-2b
+    description: "V2 Physical Dynamics Critic (2B Physical AI World Model) — Audits approach vectors & swept volume clearings (vLLM Port 8001)"
+    repo_id: nvidia/Cosmos-Reason2-2B
+    repo_type: model
+    revision: main
+    destination: /mnt/models_fast/models/cosmos/Cosmos-Reason2-2B
+    symlinks:
+      - /models/cosmos/Cosmos-Reason2-2B
+      - /models/Cosmos-Reason2-2B
+    allow_patterns:
+      - "*.safetensors"
+      - "*.json"
+      - "*.txt"
+      - "tokenizer*"
+    min_disk_free_gb: 8
+
+  - name: qwen2.5-vl-7b-instruct
+    description: "V1 General Multimodal Scene Critic (7B VLM) — 2D scene visual verification (vLLM Port 8001)"
+    repo_id: Qwen/Qwen2.5-VL-7B-Instruct
+    repo_type: model
+    revision: main
+    destination: /mnt/models_fast/models/qwen/Qwen2.5-VL-7B-Instruct
+    symlinks:
+      - /models/Qwen2.5-VL-7B-Instruct
+    allow_patterns:
+      - "*.safetensors"
+      - "*.json"
+      - "*.txt"
+      - "tokenizer*"
+      - "preprocessor*"
+    min_disk_free_gb: 17
+
+  - name: qwen3-vl-32b-thinking
+    description: "32B Visual CoT Critic — Step-0 viewport visual reasoning for Qwen3 (vLLM Port 8001)"
+    repo_id: Qwen/Qwen3-VL-32B-Thinking
+    repo_type: model
+    revision: main
+    destination: /mnt/models_fast/models/qwen/Qwen3-VL-32B-Thinking
+    symlinks:
+      - /models/Qwen3-VL-32B-Thinking
+    allow_patterns:
+      - "*.safetensors"
+      - "*.json"
+      - "*.txt"
+      - "tokenizer*"
+      - "preprocessor*"
+    min_disk_free_gb: 66
+
+  - name: da3metric-large
+    description: "V3 Dense Metric Depth Oracle — Depth-Anything Metric 3D estimation (In-Tree Daemon Port 8002)"
+    repo_id: depth-anything/DA3METRIC-LARGE
+    repo_type: model
+    revision: main
+    destination: /mnt/models_fast/models/geometry/DA3METRIC-LARGE
+    symlinks:
+      - /models/DA3METRIC-LARGE
+    min_disk_free_gb: 3
+
+  - name: moge-2-vitl
+    description: "V3 Dense Surface Normal & Geometry Oracle — MoGe-2 ViT-L (In-Tree Daemon Port 8002, verifies deck contact & normal alignment)"
+    repo_id: Ruicheng/moge-2-vitl
+    repo_type: model
+    revision: main
+    destination: /mnt/models_fast/models/geometry/moge-2-vitl
+    symlinks:
+      - /models/moge-2-vitl
+    min_disk_free_gb: 3

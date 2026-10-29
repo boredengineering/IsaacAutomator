@@ -1,0 +1,165 @@
+# Experiment 05 — Role 1: Cognitive Specification Synthesizers (Spec LLMs on Port 8000 / GPU 0)
+# Generates finite relational scene graphs, SHACL constraints, and spatial factor coordinates.
+
+schema_version: v1
+model_profile_name: exp05-spec-llms
+description: "Exp 05 Role 1: Cognitive Specification Synthesizers (vLLM arena-vllm-spec on Port 8000 + Colibri MoE)"
+
+defaults:
+  provider: huggingface
+  download_engine: hf_transfer
+  auth_env: HF_TOKEN
+
+storage:
+  physical_dir: /mnt/models_fast/models
+  logical_mounts:
+    - target: /models
+      link_to: /mnt/models_fast/models
+    - target: ~/models
+      link_to: /mnt/models_fast/models
+    - target: ~/.cache/huggingface
+      link_to: /mnt/models_fast/hf_cache
+    - target: /mnt/nvme1
+      link_to: /mnt/models_fast
+
+models:
+  - name: qwen2.5-72b-instruct-awq
+    description: "72B Dense Transformer (AWQ) — Active Workstation Baseline Anchor (vLLM arena-vllm-spec, Port 8000)"
+    repo_id: Qwen/Qwen2.5-72B-Instruct-AWQ
+    repo_type: model
+    revision: main
+    destination: /mnt/models_fast/models/qwen/Qwen2.5-72B-Instruct-AWQ
+    symlinks:
+      - /models/Qwen2.5-72B-Instruct-AWQ
+    allow_patterns:
+      - "*.safetensors"
+      - "*.json"
+      - "*.txt"
+      - "tokenizer*"
+    min_disk_free_gb: 42
+
+  - name: qwen2.5-coder-32b-instruct-awq
+    description: "32B Code-Specialized (AWQ) — Historical Control Baseline (32k/131k YaRN, vLLM arena-vllm-spec)"
+    repo_id: Qwen/Qwen2.5-Coder-32B-Instruct-AWQ
+    repo_type: model
+    revision: main
+    destination: /mnt/models_fast/models/qwen/Qwen2.5-Coder-32B-Instruct-AWQ
+    symlinks:
+      - /models/Qwen2.5-Coder-32B-Instruct-AWQ
+    allow_patterns:
+      - "*.safetensors"
+      - "*.json"
+      - "*.txt"
+      - "tokenizer*"
+    min_disk_free_gb: 20
+
+  - name: qwq-32b-awq
+    description: "32B Reasoning CoT (AWQ) — Test-Time Spatial Deduction in <think> (vLLM arena-vllm-spec)"
+    repo_id: Qwen/QwQ-32B-AWQ
+    repo_type: model
+    revision: main
+    destination: /mnt/models_fast/models/qwen/QwQ-32B-AWQ
+    symlinks:
+      - /models/QwQ-32B-AWQ
+    allow_patterns:
+      - "*.safetensors"
+      - "*.json"
+      - "*.txt"
+      - "tokenizer*"
+    min_disk_free_gb: 20
+
+  - name: deepseek-r1-distill-qwen-32b
+    description: "32B Distilled RL CoT — Spatial CoT Reasoner (vLLM arena-vllm-spec)"
+    repo_id: deepseek-ai/DeepSeek-R1-Distill-Qwen-32B
+    repo_type: model
+    revision: main
+    destination: /mnt/models_fast/models/deepseek/DeepSeek-R1-Distill-Qwen-32B
+    symlinks:
+      - /models/DeepSeek-R1-Distill-Qwen-32B
+    allow_patterns:
+      - "*.safetensors"
+      - "*.json"
+      - "*.txt"
+      - "tokenizer*"
+    min_disk_free_gb: 66
+
+  - name: qwen3-32b-fp8
+    description: "32B Dual-Mode Transformer — Next-Gen Dual-Mode CoT (Native thinking + YAML, vLLM arena-vllm-spec)"
+    repo_id: Qwen/Qwen3-32B-FP8
+    repo_type: model
+    revision: main
+    destination: /mnt/models_fast/models/qwen/Qwen3-32B-FP8
+    symlinks:
+      - /models/Qwen3-32B-FP8
+    allow_patterns:
+      - "*.safetensors"
+      - "*.json"
+      - "*.txt"
+      - "tokenizer*"
+    min_disk_free_gb: 35
+
+  - name: qwen3-30b-a3b-fp8
+    description: "30B MoE (3B active FP8) — High-Throughput MoE for rapid Bayesian repair loops (vLLM arena-vllm-spec)"
+    repo_id: Qwen/Qwen3-30B-A3B-FP8
+    repo_type: model
+    revision: main
+    destination: /mnt/models_fast/models/qwen/Qwen3-30B-A3B-FP8
+    symlinks:
+      - /models/Qwen3-30B-A3B-FP8
+    allow_patterns:
+      - "*.safetensors"
+      - "*.json"
+      - "*.txt"
+      - "tokenizer*"
+    min_disk_free_gb: 32
+
+  - name: qwen2.5-vl-72b-instruct-awq
+    description: "72B Omnimodal VLM — Unified Omnimodal Engine (spec generation + visual critique, vLLM arena-vllm-spec)"
+    repo_id: Qwen/Qwen2.5-VL-72B-Instruct-AWQ
+    repo_type: model
+    revision: main
+    destination: /mnt/models_fast/models/qwen/Qwen2.5-VL-72B-Instruct-AWQ
+    symlinks:
+      - /models/Qwen2.5-VL-72B-Instruct-AWQ
+    allow_patterns:
+      - "*.safetensors"
+      - "*.json"
+      - "*.txt"
+      - "tokenizer*"
+      - "preprocessor*"
+    min_disk_free_gb: 46
+
+  - name: glm-5.3-flash
+    description: "321B Multimodal MoE (62 shards, ~182 GB) — Dual-role factor graph & visual critic (Colibri Engine)"
+    repo_id: zai-org/GLM-5.3-Flash
+    repo_type: model
+    revision: main
+    destination: /mnt/models_fast/models/glm-5.3-flash
+    symlinks:
+      - /models/glm-5.3-flash
+    allow_patterns:
+      - "*.safetensors"
+      - "*.json"
+      - "*.txt"
+      - "tokenizer*"
+    ignore_patterns:
+      - "*.bin"
+    min_disk_free_gb: 190
+
+  - name: glm-5.3
+    description: "744B MoE Flagship (42B active INT4 gs64, 141 shards, ~419 GB) — Frontier World Knowledge Ceiling (Colibri Engine)"
+    repo_id: zai-org/GLM-5.3
+    repo_type: model
+    revision: main
+    destination: /mnt/models_fast/models/glm-5.3
+    symlinks:
+      - /models/glm-5.3
+    allow_patterns:
+      - "*.safetensors"
+      - "*.json"
+      - "*.txt"
+      - ".coli_*"
+      - "tokenizer*"
+    ignore_patterns:
+      - "*.bin"
+    min_disk_free_gb: 440

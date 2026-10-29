@@ -60,7 +60,7 @@ flowchart TD
 
 ## 3. Concrete File Modifications & Specifications
 
-### 3.1 Build-Time Layer: [`.devcontainer/Dockerfile`](file:///workspaces/IsaacAutomator/.devcontainer/Dockerfile)
+### 3.1 Build-Time Layer: [`.devcontainer/Dockerfile`](../../../.devcontainer/Dockerfile)
 
 Following our established architectural pattern, all tools, binaries, system diagnostic packages, and global Node packages must be **pre-installed at Docker image build time** to guarantee instant, offline-capable startup without runtime download delays:
 
@@ -87,7 +87,7 @@ RUN npm install -g \
 
 ---
 
-### 3.2 Workspace MCP Registry ([`.mcp.json`](file:///workspaces/IsaacAutomator/.mcp.json))
+### 3.2 Workspace MCP Registry ([`.mcp.json`](../../../.mcp.json))
 Add `docker-engine` and `linux-hardware-probe` alongside existing DevOps tools:
 
 ```json
@@ -232,7 +232,7 @@ def run_probe():
 
 ---
 
-### 3.4 DevContainer Setup Script ([`.devcontainer/setup.sh`](file:///workspaces/IsaacAutomator/.devcontainer/setup.sh))
+### 3.4 DevContainer Setup Script ([`.devcontainer/setup.sh`](../../../.devcontainer/setup.sh))
 
 Update `.devcontainer/setup.sh` to synchronize both MCP servers and the new skills:
 
@@ -298,7 +298,7 @@ fi
   - Omniverse ROS 2 Bridge extension enablement.
   - Camera, LiDAR, and joint state trajectory publishers.
 
-#### 3. Enhancement to [`.agents/skills/isaac-automator/connect-workstation/SKILL.md`](file:///workspaces/IsaacAutomator/.agents/skills/isaac-automator/connect-workstation/SKILL.md)
+#### 3. Enhancement to [`.agents/skills/isaac-automator/connect-workstation/SKILL.md`](../../skills/isaac-automator/connect-workstation/SKILL.md)
 - Add section: **Gamepad & HID Teleoperation Passthrough** (`/dev/uinput`, `evdev`, low-latency NVENC tuning in Sunshine).
 
 ---

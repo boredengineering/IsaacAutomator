@@ -94,7 +94,7 @@ If you want to package a dedicated "Isaac Automator DevOps" profile to share wit
 
 ## 4. Workspace Recommendations & `.vscode/` Directory Standards
 
-For local and non-container workflows, committing standardized configuration files inside the [`.vscode/`](file:///workspaces/IsaacAutomator/.vscode/) directory ensures consistency across team members and personal machines.
+For local and non-container workflows, committing standardized configuration files inside the [`.vscode/`](../../../.vscode/) directory ensures consistency across team members and personal machines.
 
 ---
 

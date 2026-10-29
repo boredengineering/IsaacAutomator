@@ -1,22 +1,87 @@
-# Isaac-GR00T Foundation Model Profile
-# Declarative weights for physical AI foundation models & zeroMQ embodiment inference.
+# Closed-Loop Foundation Robotics Policies Profile (Experiment 05 — GPU 1)
+# Stages Isaac-GR00T (Policy alpha + N1.6 DROID baseline), Cosmos-Reason2-2B VLM backbone,
+# and Physical Intelligence OpenPI pi0.5 (Policy beta: pi05_droid_jointpos).
 
 schema_version: v1
 model_profile_name: gr00t-foundation
-description: "Isaac-GR00T physical AI foundation model checkpoints"
+description: "Closed-Loop Foundation Robotics Policies (GR00T-N1.7-3B, GR00T-N1.6-DROID, Cosmos-Reason2-2B, OpenPI pi05_droid_jointpos)"
 
 defaults:
   provider: huggingface
   download_engine: hf_transfer
   auth_env: HF_TOKEN
 
+storage:
+  physical_dir: /mnt/models_fast/models
+  logical_mounts:
+    - target: /models
+      link_to: /mnt/models_fast/models
+    - target: ~/models
+      link_to: /mnt/models_fast/models
+    - target: ~/.cache/huggingface
+      link_to: /mnt/models_fast/hf_cache
+    - target: ~/.cache/isaac-gr00t
+      link_to: /mnt/models_fast/hf_cache
+    - target: ~/.cache/openpi
+      link_to: /mnt/models_fast/models/openpi
+
 models:
-  - name: gr00t-embodiment-dev
-    description: "Isaac-GR00T policy weights for generalist robotics manipulation"
-    repo_id: nvidia/gr00t-foundation
+  - name: gr00t-n1.7-3b
+    description: "Policy alpha: Flow-Matched DiT (50 Hz continuous Cartesian velocity control, gr00t-server Port 5556)"
+    repo_id: nvidia/GR00T-N1.7-3B
     repo_type: model
-    revision: dev
-    destination: /opt/models/gr00t
+    revision: main
+    destination: /mnt/models_fast/models/gr00t/GR00T-N1.7-3B
     symlinks:
-      - ~/models/gr00t
-    min_disk_free_gb: 40
+      - /models/gr00t/GR00T-N1.7-3B
+      - ~/models/gr00t/GR00T-N1.7-3B
+    allow_patterns:
+      - "*.safetensors"
+      - "*.json"
+      - "*.txt"
+      - "*.yaml"
+      - "tokenizer*"
+    min_disk_free_gb: 15
+
+  - name: gr00t-n1.6-droid
+    description: "Historical baseline control: Flow-Matched DiT for Franka DROID (gr00t-server Port 5556)"
+    repo_id: nvidia/GR00T-N1.6-DROID
+    repo_type: model
+    revision: main
+    destination: /mnt/models_fast/models/gr00t/GR00T-N1.6-DROID
+    symlinks:
+      - /models/gr00t/GR00T-N1.6-DROID
+      - ~/models/gr00t/GR00T-N1.6-DROID
+    allow_patterns:
+      - "*.safetensors"
+      - "*.json"
+      - "*.txt"
+      - "*.yaml"
+      - "tokenizer*"
+    min_disk_free_gb: 15
+
+  - name: cosmos-reason2-2b
+    description: "2B Physical AI World Model & GR00T VLM backbone (also serves as Exp 05 V2 critic on Port 8001)"
+    repo_id: nvidia/Cosmos-Reason2-2B
+    repo_type: model
+    revision: main
+    destination: /mnt/models_fast/models/cosmos/Cosmos-Reason2-2B
+    symlinks:
+      - /models/cosmos/Cosmos-Reason2-2B
+    allow_patterns:
+      - "*.safetensors"
+      - "*.json"
+      - "*.txt"
+      - "tokenizer*"
+    min_disk_free_gb: 8
+
+  - name: openpi-pi05-droid-jointpos
+    description: "Policy beta: OpenPI pi0.5 Autoregressive/Flow Hybrid Diffusion (50 Hz jointpos, openpi-server Port 8008)"
+    repo_id: physical-intelligence/pi05_droid_jointpos
+    repo_type: model
+    revision: main
+    destination: /mnt/models_fast/models/openpi/pi05_droid_jointpos
+    symlinks:
+      - /models/openpi/pi05_droid_jointpos
+      - ~/.cache/openpi/openpi-assets/checkpoints/pi05_droid_jointpos
+    min_disk_free_gb: 20

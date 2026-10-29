@@ -112,7 +112,7 @@ git clone https://github.com/c3xdev/c3x-pricing-api.git api
 git -C api checkout --detach cc58da98652a0ce9f8aac6d1f574d3578544d8c1
 git clone https://github.com/c3xdev/c3x.git cli
 git -C cli checkout --detach 21bc4dc26eb779b7ee18bd4cdcbb6986578b1703
-ISAAC=/workspaces/IsaacAutomator
+ISAAC="$(git rev-parse --show-toplevel)"
 mkdir -p evidence/isaac
 cp -a "$ISAAC/configs/cost/c3x-oauth" evidence/isaac/
 cp -a "$ISAAC/configs/cost/c3x-gcp-validation" evidence/isaac/

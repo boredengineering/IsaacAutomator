@@ -6,7 +6,7 @@
 ## 1. Executive Summary & Design Philosophy
 
 Inspired by **`k9s`**—the gold standard in terminal-based Kubernetes cluster operations—**`isaac9s`** is a high-performance, keyboard-driven Graphical Terminal User Interface (TUI/GUI) engineered specifically for:
-1. **Physical Bare-Metal Robotics Workstations** provisioned via [`isaac-installer`](file:///workspaces/IsaacAutomator/isaac-installer/README.md).
+1. **Physical Bare-Metal Robotics Workstations** provisioned via [`isaac-installer`](../../../isaac-installer/README.md).
 2. **Multi-Cloud GPU Workstations** deployed via `IsaacAutomator` across **AWS, GCP, Azure, and Alibaba Cloud**.
 3. **Physical AI & Foundation Model Frameworks**: NVIDIA Isaac Sim, Isaac Lab, IsaacLab-Arena, NVIDIA Isaac-GR00T (VLA), and Hugging Face LeRobot.
 
@@ -25,7 +25,7 @@ Inspired by **`k9s`**—the gold standard in terminal-based Kubernetes cluster o
 Unlike Kubernetes tooling that is built in Golang, `isaac9s` is intentionally implemented in **Python 3.10+** utilizing **Textual 8.2** and **Rich 15**:
 
 - **Ecosystem Symmetry**: NVIDIA Isaac Sim, Isaac Lab, Arena, PyTorch, and GR00T are 100% Python-centric. Robotics and AI engineers live in Python.
-- **Direct Native Codebase Access**: Imports deployment logic directly from [`src/python/deployer.py`](file:///workspaces/IsaacAutomator/src/python/deployer.py) and cloud SDKs (`boto3`, `google-cloud-compute`, `azure-mgmt-compute`) without brittle CLI subprocess scraping.
+- **Direct Native Codebase Access**: Imports deployment logic directly from [`src/python/deployer.py`](../../../src/python/deployer.py) and cloud SDKs (`boto3`, `google-cloud-compute`, `azure-mgmt-compute`) without brittle CLI subprocess scraping.
 - **Modern Reactive TUI**: Textual provides reactive state bindings, declarative CSS (`.tcss`), async event loops (`asyncio`), and smooth 60 FPS rendering with zero compile time.
 - **Direct Hardware Telemetry**: Native C-bindings via `pynvml` (`nvidia-ml-py`) and `psutil` sample GPU VRAM, clocks, temperature, and PCIe bandwidth at sub-millisecond speeds.
 
@@ -273,7 +273,7 @@ Pressing `[7]` opens the dedicated hardware diagnostics console:
 
 ### 3.1 Textual 8.2 + Rich 15 Design
 
-`isaac9s` is organized into a clean, modular Python package located in [`src/tui/`](file:///workspaces/IsaacAutomator/src/tui/):
+`isaac9s` is organized into a clean, modular Python package located in [`src/tui/`](../../../src/tui/):
 
 ```text
 src/tui/

@@ -54,7 +54,7 @@ anc={
  'artifact_10GiBmo_if_account_allowance_exhausted':money(D(10)*D('0.1')),
  'month_unit_warning':{'catalog_month_seconds':selected['hyperdisk_iops']['pricing'][0]['expression_metadata']['baseUnitConversionFactor'],'catalog_month_hours':money(D(str(selected['hyperdisk_iops']['pricing'][0]['expression_metadata']['baseUnitConversionFactor']))/3600),'public_page_monthly_hourly_toggle_uses_730':True,'do_not_mix':'730 compute hours and one storage billing month are independent assumptions; use Catalog baseUnitConversionFactor for explicitly elapsed seconds; public UI hourly display rounds and uses a different monthly presentation.'}}
 fixtures=[]
-for p in sorted(Path('/workspaces/IsaacAutomator/configs/cost/fixtures').glob('*/main.tf.json')):
+for p in sorted((ROOT.parents[1]/'fixtures').glob('*/main.tf.json')):
  d=json.loads(p.read_text());v=d['resource']['google_compute_instance']['workstation'];fixtures.append({'path':str(p),'machine_type':v['machine_type'],'scheduling':v['scheduling'],'boot_disk':v['boot_disk'],'gpu':v['guest_accelerator']})
 assert len(fixtures)==4
 out={'source':'Actual archived Google Catalog pages; 17 explicitly named SKU IDs reviewed, no collision winner','selected_components':selected,'compute_reference':compute,'ancillary_reference':anc,'fixtures':fixtures,'not_an_infrastructure_total':True}

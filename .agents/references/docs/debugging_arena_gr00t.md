@@ -439,10 +439,10 @@ Once the Docker baseline executes and telemetry is captured, we systematically e
 #### 1. Automated Manifest Extraction Procedure
 ```bash
 # 1. Extract complete Python package freeze from container runtime
-./docker/run_docker.sh -g python -m pip list --format=freeze > /workspaces/IsaacAutomator/.agents/references/docs/container_pip_freeze.txt
+./docker/run_docker.sh -g python -m pip list --format=freeze > .agents/references/docs/container_pip_freeze.txt
 
 # 2. Extract active environment variables and library paths
-./docker/run_docker.sh -g env > /workspaces/IsaacAutomator/.agents/references/docs/container_env.txt
+./docker/run_docker.sh -g env > .agents/references/docs/container_env.txt
 
 # 3. Extract exact dynamic linker shared object dependencies for WBC solvers
 ./docker/run_docker.sh -g python -c "
@@ -450,7 +450,7 @@ import pinocchio, pink, qpsolvers
 print('Pinocchio path:', pinocchio.__file__)
 print('Pink path:', pink.__file__)
 print('QPSolvers path:', qpsolvers.__file__)
-" > /workspaces/IsaacAutomator/.agents/references/docs/container_wbc_manifest.txt
+" > .agents/references/docs/container_wbc_manifest.txt
 ```
 
 #### 2. Native Bare-Metal Replication Blueprint
@@ -677,15 +677,15 @@ The following files and line numbers in `isaac-installer` implement the Docker a
 
 | File Path | Line Range | Purpose & Functionality |
 | :--- | :--- | :--- |
-| [`.agents/references/isaac-installer/lib/modules/isaaclab_arena.sh`](file:///workspaces/IsaacAutomator/.agents/references/isaac-installer/lib/modules/isaaclab_arena.sh#L23-L38) | Lines 23–38 | `ensure_docker_submodules()` helper function ensuring `submodules/IsaacLab` is populated with real repository files before Docker builds. |
-| [`.agents/references/isaac-installer/lib/modules/isaaclab_arena.sh`](file:///workspaces/IsaacAutomator/.agents/references/isaac-installer/lib/modules/isaaclab_arena.sh#L482-L525) | Lines 482–525 | `play)` command `--docker` flag handling: auto-runs `run_docker.sh -g python scripts/play.py --viz kit`. |
-| [`.agents/references/isaac-installer/lib/modules/isaaclab_arena.sh`](file:///workspaces/IsaacAutomator/.agents/references/isaac-installer/lib/modules/isaaclab_arena.sh#L526-L570) | Lines 526–570 | `run)` command `--docker` flag handling: auto-runs `run_docker.sh -g python scripts/play.py --headless`. |
-| [`.agents/references/isaac-installer/lib/modules/isaaclab_arena.sh`](file:///workspaces/IsaacAutomator/.agents/references/isaac-installer/lib/modules/isaaclab_arena.sh#L571-L715) | Lines 571–715 | `eval-gr00t)` command `--docker` flag handling: auto-runs `run_docker.sh -g python policy_runner.py`. |
-| [`.agents/references/isaac-installer/lib/modules/isaaclab_arena.sh`](file:///workspaces/IsaacAutomator/.agents/references/isaac-installer/lib/modules/isaaclab_arena.sh#L725-L740) | Lines 725–740 | `docker)` subcommand: Direct CLI passthrough executing `./docker/run_docker.sh` with `printf '%q '` escaping. |
-| [`.agents/references/isaac-installer/lib/modules/isaaclab_arena.sh`](file:///workspaces/IsaacAutomator/.agents/references/isaac-installer/lib/modules/isaaclab_arena.sh#L742-L770) | Lines 742–770 | `extract-container-manifest)` command: Automated dump of `container_pip_freeze.txt`, `container_env.txt`, and `container_wbc_manifest.txt`. |
-| [`.agents/references/isaac-installer/lib/modules/gr00t.sh`](file:///workspaces/IsaacAutomator/.agents/references/isaac-installer/lib/modules/gr00t.sh#L354-L415) | Lines 354–415 | `server)` command `--docker` flag handling: Launches containerized policy server via `./docker/run_gr00t_server.sh`. |
-| [`.agents/references/isaac-installer/lib/modules/dev_tools.sh`](file:///workspaces/IsaacAutomator/.agents/references/isaac-installer/lib/modules/dev_tools.sh#L104-L135) | Lines 104–135 | Host Docker CE installation, user group addition (`usermod -aG docker`), and NVIDIA Container Toolkit configuration (`nvidia-ctk runtime configure`). |
-| [`.agents/references/isaac-installer/lib/core/audit.sh`](file:///workspaces/IsaacAutomator/.agents/references/isaac-installer/lib/core/audit.sh#L153-L170) | Lines 153–170 | Hardware audit inspecting Docker daemon status and GPU passthrough capability (`nvidia-ctk`). |
+| [`.agents/references/isaac-installer/lib/modules/isaaclab_arena.sh`](../isaac-installer/lib/modules/isaaclab_arena.sh#L23-L38) | Lines 23–38 | `ensure_docker_submodules()` helper function ensuring `submodules/IsaacLab` is populated with real repository files before Docker builds. |
+| [`.agents/references/isaac-installer/lib/modules/isaaclab_arena.sh`](../isaac-installer/lib/modules/isaaclab_arena.sh#L482-L525) | Lines 482–525 | `play)` command `--docker` flag handling: auto-runs `run_docker.sh -g python scripts/play.py --viz kit`. |
+| [`.agents/references/isaac-installer/lib/modules/isaaclab_arena.sh`](../isaac-installer/lib/modules/isaaclab_arena.sh#L526-L570) | Lines 526–570 | `run)` command `--docker` flag handling: auto-runs `run_docker.sh -g python scripts/play.py --headless`. |
+| [`.agents/references/isaac-installer/lib/modules/isaaclab_arena.sh`](../isaac-installer/lib/modules/isaaclab_arena.sh#L571-L715) | Lines 571–715 | `eval-gr00t)` command `--docker` flag handling: auto-runs `run_docker.sh -g python policy_runner.py`. |
+| [`.agents/references/isaac-installer/lib/modules/isaaclab_arena.sh`](../isaac-installer/lib/modules/isaaclab_arena.sh#L725-L740) | Lines 725–740 | `docker)` subcommand: Direct CLI passthrough executing `./docker/run_docker.sh` with `printf '%q '` escaping. |
+| [`.agents/references/isaac-installer/lib/modules/isaaclab_arena.sh`](../isaac-installer/lib/modules/isaaclab_arena.sh#L742-L770) | Lines 742–770 | `extract-container-manifest)` command: Automated dump of `container_pip_freeze.txt`, `container_env.txt`, and `container_wbc_manifest.txt`. |
+| [`.agents/references/isaac-installer/lib/modules/gr00t.sh`](../isaac-installer/lib/modules/gr00t.sh#L354-L415) | Lines 354–415 | `server)` command `--docker` flag handling: Launches containerized policy server via `./docker/run_gr00t_server.sh`. |
+| [`.agents/references/isaac-installer/lib/modules/dev_tools.sh`](../isaac-installer/lib/modules/dev_tools.sh#L104-L135) | Lines 104–135 | Host Docker CE installation, user group addition (`usermod -aG docker`), and NVIDIA Container Toolkit configuration (`nvidia-ctk runtime configure`). |
+| [`.agents/references/isaac-installer/lib/core/audit.sh`](../isaac-installer/lib/core/audit.sh#L153-L170) | Lines 153–170 | Hardware audit inspecting Docker daemon status and GPU passthrough capability (`nvidia-ctk`). |
 
 ---
 
@@ -734,12 +734,12 @@ cd ~/Documents/GitHub/boredengineering/IsaacLab-Arena
 
 ### 9.4 Container Manifest Extraction & Ground Truth Analysis (Verified)
 
-The container manifest extraction protocol was executed on the working reference container (`isaaclab_arena:latest`), capturing ground-truth configuration in [`.agents/references/docs/`](file:///workspaces/IsaacAutomator/.agents/references/docs/):
+The container manifest extraction protocol was executed on the working reference container (`isaaclab_arena:latest`), capturing ground-truth configuration in [`.agents/references/docs/`](./):
 
 #### 1. Extracted Manifest Files Summary:
-* [`container_wbc_manifest.txt`](file:///workspaces/IsaacAutomator/.agents/references/docs/container_wbc_manifest.txt): C++ Kinematic and QP solver module paths.
-* [`container_env.txt`](file:///workspaces/IsaacAutomator/.agents/references/docs/container_env.txt): Active environment variables, Vulkan driver paths, and Omniverse hub parameters.
-* [`container_pip_freeze.txt`](file:///workspaces/IsaacAutomator/.agents/references/docs/container_pip_freeze.txt): Full freeze of all 363 Python 3.12 wheel packages.
+* [`container_wbc_manifest.txt`](container_wbc_manifest.txt): C++ Kinematic and QP solver module paths.
+* [`container_env.txt`](container_env.txt): Active environment variables, Vulkan driver paths, and Omniverse hub parameters.
+* [`container_pip_freeze.txt`](container_pip_freeze.txt): Full freeze of all 363 Python 3.12 wheel packages.
 
 #### 2. Ground-Truth Findings & Analysis:
 * **C++ Whole-Body Controller (WBC) Solver Stack**:

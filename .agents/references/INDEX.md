@@ -20,7 +20,7 @@ Catalog of high-level project specifications, architecture documents, and goal d
 | [`gcp-plans/debugging-instance.md`](./gcp-plans/debugging-instance.md) | Incident report & root cause analysis for Isaac Sim full.kit segfault & base.kit resolution on test03 | Active Reference |
 | [`devcontainer/isaacautomator-devcontainer-plan.md`](./devcontainer/isaacautomator-devcontainer-plan.md) | Architectural evaluation & parity validation for unified DevContainer with OCI features | Active Reference |
 | [`devcontainer/devcontainer-mcp-skills-plan.md`](./devcontainer/devcontainer-mcp-skills-plan.md) | Step-by-step integration plan for robotics MCP servers (docker, hw-probe) and skills | Active Plan |
-| [`isaac-installer/README.md`](file:///workspaces/IsaacAutomator/isaac-installer/README.md) | Universal bare-metal Ubuntu 22.04 installer CLI & modular library (Root Project) | Active Tool |
+| [`isaac-installer/README.md`](../../isaac-installer/README.md) | Universal bare-metal Ubuntu 22.04 installer CLI & modular library (Root Project) | Active Tool |
 | [`devcontainer/auth-strategy.md`](./devcontainer/auth-strategy.md) | DevContainer Git & GitHub authentication strategy (Pattern B: persistent named volume + setup hook) | Active Reference |
 | [`agentic_env_generation/agentic_env_generation.md`](./agentic_env_generation/agentic_env_generation.md) | Master guide for Agentic Environment Generation & Policy Evaluation in IsaacLab-Arena | Active Guide |
 | [`agentic_env_generation/agentic_env_gen_plan.md`](./agentic_env_generation/agentic_env_gen_plan.md) | Master implementation plan for RDF-star, LPG & PROV-O semantic pipeline in IsaacLab-Arena | Active Plan |
@@ -47,4 +47,5 @@ Catalog of high-level project specifications, architecture documents, and goal d
 | [`docs/optional-distribution-guide.md`](./docs/optional-distribution-guide.md) | YAML choices, ECR lifecycle/IAM, Docker Hub auth, pinned Hub snapshots and live acceptance boundaries | Active guide; live acceptance pending |
 | [`../memory/sessions/20260909_033041_8c8e9952.md`](../memory/sessions/20260909_033041_8c8e9952.md) | Optional distribution checkpoint: 195 workspace tests and 61 mocked plans; no live deployment/publication | Reviewed implementation |
 | [`plans/isaac-installer-host-compat.md`](./plans/isaac-installer-host-compat.md) | Host/cloud stack parity, composable profiles, and remaining orchestration gaps | Active Plan |
+| [`plans/declarative-model-profiles-plan.md`](./plans/declarative-model-profiles-plan.md) | Declarative model provisioning (`configs/models/`), Experiment 05 Master Model Zoo, and 3-tier hybrid storage architecture | Active Plan |
 

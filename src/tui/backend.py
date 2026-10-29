@@ -222,7 +222,8 @@ class WorkstationBackend:
             home / "dev" / repo_name,
             home / repo_name,
             Path("/workspaces") / repo_name,
-            Path("/workspaces/IsaacAutomator") / repo_name,
+            REPO_ROOT / repo_name,
+            REPO_ROOT.parent / repo_name,
             Path.cwd() / repo_name,
             Path.cwd().parent / repo_name,
         ]

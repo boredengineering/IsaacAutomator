@@ -36,7 +36,7 @@ local_ranges={
  '/tmp/isaac-selfhost-trials/c3x/c3x/internal/pricing/http.go':[(219,252),(272,312)],
  '/tmp/isaac-selfhost-trials/c3x/c3x/internal/pricing/purchaseoption.go':[(8,18)],
  '/tmp/isaac-selfhost-trials/c3x/c3x/internal/expr/functions.go':[(68,78)],
- '/workspaces/IsaacAutomator/configs/cost/infracost-usage.example.yml':[(1,18)]}
+ str(ROOT.parents[1]/'infracost-usage.example.yml'):[(1,18)]}
 locals=[]
 for filename,rr in local_ranges.items():
  p=Path(filename);raw=p.read_bytes();lines=raw.decode().splitlines();locals.append({'path':filename,'sha256':hashlib.sha256(raw).hexdigest(),'extracts':[{'start_line':a,'end_line':b,'text':'\n'.join(lines[a-1:b])} for a,b in rr]})

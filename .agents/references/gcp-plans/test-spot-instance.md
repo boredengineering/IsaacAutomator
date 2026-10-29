@@ -97,9 +97,9 @@ service_account {
 
 ## 5. State Files & Local Artifacts
 
-All local state artifacts are preserved in [`state/test03/`](file:///workspaces/IsaacAutomator/state/test03/):
+All local state artifacts are preserved in [`state/test03/`](../../../state/test03/):
 
-* **[`.tfstate`](file:///workspaces/IsaacAutomator/state/test03/.tfstate)**: Contains 12 managed resources:
+* **[`.tfstate`](../../../state/test03/.tfstate)**: Contains 12 managed resources:
   1. `google_compute_instance.default` (`isaacautomator-test03-isaac-workstation-vm`)
   2. `google_compute_address.static_ip` (`136.65.140.205`)
   3. `google_compute_network.default`
@@ -112,10 +112,10 @@ All local state artifacts are preserved in [`state/test03/`](file:///workspaces/
   10. `google_compute_firewall.egress`
   11. `google_project_service.compute_engine`
   12. `tls_private_key.ssh_key`
-* **[`key.pem`](file:///workspaces/IsaacAutomator/state/test03/key.pem)**: RSA 4096 private key with `0600` permissions.
-* **[`.inventory`](file:///workspaces/IsaacAutomator/state/test03/.inventory)**: Ansible inventory mapping host `136.65.140.205`.
-* **[`info.txt`](file:///workspaces/IsaacAutomator/state/test03/info.txt)**: Connection strings and credentials.
-* **[`meta.json`](file:///workspaces/IsaacAutomator/state/test03/meta.json)**: Complete execution and parameter metadata.
+* **[`key.pem`](../../../state/test03/key.pem)**: RSA 4096 private key with `0600` permissions.
+* **[`.inventory`](../../../state/test03/.inventory)**: Ansible inventory mapping host `136.65.140.205`.
+* **[`info.txt`](../../../state/test03/info.txt)**: Connection strings and credentials.
+* **[`meta.json`](../../../state/test03/meta.json)**: Complete execution and parameter metadata.
 
 ---
 
@@ -175,7 +175,7 @@ When triggered, Ansible performs the complete workstation setup automatically:
 
 ### Checking Live GCP Status
 ```bash
-CLOUDSDK_CONFIG=/workspaces/IsaacAutomator/state/.gcp gcloud compute instances describe \
+CLOUDSDK_CONFIG=state/.gcp gcloud compute instances describe \
   isaacautomator-test03-isaac-workstation-vm \
   --zone=us-central1-b \
   --format="yaml(name,status,machineType,scheduling,networkInterfaces[0].accessConfigs[0].natIP)"

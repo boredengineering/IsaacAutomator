@@ -19,6 +19,21 @@ class TestModelProfile(unittest.TestCase):
         self.assertIn("colibri-streaming", profiles)
         self.assertIn("example-model", profiles)
         self.assertIn("gr00t-foundation", profiles)
+        self.assertIn("exp05-spec-llms", profiles)
+        self.assertIn("exp05-visual-critics", profiles)
+        self.assertIn("experiment-05-zoo", profiles)
+
+    def test_resolve_experiment_05_zoo(self):
+        resolved = resolve_model_profile("experiment-05-zoo", target_user="ubuntu", target_home="/home/ubuntu")
+        self.assertEqual(resolved["model_profile_name"], "experiment-05-zoo")
+        self.assertEqual(len(resolved["models"]), 17)
+        self.assertEqual(resolved["total_min_disk_gb"], 1038)
+        repo_ids = [m["repo_id"] for m in resolved["models"]]
+        self.assertIn("Qwen/Qwen2.5-72B-Instruct-AWQ", repo_ids)
+        self.assertIn("nvidia/Cosmos-Reason2-2B", repo_ids)
+        self.assertIn("nvidia/GR00T-N1.7-3B", repo_ids)
+        self.assertIn("physical-intelligence/pi05_droid_jointpos", repo_ids)
+        self.assertIn("nvidia/GR00T-N1.6-DROID", repo_ids)
 
     def test_load_colibri_flash(self):
         data = load_model_profile("colibri-flash")

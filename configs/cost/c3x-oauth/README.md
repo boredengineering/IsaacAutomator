@@ -32,8 +32,8 @@ declaration. No Go toolchain was installed globally.
 ```sh
 git clone https://github.com/c3xdev/c3x-pricing-api.git c3x-pricing-api
 git -C c3x-pricing-api checkout --detach cc58da98652a0ce9f8aac6d1f574d3578544d8c1
-git -C c3x-pricing-api apply --check /workspaces/IsaacAutomator/configs/cost/c3x-oauth/upstream.patch
-git -C c3x-pricing-api apply /workspaces/IsaacAutomator/configs/cost/c3x-oauth/upstream.patch
+git -C c3x-pricing-api apply --check "$(pwd)/configs/cost/c3x-oauth/upstream.patch"
+git -C c3x-pricing-api apply "$(pwd)/configs/cost/c3x-oauth/upstream.patch"
 cd c3x-pricing-api
 go test -short -count=1 ./...
 go build -o build/c3x-pricing-api ./cmd/server

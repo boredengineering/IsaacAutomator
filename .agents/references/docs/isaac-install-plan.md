@@ -933,7 +933,7 @@ flowchart TD
 ### Submodule & Standalone Bridging Operations:
 
 ```bash
-cd /workspaces/IsaacAutomator/.agents/references/isaac-installer
+cd .agents/references/isaac-installer
 
 # 1. Audit Submodule vs Standalone Alignment:
 ./bin/isaac-installer arena submodules status
