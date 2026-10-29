@@ -10,6 +10,13 @@ repo_root = Path(__file__).resolve().parent
 if str(repo_root) not in sys.path:
     sys.path.insert(0, str(repo_root))
 
+# Auto-re-exec with dedicated TUI virtualenv if present and not already active
+venv_dir = repo_root / ".venv-isaac9s"
+venv_python = venv_dir / "bin" / "python"
+if venv_python.exists() and sys.prefix != str(venv_dir):
+    import os
+    os.execv(str(venv_python), [str(venv_python)] + sys.argv)
+
 from src.tui.app import Isaac9sApp
 
 def main():

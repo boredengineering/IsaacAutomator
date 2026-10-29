@@ -22,6 +22,9 @@ results/*
 uploads/*
 .DS_Store
 .open-url
+.venv*
+venv/
+env/
 
 src/ansible/roles/isaac/files/autorun.sh
 src/ansible/roles/isaac/files/isaaclab.pem

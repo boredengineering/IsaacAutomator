@@ -50,7 +50,7 @@ def deployments_callback(ctx, param, value):
     return value
 
 
-@click.command()
+@click.command(context_settings=dict(ignore_unknown_options=True))
 @click.option(
     "--debug/--no-debug",
     default=False,
@@ -68,10 +68,16 @@ def deployments_callback(ctx, param, value):
     type=click.Choice(INSTANCE_ROLE_NAMES),
     help="Instance role",
 )
+@click.argument(
+    "command",
+    nargs=-1,
+    type=click.UNPROCESSED,
+)
 def main(
     instance_role: str,
     debug: bool,
     deployment_name: str,
+    command: tuple = (),
 ):
     outputs = {key: read_tf_output(deployment_name, key, verbose=debug)
                for key in ("cloud", f"{instance_role}_vm_id", f"{instance_role}_ip")}
@@ -85,8 +91,11 @@ def main(
             raise click.ClickException(
                 f'No {format_instance_role(instance_role)} VM found for "{deployment_name}" deployment.'
             )
+        ssh_cmd = [*endpoint.ssh_argv(), f"{endpoint.user}@{endpoint.host}"]
+        if command:
+            ssh_cmd.extend(command)
         result = subprocess.run(
-            [*endpoint.ssh_argv(), f"{endpoint.user}@{endpoint.host}"],
+            ssh_cmd,
             shell=False, check=False,
         )
     except (OSError, ValueError, subprocess.SubprocessError):
