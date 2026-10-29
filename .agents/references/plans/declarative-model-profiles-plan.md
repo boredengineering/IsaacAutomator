@@ -194,14 +194,14 @@ models:
 
 ---
 
-## 4.5 Experiment 05 Master Model Zoo & Physical AI Models Catalog
+## 4.5 Master Model Zoo & Physical AI Models Catalog
 
-According to the Experiment 05 specification (`experiment_05.md`, Section 12), the evaluation pipeline sweeps a structured **Master Model Zoo** across three functional tiers. All 17 models are now codified as declarative YAML profiles in [`configs/models/`](../../../configs/models/):
+The evaluation and simulation pipeline sweeps a structured **Master Model Zoo** across three functional tiers. All 17 models are codified as declarative YAML profiles in [`configs/models/`](../../../configs/models/):
 
 ### 1. Cognitive Specification Synthesizers (Spec LLMs on Port 8000 / GPU 0)
-Generates finite relational scene graphs, SHACL constraints, and spatial factor coordinates (`configs/models/exp05-spec-llms.yaml`):
+Generates finite relational scene graphs, SHACL constraints, and spatial factor coordinates:
 
-| Model (`repo_id`) | Architecture | Serving Engine & Port | Role in Experiment 05 | Min Disk |
+| Model (`repo_id`) | Architecture | Serving Engine & Port | Functional Role | Min Disk |
 | :--- | :--- | :--- | :--- | :--- |
 | `Qwen/Qwen2.5-72B-Instruct-AWQ` | 72B Dense Transformer (AWQ) | vLLM (`arena-vllm-spec`, Port 8000) | Active Workstation Baseline Anchor (Dense instruction reasoning) | 42 GB |
 | `Qwen/Qwen2.5-Coder-32B-Instruct-AWQ` | 32B Code-Specialized (AWQ) | vLLM (`arena-vllm-spec`, Port 8000) | Historical Control Baseline (Grammar & syntax control; 32k/131k YaRN) | 20 GB |
@@ -214,9 +214,9 @@ Generates finite relational scene graphs, SHACL constraints, and spatial factor 
 | `zai-org/GLM-5.3-Flash` | 321B Multimodal MoE | Colibrì Engine (Vulkan DMA) | High-Capacity Multimodal MoE (62 shards, dual-role factor graph & visual critic) | 190 GB |
 
 ### 2. Visual Critics, World Models & Geometric Oracles (Port 8001 / 8002 / CPU)
-Evaluates step-0 rendered camera viewports, dynamic physics, and motion manifolds (`configs/models/exp05-visual-critics.yaml`):
+Evaluates step-0 rendered camera viewports, dynamic physics, and motion manifolds:
 
-| Model / Critic (`repo_id`) | Architecture | Serving Engine / Port | Role in Experiment 05 | Min Disk |
+| Model / Critic (`repo_id`) | Architecture | Serving Engine / Port | Functional Role | Min Disk |
 | :--- | :--- | :--- | :--- | :--- |
 | `nvidia/Cosmos-Reason2-2B` | 2B Physical AI World Model | vLLM (`arena-vllm-visual`, Port 8001) | Physical Dynamics Critic (V2) (Audits approach vectors & swept volume clearings) + GR00T VLM backbone | 8 GB |
 | `Qwen/Qwen2.5-VL-7B-Instruct` | 7B Multimodal VLM | vLLM (`arena-vllm-visual`, Port 8001) | General Multimodal Scene Critic (V1) (2D scene visual verification) | 17 GB |
@@ -225,7 +225,7 @@ Evaluates step-0 rendered camera viewports, dynamic physics, and motion manifold
 | Deterministic Physical AI Oracle | Pure Python + Pixar USD `BBoxCache` | In-Tree CLI (`verify_articulated_spec.py`, CPU) | Exact Analytical Geometry (V0) (Zero-VRAM exact ground-truth collision check) | 0 GB |
 
 ### 3. Closed-Loop Foundation Robotics Policies (GPU 1)
-Downstream policies evaluated across certified scene graphs for 10 seeds (20 s horizon) on Franka DROID (`configs/models/gr00t-foundation.yaml`):
+Downstream policies evaluated across certified scene graphs for 10 seeds (20 s horizon) on Franka DROID:
 
 | Policy Model (`repo_id`) | Architecture | Serving Container & Port | Execution Modality | Min Disk |
 | :--- | :--- | :--- | :--- | :--- |
@@ -234,12 +234,8 @@ Downstream policies evaluated across certified scene graphs for 10 seeds (20 s h
 | `nvidia/GR00T-N1.6-DROID` | Flow-Matched DiT | `gr00t-server` on Port 5556 (ZeroMQ) | Historical baseline control | 15 GB |
 
 ### Implemented Declarative Profiles Catalog (`configs/models/*.yaml`)
-Operators can now select either the monolithic Master Zoo profile or modular role-specific profiles:
-1. **[`configs/models/experiment-05-zoo.yaml`](../../../configs/models/experiment-05-zoo.yaml)** — **Full Experiment 05 Master Model Zoo** (all 17 models across Roles 1, 2, and 3; total `min_disk_free_gb: 1038 GB` $\rightarrow$ dynamically provisions a **1,300 GB** `hyperdisk-balanced` secondary disk with 25% safety buffer).
-2. **[`configs/models/exp05-spec-llms.yaml`](../../../configs/models/exp05-spec-llms.yaml)** — **Role 1: Cognitive Specification Synthesizers** (9 Spec LLMs & MoEs on Port 8000 / Colibrì; `891 GB`).
-3. **[`configs/models/exp05-visual-critics.yaml`](../../../configs/models/exp05-visual-critics.yaml)** — **Role 2: Visual Critics, World Models & Geometric Oracles** (`Cosmos-Reason2-2B`, `Qwen2.5-VL-7B-Instruct`, `Qwen3-VL-32B-Thinking`, `DA3METRIC-LARGE`, `moge-2-vitl` on Ports 8001/8002; `97 GB`).
-4. **[`configs/models/gr00t-foundation.yaml`](../../../configs/models/gr00t-foundation.yaml)** — **Role 3: Closed-Loop Foundation Robotics Policies** (`GR00T-N1.7-3B`, `GR00T-N1.6-DROID`, `Cosmos-Reason2-2B` VLM backbone, and OpenPI `pi05_droid_jointpos` on Ports 5556/8008; `58 GB`).
-5. **[`configs/models/colibri-flash.yaml`](../../../configs/models/colibri-flash.yaml)** & **[`configs/models/colibri-streaming.yaml`](../../../configs/models/colibri-streaming.yaml)** — Standalone Colibrì MoE profiles (`190 GB` / `630 GB`).
+1. **[`configs/models/complete-model-zoo.yaml`](../../../configs/models/complete-model-zoo.yaml)** — **Complete Master Model Zoo** (all 17 models across Roles 1, 2, and 3; total `min_disk_free_gb: 1038 GB` $\rightarrow$ dynamically provisions a **1,300 GB** `hyperdisk-balanced` secondary disk with 25% safety buffer).
+2. **[`configs/models/example-model.yaml`](../../../configs/models/example-model.yaml)** — **Minimal Reference Template** (`10 GB`).
 
 ---
 
@@ -631,11 +627,9 @@ For workstations that were deployed prior to enabling `models_disk` (such as the
 ## 7. Implementation Roadmap & Status
 
 ### Phase 1: Core Engine & Presets (DONE)
-- [x] Create [`configs/models/`](../../../configs/models/) directory.
+- [x] Create [`configs/models/`](../../../configs/models/) directory and [`configs/models/README.md`](../../../configs/models/README.md).
 - [x] Create reference profile [`configs/models/example-model.yaml`](../../../configs/models/example-model.yaml).
-- [x] Create Colibrì Flash profile [`configs/models/colibri-flash.yaml`](../../../configs/models/colibri-flash.yaml).
-- [x] Create Colibrì Streaming MoE profile [`configs/models/colibri-streaming.yaml`](../../../configs/models/colibri-streaming.yaml).
-- [x] Create Isaac-GR00T foundation profile [`configs/models/gr00t-foundation.yaml`](../../../configs/models/gr00t-foundation.yaml).
+- [x] Create Master Model Zoo profile [`configs/models/complete-model-zoo.yaml`](../../../configs/models/complete-model-zoo.yaml) (all 17 models across Roles 1, 2, and 3).
 - [x] Implement [`src/python/model_profile.py`](../../../src/python/model_profile.py) parser, resolver, and plan generator.
 - [x] Implement unit tests in [`src/tests/model_profile.test.py`](../../../src/tests/model_profile.test.py) (6/6 passing).
 
@@ -643,7 +637,7 @@ For workstations that were deployed prior to enabling `models_disk` (such as the
 - [x] Implement [`./download-models`](../../../download-models) wrapper.
 - [x] Add non-invasive pre-flight storage check via SSH (`df -BG`).
 - [x] Support `--dry-run`, `--force`, and `--debug` flags.
-- [x] Verified live dry-run against `studio-workstation` (detected 129 GB free root disk vs. 190 GB required).
+- [x] Verified live dry-run against `studio-workstation` (`--profile complete-model-zoo --dry-run`).
 
 ### Phase 3: isaac9s Cockpit Integration (DONE)
 - [x] Create `ModelsPane` in [`src/tui/screens/models.py`](../../../src/tui/screens/models.py).
@@ -652,12 +646,7 @@ For workstations that were deployed prior to enabling `models_disk` (such as the
 - [x] Wire `[d] Download` and `[v] Dry-Run Plan` buttons directly into background execution and the live logs pane.
 - [x] Add command palette support (`:models`, `:model`, `7`).
 
-### Phase 4: Multi-Disk Terraform, Simulation Model Catalog, & Programmatic Path Contract (PLANNED)
-- [ ] **Step 4.0 — Simulation & Physical AI Model Profiles (`configs/models/*.yaml`):**
-  - Update [`configs/models/gr00t-foundation.yaml`](../../../configs/models/gr00t-foundation.yaml) to include `nvidia/GR00T-N1.7-3B`, VLM backbone `nvidia/Cosmos-Reason2-2B`, and embodiment checkpoints.
-  - Create `configs/models/openpi-foundation.yaml` ($\pi_0$ / $\pi_0\text{-fast}$ checkpoints for `isaaclab_arena_openpi`).
-  - Create `configs/models/isaaclab-arena-benchmarks.yaml` (the 5 Arena manipulation/locomanipulation checkpoints + `dreamzero` weights).
-  - Create `configs/models/lerobot-foundation.yaml` (SmolVLA, ACT, and Diffusion policies).
+### Phase 4: Multi-Disk Terraform & Programmatic Path Contract (PLANNED)
 - [ ] **Step 4.1 — Programmatic Path Resolution & Dynamic Disk Calculator (`src/python/model_profile.py`):**
   - Implement `calculate_models_disk_spec()` summing active model profile footprints + 25% safety buffer (rounded to 100 GB increments, min 500 GB).
   - Implement dual-view materialization (`HF_HUB_CACHE` snapshot download + zero-copy symlink bridge to `/models/<canonical_subpath>`) and `/etc/isaac-models.env` generator from `export_env`.
