@@ -1,0 +1,30 @@
+# Colibri Flash Model Profile
+# Provisions GLM-5.3-Flash (321B MoE Multimodal) for Colibri autonomous agent runtime.
+
+schema_version: v1
+model_profile_name: colibri-flash
+description: "GLM-5.3-Flash weights optimized for Colibri autonomous agent runtime"
+
+defaults:
+  provider: huggingface
+  download_engine: hf_transfer
+  auth_env: HF_TOKEN
+
+models:
+  - name: glm-5.3-flash
+    description: "GLM-5.3-Flash 321B MoE multimodal checkpoint (62 shards)"
+    repo_id: zai-org/GLM-5.3-Flash
+    repo_type: model
+    revision: main
+    destination: /models/glm-5.3-flash
+    symlinks:
+      - /models/glm-5.3
+    allow_patterns:
+      - "*.safetensors"
+      - "*.json"
+      - "*.txt"
+      - "tokenizer*"
+    ignore_patterns:
+      - "*.bin"
+      - "*.msgpack"
+    min_disk_free_gb: 190

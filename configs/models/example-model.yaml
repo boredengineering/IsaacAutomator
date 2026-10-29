@@ -1,0 +1,28 @@
+# Example Declarative Model Profile for Isaac Automator
+# Defines weights, revisions, target destinations, and execution symlinks.
+
+schema_version: v1
+model_profile_name: example-model
+description: "Reference example demonstrating declarative model provisioning"
+
+defaults:
+  provider: huggingface
+  download_engine: hf_transfer  # 'hf_transfer' (multi-threaded Rust) or 'hf_cli'
+  auth_env: HF_TOKEN           # Name of environment variable containing the HF access token
+
+models:
+  - name: example-policy
+    description: "Sample small robotic diffusion policy"
+    repo_id: lerobot/diffusion_pusht
+    repo_type: model           # 'model' or 'dataset'
+    revision: main             # Branch, commit hash, or tag
+    destination: /models/lerobot/diffusion_pusht
+    symlinks:
+      - ~/models/diffusion_pusht
+    allow_patterns:
+      - "*.safetensors"
+      - "*.json"
+    ignore_patterns:
+      - "*.bin"
+      - "*.msgpack"
+    min_disk_free_gb: 5

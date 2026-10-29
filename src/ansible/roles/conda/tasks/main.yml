@@ -125,3 +125,10 @@
     owner: root
     group: root
     mode: "0755"
+
+- name: Deploy global Hugging Face CLI tools and hf-transfer
+  shell: |
+    {{ miniconda_install_dir }}/envs/{{ conda_env_name }}/bin/python -m pip install -q hf-transfer huggingface-hub
+    ln -sf {{ miniconda_install_dir }}/envs/{{ conda_env_name }}/bin/hf /usr/local/bin/hf
+    ln -sf {{ miniconda_install_dir }}/envs/{{ conda_env_name }}/bin/huggingface-cli /usr/local/bin/huggingface-cli
+  changed_when: false

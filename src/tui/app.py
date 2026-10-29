@@ -36,6 +36,7 @@ from src.tui.screens import (
     SubsystemsPane,
     WorkstationInspectorModal,
     WorkstationsPane,
+    ModelsPane,
 )
 from src.tui.telemetry import SystemTelemetry
 
@@ -103,6 +104,7 @@ class Isaac9sApp(App):
         Binding("4", "tab_doctor", "Doctor", show=True),
         Binding("5", "tab_profiles", "Profiles", show=True),
         Binding("6", "tab_hardware", "Hardware", show=True),
+        Binding("7", "tab_models", "Models", show=True),
         Binding("colon", "open_command_palette", "Cmd", show=True, key_display=":"),
         Binding("slash", "open_filter", "Filter", show=True, key_display="/"),
         Binding("n", "open_deploy_modal", "Deploy", show=True),
@@ -148,12 +150,15 @@ class Isaac9sApp(App):
             with TabPane("Hardware Telemetry [6]", id="tab-hardware"):
                 yield HardwarePane(id="pane-hardware")
 
+            with TabPane("Models & Weights [7]", id="tab-models"):
+                yield ModelsPane(id="pane-models")
+
             with TabPane("Help [?]", id="tab-help"):
                 with VerticalScroll():
                     yield Static(
                         "[bold cyan]isaac9s - Keyboard Shortcuts & Cockpit Reference[/]\n\n"
-                        "  [bold white]1 - 6[/]: Switch dashboard screens\n"
-                        "  [bold white]:[/]: Open Vim / k9s command palette (:sub, :ws, :deploy, :copy, :q)\n"
+                        "  [bold white]1 - 7[/]: Switch dashboard screens (1: Subsystems, 2: Fleet, 3: Logs, 4: Doctor, 5: Profiles, 6: Hardware, 7: Models)\n"
+                        "  [bold white]:[/]: Open Vim / k9s command palette (:sub, :ws, :models, :deploy, :copy, :q)\n"
                         "  [bold white]/[/]: Focus active search and log filter\n"
                         "  [bold white]n[/]: Deploy new cloud workstation wizard (with Dry-Run Validation)\n"
                         "  [bold white]i[/]: Deep inspect highlighted workstation metadata & billing\n"
@@ -201,6 +206,7 @@ class Isaac9sApp(App):
         self.workstations_pane = self.query_one("#pane-workstations", WorkstationsPane)
         self.doctor_pane = self.query_one("#pane-doctor", DoctorPane)
         self.hardware_pane = self.query_one("#pane-hardware", HardwarePane)
+        self.models_pane = self.query_one("#pane-models", ModelsPane)
 
         self.telemetry_widget.update_metrics()
         self.set_interval(2.0, self.update_telemetry)
@@ -230,6 +236,9 @@ class Isaac9sApp(App):
 
     def action_tab_hardware(self) -> None:
         self.query_one("#main-tabs", TabbedContent).active = "tab-hardware"
+
+    def action_tab_models(self) -> None:
+        self.query_one("#main-tabs", TabbedContent).active = "tab-models"
 
     def action_tab_help(self) -> None:
         self.query_one("#main-tabs", TabbedContent).active = "tab-help"
@@ -333,7 +342,36 @@ class Isaac9sApp(App):
         self.workstations_pane.refresh_workstations()
         self.doctor_pane.refresh_doctor()
         self.hardware_pane.refresh_telemetry()
+        self.models_pane.refresh_profiles()
         self.log_message("[bold cyan]All tab data refreshed.[/]")
+
+    def action_plan_model(self) -> None:
+        selected_profile = self.models_pane.get_selected_profile()
+        if not selected_profile:
+            self.notify("Please select a model profile from the table.", severity="warning")
+            return
+        selected_vm = self.workstations_pane.get_selected_workstation()
+        name = selected_vm.get("name")
+        if not name or name == "local-workstation":
+            self.notify("Please select a running cloud workstation from Fleet [2].", severity="warning")
+            return
+        self.log_message(f"[bold cyan]Running pre-flight dry-run plan for '{selected_profile}' on '{name}'...[/]")
+        self.action_tab_logs()
+        self.run_async_command(f"./download-models {name} --profile {selected_profile} --dry-run")
+
+    def action_download_model(self) -> None:
+        selected_profile = self.models_pane.get_selected_profile()
+        if not selected_profile:
+            self.notify("Please select a model profile from the table.", severity="warning")
+            return
+        selected_vm = self.workstations_pane.get_selected_workstation()
+        name = selected_vm.get("name")
+        if not name or name == "local-workstation":
+            self.notify("Please select a running cloud workstation from Fleet [2].", severity="warning")
+            return
+        self.log_message(f"[bold green]Starting model download for '{selected_profile}' on '{name}'...[/]")
+        self.action_tab_logs()
+        self.run_async_command(f"./download-models {name} --profile {selected_profile}")
 
     def action_cancel_running_process(self) -> None:
         if self.backend_dispatch_worker is not None:
@@ -532,6 +570,8 @@ class Isaac9sApp(App):
             self.action_tab_profiles()
         elif cmd in ("hw", "hardware", "telemetry", "6"):
             self.action_tab_hardware()
+        elif cmd in ("models", "model", "weights", "7", "m"):
+            self.action_tab_models()
         elif cmd in ("help", "?"):
             self.action_tab_help()
         elif cmd in ("deploy", "new", "n"):
@@ -594,6 +634,12 @@ class Isaac9sApp(App):
             self.action_run_heal()
         elif btn_id == "btn-hw-refresh":
             self.hardware_pane.refresh_telemetry()
+        elif btn_id == "btn-refresh-models":
+            self.models_pane.refresh_profiles()
+        elif btn_id == "btn-plan-model":
+            self.action_plan_model()
+        elif btn_id == "btn-download-model":
+            self.action_download_model()
         elif btn_id == "btn-apply-profile":
             self.log_message("[bold green]Configuration profile applied successfully.[/]")
 

@@ -1,0 +1,195 @@
+#!/usr/bin/env python3
+"""CLI tool to provision, verify, and download machine learning models onto an Isaac Workstation."""
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+import click
+
+from src.python.config import c as config
+from src.python.file_transfer import endpoint_from_config
+from src.python.model_profile import (
+    list_model_profiles,
+    resolve_model_profile,
+    generate_download_plan,
+    ModelProfileError,
+)
+from src.python.utils import (
+    approved_deployment_path,
+    read_meta,
+    colorize_error,
+    colorize_prompt,
+    deployments,
+    read_tf_output,
+    shell_command,
+)
+
+
+def deployments_callback(ctx, param, value):
+    if (value is None) or (value not in deployments()):
+        click.echo(
+            colorize_error(
+                f'Invalid deployment name "{value}". Must be one of: [{", ".join(deployments())}].'
+            )
+        )
+        ctx.abort()
+    return value
+
+
+def profile_callback(ctx, param, value):
+    available = list_model_profiles()
+    if value not in available:
+        # Also allow direct file paths
+        if not Path(value).is_file():
+            click.echo(
+                colorize_error(
+                    f'Invalid model profile "{value}". Available presets: [{", ".join(available)}].'
+                )
+            )
+            ctx.abort()
+    return value
+
+
+def execute_ssh_command(endpoint, cmd_str, check=True):
+    """Run a remote shell command via the resolved SSH endpoint."""
+    ssh_cmd = [*endpoint.ssh_argv(), f"{endpoint.user}@{endpoint.host}", cmd_str]
+    result = subprocess.run(ssh_cmd, shell=False, check=False)
+    if check and result.returncode != 0:
+        raise click.ClickException(f"Remote command failed with exit code {result.returncode}: {cmd_str}")
+    return result
+
+
+def query_ssh_output(endpoint, cmd_str):
+    """Run a remote shell command and return captured stdout string."""
+    ssh_cmd = [*endpoint.ssh_argv(), f"{endpoint.user}@{endpoint.host}", cmd_str]
+    result = subprocess.run(ssh_cmd, shell=False, capture_output=True, text=True)
+    if result.returncode != 0:
+        return ""
+    return result.stdout.strip()
+
+
+@click.command()
+@click.argument("deployment_name", required=True, callback=deployments_callback)
+@click.option(
+    "--profile", "-p",
+    required=True,
+    help="Model profile name or path from configs/models/",
+    callback=profile_callback,
+)
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    default=False,
+    help="Print the planned actions without downloading models or altering files.",
+)
+@click.option(
+    "--force",
+    is_flag=True,
+    default=False,
+    help="Proceed even if free disk space appears lower than recommended.",
+)
+@click.option(
+    "--debug/--no-debug",
+    default=False,
+    show_default=True,
+)
+def main(deployment_name: str, profile: str, dry_run: bool, force: bool, debug: bool):
+    """Download and configure models on DEPLOYMENT_NAME using a model profile."""
+    # 1. Resolve Workstation Endpoint
+    outputs = {key: read_tf_output(deployment_name, key, verbose=debug)
+               for key in ("cloud", "isaac_workstation_vm_id", "isaac_workstation_ip")}
+    meta = read_meta(deployment_name, verbose=debug)
+    endpoint = endpoint_from_config(
+        meta, outputs,
+        approved_deployment_path(deployment_name), role="isaac_workstation",
+        default_user=config["default_ssh_user"],
+    )
+    if endpoint.host in ("NA", "", None):
+        raise click.ClickException(f'No active workstation VM found for "{deployment_name}".')
+
+    click.echo(colorize_prompt(f"==> Resolving model profile '{profile}' for {endpoint.user}@{endpoint.host}"))
+
+    # 2. Resolve Profile & Generate Plan
+    target_home = f"/home/{endpoint.user}" if endpoint.user != "root" else "/root"
+    try:
+        resolved = resolve_model_profile(profile, target_user=endpoint.user, target_home=target_home)
+        plan = generate_download_plan(resolved)
+    except ModelProfileError as err:
+        raise click.ClickException(f"Profile error: {err}")
+
+    click.echo(f"Profile:     {plan['profile_name']}")
+    click.echo(f"Description: {resolved['description']}")
+    click.echo(f"Models:      {len(resolved['models'])} model(s) declared")
+    click.echo(f"Required:    ~{plan['total_min_disk_gb']} GB free disk space recommended\n")
+
+    # 3. Pre-flight Disk Check via SSH
+    click.echo(colorize_prompt("==> Checking remote storage space..."))
+    df_raw = query_ssh_output(endpoint, "df -BG / | tail -n 1 | awk '{print $4}' | tr -d 'G'")
+    avail_gb = 0
+    if df_raw.isdigit():
+        avail_gb = int(df_raw)
+        click.echo(f"Target root partition free space: {avail_gb} GB")
+    else:
+        click.echo("Target root partition free space: Unknown (could not query df)")
+
+    if avail_gb > 0 and avail_gb < plan["total_min_disk_gb"]:
+        msg = f"WARNING: Target has {avail_gb} GB free, but profile recommends {plan['total_min_disk_gb']} GB."
+        if not force and not dry_run:
+            click.echo(colorize_error(msg))
+            click.echo("Use --force to proceed anyway or attach/mount a larger disk at /mnt/models_fast or /models.")
+            raise click.Abort()
+        else:
+            click.echo(colorize_error(f"{msg} Continuing due to --force/--dry-run."))
+
+    # 4. Display Plan
+    click.echo(colorize_prompt("\n==> Filesystem Plan:"))
+    for dir_path in plan["directories_to_create"]:
+        click.echo(f"  [dir]     {dir_path}")
+    for link_to, target in plan["symlinks_to_create"]:
+        click.echo(f"  [symlink] {target} -> {link_to}")
+
+    click.echo(colorize_prompt("\n==> Download Commands:"))
+    for item in plan["download_commands"]:
+        click.echo(f"  [{item['model_name']}] {item['command']}")
+
+    if dry_run:
+        click.echo(colorize_prompt("\n[Dry Run] No actions performed on remote workstation."))
+        return
+
+    # 5. Execute Filesystem Staging
+    click.echo(colorize_prompt("\n==> Preparing directories and permissions on workstation..."))
+    for dir_path in plan["directories_to_create"]:
+        # Use sudo if creating top-level directories like /models or /mnt/models_fast
+        if dir_path.startswith(("/models", "/mnt", "/opt")):
+            setup_cmd = f"sudo mkdir -p '{dir_path}' && sudo chown -R {endpoint.user}:{endpoint.user} '{dir_path}'"
+        else:
+            setup_cmd = f"mkdir -p '{dir_path}'"
+        execute_ssh_command(endpoint, setup_cmd)
+
+    for link_to, target in plan["symlinks_to_create"]:
+        # Ensure parent of target exists
+        parent_dir = str(Path(target).parent)
+        if target.startswith(("/models", "/mnt", "/opt")):
+            link_cmd = f"sudo mkdir -p '{parent_dir}' && sudo chown -R {endpoint.user}:{endpoint.user} '{parent_dir}' && ln -sfn '{link_to}' '{target}'"
+        else:
+            link_cmd = f"mkdir -p '{parent_dir}' && ln -sfn '{link_to}' '{target}'"
+        execute_ssh_command(endpoint, link_cmd)
+
+    # 6. Execute Downloads
+    click.echo(colorize_prompt("\n==> Downloading models (using high-speed hf / hf-transfer)..."))
+    for item in plan["download_commands"]:
+        click.echo(colorize_prompt(f"\n--- Starting download for '{item['model_name']}' ---"))
+        cmd = item["command"]
+        # Source conda isaaclab env or PATH if needed
+        full_remote_cmd = f"bash -l -c '{cmd}'"
+        execute_ssh_command(endpoint, full_remote_cmd)
+
+    click.echo(colorize_prompt("\n==> All models successfully provisioned!"))
+
+
+if __name__ == "__main__":
+    if os.path.exists("/.dockerenv"):
+        main()
+    else:
+        shell_command(f"./run '{' '.join(sys.argv)}'", verbose=True)

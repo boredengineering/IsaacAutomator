@@ -157,3 +157,20 @@ WorkstationInspectorModal, CloudAuthBridgeModal, DeployWorkstationModal {
     margin: 1 0;
 }
 
+#models-split-view {
+    height: 1fr;
+}
+
+#models-table-container {
+    width: 50%;
+    height: 1fr;
+}
+
+#models-detail-pane {
+    width: 50%;
+    height: 1fr;
+    background: #161b22;
+    border-left: solid #30363d;
+    padding: 1;
+}
+

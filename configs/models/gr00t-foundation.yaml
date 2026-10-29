@@ -1,0 +1,22 @@
+# Isaac-GR00T Foundation Model Profile
+# Declarative weights for physical AI foundation models & zeroMQ embodiment inference.
+
+schema_version: v1
+model_profile_name: gr00t-foundation
+description: "Isaac-GR00T physical AI foundation model checkpoints"
+
+defaults:
+  provider: huggingface
+  download_engine: hf_transfer
+  auth_env: HF_TOKEN
+
+models:
+  - name: gr00t-embodiment-dev
+    description: "Isaac-GR00T policy weights for generalist robotics manipulation"
+    repo_id: nvidia/gr00t-foundation
+    repo_type: model
+    revision: dev
+    destination: /opt/models/gr00t
+    symlinks:
+      - ~/models/gr00t
+    min_disk_free_gb: 40
