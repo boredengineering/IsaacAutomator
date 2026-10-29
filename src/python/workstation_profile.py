@@ -136,6 +136,23 @@ def _workspace(value):
         raise ProfileError('workspace.name conflicts with default_owner')
 
 
+def _devtools(value):
+    if type(value) is not dict:
+        raise ProfileError('devtools: expected mapping')
+    allowed_tools = {'docker', 'nvidia_container_toolkit', 'vscode', 'github_desktop', 'chromium', 'discord', 'cloud_clis'}
+    _keys(value, allowed_tools, 'devtools')
+    for key in ('docker', 'nvidia_container_toolkit', 'vscode', 'github_desktop', 'chromium', 'discord'):
+        if key in value and not isinstance(value[key], bool):
+            raise ProfileError(f'devtools.{key} must be boolean')
+    if 'cloud_clis' in value:
+        if type(value['cloud_clis']) is not dict:
+            raise ProfileError('devtools.cloud_clis: expected mapping')
+        _keys(value['cloud_clis'], {'aws', 'gcloud', 'gh'}, 'devtools.cloud_clis')
+        for key in ('aws', 'gcloud', 'gh'):
+            if key in value['cloud_clis'] and not isinstance(value['cloud_clis'][key], bool):
+                raise ProfileError(f'devtools.cloud_clis.{key} must be boolean')
+
+
 def _custom_dependencies(items):
     if type(items) is not list or len(items) > 4096:
         raise ProfileError('custom_dependencies: expected bounded list')
@@ -243,7 +260,8 @@ def _repositories(items):
 
 def _validate(data, overlay=False):
     allowed = {'schema_version', 'kind', 'name', 'extends', 'target', 'components', 'runtimes', 'serving',
-               'defaults', 'draft', 'workspace', 'custom_dependencies', 'environments', 'notes', 'repositories'}
+               'defaults', 'draft', 'workspace', 'custom_dependencies', 'environments', 'notes', 'repositories',
+               'devtools'}
     if overlay:
         allowed -= {'schema_version', 'kind', 'name', 'extends', 'defaults', 'draft'}
     _keys(data, allowed, 'profile')
@@ -267,6 +285,8 @@ def _validate(data, overlay=False):
         raise ProfileError('Self-contained drafts cannot inherit presets')
     if 'workspace' in data:
         _workspace(data['workspace'])
+    if 'devtools' in data:
+        _devtools(data['devtools'])
     if 'custom_dependencies' in data:
         _custom_dependencies(data['custom_dependencies'])
     if 'environments' in data:

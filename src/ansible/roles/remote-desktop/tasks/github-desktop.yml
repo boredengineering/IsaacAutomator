@@ -1,0 +1,90 @@
+# region copyright
+# Copyright 2023-2026 NVIDIA Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# endregion
+
+---
+# Install and configure GitHub Desktop for Linux via Shiftkey / MWT package feed
+
+- name: Ensure keyrings directory exists
+  ansible.builtin.file:
+    path: /usr/share/keyrings
+    state: directory
+    mode: "0755"
+    owner: root
+    group: root
+
+- name: Download Shiftkey / MWT GPG key
+  ansible.builtin.get_url:
+    url: https://mirror.mwt.me/shiftkey-desktop/gpgkey
+    dest: /tmp/mwt-desktop.gpg.raw
+    mode: "0644"
+
+- name: Dearmor Shiftkey / MWT GPG key
+  ansible.builtin.shell: >
+    cat /tmp/mwt-desktop.gpg.raw | gpg --dearmor --yes -o /usr/share/keyrings/mwt-desktop.gpg
+  args:
+    creates: /usr/share/keyrings/mwt-desktop.gpg
+
+- name: Set permissions on MWT GPG keyring
+  ansible.builtin.file:
+    path: /usr/share/keyrings/mwt-desktop.gpg
+    mode: "0644"
+    owner: root
+    group: root
+
+- name: Configure Shiftkey / MWT APT repository
+  ansible.builtin.apt_repository:
+    repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/mwt-desktop.gpg] https://mirror.mwt.me/shiftkey-desktop/deb/ any main"
+    filename: mwt-desktop
+    state: present
+    update_cache: yes
+
+- name: Install GitHub Desktop package
+  ansible.builtin.apt:
+    name: github-desktop
+    state: present
+
+- name: Make sure desktop directory exists
+  ansible.builtin.file:
+    path: /home/{{ ansible_user }}/Desktop
+    state: directory
+    mode: "0755"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+
+- name: Create desktop shortcut for GitHub Desktop
+  ansible.builtin.copy:
+    dest: /home/{{ ansible_user }}/Desktop/github-desktop.desktop
+    mode: "0755"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    content: |
+      [Desktop Entry]
+      Version=1.0
+      Type=Application
+      Name=GitHub Desktop
+      GenericName=Git Client
+      Comment=GUI for managing Git and GitHub repositories
+      Exec=github-desktop %U
+      Icon=github-desktop
+      StartupWMClass=GitHub Desktop
+      Terminal=false
+      Categories=Development;RevisionControl;
+
+- name: Allow execution of desktop icon for GitHub Desktop
+  ansible.builtin.shell: >
+    gio set "/home/{{ ansible_user }}/Desktop/github-desktop.desktop" metadata::trusted true
+  become_user: "{{ ansible_user }}"
+  ignore_errors: true

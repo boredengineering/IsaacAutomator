@@ -16,6 +16,7 @@
 ---
 vnc_password: empty
 remote_desktop: "standard"
+github_desktop: false
 
 # NoMachine
 nomachine_version: "9.5.7_2"

@@ -55,6 +55,14 @@
   tags:
     - __vscode
 
+# install github desktop
+- name: GitHub Desktop
+  import_tasks: github-desktop.yml
+  when: github_desktop | default(false) | bool
+  tags:
+    - __github_desktop
+
+
 # Parse selected remote desktop providers
 - name: Build list of selected remote desktop providers
   set_fact:

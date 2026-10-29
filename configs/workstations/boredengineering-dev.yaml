@@ -280,3 +280,10 @@ repositories:
     pin_provenance: selected-head-only
     required: false
     support: unsupported
+
+# ------------------------------------------------------------------------------
+# 6. Developer Applications & Tools
+# ------------------------------------------------------------------------------
+devtools:
+  github_desktop: true
+  vscode: true

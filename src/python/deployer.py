@@ -569,6 +569,7 @@ class Deployer:
             current_profile = self.params.get('profile')
             current_sec_profile = self.params.get('security_profile')
             current_remote_desktop = self.params.get('remote_desktop')
+            current_github_desktop = self.params.get('github_desktop')
 
             # restore params from meta file
             self._persistence_ready = False
@@ -597,6 +598,9 @@ class Deployer:
                     prof_rd = pspec.get('raw', {}).get('workstation', {}).get('remote_desktop')
                     if prof_rd:
                         current_remote_desktop = prof_rd
+                    prof_gd = pspec.get('raw', {}).get('workstation', {}).get('github_desktop')
+                    if prof_gd is not None:
+                        current_github_desktop = prof_gd
                 except Exception:
                     pass
 
@@ -606,6 +610,9 @@ class Deployer:
             if current_remote_desktop is not None:
                 self.params['remote_desktop'] = current_remote_desktop
                 self.resolve_remote_desktop()
+
+            if current_github_desktop is not None:
+                self.params['github_desktop'] = current_github_desktop
 
             self._persistence_ready = True
 
@@ -930,6 +937,7 @@ class Deployer:
         ansible_vars.setdefault("isaaclab_private_git", self.params.get("isaaclab_private_git", ""))
         ansible_vars.setdefault("demos", self.params.get("demos", "no"))
         ansible_vars.setdefault("remote_desktop", self.params.get("remote_desktop", "standard"))
+        ansible_vars.setdefault("github_desktop", self.params.get("github_desktop", False))
         ansible_vars.setdefault("gcs_backup_bucket", self.params.get("backup_bucket", "") or "")
         ansible_vars.setdefault("gcs_auto_restore", self.params.get("auto_restore", False))
 

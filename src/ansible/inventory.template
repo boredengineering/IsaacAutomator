@@ -18,6 +18,7 @@ system_user_password="{system_user_password}"
 isaaclab_arena_git_checkpoint="{isaaclab_arena}"
 demos="{demos}"
 remote_desktop="{remote_desktop}"
+github_desktop={github_desktop}
 uploads_dir="{config[default_remote_uploads_dir]}"
 results_dir="{config[default_remote_results_dir]}"
 workspace_dir="{config[default_remote_workspace_dir]}"

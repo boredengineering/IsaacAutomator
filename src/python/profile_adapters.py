@@ -443,6 +443,25 @@ def render_profile(profile_or_resolved, adapter, target_home):
                 mark(prefix + '.' + key, 'mapped', consumer='profile_lab_packages', required=item['required'])
             for key in ('id', 'purpose', 'required', 'support'):
                 mark(prefix + '.' + key, 'metadata', reason='Review declaration retained in coverage', required=item['required'])
+    if 'devtools' in profile:
+        devtools = profile['devtools']
+        artifact.setdefault('devtools', {'docker': False, 'nvidia_container_toolkit': False,
+            'vscode': False, 'github_desktop': False, 'chromium': False,
+            'discord': False, 'cloud_clis': {'aws': False, 'gcloud': False, 'gh': False}})
+        for key, val in devtools.items():
+            if key == 'cloud_clis' and isinstance(val, dict):
+                artifact['devtools'].setdefault('cloud_clis', {})
+                for cli_k, cli_v in val.items():
+                    artifact['devtools']['cloud_clis'][cli_k] = cli_v
+                    mark(f'devtools.cloud_clis.{cli_k}', 'mapped', consumer=f'devtools.cloud_clis.{cli_k}')
+            else:
+                artifact['devtools'][key] = val
+                consumer_name = 'github_desktop' if key == 'github_desktop' else f'devtools.{key}'
+                mark('devtools.' + key, 'mapped', consumer=consumer_name,
+                     reason='Developer tool component intent mapped to environment specification')
+        if 'github_desktop' in devtools:
+            artifact['github_desktop'] = bool(devtools['github_desktop'])
+
     for section in ('environments', 'notes', 'repositories'):
         if not profile.get(section):
             mark(section, 'not_selected', reason='No declarations selected')
