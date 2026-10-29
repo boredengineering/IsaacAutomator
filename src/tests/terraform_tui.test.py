@@ -68,6 +68,15 @@ class BackendSelectionTests(unittest.TestCase):
         self.assertNotIn("--backend-config", argv)
         self.assertIn("--dry-run", argv)
 
+    def test_deployment_command_includes_remote_desktop(self):
+        import shlex
+        result = {"name": "kasm-rig", "cloud": "gcp", "project": "test-proj",
+                  "remote_desktop": "standard,kasmvnc", "dry_run": True}
+        command = backend.deployment_command(result)
+        argv = shlex.split(command)
+        self.assertIn("--remote-desktop", argv)
+        self.assertEqual(argv[argv.index("--remote-desktop") + 1], "standard,kasmvnc")
+
     def test_untouched_saved_remote_profile_is_not_overridden_by_local(self):
         from src.python.config import load_profile_spec
         from src.python.backend_selection import select_backend

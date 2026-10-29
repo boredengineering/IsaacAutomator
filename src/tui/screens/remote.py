@@ -23,9 +23,11 @@ class RemoteDesktopModal(ModalScreen):
         Binding("escape", "dismiss_modal", "Close", show=True),
         Binding("q", "dismiss_modal", "Close", show=True),
         Binding("1", "select_novnc", "noVNC", show=False),
-        Binding("2", "select_nomachine", "NoMachine", show=False),
-        Binding("3", "select_sunshine", "Sunshine", show=False),
-        Binding("4", "select_ssh", "SSH", show=False),
+        Binding("2", "select_kasmvnc", "KasmVNC", show=False),
+        Binding("3", "select_nomachine", "NoMachine", show=False),
+        Binding("4", "select_sunshine", "Sunshine", show=False),
+        Binding("5", "select_ssh", "SSH", show=False),
+        Binding("6", "select_vscode", "VS Code", show=False),
     ]
 
     def __init__(self, workstation: dict = None):
@@ -94,9 +96,11 @@ class RemoteDesktopModal(ModalScreen):
 
             with RadioSet(id="proto-select"):
                 yield RadioButton("1. noVNC Browser Desktop (Port 6080) - HTML5 2D Web Desktop", value=True, id="rb-novnc")
-                yield RadioButton("2. NoMachine High-Performance 3D (Port 4000) - 60 FPS Isaac Sim 3D Viewport", id="rb-nomachine")
-                yield RadioButton("3. Sunshine + Moonlight GameStream (Port 47989) - Low Latency NVENC Teleop", id="rb-sunshine")
-                yield RadioButton("4. Secure SSH Shell Tunnel (Port 22 / IAP / SSM) - Terminal Access", id="rb-ssh")
+                yield RadioButton("2. KasmVNC WebRTC Browser (Port 8444) - Fast Streaming & Native Clipboard [Recommended]", id="rb-kasmvnc")
+                yield RadioButton("3. NoMachine High-Performance 3D (Port 4000) - 60 FPS Isaac Sim Viewport", id="rb-nomachine")
+                yield RadioButton("4. Sunshine + Moonlight GameStream (Port 47989) - Low Latency NVENC Teleop", id="rb-sunshine")
+                yield RadioButton("5. Secure SSH Shell Tunnel (Port 22 / IAP / SSM) - Terminal Access", id="rb-ssh")
+                yield RadioButton("6. VS Code Remote-SSH Workspace (Port 22 / IAP) - Dev Container Ready", id="rb-vscode")
 
             yield Static(
                 self.format_endpoint_markup(ep),
@@ -105,7 +109,7 @@ class RemoteDesktopModal(ModalScreen):
             )
 
             with Horizontal(classes="modal-btn-bar"):
-                yield Button("Launch in Browser", id="btn-launch", variant="primary")
+                yield Button("Launch / Connect", id="btn-launch", variant="primary")
                 yield Button("Copy Endpoint", id="btn-copy", variant="default")
                 yield Button("Close [Esc / q]", id="btn-close", variant="error")
 
@@ -118,9 +122,11 @@ class RemoteDesktopModal(ModalScreen):
     def on_radio_set_changed(self, event: RadioSet.Changed) -> None:
         mapping = {
             "rb-novnc": "novnc",
+            "rb-kasmvnc": "kasmvnc",
             "rb-nomachine": "nomachine",
             "rb-sunshine": "sunshine",
             "rb-ssh": "ssh",
+            "rb-vscode": "vscode",
         }
         proto = mapping.get(event.pressed.id, "novnc")
         self.update_proto(proto)
@@ -133,7 +139,7 @@ class RemoteDesktopModal(ModalScreen):
             if not ep.supported and ep.warning:
                 self.notify(ep.warning, title="Protocol Incompatible", severity="error")
                 return
-            if self.selected_proto in ("novnc", "sunshine") and not ep.requires_tunnel:
+            if self.selected_proto in ("novnc", "sunshine", "kasmvnc", "vscode") and not ep.requires_tunnel:
                 webbrowser.open(ep.target_endpoint)
             self.dismiss(self.selected_proto)
         elif event.button.id == "btn-copy":
@@ -156,6 +162,10 @@ class RemoteDesktopModal(ModalScreen):
         self.query_one("#rb-novnc", RadioButton).value = True
         self.update_proto("novnc")
 
+    def action_select_kasmvnc(self) -> None:
+        self.query_one("#rb-kasmvnc", RadioButton).value = True
+        self.update_proto("kasmvnc")
+
     def action_select_nomachine(self) -> None:
         self.query_one("#rb-nomachine", RadioButton).value = True
         self.update_proto("nomachine")
@@ -167,3 +177,7 @@ class RemoteDesktopModal(ModalScreen):
     def action_select_ssh(self) -> None:
         self.query_one("#rb-ssh", RadioButton).value = True
         self.update_proto("ssh")
+
+    def action_select_vscode(self) -> None:
+        self.query_one("#rb-vscode", RadioButton).value = True
+        self.update_proto("vscode")

@@ -27,3 +27,8 @@ gcs_backup_bucket: ""
 gcs_backup_interval_minutes: 10
 
 gcs_auto_restore: false
+
+# Custom wallpaper configuration (empty by default to use bundled Isaac wallpaper)
+custom_wallpaper_url: ""
+custom_wallpaper_path: ""
+

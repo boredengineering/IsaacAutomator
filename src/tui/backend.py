@@ -67,6 +67,8 @@ def deployment_command(result: dict) -> str:
         argv.append("--spot")
     if zone and zone != "default":
         argv.extend(["--zone" if cloud == "gcp" else "--region", zone])
+    if result.get("remote_desktop"):
+        argv.extend(["--remote-desktop", str(result["remote_desktop"])])
     if result.get("dry_run"):
         argv.append("--dry-run")
     argv.extend(["--demos", ",".join(result.get("demos", [])) or "no"])

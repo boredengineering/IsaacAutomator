@@ -1,0 +1,192 @@
+#!/usr/bin/env bash
+# region copyright
+# Copyright 2023-2026 NVIDIA Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# endregion
+
+# ==============================================================================
+# Isaac Automator - Universal Desktop Wallpaper Setter
+# Standardizes background across GNOME (noVNC / NoMachine / DCV) and XFCE (KasmVNC)
+# ==============================================================================
+set -euo pipefail
+
+TARGET_USER="{{ ansible_user }}"
+USER_HOME=$(eval echo "~$TARGET_USER")
+WP_DEST="$USER_HOME/Pictures/wallpaper.png"
+SYSTEM_WP="/usr/share/backgrounds/isaac-automator/wallpaper.png"
+
+show_help() {
+    cat <<EOF
+Usage: set-wallpaper [OPTIONS] [IMAGE_PATH | URL]
+
+Sets and standardizes the desktop wallpaper across all remote desktop environments:
+  - noVNC / NoMachine / NICE DCV (GNOME on Display :0)
+  - KasmVNC (XFCE on Display :1)
+
+Arguments:
+  IMAGE_PATH        Local path to a PNG or JPG image file
+  URL               Web URL (http:// or https://) to download the image from
+
+Options:
+  --apply-only      Re-apply the current wallpaper without replacing the image file
+  -h, --help        Show this help message
+
+Examples:
+  set-wallpaper /home/$TARGET_USER/Pictures/my_custom_bg.png
+  set-wallpaper https://example.com/robotics_wallpaper.png
+  set-wallpaper --apply-only
+EOF
+}
+
+if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
+    show_help
+    exit 0
+fi
+
+mkdir -p "$USER_HOME/Pictures"
+mkdir -p /usr/share/backgrounds/isaac-automator
+
+# 1. Fetch, copy, or use existing image
+if [ "${1:-}" = "--apply-only" ] || [ -z "${1:-}" ]; then
+    if [ ! -f "$WP_DEST" ]; then
+        if [ -f "$SYSTEM_WP" ]; then
+            cp -f "$SYSTEM_WP" "$WP_DEST"
+        else
+            echo "Error: No existing wallpaper found at $WP_DEST or $SYSTEM_WP" >&2
+            exit 1
+        fi
+    fi
+    echo "[set-wallpaper] Re-applying existing wallpaper: $WP_DEST"
+else
+    INPUT="$1"
+    if [[ "$INPUT" =~ ^https?:// ]]; then
+        echo "[set-wallpaper] Downloading wallpaper from $INPUT..."
+        TEMP_DOWNLOAD=$(mktemp /tmp/custom_wallpaper_XXXXXX)
+        if command -v curl >/dev/null 2>&1; then
+            curl -fsSL "$INPUT" -o "$TEMP_DOWNLOAD"
+        elif command -v wget >/dev/null 2>&1; then
+            wget -qO "$TEMP_DOWNLOAD" "$INPUT"
+        else
+            echo "Error: Neither curl nor wget is installed." >&2
+            exit 1
+        fi
+        cp -f "$TEMP_DOWNLOAD" "$WP_DEST"
+        rm -f "$TEMP_DOWNLOAD"
+    elif [ -f "$INPUT" ]; then
+        echo "[set-wallpaper] Copying local wallpaper from $INPUT..."
+        cp -f "$INPUT" "$WP_DEST"
+    else
+        echo "Error: File '$INPUT' does not exist." >&2
+        exit 1
+    fi
+fi
+
+chmod 644 "$WP_DEST"
+chown "$TARGET_USER:$TARGET_USER" "$WP_DEST" 2>/dev/null || true
+cp -f "$WP_DEST" "$SYSTEM_WP" 2>/dev/null || true
+
+# 2. Update XFCE system-wide fallback backgrounds
+if [ -d /usr/share/backgrounds/xfce ]; then
+    echo "[set-wallpaper] Updating XFCE system default wallpapers..."
+    ln -sf "$WP_DEST" /usr/share/backgrounds/xfce/xfce-stripes.png 2>/dev/null || true
+    ln -sf "$WP_DEST" /usr/share/backgrounds/xfce/xfce-teal.jpg 2>/dev/null || true
+    ln -sf "$WP_DEST" /usr/share/backgrounds/xfce/xfce-blue.jpg 2>/dev/null || true
+fi
+
+# 3. Update XFCE default channel XML configuration
+XFCE_XML_DIR="$USER_HOME/.config/xfce4/xfconf/xfce-perchannel-xml"
+mkdir -p "$XFCE_XML_DIR"
+cat > "$XFCE_XML_DIR/xfce4-desktop.xml" <<XML
+<?xml version="1.0" encoding="UTF-8"?>
+<channel name="xfce4-desktop" version="1.0">
+  <property name="backdrop" type="empty">
+    <property name="screen0" type="empty">
+      <property name="monitor0" type="empty">
+        <property name="workspace0" type="empty">
+          <property name="color-style" type="int" value="0"/>
+          <property name="image-style" type="int" value="5"/>
+          <property name="last-image" type="string" value="$WP_DEST"/>
+        </property>
+      </property>
+      <property name="monitorVirtual-1" type="empty">
+        <property name="workspace0" type="empty">
+          <property name="color-style" type="int" value="0"/>
+          <property name="image-style" type="int" value="5"/>
+          <property name="last-image" type="string" value="$WP_DEST"/>
+        </property>
+      </property>
+      <property name="monitorVirtual1" type="empty">
+        <property name="workspace0" type="empty">
+          <property name="color-style" type="int" value="0"/>
+          <property name="image-style" type="int" value="5"/>
+          <property name="last-image" type="string" value="$WP_DEST"/>
+        </property>
+      </property>
+    </property>
+  </property>
+</channel>
+XML
+chown -R "$TARGET_USER:$TARGET_USER" "$USER_HOME/.config" 2>/dev/null || true
+
+# Also sync to /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml if directory exists
+if [ -d /etc/xdg/xfce4/xfconf/xfce-perchannel-xml ]; then
+    cp -f "$XFCE_XML_DIR/xfce4-desktop.xml" /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml 2>/dev/null || true
+fi
+
+# 4. Update GNOME system-wide dconf configuration
+if command -v dconf >/dev/null 2>&1; then
+    mkdir -p /etc/dconf/profile /etc/dconf/db/local.d
+    if [ ! -f /etc/dconf/profile/user ]; then
+        cat > /etc/dconf/profile/user <<'DCONF_PROF'
+user-db:user
+system-db:local
+DCONF_PROF
+    fi
+    cat > /etc/dconf/db/local.d/00-wallpaper <<DCONF_BG
+[org/gnome/desktop/background]
+picture-uri='file://$WP_DEST'
+picture-uri-dark='file://$WP_DEST'
+picture-options='zoom'
+DCONF_BG
+    dconf update 2>/dev/null || true
+fi
+
+# 5. Apply live to running GNOME session (Display :0)
+TARGET_UID=$(id -u "$TARGET_USER" 2>/dev/null || echo "1000")
+if command -v gsettings >/dev/null 2>&1; then
+    echo "[set-wallpaper] Updating GNOME desktop background..."
+    for item in picture-uri picture-uri-dark; do
+        sudo -u "$TARGET_USER" DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$TARGET_UID/bus" DISPLAY=:0 \
+            gsettings set org.gnome.desktop.background "$item" "file://$WP_DEST" 2>/dev/null || \
+        sudo -u "$TARGET_USER" gsettings set org.gnome.desktop.background "$item" "file://$WP_DEST" 2>/dev/null || true
+    done
+    sudo -u "$TARGET_USER" DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$TARGET_UID/bus" DISPLAY=:0 \
+        gsettings set org.gnome.desktop.background picture-options 'zoom' 2>/dev/null || \
+    sudo -u "$TARGET_USER" gsettings set org.gnome.desktop.background picture-options 'zoom' 2>/dev/null || true
+fi
+
+# 6. Apply live to running XFCE session (Display :1 or active xfdesktop)
+if command -v xfconf-query >/dev/null 2>&1; then
+    echo "[set-wallpaper] Updating XFCE desktop background..."
+    for DISP in :1 :0; do
+        PROPS=$(DISPLAY="$DISP" sudo -u "$TARGET_USER" xfconf-query -c xfce4-desktop -l 2>/dev/null | grep 'last-image$' || true)
+        for prop in $PROPS; do
+            DISPLAY="$DISP" sudo -u "$TARGET_USER" xfconf-query -c xfce4-desktop -p "$prop" -s "$WP_DEST" 2>/dev/null || true
+            STYLE_PROP="${prop%last-image}image-style"
+            DISPLAY="$DISP" sudo -u "$TARGET_USER" xfconf-query -c xfce4-desktop -p "$STYLE_PROP" -s 5 2>/dev/null || true
+        done
+    done
+fi
+
+echo "[set-wallpaper] Successfully applied wallpaper across noVNC (GNOME) and KasmVNC (XFCE)."

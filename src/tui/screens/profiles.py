@@ -64,6 +64,8 @@ class ProfilesPane(VerticalScroll):
             yield Checkbox("Shielded VM (Secure Boot, vTPM, Integrity Monitoring)", value=True, id="cb-custom-shielded")
             yield Checkbox("Centralized OS Login with Mandatory 2FA", value=True, id="cb-custom-oslogin")
             yield Checkbox("Google Secret Manager (Zero-Bake Credentials)", value=True, id="cb-custom-secrets")
+            yield Checkbox("GitHub Desktop (Shiftkey/MWT Package Feed)", value=True, id="cb-custom-github-desktop")
+            yield Checkbox("VS Code + Dev Containers Integration", value=True, id="cb-custom-vscode")
 
             with Horizontal(classes="action-bar"):
                 yield Label("[bold white]Profile Name:[/] ", classes="action-label")
@@ -97,7 +99,10 @@ class ProfilesPane(VerticalScroll):
         try:
             report = resolve_profile(self.selected_profile)
             components = ", ".join(name for name, spec in report["profile"]["components"].items() if spec["enabled"])
-            text = (f"{self.selected_profile}: {components or 'no software selected'}. "
+            devtools = report["profile"].get("devtools", {})
+            active_devtools = [name for name, enabled in devtools.items() if enabled]
+            devtools_str = f" | Devtools: {', '.join(active_devtools)}" if active_devtools else ""
+            text = (f"{self.selected_profile}: {components or 'no software selected'}{devtools_str}. "
                     "Offline intent, not applied. Software apply unsupported; ready_for_apply=False. "
                     "No installation, verification or pricing implied by this selection.")
         except (ProfileError, OSError):
@@ -213,6 +218,10 @@ class ProfilesPane(VerticalScroll):
                 "secrets": {
                     "engine": "secret_manager" if self.query_one("#cb-custom-secrets", Checkbox).value else "env_vars",
                 },
+            },
+            "devtools": {
+                "github_desktop": self.query_one("#cb-custom-github-desktop", Checkbox).value,
+                "vscode": self.query_one("#cb-custom-vscode", Checkbox).value,
             },
             "workstation": {
                 "base_profile": self.selected_profile,

@@ -106,6 +106,9 @@
       #!/bin/sh
       unset SESSION_MANAGER
       unset DBUS_SESSION_BUS_ADDRESS
+      if [ -x /usr/local/bin/set-wallpaper ]; then
+        (sleep 2 && /usr/local/bin/set-wallpaper --apply-only >/dev/null 2>&1) &
+      fi
       exec dbus-launch --exit-with-session startxfce4
 
 - name: Set KasmVNC password

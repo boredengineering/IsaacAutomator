@@ -196,6 +196,20 @@ class DeployWorkstationModal(ModalScreen):
                     yield Checkbox("Humanoid Locomotion", value=False, id="cb-demo-humanoid")
                     yield Checkbox("Quadruped Locomotion", value=False, id="cb-demo-quadruped")
 
+                yield Label("[bold white]8. Remote Desktop Streaming Stack:[/]")
+                yield Select([
+                    ("Standard + KasmVNC (WebRTC 8444 + NoMachine + noVNC) [Recommended]", "standard,kasmvnc"),
+                    ("KasmVNC Only (Fast WebRTC browser stream)", "kasmvnc"),
+                    ("Standard (NoMachine + noVNC)", "standard"),
+                    ("All (KasmVNC + NoMachine + Sunshine + noVNC + XRDP)", "all"),
+                    ("Headless (No GUI / SSH Only)", "no"),
+                ], value="standard,kasmvnc", allow_blank=False, id="sel-remote-desktop")
+
+                yield Label("[bold white]9. Developer Tooling & Integrations:[/]")
+                with Horizontal(classes="checkbox-row"):
+                    yield Checkbox("GitHub Desktop GUI", value=True, id="cb-dev-github-desktop")
+                    yield Checkbox("VS Code Remote & Dev Containers", value=True, id="cb-dev-vscode")
+
                 yield Static(
                     self.build_summary_text(),
                     id="deploy-summary",
@@ -231,10 +245,16 @@ class DeployWorkstationModal(ModalScreen):
         elif self.selected_profile not in ("simple", "team", "enterprise"):
             prof_desc = f"Custom Profile '{self.selected_profile}'; saved backend intent is inherited unless overridden."
 
+        try:
+            rd = str(self.query_one("#sel-remote-desktop", Select).value)
+        except Exception:
+            rd = "standard,kasmvnc"
+
         return (
             f"[bold cyan]Deployment Preview ({self.selected_cloud.upper()}):[/]\n"
             f"• Instance & GPU: [bold white]{self.selected_gpu}[/] | Zone: [cyan]{self.selected_zone}[/]\n"
             f"• Provisioning Model: {sched_badge}{resilience_str}\n"
+            f"• Remote Desktop: [bold green]{rd}[/]\n"
             f"• Security & Storage: [white]{prof_desc}[/]\n"
             f"• State backend: {self.effective_state_backend or 'UNKNOWN'} "
             f"({'inherited profile intent' if self.selected_state_backend is None else 'explicit override'}); cloud access UNKNOWN. "
@@ -335,6 +355,8 @@ class DeployWorkstationModal(ModalScreen):
         elif event.select.id == "sel-deploy-zone":
             self.selected_zone = str(event.value)
             self.update_summary()
+        elif event.select.id == "sel-remote-desktop":
+            self.update_summary()
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "btn-backend-validate":
@@ -366,6 +388,20 @@ class DeployWorkstationModal(ModalScreen):
         if self.query_one("#cb-demo-quadruped", Checkbox).value:
             demos.append("quadruped-locomotion")
 
+        try:
+            remote_desktop = str(self.query_one("#sel-remote-desktop", Select).value)
+        except Exception:
+            remote_desktop = "standard,kasmvnc"
+
+        devtools = []
+        try:
+            if self.query_one("#cb-dev-github-desktop", Checkbox).value:
+                devtools.append("github_desktop")
+            if self.query_one("#cb-dev-vscode", Checkbox).value:
+                devtools.append("vscode")
+        except Exception:
+            pass
+
         result = {
             "name": name,
             "cloud": self.selected_cloud,
@@ -374,6 +410,8 @@ class DeployWorkstationModal(ModalScreen):
             "spot": (self.scheduling_model == "spot"),
             "flex_start": (self.scheduling_model == "flex"),
             "profile": self.selected_profile,
+            "remote_desktop": remote_desktop,
+            "devtools": devtools,
             "demos": demos,
             "dry_run": dry_run,
             "state_backend": self.selected_state_backend,

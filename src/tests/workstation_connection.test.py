@@ -50,6 +50,18 @@ class WorkstationConnectionTests(unittest.TestCase):
             ]
         )
 
+        # 1b. KasmVNC
+        kasm_ep = info.get_protocol_endpoint("kasmvnc")
+        self.assertTrue(kasm_ep.supported)
+        self.assertTrue(kasm_ep.requires_tunnel)
+        self.assertEqual(kasm_ep.remote_port, 8444)
+        self.assertEqual(kasm_ep.target_endpoint, "https://127.0.0.1:8444")
+
+        # 1c. VS Code Remote
+        vscode_ep = info.get_protocol_endpoint("vscode")
+        self.assertTrue(vscode_ep.supported)
+        self.assertEqual(vscode_ep.target_endpoint, "vscode://vscode-remote/ssh-remote+private-gcp-rig/home/ubuntu/Documents/GitHub")
+
         # Custom local port for noVNC
         custom_novnc = info.get_protocol_endpoint("novnc", local_port=16080)
         self.assertEqual(custom_novnc.local_port, 16080)
@@ -102,6 +114,15 @@ class WorkstationConnectionTests(unittest.TestCase):
         self.assertTrue(novnc_ep.supported)
         self.assertFalse(novnc_ep.requires_tunnel)
         self.assertEqual(novnc_ep.target_endpoint, "http://198.51.100.42:6080/vnc.html?autoconnect=true&resize=remote")
+
+        kasm_ep = info.get_protocol_endpoint("kasmvnc")
+        self.assertTrue(kasm_ep.supported)
+        self.assertFalse(kasm_ep.requires_tunnel)
+        self.assertEqual(kasm_ep.target_endpoint, "https://198.51.100.42:8444")
+
+        vscode_ep = info.get_protocol_endpoint("vscode")
+        self.assertTrue(vscode_ep.supported)
+        self.assertEqual(vscode_ep.target_endpoint, "vscode://vscode-remote/ssh-remote+ubuntu@198.51.100.42/home/ubuntu/Documents/GitHub")
 
         nomachine_ep = info.get_protocol_endpoint("nomachine")
         self.assertTrue(nomachine_ep.supported)

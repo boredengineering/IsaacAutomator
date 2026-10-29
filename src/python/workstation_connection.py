@@ -127,6 +127,62 @@ class WorkstationConnectionInfo:
                     local_port=remote_port,
                 )
 
+        elif proto == "kasmvnc":
+            remote_port = 8444
+            lp = local_port or remote_port
+            if self.iap_enabled:
+                tunnel_cmd = build_iap_tunnel_command(
+                    self.instance_name, remote_port, lp, self.project, self.zone
+                ) if self.instance_name and self.project and self.zone else []
+                return ProtocolEndpoint(
+                    protocol="kasmvnc",
+                    supported=True,
+                    target_endpoint=f"https://127.0.0.1:{lp}",
+                    desc="Modern WebRTC browser desktop with audio and native clipboard via Cloud IAP tunnel.",
+                    security_lock=sec_lock,
+                    requires_tunnel=True,
+                    remote_port=remote_port,
+                    local_port=lp,
+                    tunnel_command=tunnel_cmd,
+                )
+            else:
+                return ProtocolEndpoint(
+                    protocol="kasmvnc",
+                    supported=bool(self.public_ip and self.public_ip not in ("NA", "None", "", "IAP_ONLY")),
+                    target_endpoint=f"https://{host}:8444",
+                    desc="Modern WebRTC browser desktop with audio, native clipboard, and dynamic resolution.",
+                    security_lock=sec_lock,
+                    requires_tunnel=False,
+                    remote_port=remote_port,
+                    local_port=remote_port,
+                )
+
+        elif proto in ("vscode", "devcontainer"):
+            remote_port = 22
+            lp = local_port or remote_port
+            if self.iap_enabled:
+                return ProtocolEndpoint(
+                    protocol="vscode",
+                    supported=True,
+                    target_endpoint=f"vscode://vscode-remote/ssh-remote+{self.name}/home/ubuntu/Documents/GitHub",
+                    desc="VS Code Remote-SSH workspace connection through IAP SSH wrapper.",
+                    security_lock=sec_lock,
+                    requires_tunnel=True,
+                    remote_port=remote_port,
+                    local_port=lp,
+                )
+            else:
+                return ProtocolEndpoint(
+                    protocol="vscode",
+                    supported=bool(self.public_ip and self.public_ip not in ("NA", "None", "", "IAP_ONLY")),
+                    target_endpoint=f"vscode://vscode-remote/ssh-remote+ubuntu@{host}/home/ubuntu/Documents/GitHub",
+                    desc="VS Code Remote-SSH workspace connection to remote workstation.",
+                    security_lock=sec_lock,
+                    requires_tunnel=False,
+                    remote_port=remote_port,
+                    local_port=remote_port,
+                )
+
         elif proto == "nomachine":
             remote_port = 4000
             lp = local_port or remote_port

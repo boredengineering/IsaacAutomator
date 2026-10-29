@@ -14,25 +14,67 @@
 # limitations under the License.
 # endregion
 
-- name: Make sure wallpaper dir exists
+- name: Make sure user pictures and system wallpaper dirs exist
   file:
-    path: /home/{{ ansible_user }}/Pictures
+    path: "{{ item }}"
     state: directory
     owner: "{{ ansible_user }}"
     group: "{{ ansible_user }}"
-    mode: 0755
+    mode: "0755"
+  with_items:
+    - "/home/{{ ansible_user }}/Pictures"
+    - "/usr/share/backgrounds/isaac-automator"
+    - "/usr/share/backgrounds/xfce"
 
-- name: Upload wallpaper
-  copy:
-    src: wallpaper.png
-    dest: /home/{{ ansible_user }}/Pictures/wallpaper.png
+- name: Download custom wallpaper from URL
+  get_url:
+    url: "{{ custom_wallpaper_url }}"
+    dest: "/home/{{ ansible_user }}/Pictures/wallpaper.png"
     owner: "{{ ansible_user }}"
     group: "{{ ansible_user }}"
-    mode: 0644
+    mode: "0644"
+  when: custom_wallpaper_url is defined and custom_wallpaper_url | length > 0
 
-- name: Set wallpaper
-  shell: gsettings set org.gnome.desktop.background {{ item }} file:///home/{{ ansible_user }}/Pictures/wallpaper.png
-  become_user: "{{ ansible_user }}"
-  with_items:
-    - picture-uri
-    - picture-uri-dark
+- name: Upload custom wallpaper from local path
+  copy:
+    src: "{{ custom_wallpaper_path }}"
+    dest: "/home/{{ ansible_user }}/Pictures/wallpaper.png"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0644"
+  when:
+    - (custom_wallpaper_url is not defined or custom_wallpaper_url | length == 0)
+    - custom_wallpaper_path is defined and custom_wallpaper_path | length > 0
+
+- name: Upload default bundled Isaac wallpaper
+  copy:
+    src: wallpaper.png
+    dest: "/home/{{ ansible_user }}/Pictures/wallpaper.png"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0644"
+  when:
+    - (custom_wallpaper_url is not defined or custom_wallpaper_url | length == 0)
+    - (custom_wallpaper_path is not defined or custom_wallpaper_path | length == 0)
+
+- name: Install universal set-wallpaper script
+  template:
+    src: set-wallpaper.j2
+    dest: /usr/local/bin/set-wallpaper
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Create isaac-wallpaper alias symlink
+  file:
+    src: /usr/local/bin/set-wallpaper
+    dest: /usr/local/bin/isaac-wallpaper
+    state: link
+    force: true
+
+- name: Apply wallpaper across GNOME and XFCE desktop environments
+  shell: /usr/local/bin/set-wallpaper --apply-only
+  args:
+    executable: /bin/bash
+  register: wallpaper_apply_output
+  changed_when: "'Successfully applied wallpaper' in wallpaper_apply_output.stdout"
