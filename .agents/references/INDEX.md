@@ -50,4 +50,6 @@ Catalog of high-level project specifications, architecture documents, and goal d
 | [`plans/declarative-model-profiles-plan.md`](./plans/declarative-model-profiles-plan.md) | Declarative model provisioning (`configs/models/`), Experiment 05 Master Model Zoo, and 3-tier hybrid storage architecture | Active Plan |
 | [`notes/architectural_limitations.md`](./notes/architectural_limitations.md) | Single-Node Deployment Coupling & Multi-Instance Cluster Constraints Audit across 5 Architectural Layers | Active Architectural Note |
 | [`notes/architecture_reevaluation.md`](./notes/architecture_reevaluation.md) | Hardcoded Profile Configurations, Closed-World Enum Audits & Dynamic Extensibility Flaws | Active Architectural Note |
+| [`plans/dual-instance-cluster-plan.md`](./plans/dual-instance-cluster-plan.md) | Dual-Instance Heterogeneous Cluster (1x GPU Sim Runner + 8x GPU Frontier MoE Host), Shared VPC Fabric & Selective GCS Hydration Plan | Planned |
+
 

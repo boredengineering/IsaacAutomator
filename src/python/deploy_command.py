@@ -95,8 +95,17 @@ class DeployCommand(click.core.Command):
                     args.extend(['--isaac-workstation-gpu-count', str(ws['gpu_count'])])
                 if 'remote_desktop' not in opts and ws.get('remote_desktop'):
                     args.extend(['--remote-desktop', str(ws['remote_desktop'])])
-                if 'ingress_cidrs' not in opts and raw.get('security', {}).get('network', {}).get('iap_only'):
-                    args.extend(['--ingress-cidrs', '0.0.0.0/0'])
+                if 'ingress_cidrs' not in opts:
+                    net_cfg = raw.get('security', {}).get('network', {})
+                    if net_cfg.get('iap_only'):
+                        args.extend(['--ingress-cidrs', '0.0.0.0/0'])
+                    elif net_cfg.get('ingress_cidrs'):
+                        cidrs = net_cfg['ingress_cidrs']
+                        if isinstance(cidrs, list):
+                            mapped = ['myip' if str(c).lower() == 'auto' else str(c) for c in cidrs]
+                            args.extend(['--ingress-cidrs', ','.join(mapped)])
+                        elif isinstance(cidrs, str):
+                            args.extend(['--ingress-cidrs', 'myip' if cidrs.lower() == 'auto' else cidrs])
 
             if source is not None:
                 from src.python.workstation_profile import resolve_profile

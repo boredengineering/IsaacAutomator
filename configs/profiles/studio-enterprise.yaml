@@ -41,7 +41,7 @@ workstation:
   gpu_model: "g4-standard-48"    # High-performance workstation compute (48 vCPU, 1x NVIDIA RTX PRO 6000 96GB GDDR7, 192GB Host RAM)
   gpu_count: 1
   boot_disk_size_gb: 300         # OS, Docker, Conda, and Isaac Sim/Lab/Arena software stack
-  software_profile: "configs/workstations/boredengineering-dev.yaml" # BoredEngineering personal fork stack tracking dev/0.3.0-prerelease
+  software_profile: "configs/workstations/boredengineering-dev.yaml" # BoredEngineering personal fork stack tracking dev/0.3.1
   model_profile: "configs/models/complete-model-zoo.yaml"            # 17-model catalog (Spec LLMs + Visual/3D Critics + GR00T/OpenPI)
   models_disk:
     enabled: false               # Attach on-demand via --enable-models-disk or ./download-models <name> --attach-disk

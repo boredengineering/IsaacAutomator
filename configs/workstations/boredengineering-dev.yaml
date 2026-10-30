@@ -4,7 +4,7 @@
 # Reconciles local host development setup with cloud deployment targets.
 # Configures personal forks under 'boredengineering' as origin remotes,
 # with canonical upstream repositories under 'isaac-sim' and 'NVIDIA'.
-# Targets the active https://github.com/boredengineering/IsaacLab-Arena/tree/dev/0.3.0-prerelease
+# Targets the active https://github.com/boredengineering/IsaacLab-Arena/tree/dev/0.3.1
 # evaluation stack with Isaac Sim 6.0.1 Standalone, Isaac Lab, and Isaac-GR00T.
 # Validated for both 'ansible' (cloud deployment) and 'local' (host execution).
 # ==============================================================================
@@ -56,7 +56,7 @@ components:
     source:
       mode: git
       repository: https://github.com/boredengineering/IsaacLab-Arena.git
-      ref: dev/0.3.0-prerelease
+      ref: dev/0.3.1
       revision: null
 
   gr00t:
@@ -167,7 +167,7 @@ repositories:
     git_dir: ~/Documents/GitHub/BoredEngineer/IsaacLab-Arena/.git
     common_dir: ~/Documents/GitHub/BoredEngineer/IsaacLab-Arena/.git
     head:
-      ref: dev/0.3.0-prerelease
+      ref: dev/0.3.1
       commit: null
     remotes:
       - name: origin

@@ -63,7 +63,7 @@ workstation:
   gpu_model: "g4-standard-384"   # Flagship 8x GPU compute (384 vCPU, 8x NVIDIA RTX PRO 6000 768GB VRAM, 1.44TB RAM)
   gpu_count: 8
   boot_disk_size_gb: 500         # System, CUDA 13.x, Docker, Conda, Isaac Sim/Lab/Arena environments
-  software_profile: "configs/workstations/boredengineering-dev.yaml" # BoredEngineering fork stack tracking dev/0.3.0-prerelease
+  software_profile: "configs/workstations/boredengineering-dev.yaml" # BoredEngineering fork stack tracking dev/0.3.1
   model_profile: "configs/models/complete-model-zoo.yaml"            # 17-model physical AI foundation catalog
   models_disk:
     enabled: true                # Dedicated high-throughput models volume mounted at /mnt/models_fast

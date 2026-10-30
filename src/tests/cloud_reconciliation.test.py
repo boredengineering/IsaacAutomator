@@ -85,9 +85,9 @@ class TestCloudReconciliation(unittest.TestCase):
         deployer.validate_configuration()
         self.assertEqual(deployer.params.get('isaac_workstation_instance_type'), 'g4-standard-48')
         self.assertEqual(deployer.params.get('isaac_workstation_gpu_count'), '1')
-        self.assertEqual(deployer.params.get('remote_desktop'), 'nomachine,novnc')
+        self.assertEqual(deployer.params.get('remote_desktop'), 'nomachine,novnc,kasmvnc')
         self.assertTrue(deployer.params.get('flex_start'))
-        self.assertTrue(deployer.params.get('enable_iap_only'))
+        self.assertFalse(deployer.params.get('enable_iap_only'))
         
         report = deployer.software_profile_report()
         self.assertTrue(report['render_supported'])
@@ -114,7 +114,7 @@ class TestCloudReconciliation(unittest.TestCase):
         art = ansible_report['artifact']
         self.assertEqual(art['workspace_dir'], '/home/ubuntu/Documents/GitHub/BoredEngineer')
         self.assertEqual(art['isaaclab_arena_git_repo'], 'https://github.com/boredengineering/IsaacLab-Arena.git')
-        self.assertEqual(art['isaaclab_arena_git_checkpoint'], 'dev/0.3.0-prerelease')
+        self.assertEqual(art['isaaclab_arena_git_checkpoint'], 'dev/0.3.1')
         self.assertEqual(art['isaaclab_git_repo'], 'https://github.com/boredengineering/IsaacLab.git')
         self.assertEqual(art['isaaclab_git_checkpoint'], 'dev/arena_v0.3.0-compat')
         self.assertEqual(art['gr00t_git_repo'], 'https://github.com/boredengineering/Isaac-GR00T.git')
